@@ -1,5 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup, For } from "solid-js";
 import { Portal } from "solid-js/web";
+import { createFlyoutPlacement } from "../utils/tool-flyout";
 import { store, setSelectedTool, setSelectedWireframeType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import { UI_SHAPE_DEFS, type UIShapeCategory } from "../config/ui-shape-defs";
@@ -85,6 +86,7 @@ const WireframeToolGroup: Component = () => {
     const [isOpen, setIsOpen] = createSignal(false);
     let buttonRef: HTMLButtonElement | undefined;
     let dropdownRef: HTMLDivElement | undefined;
+    const flyout = createFlyoutPlacement(() => buttonRef);
 
     createEffect(() => {
         if (isOpen()) {
@@ -148,15 +150,6 @@ const WireframeToolGroup: Component = () => {
     const activeTool = () => getActiveTool();
     const isActive = () => allUITypes.includes(store.selectedTool as any);
 
-    const getDropdownPosition = () => {
-        if (!buttonRef) return {};
-        const rect = buttonRef.getBoundingClientRect();
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            return { bottom: `${window.innerHeight - rect.top + 8}px`, left: '50%', transform: 'translateX(-50%)' };
-        }
-        return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
-    };
 
     return (
         <div class="pen-tool-group">
@@ -182,8 +175,8 @@ const WireframeToolGroup: Component = () => {
 
             <Show when={isOpen()}>
                 <Portal>
-                    <div ref={dropdownRef} class="pen-tool-dropdown" style={{
-                        ...getDropdownPosition(),
+                    <div ref={el => { dropdownRef = el; flyout.attach(el); }} class="pen-tool-dropdown" style={{
+                        ...flyout.style(),
                         display: 'flex',
                         'flex-direction': 'column',
                         'grid-template-columns': 'none',

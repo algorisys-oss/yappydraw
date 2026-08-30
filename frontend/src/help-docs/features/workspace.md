@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles"
+keywords: "fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles"
 ---
 
 # Workspace & Productivity
@@ -14,6 +14,8 @@ The everyday helpers: the floating **smart toolbar**, **align & distribute**, **
 ## Where the toolbar lives
 
 The tool column is docked to the **left edge** by default, and the canvas starts after it rather than underneath. The button at the top of the column moves it: each click steps to the next position — **left → top → right → bottom → floating** — and its icon shows where the bar currently sits. A docked bar reserves its edge; **floating** puts it back to a draggable overlay you can park anywhere (drag the grip, or drag its resize grip to wrap the icons into a compact grid).
+
+A tool group's **flyout** (the submenu under Shapes, Pen, UML, BPMN and the rest) follows the bar: it opens *below* the button on a left- or top-docked bar, *beside* it on a right-docked one, and *above* it on a bottom-docked one — always fully on screen and never covering the button you pressed.
 
 :::tip
 The position sticks between sessions. Scripted: `Yappy.getState().globalSettings.toolbarDock` reports it.
@@ -41,7 +43,7 @@ At the **foot of the tool column** sits the Illustrator swatch pair: a solid squ
 - **None** — takes the fill or stroke away entirely. This is the one-click "no outline" that used to mean scrolling the Properties panel.
 - **Pick** — the **eyedropper**. Click anything on the canvas and its colour lands in the channel. It reads the colour out of the *document*, so what you pick is exactly what is there; over an image (a **reference photo** you pasted in, say) it samples the pixel under the cursor, which is what makes matching a palette from a reference straightforward.
 - **Swap** and **Reset** — swap fill ⇄ stroke, or go back to a black stroke with no fill.
-- A full **colour picker** with a hex field and recents.
+- A full **colour picker** with a hex field and recents. It **follows the swatch you pick** — choose a colour from any palette and the saturation square, the hue slider and the hex field all move to it, so the picker is always a live readout of the current channel rather than a separate control. That includes the wide-gamut **P3** palette: those swatches are stored as `color(display-p3 …)`, and the picker shows the closest sRGB equivalent while the object keeps the true P3 colour.
 
 | Key | Does |
 | --- | --- |
@@ -88,7 +90,7 @@ With **nothing selected** and the Select tool active, Alt+Enter opens **Canvas p
 
 The panel **never opens by itself**. Picking a drawing tool leaves it exactly as you left it, so a long brainstorming session isn't interrupted by a panel sliding in on every tool switch. Open it deliberately with Alt+Enter, the sliders button, or by **right-clicking a tool group** in the toolbar (which opens the panel on that tool's defaults) — and once it's open it stays docked while you work.
 
-Properties is a **dockable panel** like Layers, History or Swatches, so it is not stuck on the right. Drag its title bar to the left or right edge to dock it there, drop it anywhere else to float it, drag the zone's inner edge to resize, and use the title-bar buttons to dock left / dock right / float / collapse to the title bar / close. Your arrangement is saved and comes back next time. The resize edge carries a small **grip** — a short vertical bar on the inner edge of the docked column; grab it and drag sideways to set the width (200–560px). The animation timeline has the matching grip on its *top* edge for height. *Duplicate* and *Delete* sit just below the title bar, with the object's properties, because they act on the selection rather than on the panel.
+Properties is a **dockable panel** like Layers, History or Swatches, so it is not stuck on the right. **The title bar is the handle** — it carries a grip (⣿) next to the panel's name, and dragging it moves the whole panel, with a finger or pen as well as a mouse. Drag it to the left or right edge to dock it there, drop it anywhere else to float it, drag the zone's inner edge to resize, and use the title-bar buttons to dock left / dock right / float / collapse to the title bar / close. Your arrangement is saved and comes back next time. The resize edge carries a small **grip** — a short vertical bar on the inner edge of the docked column; grab it and drag sideways to set the width (200–560px). The animation timeline has the matching grip on its *top* edge for height. *Duplicate* and *Delete* sit just below the title bar, with the object's properties, because they act on the selection rather than on the panel.
 
 ## Smart toolbar
 
@@ -150,6 +152,8 @@ Yappy.exitAllGroups();         // leave entirely
 ```
 
 ## The object tree — every object on a layer
+
+The Layers panel is **movable**, like every other dock panel: grab its title bar (the grip ⣿ beside the word *Layers*) and drag. Drop it near the left or right edge to dock it into that column, or anywhere else to leave it floating over the canvas; the title-bar buttons do the same thing in one click. Wherever you leave it is remembered, and a floating panel is always pulled back into view if the window gets smaller, so it can never end up somewhere you cannot reach it.
 
 Open the **Layers** panel and click the **box icon** on a layer row to list the objects on it. The list reads top-of-stack first, exactly like the artwork, and groups appear as one row you can expand.
 

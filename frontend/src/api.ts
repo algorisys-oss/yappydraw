@@ -1909,6 +1909,11 @@ export const YappyAPI = {
      * Free Transform: toggle a 4-corner envelope distort on the given (or selected)
      * elements. On: initializes the warp quad to the bbox (drag the orange corner handles
      * to distort); non-path shapes are converted to a path first. Off: clears the warp.
+     *
+     * On canvas the same 2×2 cage is also produced by **Ctrl/Cmd + dragging a corner
+     * handle** ("free distort" — that corner moves alone, the other three stay put). That
+     * route sets `warp.projective` and does NOT convert the shape to a path, because it
+     * needs no node editing; this menu/API route converts so the outline stays editable.
      */
     toggleEnvelopeWarp(ids?: string[]): string[] {
         return toggleEnvelopeWarp(ids ?? store.selection);

@@ -9,12 +9,12 @@
  * leaves it floating. The opaque dock zones sit above the canvas, so the canvas never receives
  * pointer events under a dock (drawing-under is prevented). See docs/dockable-panel-system-plan.md.
  */
-import { type Component, For, Show, Suspense, createSignal } from "solid-js";
+import { type Component, For, Show, Suspense, createSignal, onMount, onCleanup } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { X, ChevronDown, ChevronUp, PanelRight, PanelLeft, PictureInPicture2 } from "lucide-solid";
 import {
     dockLayout, panelState, dockedPanels, hidePanel, dockPanel, dockPanelAt, floatPanel, setFloatPos, toggleCollapse, setZoneWidth,
-    type DockZone,
+    clampFloatingPanels, type DockZone,
 } from "../../store/dock-layout";
 import { panelDef } from "./panel-registry";
 import "./dock.css";
@@ -61,6 +61,14 @@ const PanelChrome: Component<{ id: string; floating?: boolean }> = (props) => {
         if (e.button !== 0) return;
         if ((e.target as HTMLElement).closest('button')) return; // let action buttons work
         e.preventDefault();
+        // Capture the pointer on the title bar. Without it a fast drag that outruns the
+        // panel — or one that crosses the canvas — hands the pointer stream to whatever is
+        // underneath, and the panel stops following: the drag "doesn't work" intermittently,
+        // which is exactly how a movable panel gets reported as fixed. Paired with
+        // `touch-action: none` in dock.css, which is what stops a touch drag from scrolling
+        // the dock zone instead.
+        const titleEl = e.currentTarget as HTMLElement;
+        try { titleEl.setPointerCapture(e.pointerId); } catch { /* not fatal */ }
         const startedDocked = !props.floating;
         // Offset of the pointer within the title bar, so the panel doesn't jump under the cursor.
         const grabDX = 30, grabDY = 12;
@@ -83,6 +91,8 @@ const PanelChrome: Component<{ id: string; floating?: boolean }> = (props) => {
         const up = (ev: PointerEvent) => {
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);
+            window.removeEventListener('pointercancel', up);
+            try { titleEl.releasePointerCapture(ev.pointerId); } catch { /* already gone */ }
             const zone = floated ? edgeAt(ev.clientX) : null;
             // Dock at the slot under the cursor so dragging over a populated zone reorders it.
             if (zone) dockPanelAt(props.id, zone, insertIndexAt(zone, ev.clientY, props.id));
@@ -94,12 +104,17 @@ const PanelChrome: Component<{ id: string; floating?: boolean }> = (props) => {
         if (props.floating) { setDragId(props.id); }
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', up);
+        // A cancelled pointer (the OS taking over, a touch turning into a system gesture)
+        // never fires pointerup, and without this the listeners — and `dragId` — leaked, so
+        // the panel kept following the cursor with no button held.
+        window.addEventListener('pointercancel', up);
     };
 
     return (
         <Show when={def()}>
             <div class="dock-panel" classList={{ dragging: dragId() === props.id }} data-panel-id={props.id}>
-                <div class="dock-panel-title draggable" onPointerDown={onTitleDown}>
+                <div class="dock-panel-title draggable" onPointerDown={onTitleDown}
+                    title="Drag to move this panel — release near the left or right edge to dock it">
                     <span class="dock-panel-name">{def()!.title}</span>
                     <div class="dock-panel-actions">
                         <button title="Dock left" onClick={() => dockPanel(props.id, 'left')}><PanelLeft size={13} /></button>
@@ -156,6 +171,19 @@ const DockZoneColumn: Component<{ zone: 'left' | 'right' }> = (props) => {
 
 export const DockContainer: Component = () => {
     const floating = () => Object.entries(dockLayout.panels).filter(([, s]) => s.mode === 'floating').map(([id]) => id);
+
+    // A floating panel's position is saved, so a panel parked near an edge in a big window
+    // is off-screen the next time the app opens in a small one — and since the title bar is
+    // the only way to move a panel, an off-screen title bar means the panel is stuck for
+    // good. Pull them back whenever the viewport changes, and once at startup for a layout
+    // saved before this existed.
+    onMount(() => {
+        clampFloatingPanels();
+        const onResize = () => clampFloatingPanels();
+        window.addEventListener('resize', onResize);
+        onCleanup(() => window.removeEventListener('resize', onResize));
+    });
+
     return (
         <>
             <DockZoneColumn zone="left" />

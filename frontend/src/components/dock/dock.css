@@ -96,7 +96,38 @@
     top: 0;
     z-index: 2;
 }
-.dock-panel-title.draggable { cursor: move; }
+/**
+ * The title bar IS the panel's move handle, so it has to look like one and behave like one.
+ *
+ * `touch-action: none` is not cosmetic: the dock zone is a scroll container, and without it
+ * a touch or pen drag on the title scrolls the stack instead of moving the panel —
+ * `preventDefault()` on pointerdown does not stop that, only this does. On a touch-capable
+ * laptop that made the panel look immovable, which is how it was reported ("please make the
+ * Layer panel movable, it is currently fixed", Aug 2026).
+ *
+ * The grip dots are the other half of the same report: `cursor: move` only appears once the
+ * pointer is already on the bar, so nothing on screen ever said the panel could be dragged.
+ */
+.dock-panel-title.draggable {
+    cursor: move;
+    touch-action: none;
+}
+
+.dock-panel-title.draggable .dock-panel-name::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 12px;
+    margin-right: 7px;
+    vertical-align: -2px;
+    opacity: 0.45;
+    /* Two columns of dots — the conventional drag grip, drawn in the text colour so it
+       follows the theme without a second variable. */
+    background-image: radial-gradient(currentColor 1px, transparent 1.2px);
+    background-size: 3.5px 4px;
+}
+
+.dock-panel-title.draggable:hover .dock-panel-name::before { opacity: 0.75; }
 
 .dock-panel.dragging { opacity: 0.9; }
 .dock-floating .dock-panel.dragging { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28); }

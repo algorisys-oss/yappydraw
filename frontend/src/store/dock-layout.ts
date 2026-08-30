@@ -108,19 +108,75 @@ export function dockPanelAt(id: string, zone: DockZone, index: number) {
     persist();
 }
 
+/**
+ * Keep a floating panel's title bar reachable.
+ *
+ * A panel is moved by its title bar and by nothing else, so a position that puts that bar
+ * off-screen makes the panel permanently unmovable — and a panel you cannot move is
+ * indistinguishable from a panel that was never movable. There are two ways to get there:
+ * dragging it past an edge, and shrinking the window under a panel parked near one.
+ *
+ * The clamp is deliberately generous on the horizontal axis: a panel may hang off the right
+ * so long as `KEEP_VISIBLE` of it remains, because that is a legitimate place to park one.
+ * What it may never do is go above the top or start past the right edge.
+ */
+const KEEP_VISIBLE = 140;   // px of title bar that must stay on screen
+const TITLE_H = 34;
+
+/**
+ * The top of the app chrome, below which a floating panel must stay.
+ *
+ * `y >= 0` is not enough: the top bar is opaque and sits above floating panels, so a panel
+ * at y=0 has its title bar hidden *behind* it — visible page, unreachable handle. The dock
+ * zones already offset themselves by this same `--topbar-h`, so read it rather than
+ * repeating the number.
+ */
+function topChromeHeight(): number {
+    if (typeof document === 'undefined') return 52;
+    const read = (name: string) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+    // Read, not imported: `utils/dock-layout` pulls in the main app store, and this small
+    // store is deliberately free of that dependency. Zero is a legitimate value (Zen and
+    // Presentation have no header), so only a missing/NaN var falls back.
+    const top = read('--topbar-h');
+    return Number.isFinite(top) && top >= 0 ? top : 52;
+}
+
+function clampFloat(x: number, y: number): { x: number; y: number } {
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const minY = topChromeHeight();
+    return {
+        x: Math.round(Math.max(0, Math.min(x, Math.max(0, vw - KEEP_VISIBLE)))),
+        y: Math.round(Math.max(minY, Math.min(y, Math.max(minY, vh - TITLE_H)))),
+    };
+}
+
 export function floatPanel(id: string, x?: number, y?: number) {
-    setDockLayout('panels', id, (p) => ({
-        ...(p || {}),
-        mode: 'floating' as const,
-        floatX: x ?? p?.floatX ?? 140,
-        floatY: y ?? p?.floatY ?? 120,
-    }));
+    setDockLayout('panels', id, (p) => {
+        const at = clampFloat(x ?? p?.floatX ?? 140, y ?? p?.floatY ?? 120);
+        return { ...(p || {}), mode: 'floating' as const, floatX: at.x, floatY: at.y };
+    });
     persist();
 }
 
 export function setFloatPos(id: string, x: number, y: number) {
-    setDockLayout('panels', id, (p) => ({ ...(p || { mode: 'floating' as const }), floatX: x, floatY: y }));
+    const at = clampFloat(x, y);
+    setDockLayout('panels', id, (p) => ({ ...(p || { mode: 'floating' as const }), floatX: at.x, floatY: at.y }));
     persist();
+}
+
+/** Pull every floating panel back into view — for a window resize, which can strand one. */
+export function clampFloatingPanels() {
+    let changed = false;
+    for (const [id, st] of Object.entries(dockLayout.panels)) {
+        if (st.mode !== 'floating') continue;
+        const at = clampFloat(st.floatX ?? 140, st.floatY ?? 120);
+        if (at.x !== st.floatX || at.y !== st.floatY) {
+            setDockLayout('panels', id, (p) => ({ ...(p!), floatX: at.x, floatY: at.y }));
+            changed = true;
+        }
+    }
+    if (changed) persist();
 }
 
 export function toggleCollapse(id: string) {

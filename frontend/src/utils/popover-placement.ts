@@ -54,3 +54,61 @@ export function placeBesideAnchor(
 
     return { left, top };
 }
+
+/**
+ * Place a tool-group flyout (the submenu under a toolbar button) fully inside the viewport.
+ *
+ * The flyouts used to be positioned as a flat `{ top: anchor.bottom + 4, left: anchor.left }`,
+ * which silently assumed the toolbar was on the LEFT or TOP edge. It can be docked to any of
+ * the four, and on the other two that formula puts the panel off-screen: docked right, the
+ * panel starts a few pixels from the right edge and runs off it; docked bottom, `anchor.bottom`
+ * is already at the foot of the window so the panel opens below the fold. Either way the
+ * expanded tools were unreachable (user feedback, Aug 2026).
+ *
+ * No knowledge of the dock edge is needed — asking "where does it fit?" answers it, in the
+ * order a menu should try:
+ *
+ *   below → above → left of the anchor → right of the anchor → below, clamped.
+ *
+ * Below stays first, so the two edges that already worked are untouched. The two SIDE
+ * placements are what a right-docked bar needs: merely clamping the panel back inside the
+ * window would slide it under the toolbar column and hide the buttons it belongs to, so it
+ * opens beside the bar instead, the way a submenu does.
+ */
+export function placeFlyout(
+    anchor: Box,
+    size: { width: number; height: number },
+    viewport: { width: number; height: number },
+    gap = 4,
+    margin = 8,
+): Placement {
+    const { width, height } = size;
+    const maxLeft = viewport.width - width - margin;
+    const maxTop = viewport.height - height - margin;
+
+    // Stacked above/below: aligned with the anchor's left edge. Only the RIGHT edge is
+    // tested — a bar docked hard against the left runs its buttons to x≈4, inside the
+    // margin, and a panel that lines up with them is on screen and correct.
+    const alignedLeft = Math.max(0, anchor.left);
+    const stackFits = alignedLeft <= maxLeft;
+    if (stackFits) {
+        const below = anchor.bottom + gap;
+        if (below <= maxTop) return { left: alignedLeft, top: below };
+        const above = anchor.top - gap - height;
+        if (above >= margin) return { left: alignedLeft, top: above };
+    }
+
+    // Beside: vertically aligned with the anchor's top, slid up only as far as it must.
+    const sideTop = Math.max(margin, Math.min(anchor.top, Math.max(margin, maxTop)));
+    const toLeft = anchor.left - gap - width;
+    if (toLeft >= margin) return { left: toLeft, top: sideTop };
+    const toRight = anchor.right + gap;
+    if (toRight <= maxLeft) return { left: toRight, top: sideTop };
+
+    // Nothing fits cleanly (a panel wider or taller than the window): clamp and show as
+    // much as possible rather than placing it somewhere unreachable.
+    return {
+        left: Math.max(margin, Math.min(alignedLeft, maxLeft)),
+        top: Math.max(margin, Math.min(anchor.bottom + gap, Math.max(margin, maxTop))),
+    };
+}

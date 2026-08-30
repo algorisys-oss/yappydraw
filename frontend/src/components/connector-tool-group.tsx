@@ -1,5 +1,6 @@
 import { type Component, createSignal, Show, For, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
+import { createFlyoutPlacement } from "../utils/tool-flyout";
 import { store, setSelectedTool, setSelectedConnectorType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import { MoveUpRight, Minus, Spline, Waypoints, CornerDownRight, ChevronDown } from "lucide-solid";
@@ -19,6 +20,7 @@ const ConnectorToolGroup: Component = () => {
     const [isOpen, setIsOpen] = createSignal(false);
     let buttonRef: HTMLButtonElement | undefined;
     let dropdownRef: HTMLDivElement | undefined;
+    const flyout = createFlyoutPlacement(() => buttonRef);
 
     createEffect(() => {
         if (isOpen()) {
@@ -78,15 +80,6 @@ const ConnectorToolGroup: Component = () => {
         setIsOpen(!isOpen());
     };
 
-    const getDropdownPosition = () => {
-        if (!buttonRef) return {};
-        const rect = buttonRef.getBoundingClientRect();
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            return { bottom: `${window.innerHeight - rect.top + 8}px`, left: '50%', transform: 'translateX(-50%)' };
-        }
-        return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
-    };
 
     return (
         <div class="connector-tool-group">
@@ -113,7 +106,7 @@ const ConnectorToolGroup: Component = () => {
 
             <Show when={isOpen()}>
                 <Portal>
-                    <div ref={dropdownRef} class="connector-tool-dropdown" style={getDropdownPosition()}>
+                    <div ref={el => { dropdownRef = el; flyout.attach(el); }} class="connector-tool-dropdown" style={flyout.style()}>
                         <For each={connectorTools}>
                             {(tool) => (
                                 <button

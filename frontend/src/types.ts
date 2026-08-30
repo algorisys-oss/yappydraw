@@ -680,7 +680,9 @@ export interface DrawingElement {
         preset?: string; bend?: number;
         /** Map the 4-corner cage projectively (a homography) rather than bilinearly — set by
          *  shapes drawn on a perspective plane, where bilinear puts the centre in the wrong
-         *  place. Absent on every other warp, which stays bilinear. */
+         *  place, and by the Ctrl/Cmd + corner-handle free distort, where pulling one corner
+         *  of a quad IS a perspective change (bilinear would bow the two adjacent edges).
+         *  Absent on every other warp, which stays bilinear. */
         projective?: boolean };
     /** Puppet Warp pins (centred-local coords): `base` = rest position, current = {x,y}. The
      *  warp grid is recomputed from pin displacements via RBF interpolation. */

@@ -28,6 +28,9 @@ export interface PointerState {
     shearing: boolean;
     shearInitialX: number;
     shearInitialY: number;
+    /** Free Transform distort (Ctrl/Cmd + drag a CORNER handle): which corner is being
+     *  pulled on its own, leaving the other three where they are. Null when not distorting. */
+    distortCorner: 'tl' | 'tr' | 'bl' | 'br' | null;
     lastSnappingTime: number;
     /** Cached path-intersection snap targets for the current drag (static elements
         don't move mid-drag, so compute once). Undefined = not yet computed. */
@@ -156,6 +159,7 @@ export function createPointerState(): PointerState {
         shearing: false,
         shearInitialX: 0,
         shearInitialY: 0,
+        distortCorner: null,
         lastSnappingTime: 0,
         laserTrailData: [],
         laserRafPending: false,

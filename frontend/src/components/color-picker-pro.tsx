@@ -2,6 +2,7 @@ import { type Component, createSignal, createEffect, onMount, Show, For } from '
 import { Pipette, Monitor, Square as SquareIcon, Triangle as TriangleIcon } from 'lucide-solid';
 import { readJsonArray } from '../utils/safe-storage';
 import { startColorEyedropper } from '../store/app-store';
+import { cssColorToRgb255 } from '../utils/color-utils';
 import './color-picker-pro.css';
 
 /**
@@ -72,8 +73,16 @@ export const ColorPickerPro: Component<Props> = (props) => {
 
     // Sync HSV from an externally-set value (not while the user is dragging, so we
     // don't fight their input or lose hue when s/v hit an achromatic edge).
+    //
+    // Parsed with the general CSS parser, not `hexToRgb`. The value handed in is whatever
+    // the document stores, and that is not always hex: choosing a swatch from the P3
+    // Wide-Gamut palette sets `color(display-p3 1 1 0)`, which `hexToRgb` rejected — so the
+    // saturation square and hue slider went on showing the *previous* colour while the
+    // swatch above them had visibly changed (user feedback, Aug 2026). Out-of-sRGB P3
+    // colours clamp on the way in; that is the closest sRGB the picker can display, and it
+    // preserves the hue, which is what the sync is for.
     createEffect(() => {
-        const rgb = hexToRgb(props.value || '');
+        const rgb = cssColorToRgb255(props.value || '');
         if (!rgb || dragging) return;
         const c = rgbToHsv(...rgb);
         setH(c.s > 0.001 && c.v > 0.001 ? c.h : h()); // keep hue on greys/blacks
@@ -221,7 +230,7 @@ export const ColorPickerPro: Component<Props> = (props) => {
         if (hexToRgb(hex)) { props.onStart?.(); props.onChange(hex); }
     };
 
-    onMount(() => { const rgb = hexToRgb(props.value || ''); if (rgb) { const c = rgbToHsv(...rgb); setH(c.h); setS(c.s); setV(c.v); } });
+    onMount(() => { const rgb = cssColorToRgb255(props.value || ''); if (rgb) { const c = rgbToHsv(...rgb); setH(c.h); setS(c.s); setV(c.v); } });
 
     return (
         <div class="cpp" onPointerDown={(e) => e.stopPropagation()}>

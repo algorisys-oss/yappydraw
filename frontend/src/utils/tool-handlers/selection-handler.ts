@@ -298,6 +298,21 @@ export function selectionOnDown(
             pState.shearInitialY = sel?.shearY || 0;
         }
 
+        // Free Transform DISTORT: Ctrl/Cmd + drag a CORNER handle moves that corner ALONE,
+        // leaving the other three where they are (Illustrator's Free Distort, Photoshop's
+        // Ctrl-drag in Free Transform). The same modifier already means "deform rather than
+        // resize" on the side handles above, so the corner case completes the pair.
+        //
+        // This is the one thing the bbox handles genuinely could not do. Dragging a side
+        // handle already stretches that side alone, and W/H in Properties are already
+        // independent — but there was no way to say "three corners are right, this one needs
+        // to move", which is exactly what was asked for (user feedback, Aug 2026).
+        pState.distortCorner = null;
+        if (hitHandle.id !== 'multi' && (e.ctrlKey || e.metaKey) && !pState.shearing &&
+            (hitHandle.handle === 'tl' || hitHandle.handle === 'tr' || hitHandle.handle === 'bl' || hitHandle.handle === 'br')) {
+            pState.distortCorner = hitHandle.handle;
+        }
+
         if (hitHandle.id === 'multi') {
             const box = getSelectionBoundingBox(store.elements, store.selection);
             if (box) {
@@ -1475,6 +1490,33 @@ function handleResize(
         if (wi >= 0 && wi < points.length) points[wi] = { x: ur.x - cx, y: ur.y - cy };
         updateElement(id, { warp: { rows: grid.rows, cols: grid.cols, points } }, false);
         return;
+    }
+
+    // Free Transform DISTORT — Ctrl/Cmd + drag a corner handle. That corner follows the
+    // pointer; the other three stay put.
+    //
+    // Implemented as a 2×2 *projective* envelope cage rather than as new geometry, which is
+    // what makes it cheap and complete: `getShapeGeometry` already applies `el.warp` to
+    // whatever geometry a shape has, so rendering (both styles), hit-testing, SVG export and
+    // undo all work with no further code. Projective (a homography) rather than the default
+    // bilinear map because pulling one corner of a quad is a perspective change — bilinear
+    // would bow the two adjacent edges instead of keeping them straight.
+    //
+    // The cage is created lazily HERE and not on pointer-down, so a Ctrl-click that never
+    // becomes a drag leaves the element exactly as it was.
+    if (pState.distortCorner) {
+        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+        const ur = rotatePoint(x, y, cx, cy, -(el.angle || 0));
+        const grid = getWarpGrid(el.warp) ?? { ...defaultWarpGrid(el.width, el.height, 2, 2), projective: true };
+        // Only a 2×2 cage has "corners" in this sense. On a finer mesh warp, fall through
+        // to an ordinary resize rather than silently moving one mesh node.
+        if (grid.rows === 2 && grid.cols === 2) {
+            const CORNER_INDEX = { tl: 0, tr: 1, bl: 2, br: 3 } as const;
+            const points = grid.points.map(p => ({ ...p }));
+            points[CORNER_INDEX[pState.distortCorner]] = { x: ur.x - cx, y: ur.y - cy };
+            updateElement(id, { warp: { rows: 2, cols: 2, points, projective: true } } as Partial<DrawingElement>, false);
+            return;
+        }
     }
 
     // Free Transform shear — Ctrl/Cmd + drag a side handle. Drag the top/bottom handle

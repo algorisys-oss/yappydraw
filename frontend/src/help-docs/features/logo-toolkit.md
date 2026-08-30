@@ -208,6 +208,12 @@ The setting persists across sessions and is saved with the document, alongside t
 
 **Rotation-aware resize.** Rotate a shape, then drag any corner or edge handle — it now scales along the shape's *own* axes (not the screen's), and the handle opposite the one you drag stays pinned. Hold <kbd>Shift</kbd> to keep the aspect ratio. This makes adjusting a tilted wordmark or emblem feel natural instead of skewing off-axis.
 
+**Stretch one side.** Drag a **side** (edge-midpoint) handle and only that edge moves — the other three sides stay exactly where they are, so the shape gets longer or shorter on one axis alone. This is the default: plain drag, no modifier. Note that <kbd>Shift</kbd> does the *opposite* of what it does in some other apps — here it **constrains** proportions, so a side handle with <kbd>Shift</kbd> held scales both axes together. If a stretch is coming out uniform when you wanted it on one axis, let go of <kbd>Shift</kbd>.
+
+:::tip
+Every one of these is also available numerically: the Properties panel's **W** and **H** are independent fields, so you can stretch one axis by typing a number without touching the other.
+:::
+
 **Custom rotation point.** By default a shape rotates about its centre. To rotate about a different point, right-click (or long-press on a tablet) and choose *Set Rotation Point Here* — a crosshair (⊕) appears at that spot. Drag the crosshair to fine-tune it, then drag the rotate handle and the shape orbits that point. Right-click → *Reset Rotation Point* returns it to the centre.
 
 :::tip
@@ -229,6 +235,8 @@ The rotation point is per-selection and resets automatically when you select som
 **Mesh warp.** For finer control, right-click → *Path → Mesh Warp* and pick a grid (2×2 up to 5×5). Dragging the **interior** control points bulges and waves the middle of the shape — distortions a 4-corner cage can't make (think flowing ribbons, fish-eye badges, organic blobs). Hit-testing and SVG export follow the mesh. Toggle *Mesh: Smooth* for flowing bicubic curves (vs sharp straight cells). **Images** warp too — the bitmap is texture-mapped through the mesh (great for mockups on curved surfaces).
 
 **Remove vs. Apply.** The warp is non-destructive: *Remove Envelope Distort* drops the cage and reverts to the original shape. To keep the distortion instead, use *Apply / Bake Warp* — it commits the warp (a path's outline becomes new anchors; an image rasterizes to a new bitmap) and removes the cage. Warped images also export to SVG now (baked to a bitmap, since SVG can't express a freeform image warp).
+
+**Free distort — move one corner.** Hold <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd>) and drag a **corner** handle to move *that corner alone*, leaving the other three where they are. Use it when three corners are already right and only one needs to come in or out — tapering a banner end, squaring a photo to a wall, faking a perspective on a badge. It is the corner counterpart of the shear below: the same modifier means "deform rather than resize" on both. Under the hood it drops a 4-corner cage on the shape (the orange handles appear, so you can keep adjusting any corner afterwards), the shape keeps its type, and <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the whole drag in one step. Renders in both Sketch and Architectural styles and exports to SVG.
 
 **Shear (slant).** Hold <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd>) and drag a **side** handle to slant the shape — drag the top/bottom handle sideways for horizontal shear, the left/right handle up/down for vertical shear. For exact values, type into the **Shear X / Shear Y** fields in the Dimensions panel. Shear renders in both Sketch and Architectural styles and exports to SVG as a true matrix transform — great for italic/oblique wordmarks and isometric-looking marks.
 

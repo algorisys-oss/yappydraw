@@ -1,5 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
+import { createFlyoutPlacement } from "../utils/tool-flyout";
 import { store, setSelectedTool, setSelectedConnectionRelType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
@@ -91,6 +92,7 @@ const ConnectionRelToolGroup: Component = () => {
     const [isOpen, setIsOpen] = createSignal(false);
     let buttonRef: HTMLButtonElement | undefined;
     let dropdownRef: HTMLDivElement | undefined;
+    const flyout = createFlyoutPlacement(() => buttonRef);
 
     createEffect(() => {
         if (isOpen()) {
@@ -150,15 +152,6 @@ const ConnectionRelToolGroup: Component = () => {
     const activeTool = () => getActiveTool();
     const isActive = () => connectionRelTools.some(t => t.type === store.selectedTool);
 
-    const getDropdownPosition = () => {
-        if (!buttonRef) return {};
-        const rect = buttonRef.getBoundingClientRect();
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            return { bottom: `${window.innerHeight - rect.top + 8}px`, left: '50%', transform: 'translateX(-50%)' };
-        }
-        return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
-    };
 
     return (
         <div class="pen-tool-group">
@@ -184,7 +177,7 @@ const ConnectionRelToolGroup: Component = () => {
 
             <Show when={isOpen()}>
                 <Portal>
-                    <div ref={dropdownRef} class="pen-tool-dropdown" style={getDropdownPosition()}>
+                    <div ref={el => { dropdownRef = el; flyout.attach(el); }} class="pen-tool-dropdown" style={flyout.style()}>
                         {connectionRelTools.map((tool) => (
                             <button
                                 class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}

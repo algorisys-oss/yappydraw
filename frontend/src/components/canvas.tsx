@@ -47,6 +47,7 @@ import { getSelectionBoundingBox, getPathHandleAtPosition } from "../utils/handl
 import { RESIZE_ANCHOR_SIGNS } from "../utils/resize-box";
 import { animPosedElements } from "../store/anim-ops";
 import { getPathSubpaths } from "../utils/math/path-utils";
+import { renderPenConstruction } from "../rendering/pen-construction";
 import type { MenuItem } from "./context-menu";
 import { checkBinding as checkBindingUtil, refreshLinePoints as refreshLinePointsUtil, refreshBoundLine as refreshBoundLineUtil } from "../utils/binding-logic";
 import {
@@ -647,6 +648,15 @@ const Canvas: Component = () => {
         });
 
         renderLaserTrail(ctx, pState.laserTrailData, scale, LASER_DECAY_MS);
+
+        // Pen construction guide — the blue path-under-construction, drawn regardless of
+        // what the element's own stroke and fill are set to. With the stroke set to None
+        // (what you do when the goal is a filled shape with no outline) the Pen used to
+        // give no feedback at all: see rendering/pen-construction.ts.
+        if (pState.isPenBuilding && pState.currentId) {
+            const penEl = store.elements.find(e => e.id === pState.currentId);
+            if (penEl) renderPenConstruction(ctx, penEl, scale, pState.penDragging ? pState.penActiveIdx : -1);
+        }
 
         // Pen "continue from here" ring — the end anchor of an open path under the idle
         // Pen cursor. Sized in screen px (divided by scale) so it stays legible at any zoom.

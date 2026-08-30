@@ -3,7 +3,7 @@ import { render } from 'solid-js/web'
 import { createSignal, createEffect, onMount, lazy, Suspense, Switch, Match, ErrorBoundary } from 'solid-js'
 import './index.css'
 import App from './app.tsx'
-import { loadDocument, setStore } from './store/app-store'
+import { loadDocument, setStore, store, undo } from './store/app-store'
 import { isSlideDocument, migrateToSlideFormat } from './utils/migration'
 import { storage } from './storage/file-system-storage'
 import { preloadAppFonts } from './utils/font-loading'
@@ -139,12 +139,22 @@ const Router = () => {
      * A plain reload keeps the page's service worker, and with our `prompt`
      * strategy that worker keeps serving the very build that just failed — which
      * is why "Reload" looked broken and only closing the tab helped.
+     *
+     * "Undo last change" exists because this screen used to be a trap. When the error
+     * comes from an *edit* — a Pathfinder op, a delete — the document and the whole undo
+     * stack are still intact in the module-level store; it is only the UI that is gone,
+     * and with it every route to Ctrl+Z. A user reported exactly that: "things cannot be
+     * undone using undo after this happens". Undoing the offending edit and then remounting
+     * removes the state that threw, so the editor comes back with the work restored.
+     * Ordering matters — `undo()` must run before `reset()`, or the remounted UI reads the
+     * bad state again and throws straight back to this screen.
      */
     const RouteError = (err: any, reset: () => void) => {
         if (recoverFromStaleBuild(err)) {
             return <div style={{ padding: '2rem', 'text-align': 'center' }}>Updating to the latest version…</div>
         }
         console.error('[yappy] Route error:', err)
+        const btn = { padding: '7px 16px', font: 'inherit', cursor: 'pointer', 'margin-left': '8px' }
         return (
         <div style={{ padding: '2rem', 'text-align': 'center', font: '14px/1.6 system-ui, sans-serif' }}>
             <p><strong>Something went wrong.</strong></p>
@@ -157,8 +167,15 @@ const Router = () => {
                     style={{ padding: '7px 16px', font: 'inherit', 'font-weight': '600', color: '#fff', background: '#4c8dff', border: '0', 'border-radius': '6px', cursor: 'pointer' }}>
                     Reload
                 </button>
-                <button type="button" onClick={reset}
-                    style={{ 'margin-left': '8px', padding: '7px 16px', font: 'inherit', cursor: 'pointer' }}>
+                {store.undoStackLength > 0 && (
+                    <button type="button"
+                        title="Undo the change that caused this, then reopen the editor"
+                        onClick={() => { try { undo() } catch (e) { console.error('[yappy] Undo-and-recover failed:', e) } reset() }}
+                        style={btn}>
+                        Undo last change
+                    </button>
+                )}
+                <button type="button" onClick={reset} style={btn}>
                     Try again
                 </button>
             </p>

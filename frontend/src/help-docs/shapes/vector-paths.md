@@ -4,7 +4,7 @@ name: Vector Paths
 icon: "✒️"
 category: Drawing
 description: Pen tool, the Node tool (Direct Selection), Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes
-keywords: "direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path straight line straight lines constrain segment 15 degrees fixed angle horizontal vertical 45 clock method noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api pause pen resume pen continue path continue from last anchor reopen path pick up where I left off unfinished path open path end anchor endpoint extend path close the shape later open stroke leave path open finish open ctrl click alt click photoshop click away drop the pen undo last point point level undo remove last anchor backspace ctrl z while drawing"
+keywords: "direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path straight line straight lines constrain segment 15 degrees fixed angle horizontal vertical 45 clock method noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api pause pen resume pen continue path continue from last anchor reopen path pick up where I left off unfinished path open path end anchor endpoint extend path close the shape later open stroke leave path open finish open ctrl click alt click photoshop click away drop the pen undo last point point level undo remove last anchor backspace ctrl z while drawing rubber band rubberband blue guide construction path preview see what I am drawing no stroke none fill only invisible path outline preview"
 seoTitle: "Vector path editing online — pen tool, nodes and pathfinder"
 seoDescription: "Edit vector paths in the browser: pen tool, node editing, convert to path, pathfinder booleans, outline stroke and offset path."
 ---
@@ -28,6 +28,14 @@ Pick the **Pen / Vector Path** tool (the pen-nib icon) from the toolbar, then bu
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click anywhere | Finish the path open **and stay on the Pen**, ready for the next curve |
 | <kbd>Backspace</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> | Step back one anchor while still drawing |
 | **Click an end anchor of an open path** | **Continue that path** from where you stopped |
+
+**You always see what you are drawing.** While a path is under construction the Pen draws a
+thin **blue guide** through the anchors, with a square on each one and a rubber-band segment
+running to the cursor. That guide is independent of the shape's own paint, which matters when
+you are building a **filled shape with no stroke**: set the stroke to *None*, and the object
+itself is invisible until it closes — the blue guide is what you draw against in the meantime.
+The guide is construction chrome only; it disappears the moment the path is finished and it
+never appears in an export.
 
 :::tip
 **Leaving a path open is a first-class result, not a fallback.** An open path is a stroke —

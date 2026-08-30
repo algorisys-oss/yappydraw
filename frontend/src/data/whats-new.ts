@@ -13,6 +13,16 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.226', date: '2026-08-30', items: [
+        'The "Something went wrong" screen should stop interrupting you. Deleting two or more selected objects with the Del key, or combining shapes with Pathfinder, could replace the whole editor with an error page — and because the toolbar went with it, there was no way to press Ctrl+Z afterwards. Both came from the same fault and both are fixed.',
+        'And if any error screen ever does appear, your work is not lost. It now has an "Undo last change" button: your drawing and its whole undo history were always still there behind the error page, and that button undoes whatever caused it and puts you back in the editor.',
+        'Move the toolbar to the right or bottom edge and the tool menus still open on screen. Every tool group that expands into a menu — Shapes, Pen, UML, BPMN and the rest — was opening its menu off the edge of the window, so those tools simply could not be reached from those two positions.',
+        'You can see what the Pen is drawing, even with no outline set. Building a filled shape with the stroke set to None used to draw nothing at all until you closed the path. A thin blue guide now follows the path as you click, with a line running to your cursor, and disappears when you finish. It is only a guide — it is never part of your drawing or your exports.',
+        'Move one corner of a shape on its own. Hold Ctrl (or Cmd) and drag a corner handle: that corner follows your pointer and the other three stay put — for tapering a banner end, squaring artwork to a wall, or faking a bit of perspective. Ctrl and a side handle still slants the shape, as before.',
+        'A reminder while you are there: dragging a side handle already stretches just that side, leaving the other three where they are. Hold Shift and it keeps the proportions instead — which is the opposite of some other apps, and worth knowing if a stretch is coming out uniform when you did not want it to be.',
+        'Picking a P3 Wide-Gamut colour now moves the colour picker with it. The saturation square, the hue slider and the hex box stayed on the previous colour, so the picker disagreed with the swatch you had just clicked.',
+        'The Layers panel — and every other panel — moves properly. Drag it by its title bar, which now has a grip on it so you can see that you can. It works with a finger or a pen as well as a mouse, and a panel can no longer end up somewhere off-screen where you cannot grab it back.',
+    ] },
     { version: '0.8.225', date: '2026-08-26', items: [
         'Fill and stroke colours are in the toolbar now. Two little squares at the top of the tool column show what the selected shape is painted with — or, if nothing is selected, what the next shape you draw will be painted with. Click either one to change it, without opening the Properties panel and scrolling.',
         'Removing a fill or an outline is one click. The panel that opens has a None button, and every colour palette now starts with a checkerboard swatch that means "no colour" — before this, only the palette called Default had one, so if you were on any other palette there was no way to take a colour off at all.',

@@ -1476,12 +1476,19 @@ export const deleteElements = (ids: string[]) => {
         if (el?.parentId && !deletedSet.has(el.parentId)) survivingParents.add(el.parentId);
     }
 
-    setStore("elements", (els) => els.filter(el => !ids.includes(el.id)));
-    setStore("selection", []); // Clear selection
-    // Drop dimension annotations and transform-parent links that referenced deleted elements.
-    if (store.dimensionAnnotations.some(d => deletedSet.has(d.targetId))) {
-        setStore("dimensionAnnotations", (list) => list.filter(d => !deletedSet.has(d.targetId)));
-    }
+    // One batch: removing the elements and clearing the selection must not be observable
+    // as two separate states. Between them the selection names elements that are gone, and
+    // every reactive reader that pairs the two lists — the Fill & Stroke swatch, the
+    // property panel, the selection overlay — sees a selection it cannot resolve. That gap
+    // is what crashed the editor on Delete (see `paintColorIsMixed`).
+    batch(() => {
+        setStore("elements", (els) => els.filter(el => !ids.includes(el.id)));
+        setStore("selection", []); // Clear selection
+        // Drop dimension annotations and transform-parent links that referenced deleted elements.
+        if (store.dimensionAnnotations.some(d => deletedSet.has(d.targetId))) {
+            setStore("dimensionAnnotations", (list) => list.filter(d => !deletedSet.has(d.targetId)));
+        }
+    });
 
     if (survivingParents.size > 0) {
         const roots = new Set([...survivingParents].map(id => findMindmapRoot(id)));
@@ -3611,10 +3618,28 @@ export const currentPaintColor = (channel: PaintChannel): string => {
     return raw || (channel === 'fill' ? 'transparent' : '#000000');
 };
 
-/** Do the selected elements disagree about this channel? Worth saying, not worth blocking on. */
+/**
+ * Do the selected elements disagree about this channel? Worth saying, not worth blocking on.
+ *
+ * The second length check is not redundant with the first. `store.selection` is a list of
+ * IDs, and it is briefly allowed to name elements that no longer exist: any operation that
+ * removes the selected elements does so in one `setStore('elements', …)` and clears the
+ * selection in the next, and Solid runs effects BETWEEN those two writes. In that gap the
+ * filter returns fewer elements than the selection claims — empty, for a plain delete — and
+ * reading `sel[0].strokeColor` threw. This runs inside a reactive `title` binding, so the
+ * throw reached the top-level ErrorBoundary and replaced the whole editor with "Something
+ * went wrong", taking the toolbar (and therefore any way to press Ctrl+Z) with it.
+ *
+ * That is the crash a user hit repeatedly in one session — pressing Delete with two objects
+ * selected, and running Pathfinder > Unite. The callers now batch (see `deleteElements`),
+ * which closes the gap; this stays as the guard that makes a torn read harmless rather than
+ * fatal, because "the selection names a missing element" is a state this function must
+ * simply survive.
+ */
 export const paintColorIsMixed = (channel: PaintChannel): boolean => {
     if (store.selection.length < 2) return false;
     const sel = store.elements.filter(e => store.selection.includes(e.id));
+    if (sel.length < 2) return false;
     const of = (e: DrawingElement) => channel === 'fill' ? e.backgroundColor : e.strokeColor;
     const first = of(sel[0]);
     return sel.some(e => of(e) !== first);
@@ -6918,8 +6943,7 @@ export const commitPathErase = (worldPts: { x: number; y: number }[], radius: nu
     }
     if (!consumed.length) return [];
     pushToHistory();
-    replaceElementsPreservingOrder(consumed, created);
-    setStore('selection', created.map(e => e.id));
+    replaceElementsPreservingOrder(consumed, created, created.map(e => e.id));
     bumpDirtyRevision();
     return created.map(e => e.id);
 };
@@ -7278,17 +7302,32 @@ export const spraySymbolInstances = (symbolId: string, pts: { x: number; y: numb
  * consumed element — Illustrator preserves stacking order through Pathfinder / Knife / Distort
  * / Shape Builder, rather than promoting results to the top of the stack.
  */
-const replaceElementsPreservingOrder = (consumedIds: string[], created: DrawingElement[]) => {
+/**
+ * Swap `consumedIds` out for `created`, keeping the created elements at the stacking
+ * position the first consumed one held.
+ *
+ * `select` is not a convenience — it is the reason the selection update belongs in here.
+ * Every caller (Pathfinder, compound shapes, Shape Builder, Scissors, Distort) follows the
+ * swap by selecting the results, and doing that as a second `setStore` leaves one frame in
+ * which `store.selection` names elements that no longer exist. Solid runs effects between
+ * the two writes, so readers that pair the two lists saw a selection they could not resolve
+ * — which is exactly how Pathfinder > Unite crashed the whole editor (see
+ * `paintColorIsMixed`). Batching them makes that state unobservable.
+ */
+const replaceElementsPreservingOrder = (consumedIds: string[], created: DrawingElement[], select?: string[]) => {
     const consumed = new Set(consumedIds);
-    setStore('elements', list => {
-        let insertAt = 0, seenFirst = false;
-        const others: DrawingElement[] = [];
-        for (const e of list) {
-            if (consumed.has(e.id)) { if (!seenFirst) { seenFirst = true; insertAt = others.length; } continue; }
-            others.push(e);
-        }
-        if (!seenFirst) insertAt = others.length;
-        return [...others.slice(0, insertAt), ...created, ...others.slice(insertAt)];
+    batch(() => {
+        setStore('elements', list => {
+            let insertAt = 0, seenFirst = false;
+            const others: DrawingElement[] = [];
+            for (const e of list) {
+                if (consumed.has(e.id)) { if (!seenFirst) { seenFirst = true; insertAt = others.length; } continue; }
+                others.push(e);
+            }
+            if (!seenFirst) insertAt = others.length;
+            return [...others.slice(0, insertAt), ...created, ...others.slice(insertAt)];
+        });
+        if (select) setStore('selection', select);
     });
 };
 
@@ -7525,8 +7564,7 @@ export const splitPathAt = (
 
     if (!created.length) { say('Scissors: nothing to split', 'info'); return []; }
     if (opts.history !== false) pushToHistory();
-    replaceElementsPreservingOrder([id], created);
-    setStore('selection', created.map(c => c.id));
+    replaceElementsPreservingOrder([id], created, created.map(c => c.id));
     say('Scissors: split', 'success');
     return created.map(c => c.id);
 };
@@ -8610,8 +8648,7 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     if (created.length === 0) return [];
 
     pushToHistory();
-    replaceElementsPreservingOrder(ids, created);
-    setStore('selection', created.map(c => c.id));
+    replaceElementsPreservingOrder(ids, created, created.map(c => c.id));
     showToast(`Pathfinder: ${op}`, 'success');
     return created.map(c => c.id);
 };
@@ -8672,8 +8709,7 @@ export const applyPathfinderRegion = (ids: string[], op: RegionPathfinderOp): st
 
     if (!created.length) { showToast('Pathfinder: empty result', 'info'); return []; }
     pushToHistory();
-    replaceElementsPreservingOrder(ids, created);
-    setStore('selection', created.map(c => c.id));
+    replaceElementsPreservingOrder(ids, created, created.map(c => c.id));
     showToast(`Pathfinder: ${op}`, 'success');
     return created.map(c => c.id);
 };
@@ -8739,8 +8775,7 @@ export const commitShapeBuilderFaces = (ids: string[], touchedKeys: string[], mo
         return [];
     }
     pushToHistory();
-    replaceElementsPreservingOrder(ids, created);
-    setStore('selection', created.map(c => c.id));
+    replaceElementsPreservingOrder(ids, created, created.map(c => c.id));
     showToast(mode === 'merge' ? 'Shape Builder: merged' : 'Shape Builder: deleted', 'success');
     return created.map(c => c.id);
 };
@@ -8804,8 +8839,7 @@ export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): s
     }
     if (!created.length) { showToast('Distort: nothing to distort', 'info'); return []; }
     pushToHistory();
-    replaceElementsPreservingOrder(consumed, created);
-    setStore('selection', created.map(c => c.id));
+    replaceElementsPreservingOrder(consumed, created, created.map(c => c.id));
     showToast(`Distort: ${kind}`, 'success');
     return created.map(c => c.id);
 };
@@ -9725,8 +9759,7 @@ export const makeCompoundShape = (ids: string[], op: BooleanOp = 'union'): strin
     const compound = buildCompoundPath(polys, compoundStyleOf(base), op, els.map(e => ({ ...e })));
     if (!compound) return null;
     pushToHistory();
-    replaceElementsPreservingOrder(ids, [compound]);
-    setStore('selection', [compound.id]);
+    replaceElementsPreservingOrder(ids, [compound], [compound.id]);
     bumpDirtyRevision();
     showToast(`Compound shape: ${op}`, 'success');
     return compound.id;
@@ -9759,8 +9792,7 @@ export const releaseCompoundShape = (id: string): string[] => {
     const batchIds = new Set<string>();
     const restored = operands.map(o => ({ ...o, id: generateId(o.type as any, batchIds), compoundOperands: undefined, compoundOp: undefined }));
     pushToHistory();
-    replaceElementsPreservingOrder([id], restored as DrawingElement[]);
-    setStore('selection', restored.map(r => r.id));
+    replaceElementsPreservingOrder([id], restored as DrawingElement[], restored.map(r => r.id));
     bumpDirtyRevision();
     showToast('Compound shape released', 'success');
     return restored.map(r => r.id);

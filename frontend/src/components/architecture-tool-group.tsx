@@ -1,5 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
+import { createFlyoutPlacement } from "../utils/tool-flyout";
 import { store, setSelectedTool, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
@@ -124,6 +125,7 @@ const ArchitectureToolGroup: Component = () => {
     const [lastType, setLastType] = createSignal<ElementType>('server');
     let buttonRef: HTMLButtonElement | undefined;
     let dropdownRef: HTMLDivElement | undefined;
+    const flyout = createFlyoutPlacement(() => buttonRef);
 
     createEffect(() => {
         if (isOpen()) {
@@ -178,15 +180,6 @@ const ArchitectureToolGroup: Component = () => {
         setIsOpen(!isOpen());
     };
 
-    const getDropdownPosition = () => {
-        if (!buttonRef) return {};
-        const rect = buttonRef.getBoundingClientRect();
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            return { bottom: `${window.innerHeight - rect.top + 8}px`, left: '50%', transform: 'translateX(-50%)' };
-        }
-        return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
-    };
 
     return (
         <div class="pen-tool-group">
@@ -206,7 +199,7 @@ const ArchitectureToolGroup: Component = () => {
 
             <Show when={isOpen()}>
                 <Portal>
-                    <div ref={dropdownRef} class="pen-tool-dropdown arch-dropdown" style={getDropdownPosition()}>
+                    <div ref={el => { dropdownRef = el; flyout.attach(el); }} class="pen-tool-dropdown arch-dropdown" style={flyout.style()}>
                         <div class="arch-dropdown-title"><Network size={13} /> Architecture</div>
                         {sections.map((section) => (
                             <div class="arch-section">
