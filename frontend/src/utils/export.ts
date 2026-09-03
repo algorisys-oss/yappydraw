@@ -493,6 +493,21 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
     return canvas;
 }
 
+/**
+ * The colour the document is actually drawn on.
+ *
+ * Every non-slide exporter used to hardcode `#ffffff` here, ignoring the canvas background
+ * the user had set. Set the canvas to black and write in white, a perfectly ordinary thing
+ * to do, and the exported file came back as blank white paper with invisible white text on
+ * it. The drawing was in the file and nothing could be seen. Reported by a user, and the
+ * failure is total rather than cosmetic, which is why it read as "export is broken".
+ *
+ * Slides never had this: they already read `slide.backgroundColor`. This is the same idea
+ * for the infinite canvas, where `canvasBackgroundColor` is the equivalent. It defaults to
+ * white, so nothing changes for anyone who never touched the setting.
+ */
+const documentBackground = (): string => store.canvasBackgroundColor || '#ffffff';
+
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
     // Paged docs (design / slides): export every page at full page bounds with its
@@ -532,7 +547,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
 
     // Background
     if (background) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = documentBackground();
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
@@ -694,8 +709,9 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
     const ctx = canvas.getContext('2d');
     if (!ctx) return undefined;
     if (format === 'jpeg') {
-        // JPEG has no transparency — always white background
-        ctx.fillStyle = '#ffffff';
+        // JPEG has no transparency, so it always needs an opaque fill. The fill is the
+        // document's own background, not an assumed white.
+        ctx.fillStyle = documentBackground();
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     ctx.scale(scale, scale);
@@ -754,8 +770,9 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // JPEG has no transparency — always white background
-    ctx.fillStyle = '#ffffff';
+    // JPEG has no transparency, so this fill is always painted, with the document's own
+    // background colour rather than an assumed white.
+    ctx.fillStyle = documentBackground();
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.scale(scale, scale);
@@ -792,7 +809,7 @@ export const copyCanvasAsPng = async (scale: number) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = documentBackground();
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.scale(scale, scale);
@@ -1468,6 +1485,26 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
     return str;
 };
 
+/**
+ * Encode an export canvas for a PDF page.
+ *
+ * JPEG has no alpha channel. With "background" switched off nothing fills the canvas, so
+ * every transparent pixel encoded to JPEG came out **black**: the PDF opened as a black
+ * page with the artwork nearly invisible on it. That is what "PDF export is broken" looked
+ * like from the outside, and it only happened on the one setting nobody tests by default.
+ *
+ * PNG keeps the alpha, and a jsPDF page is white underneath, so a transparent export now
+ * renders as artwork on white paper while still compositing correctly if the PDF is placed
+ * over something else. JPEG is kept for the opaque case, where it is a good deal smaller
+ * and the alpha channel would be wasted.
+ *
+ * `exportToPptx` already used PNG throughout, which is why it never had this fault.
+ */
+const pdfImage = (canvas: HTMLCanvasElement, background: boolean) =>
+    background
+        ? { data: canvas.toDataURL('image/jpeg', 0.92), format: 'JPEG' as const }
+        : { data: canvas.toDataURL('image/png'), format: 'PNG' as const };
+
 export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
     // Hidden objects never reach a PDF/PPTX page (see isExportable).
@@ -1530,8 +1567,8 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
                 pdf.addPage([sW, sH], slideOrientation);
             }
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.92);
-            pdf.addImage(imgData, 'JPEG', 0, 0, sW, sH);
+            const img = pdfImage(canvas, background);
+            pdf.addImage(img.data, img.format, 0, 0, sW, sH);
         }
 
         pdf.save('yappy_drawing.pdf');
@@ -1560,7 +1597,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
         if (!ctx) return;
 
         if (background) {
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = documentBackground();
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -1581,8 +1618,8 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
             hotfixes: ['px_scaling'],
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.92);
-        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
+        const img = pdfImage(canvas, background);
+        pdf.addImage(img.data, img.format, 0, 0, width, height);
         pdf.save('yappy_drawing.pdf');
     }
 };
@@ -1674,7 +1711,7 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
         if (!ctx) return;
 
         if (background) {
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = documentBackground();
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 

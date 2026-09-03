@@ -355,7 +355,7 @@ frontend/src/config/support.ts | typescript | 146 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 72 | FoundersData:25
-frontend/src/data/whats-new.ts | typescript | 733 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 737 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -705,7 +705,7 @@ frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19
 frontend/src/utils/excalidraw-io.ts | typescript | 269 | ExcalidrawFile:23 pointPairs:52 anchorsToPairs:64 baseExc:70 ToExcalidrawResult:101 toExcalidraw:103 FromExcalidrawResult:177 fromExcalidraw:189
 frontend/src/utils/export-game.ts | typescript | 47 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1705 | SvgThemeOptions:20 RichTextSegment:23 ShapeGeometry:24 paintDimensions:72 Bounds:77 ensureExportImages:82 elementAABB:95 elementsBounds:138 renderElWithEffects:159 buildAppearanceSvgGroup:198 buildUmlClassNode:257 umlArrowheadGlyph:348 connectorPathEl:376 geometryToDs:393 renderPagedDocToCanvas:451
+frontend/src/utils/export.ts | typescript | 1742 | SvgThemeOptions:20 RichTextSegment:23 ShapeGeometry:24 paintDimensions:72 Bounds:77 ensureExportImages:82 elementAABB:95 elementsBounds:138 renderElWithEffects:159 buildAppearanceSvgGroup:198 buildUmlClassNode:257 umlArrowheadGlyph:348 connectorPathEl:376 geometryToDs:393 renderPagedDocToCanvas:451
 frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
 frontend/src/utils/font-loading.ts | typescript | 81 | primaryFamily:34 preloadAppFonts:44 fontsReady:70 fontsAreLoaded:75
 frontend/src/utils/font-variants.test.ts | typescript | 272 | menus:69
@@ -921,7 +921,9 @@ scripts/i18n-scaffold.mjs | javascript | 92 | in:6 quote:38 Dictionary:65
 scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 languageName:127 of:147 userContent:181 save:198 parseTranslations:206
 scripts/prerender.ts | typescript | 80 | lastmodFor:48 main:61
 scripts/publish-oss.sh | shell | 223 | info:40 warn:41 error:42
+scripts/record-gifs.mjs | javascript | 173 | clip:48 toGif:64 run:75
 scripts/record-inflate-demo.mjs | javascript | 435 | performer:33 run:137
+scripts/record-showcase.mjs | javascript | 336 | run:80
 scripts/render-dsl.mjs | javascript | 279 | parseArgs:50 opts:51 parseWidths:83 readManifest:93 fail:108 isUp:137 waitUntilUp:144 main:153
 scripts/repograph-refresh.sh | shell | 26 |
 scripts/test_relative_path.ts | typescript | 58 |

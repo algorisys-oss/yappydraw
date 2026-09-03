@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.231', date: '2026-09-03', items: [
+        'If you set a background colour on your canvas, your downloads now have it. Previously every export came out on white paper regardless — so a black canvas with white writing downloaded as a blank white page, with your drawing in the file but impossible to see. PNG, JPG, PDF, PowerPoint and copy-as-image were all affected.',
+        'Exporting a PDF with the background switched off no longer gives you a black page. It comes out transparent, as it should, so it sits properly on whatever you place it over.',
+    ] },
     { version: '0.8.230', date: '2026-09-03', items: [
         'Clearer terms if you ever pay us anything. There are now proper Refund, Delivery and Contact pages, linked from the bottom of the app, with our registered address, phone number and how to reach a person.',
         'The refund terms say plainly what applies to what. A voluntary contribution is a gift and is not refundable, though we will always return a duplicate or an obvious mistake. A Founding Supporter place can be refunded in full within 7 days, no reason needed, because it promises you something in return.',
