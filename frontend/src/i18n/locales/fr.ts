@@ -749,6 +749,8 @@ export const fr: Dictionary = {
         privacy: 'Confidentialité',
         about: 'À propos',
         terms: 'Conditions',
+        refunds: 'Remboursements',
+        contact: 'Contact',
         madeBy: 'par',
         symmetryVertical: 'Symétrie verticale — miroir gauche/droite (Alt+Y active la symétrie)',
         symmetryHorizontal: 'Symétrie horizontale — miroir haut/bas (Alt+Y active la symétrie)',

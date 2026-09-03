@@ -735,6 +735,8 @@ export const de: Dictionary = {
         privacy: 'Datenschutz',
         about: 'Über',
         terms: 'Nutzungsbedingungen',
+        refunds: 'Erstattungen',
+        contact: 'Kontakt',
         madeBy: 'von',
         symmetryVertical: 'Vertikale Symmetrie — links/rechts spiegeln (Alt+Y schaltet die Symmetrie um)',
         symmetryHorizontal: 'Horizontale Symmetrie — oben/unten spiegeln (Alt+Y schaltet die Symmetrie um)',

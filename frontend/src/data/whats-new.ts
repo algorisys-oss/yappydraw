@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.230', date: '2026-09-03', items: [
+        'Clearer terms if you ever pay us anything. There are now proper Refund, Delivery and Contact pages, linked from the bottom of the app, with our registered address, phone number and how to reach a person.',
+        'The refund terms say plainly what applies to what. A voluntary contribution is a gift and is not refundable, though we will always return a duplicate or an obvious mistake. A Founding Supporter place can be refunded in full within 7 days, no reason needed, because it promises you something in return.',
+    ] },
     { version: '0.8.229', date: '2026-09-03', items: [
         'The Help, Learn and Examples pages open properly again. If you had used YappyDraw before, going to any of them could land you back on the drawing canvas instead — the app was answering those addresses from its offline copy rather than fetching the real page. Every one of them now loads what you asked for.',
         'A behind-the-scenes engineering write-up that briefly appeared under Learn has been taken down. It was internal notes rather than something written for you to read.',

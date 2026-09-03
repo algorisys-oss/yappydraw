@@ -735,6 +735,8 @@ export const ja: Dictionary = {
         privacy: 'プライバシー',
         about: 'このアプリについて',
         terms: '利用規約',
+        refunds: '返金',
+        contact: 'お問い合わせ',
         madeBy: '制作:',
         symmetryVertical: '垂直対称 — 左右を反転（Alt+Y で対称を切り替え）',
         symmetryHorizontal: '水平対称 — 上下を反転（Alt+Y で対称を切り替え）',

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Us — YappyDraw</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --bg-card: #1e1e2e;
+            --text: #e0e0e0;
+            --text-muted: #9ca3af;
+            --accent: #f5a623;
+            --border: #2d2d3d;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 48px 40px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: white;
+        }
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        h2 {
+            font-size: 18px;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--accent);
+        }
+        p, ul {
+            font-size: 15px;
+            margin-bottom: 14px;
+            color: var(--text);
+        }
+        ul {
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .back-link:hover {
+            color: var(--text);
+        }
+        @media (max-width: 600px) {
+            .container { padding: 28px 20px; }
+            h1 { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" href="/">&larr; Back to YappyDraw</a>
+
+        <h1>Contact Us</h1>
+        <p class="subtitle">Last updated: September 3, 2026</p>
+        <h2>Company</h2>
+        <p>
+            YappyDraw is operated by <strong>Algorisys Technologies Private Limited</strong>,
+            a company registered in India.
+        </p>
+
+        <h2>Registered &amp; Operating Address</h2>
+        <p>
+            Algorisys Technologies Private Limited<br />
+            Gala No. VH-II-1, 2nd Floor, Vijay House,<br />
+            Devidayal Compound, L.B.S. Marg,<br />
+            Bhandup (West), Mumbai,<br />
+            Maharashtra &ndash; 400078, India
+        </p>
+
+        <h2>Get in Touch</h2>
+        <ul>
+            <li><strong>Email (support):</strong> support@algorisys.com</li>
+            <li><strong>Email (general):</strong> info@algorisys.com</li>
+            <li><strong>Phone:</strong> +91 22 4455 4296</li>
+            <li><strong>Website:</strong> <a href="https://yappydraw.com">https://yappydraw.com</a></li>
+        </ul>
+        <p>
+            We aim to respond to email within two working days. Phone lines are open
+            Monday to Friday, 10:00&ndash;18:00 IST, excluding public holidays in India.
+        </p>
+
+        <h2>Billing &amp; Payments</h2>
+        <p>
+            For anything relating to a payment, please email <strong>support@algorisys.com</strong>
+            with the date, the amount and the email address used at checkout. See also our
+            <a href="/refund-policy.html">Refund &amp; Cancellation Policy</a> and
+            <a href="/delivery-policy.html">Delivery Policy</a>.
+        </p>
+
+        <h2>Reporting a Problem</h2>
+        <p>
+            Bugs and feature requests are best raised on our public issue tracker at
+            <a href="https://github.com/algorisys-oss/yappydraw" target="_blank" rel="noopener">github.com/algorisys-oss/yappydraw</a>,
+            where you can see what has already been reported and what is being worked on.
+        </p>
+    </div>
+</body>
+</html>

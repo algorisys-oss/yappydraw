@@ -161,6 +161,8 @@ export const buildPage = (input: PageInput): string => `<!doctype html>
           <a href="${pathFor('learn')}">Learn</a>
           <a href="/privacy-policy.html">Privacy</a>
           <a href="/terms-of-service.html">Terms</a>
+          <a href="/refund-policy.html">Refunds</a>
+          <a href="/contact.html">Contact</a>
         </footer>
       </main>
     </div>

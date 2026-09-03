@@ -207,6 +207,13 @@ const foundersBody = (checkoutUrl: string): string => {
     <p>To the people actively working on YappyDraw: developers, artists and testers. None of it is
     held back as profit. Payments are handled by Razorpay; nothing about your drawings is involved,
     and they never leave your browser.</p>
+    <h2>Refunds and delivery</h2>
+    <p>A founding place is a one-off payment, not a subscription: nothing recurs and there is
+    nothing to cancel. Because something is promised in return, you can change your mind: email
+    support@algorisys.com within 7 days for a full refund, no reason needed. Founder benefits are
+    delivered by email within two working days of payment. The
+    <a href="/refund-policy.html">Refund &amp; Cancellation Policy</a> and the
+    <a href="/delivery-policy.html">Delivery Policy</a> have the detail.</p>
     <h2>What we do with your details</h2>
     <p>Razorpay collects your name, email and phone number to take the payment, and passes them to
     us. We use them for one thing: reaching you as a founder, which means the community invite,

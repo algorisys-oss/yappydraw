@@ -742,6 +742,8 @@ export const en = {
         privacy: 'Privacy',
         about: 'About',
         terms: 'Terms',
+        refunds: 'Refunds',
+        contact: 'Contact',
         madeBy: 'by',
         symmetryVertical: 'Vertical symmetry — mirror left/right (Alt+Y toggles symmetry)',
         symmetryHorizontal: 'Horizontal symmetry — mirror up/down (Alt+Y toggles symmetry)',

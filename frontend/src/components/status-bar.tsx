@@ -342,6 +342,14 @@ const StatusBar: Component = () => {
                 <a href="/terms-of-service.html" target="_blank" rel="noopener noreferrer">
                     {t('statusBar.terms')}
                 </a>
+                <span style={{ opacity: 0.4 }}>|</span>
+                <a href="/refund-policy.html" target="_blank" rel="noopener noreferrer">
+                    {t('statusBar.refunds')}
+                </a>
+                <span style={{ opacity: 0.4 }}>|</span>
+                <a href="/contact.html" target="_blank" rel="noopener noreferrer">
+                    {t('statusBar.contact')}
+                </a>
             </div>
 
             {/* Attribution */}
