@@ -57,6 +57,8 @@ export const fr: Dictionary = {
         'action-delete': 'Supprimer la sélection',
         'action-flip-h': 'Miroir horizontal',
         'action-flip-v': 'Miroir vertical',
+        'action-about': 'À propos de YappyDraw',
+        'action-support': 'Soutenir YappyDraw',
         'action-outlines': 'Vectoriser (texte → vectoriel)',
         'effect-feather': 'Effet : contour progressif',
         'effect-feather-off': 'Effet : supprimer le contour progressif',
@@ -745,6 +747,7 @@ export const fr: Dictionary = {
         present: 'Présenter depuis le début (F5)',
         whatsNew: 'Nouveautés',
         privacy: 'Confidentialité',
+        about: 'À propos',
         terms: 'Conditions',
         madeBy: 'par',
         symmetryVertical: 'Symétrie verticale — miroir gauche/droite (Alt+Y active la symétrie)',
@@ -970,7 +973,38 @@ export const fr: Dictionary = {
         stop: 'Arrêter',
         properties: 'Propriétés',
         shortcutsHelp: 'Raccourcis et aide',
+        support: 'Soutenir YappyDraw',
+        about: 'À propos de YappyDraw',
         toggleTheme: 'Changer de thème ({{ theme }})',
+    },
+
+    /** Le dialogue « Soutenir YappyDraw » — une invitation, jamais une relance. */
+    support: {
+        title: 'Soutenir YappyDraw',
+        close: 'Fermer',
+        lede: 'YappyDraw est gratuit, open source et fonctionne sans compte. Vos dessins restent dans votre navigateur. S’il vous a été utile et que vous souhaitez aider à le faire vivre, voici comment.',
+        razorpay: 'Soutenir via Razorpay',
+        razorpayNote: 'Carte bancaire, UPI et virement. Montant libre. Idéal depuis l’Inde.',
+        github: 'Devenir sponsor sur GitHub',
+        githubNote: 'Ponctuel ou mensuel, dans votre devise. Disponible partout dans le monde.',
+        founders: 'Devenir Membre fondateur',
+        foundersNote: '2 499 ₹, une seule fois. Badge de fondateur, accès anticipé, vote sur la feuille de route et communauté privée des fondateurs.',
+        freeForever: 'Entièrement facultatif. Aucune fonction de YappyDraw n’est payante, et cela ne changera pas.',
+    },
+
+    /** The About dialog. Personal and company names are never translated. */
+    about: {
+        title: 'À propos',
+        close: 'Fermer',
+        tagline: 'Un outil à canevas infini pour le dessin, les schémas, les présentations et l’animation. Gratuit, open source, et fonctionnant entièrement dans votre navigateur.',
+        developedBy: 'Développé par',
+        supportedBy: 'Soutenu par',
+        licence: 'Licence',
+        privacy: 'Vos dessins sont enregistrés dans ce navigateur et ne sont jamais envoyés ailleurs. Aucun compte n’est nécessaire.',
+        whatsNewHint: 'Voir les nouveautés de cette version',
+        artists: 'Illustration et tests',
+        artistsNote: 'Les artistes dont les dessins mettent YappyDraw à l’épreuve — et révèlent les bugs que les tests ne trouvent jamais.',
+        revenue: 'Chaque contribution reçue via Soutenir est répartie entre les personnes qui travaillent activement sur YappyDraw : développeurs, artistes et testeurs. Rien n’est conservé à titre de bénéfice.',
     },
 
     /** Where the toolbar currently sits, for its dock tooltip. */

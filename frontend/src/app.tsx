@@ -87,6 +87,8 @@ import Menu, {
   isAIPromptOpen, setIsAIPromptOpen, quickSaveToGallery
 } from './components/menu';
 import StatusBar from './components/status-bar';
+import SupportDialog from './components/support-dialog';
+import AboutDialog from './components/about-dialog';
 import { initAPI } from './api';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
@@ -1533,6 +1535,12 @@ const App: Component = () => {
         <CropBar />
         <RepeatDialog />
         <MandalaDialog />
+        {/* Support and About are mounted HERE, not inside <StatusBar />, because the status
+            bar lives under `<Show when={!store.zenMode}>` — mounted there, both dialogs
+            simply ceased to exist in Zen mode and their menu items did nothing. A dialog
+            reachable from the menu has to outlive every panel the menu can hide. */}
+        <SupportDialog />
+        <AboutDialog />
         {/* The shell header region is rendered by <Menu /> now — it owns the bar's three
             slots (logo/menu, tool options, view controls) as real layout children. */}
         <SymmetryOverlay />

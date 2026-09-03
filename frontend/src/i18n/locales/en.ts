@@ -42,6 +42,8 @@ export const en = {
         'action-delete': 'Delete Selected',
         'action-flip-h': 'Flip Horizontal',
         'action-flip-v': 'Flip Vertical',
+        'action-about': 'About YappyDraw',
+        'action-support': 'Support YappyDraw',
         'action-outlines': 'Create Outlines (text → vector)',
         'effect-feather': 'Effect: Feather (soft edge)',
         'effect-feather-off': 'Effect: Remove Feather',
@@ -738,6 +740,7 @@ export const en = {
         present: 'Present from beginning (F5)',
         whatsNew: "What's new",
         privacy: 'Privacy',
+        about: 'About',
         terms: 'Terms',
         madeBy: 'by',
         symmetryVertical: 'Vertical symmetry — mirror left/right (Alt+Y toggles symmetry)',
@@ -968,7 +971,41 @@ export const en = {
         stop: 'Stop',
         properties: 'Properties',
         shortcutsHelp: 'Shortcuts & Help',
+        support: 'Support YappyDraw',
+        about: 'About YappyDraw',
         toggleTheme: 'Toggle Theme ({{ theme }})',
+    },
+
+    /**
+     * The "Support YappyDraw" dialog. Phrased as an invitation, never a nag: the app
+     * is free and AGPL whether or not anyone gives anything, and the copy has to say so.
+     */
+    support: {
+        title: 'Support YappyDraw',
+        close: 'Close',
+        lede: 'YappyDraw is free, open source, and works without an account. Your drawings stay in your browser. If it has been useful and you would like to help keep it going, here is how.',
+        razorpay: 'Support via Razorpay',
+        razorpayNote: 'Cards, UPI and net banking. Choose your own amount. Best for donors in India.',
+        github: 'Sponsor on GitHub',
+        githubNote: 'One-off or monthly, in your own currency. Works worldwide.',
+        founders: 'Become a Founding Supporter',
+        foundersNote: 'A one-off ₹2,499. Founder badge, early access, a vote on the roadmap and the private founder community.',
+        freeForever: 'Entirely optional. Nothing in YappyDraw is behind a payment, and nothing ever will be.',
+    },
+
+    /** The About dialog. Personal and company names are never translated. */
+    about: {
+        title: 'About',
+        close: 'Close',
+        tagline: 'An infinite-canvas tool for drawing, diagramming, slides and animation. Free, open source, and it runs entirely in your browser.',
+        developedBy: 'Developed by',
+        supportedBy: 'Supported by',
+        licence: 'Licence',
+        privacy: 'Your drawings are stored in this browser and are never uploaded. Nothing here needs an account.',
+        whatsNewHint: 'See what\'s new in this version',
+        artists: 'Artwork & testing',
+        artistsNote: 'The artists whose drawings put YappyDraw through real work — and turn up the bugs the tests never do.',
+        revenue: 'Every rupee that comes in through Support is shared out among the people actively working on YappyDraw: developers, artists and testers. None of it is held back as profit.',
     },
 
     /** Where the toolbar currently sits, for its dock tooltip. */

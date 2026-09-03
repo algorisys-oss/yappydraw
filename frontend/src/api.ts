@@ -2797,6 +2797,15 @@ export const YappyAPI = {
     startTour() { void import('./components/onboarding-tour').then(m => m.startTour()); },
     /** Open the "What's new" popup (recent user-facing changes). */
     showWhatsNew() { void import('./components/whats-new-dialog').then(m => m.openWhatsNew()); },
+
+    /**
+     * Open the "Support YappyDraw" dialog (outbound payment links only — no payment
+     * SDK is loaded into the app). No-ops when no support link is configured.
+     */
+    showSupport() { void import('./components/support-dialog').then(m => m.openSupport()); },
+
+    /** Open the "About YappyDraw" dialog — version, authorship, licence and links. */
+    showAbout() { void import('./components/about-dialog').then(m => m.openAbout()); },
     toggleSlideNavigator(visible?: boolean) { toggleSlideNavigator(visible); },
     toggleMainToolbar(visible?: boolean) { toggleMainToolbar(visible); },
     toggleUtilityToolbar(visible?: boolean) { toggleUtilityToolbar(visible); },

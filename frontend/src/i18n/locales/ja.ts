@@ -35,6 +35,8 @@ export const ja: Dictionary = {
         'action-delete': '選択項目を削除',
         'action-flip-h': '左右反転',
         'action-flip-v': '上下反転',
+        'action-about': 'YappyDraw について',
+        'action-support': 'YappyDraw を支援する',
         'action-outlines': 'アウトラインを作成（テキスト → ベクター）',
         'effect-feather': '効果: ぼかし（境界をやわらかく）',
         'effect-feather-off': '効果: ぼかしを解除',
@@ -731,6 +733,7 @@ export const ja: Dictionary = {
         present: '最初からプレゼン（F5）',
         whatsNew: '新機能',
         privacy: 'プライバシー',
+        about: 'このアプリについて',
         terms: '利用規約',
         madeBy: '制作:',
         symmetryVertical: '垂直対称 — 左右を反転（Alt+Y で対称を切り替え）',
@@ -956,7 +959,38 @@ export const ja: Dictionary = {
         stop: '停止',
         properties: 'プロパティ',
         shortcutsHelp: 'ショートカットとヘルプ',
+        support: 'YappyDraw を支援する',
+        about: 'YappyDraw について',
         toggleTheme: 'テーマを切り替え ({{ theme }})',
+    },
+
+    /** 「YappyDraw を支援する」ダイアログ。催促ではなく、あくまでお誘いとして。 */
+    support: {
+        title: 'YappyDraw を支援する',
+        close: '閉じる',
+        lede: 'YappyDraw は無料のオープンソースで、アカウントなしで使えます。描いたものはブラウザの中に留まります。役に立ったと感じ、開発の継続を応援していただけるなら、次の方法があります。',
+        razorpay: 'Razorpay で支援する',
+        razorpayNote: 'カード・UPI・ネットバンキングに対応。金額は自由。インドからの支援に最適です。',
+        github: 'GitHub でスポンサーになる',
+        githubNote: '一回のみ、または毎月。ご自身の通貨で。世界中から利用できます。',
+        founders: 'ファウンディング・サポーターになる',
+        foundersNote: '₹2,499 の一回払い。ファウンダーバッジ、新機能への先行アクセス、ロードマップへの投票、非公開のファウンダーコミュニティ。',
+        freeForever: '支援は任意です。YappyDraw の機能はすべて無料で、今後も有料になることはありません。',
+    },
+
+    /** The About dialog. Personal and company names are never translated. */
+    about: {
+        title: 'このアプリについて',
+        close: '閉じる',
+        tagline: '描画・作図・スライド・アニメーションのための無限キャンバスツール。無料のオープンソースで、すべてブラウザ内で動作します。',
+        developedBy: '開発',
+        supportedBy: '支援',
+        licence: 'ライセンス',
+        privacy: '描いたものはこのブラウザ内に保存され、どこにもアップロードされません。アカウントも不要です。',
+        whatsNewHint: 'このバージョンの新機能を見る',
+        artists: '作品制作とテスト',
+        artistsNote: '実際の制作を通して YappyDraw を試し、テストでは見つからない不具合を見つけてくださっているアーティストの方々です。',
+        revenue: '「支援する」を通じていただいた金額は、YappyDraw に実際に関わっている開発者・アーティスト・テスターで分配されます。利益として留保することはありません。',
     },
 
     /** Where the toolbar currently sits, for its dock tooltip. */

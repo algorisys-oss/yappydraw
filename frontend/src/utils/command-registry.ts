@@ -25,6 +25,9 @@ import { openRepeatDialog } from "../components/repeat-dialog";
 import { openMandalaDialog } from "../components/mandala-dialog";
 import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
 import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
+import { openSupport } from "../components/support-dialog";
+import { openAbout } from "../components/about-dialog";
+import { hasSupportLinks } from "../config/support";
 import type { ToolType } from "../types";
 import { canvasCenterClient } from './dock-layout';
 import { rasterizeSelection } from './rasterize';
@@ -476,6 +479,24 @@ export const getCommands = (): Command[] => {
             category: 'Layers',
             action: () => setActiveLayer(layer.id)
         });
+    });
+
+    // Only offered when a support link is actually configured, so the palette never
+    // surfaces a command that opens nothing (openSupport() is a no-op in that case).
+    if (hasSupportLinks()) {
+        commands.push({
+            id: 'action-support',
+            label: t('commands.action-support'),
+            category: 'Actions',
+            action: () => openSupport(),
+        });
+    }
+
+    commands.push({
+        id: 'action-about',
+        label: t('commands.action-about'),
+        category: 'Actions',
+        action: () => openAbout(),
     });
 
     return commands;

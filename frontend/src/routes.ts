@@ -33,6 +33,7 @@ export type RouteKey =
     | 'example'
     | 'learn'
     | 'learnArticle'
+    | 'founders'
     | 'embed';
 
 export interface Route {
@@ -92,6 +93,9 @@ export const parsePath = (pathname: string): Route | null => {
         return { key: 'learnArticle', param: second };
     }
 
+    // A single page, with no children — `/founders/anything` is a 404, not the page.
+    if (head === 'founders' && !second) return { key: 'founders' };
+
     return null;
 };
 
@@ -118,6 +122,8 @@ export const pathFor = (key: RouteKey, param?: string): string => {
             return '/learn/';
         case 'learnArticle':
             return `/learn/${param}/`;
+        case 'founders':
+            return '/founders/';
         case 'embed':
             return `/#/embed/${param}`;
     }

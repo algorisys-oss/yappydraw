@@ -13,6 +13,15 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.227', date: '2026-09-03', items: [
+        'You can support YappyDraw now, if you would like to. There is a Support button in the top bar, and it opens a small dialog with the ways to do it. It is entirely optional: nothing in YappyDraw is behind a payment, and nothing ever will be.',
+        'There is also a Founding Supporter programme at yappydraw.com/founders — a one-off payment for the first 1,000 people, with a founder badge, early access, a vote on what gets built next, and a private community. It is not a paid tier. There is no Pro version and no feature you have to pay for; what it funds is the work continuing.',
+        'No payment code runs inside YappyDraw. Both routes are ordinary links that open the payment provider\'s own page in a new tab, so nothing about your drawings is involved and they still never leave your browser.',
+        'A new About box, from the menu or the word "About" in the status bar. Version, who made it, the licence, and the artists who test it — Anshika Shukla and Shriraj Naikwadi, whose drawings are behind most of the bugs that get fixed here.',
+        'The name in the top-left is spelled correctly again. It had been rendering as "Yappy Draw", two words, with a gap through the middle. It also has a logo now.',
+        'Two dialogs did nothing in Zen mode. Support and About were part of the status bar, which Zen mode hides, so their menu items silently failed. They work everywhere now.',
+        'The "Found a bug? Report" link in the menu now goes to the repository instead of a page that was not it.',
+    ] },
     { version: '0.8.226', date: '2026-08-30', items: [
         'The "Something went wrong" screen should stop interrupting you. Deleting two or more selected objects with the Del key, or combining shapes with Pathfinder, could replace the whole editor with an error page — and because the toolbar went with it, there was no way to press Ctrl+Z afterwards. Both came from the same fault and both are fixed.',
         'And if any error screen ever does appear, your work is not lost. It now has an "Undo last change" button: your drawing and its whole undo history were always still there behind the error page, and that button undoes whatever caused it and puts you back in the editor.',

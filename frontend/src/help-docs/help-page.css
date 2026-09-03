@@ -502,3 +502,86 @@
     color: #4c8dff;
     text-decoration: underline;
 }
+
+/* ── /founders/ ────────────────────────────────────────────────────────────
+   The Founding Supporter page. Prerendered static HTML, so these rules are the
+   only styling it gets: no component CSS is loaded on that route. */
+
+.founders-count {
+    margin: 0 0 28px;
+    padding: 16px 18px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    background: var(--bg-secondary, #f8fafc);
+}
+
+.founders-count p {
+    margin: 10px 0 0;
+    font-size: 15px;
+}
+
+/* The date is not fine print. The count is updated by hand, so a reader is
+   entitled to see how fresh it is without hunting for it. */
+.founders-asof {
+    display: block;
+    margin-top: 3px;
+    font-size: 12.5px;
+    opacity: 0.7;
+}
+
+.founders-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--border-color, #e2e8f0);
+    overflow: hidden;
+}
+
+.founders-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: #4338ca;
+    /* A zero-width bar should still read as a bar, not as a missing element. */
+    min-width: 2px;
+}
+
+.founders-benefits {
+    margin: 0 0 26px;
+    padding-left: 20px;
+    line-height: 1.85;
+}
+
+.founders-cta {
+    display: inline-block;
+    padding: 13px 24px;
+    border-radius: 10px;
+    background: #4338ca;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.12s ease;
+}
+
+.founders-cta:hover {
+    background: #3730a3;
+    text-decoration: none;
+}
+
+.founders-soldout {
+    padding: 13px 16px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 10px;
+    background: var(--bg-secondary, #f8fafc);
+    font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .founders-cta { transition: none; }
+}
+
+.founders-fineprint {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    opacity: 0.75;
+}

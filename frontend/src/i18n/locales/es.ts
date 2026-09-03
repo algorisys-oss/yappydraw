@@ -35,6 +35,8 @@ export const es: Dictionary = {
         'action-delete': 'Eliminar seleccionado',
         'action-flip-h': 'Voltear horizontalmente',
         'action-flip-v': 'Voltear verticalmente',
+        'action-about': 'Acerca de YappyDraw',
+        'action-support': 'Apoyar YappyDraw',
         'action-outlines': 'Crear contornos (texto → vector)',
         'effect-feather': 'Efecto: Desvanecer (borde suave)',
         'effect-feather-off': 'Efecto: Quitar desvanecido',
@@ -731,6 +733,7 @@ export const es: Dictionary = {
         present: 'Presentar desde el principio (F5)',
         whatsNew: 'Novedades',
         privacy: 'Privacidad',
+        about: 'Acerca de',
         terms: 'Términos',
         madeBy: 'por',
         symmetryVertical: 'Simetría vertical — reflejar izquierda/derecha (Alt+Y alterna la simetría)',
@@ -956,7 +959,38 @@ export const es: Dictionary = {
         stop: 'Detener',
         properties: 'Propiedades',
         shortcutsHelp: 'Atajos y ayuda',
+        support: 'Apoyar YappyDraw',
+        about: 'Acerca de YappyDraw',
         toggleTheme: 'Cambiar tema ({{ theme }})',
+    },
+
+    /** El diálogo «Apoyar YappyDraw»: una invitación, nunca una insistencia. */
+    support: {
+        title: 'Apoyar YappyDraw',
+        close: 'Cerrar',
+        lede: 'YappyDraw es gratuito, de código abierto y funciona sin cuenta. Tus dibujos se quedan en tu navegador. Si te ha resultado útil y quieres ayudar a mantenerlo, así puedes hacerlo.',
+        razorpay: 'Apoyar con Razorpay',
+        razorpayNote: 'Tarjeta, UPI y banca en línea. Tú eliges el importe. Ideal desde la India.',
+        github: 'Patrocinar en GitHub',
+        githubNote: 'Puntual o mensual, en tu moneda. Disponible en todo el mundo.',
+        founders: 'Hazte Mecenas fundador',
+        foundersNote: 'Pago único de 2499 ₹. Insignia de fundador, acceso anticipado, voto sobre la hoja de ruta y la comunidad privada de fundadores.',
+        freeForever: 'Totalmente opcional. Ninguna función de YappyDraw es de pago, y nunca lo será.',
+    },
+
+    /** The About dialog. Personal and company names are never translated. */
+    about: {
+        title: 'Acerca de',
+        close: 'Cerrar',
+        tagline: 'Una herramienta de lienzo infinito para dibujar, diagramar, presentar y animar. Gratuita, de código abierto y funciona por completo en tu navegador.',
+        developedBy: 'Desarrollado por',
+        supportedBy: 'Con el apoyo de',
+        licence: 'Licencia',
+        privacy: 'Tus dibujos se guardan en este navegador y nunca se suben a ningún sitio. No hace falta ninguna cuenta.',
+        whatsNewHint: 'Ver las novedades de esta versión',
+        artists: 'Ilustración y pruebas',
+        artistsNote: 'Los artistas cuyos dibujos ponen a prueba YappyDraw de verdad, y sacan a la luz los fallos que las pruebas nunca encuentran.',
+        revenue: 'Cada aportación que llega a través de Apoyar se reparte entre las personas que trabajan activamente en YappyDraw: desarrollo, ilustración y pruebas. Nada se queda como beneficio.',
     },
 
     /** Where the toolbar currently sits, for its dock tooltip. */

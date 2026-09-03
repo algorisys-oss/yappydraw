@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles"
+keywords: "fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport"
 ---
 
 # Workspace & Productivity
@@ -512,6 +512,47 @@ Choose **SVG** for logos, icons and anything you'll scale or re-edit; **PNG** (2
 Yappy round-trips with **Excalidraw**. **Export to Excalidraw** (in the Save/Export panel) writes a `.excalidraw` file you can open in Excalidraw — rectangles, ellipses, diamonds, lines, arrows, text, images and pen strokes map across directly; Yappy-only shapes (UML, BPMN, icons, …) are exported as their outline so they still look right. To **import**, just open a `.excalidraw` file from the menu — its elements are added to your current drawing. From a script: `window.Yappy.exportExcalidraw()` and ` window.Yappy.importExcalidraw(json)`.
 
 The native Yappy document format is an open, documented JSON (see ` docs/yappy-format-spec.md`) so other tools can read and write Yappy files too.
+
+## Supporting YappyDraw
+
+YappyDraw is free, open source (AGPL-3.0) and works without an account. Nothing is behind
+a payment and nothing is planned to be. If you'd like to chip in anyway, **Menu ▸ ⋮ ▸ Support
+YappyDraw**, or `Support` in the command palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>), opens a
+small dialog with the ways to do it.
+
+| Route | Good for |
+|---|---|
+| **Founding Supporter** | A one-off payment for the founding cohort. Founder badge, early access, a vote on the roadmap, and the private founder community. See [/founders/](/founders/). |
+| **Razorpay** | Cards, UPI and net banking, with an amount you choose. Best from India. |
+| **GitHub Sponsors** | One-off or monthly, in your own currency. Works worldwide. |
+
+All three are ordinary links that open their own page in a new tab.
+
+:::note
+**Founding Supporter is not a paid tier.** There is no Pro version of YappyDraw and no
+feature behind a payment. The project is AGPL-3.0, so anyone can read the source, fork it
+and run it without paying anyone. What a founder funds is the work continuing; what they
+get back is recognition, early access and a say in what gets built.
+:::
+
+:::note
+**No payment code runs inside YappyDraw.** There is no payment SDK in the bundle, no
+third-party script on the canvas page, and nothing about your drawing is sent anywhere when
+you open the dialog. It is a list of links until you click one, and the payment then happens
+entirely on the provider's site. This is also why the feature needs no server: YappyDraw is a
+static site, and hosted payment pages are the only way to take a payment without one.
+:::
+
+If the **Support YappyDraw** item isn't in your menu, no support link is configured in that
+build. The entry, the command and the API call all hide themselves rather than offer a dead
+link. Self-hosters can set their own with the `VITE_SUPPORT_RAZORPAY_URL` and
+`VITE_SUPPORT_GITHUB_URL` build variables, or leave them empty to switch the feature off.
+
+From a script:
+
+```
+window.Yappy.showSupport();   // opens the dialog; no-ops if nothing is configured
+```
 
 ## Scripting (API)
 

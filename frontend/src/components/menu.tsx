@@ -20,7 +20,7 @@ import {
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
-, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand, Blend, GraduationCap
+, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand, Blend, GraduationCap, Heart, Info
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -31,6 +31,10 @@ import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
 import { clickOutside } from "../utils/click-outside";
 const HelpDialog = lazy(() => import("./help-dialog"));
+import { openSupport } from "./support-dialog";
+import { openAbout } from "./about-dialog";
+import YappyLogoMark from "./yappy-logo-mark";
+import { hasSupportLinks } from "../config/support";
 const LoadExportDialog = lazy(() => import("./load-export-dialog"));
 const FileOpenDialog = lazy(() => import("./file-open-dialog"));
 const ExportDialog = lazy(() => import("./export-dialog"));
@@ -780,7 +784,8 @@ const Menu: Component = () => {
                     <div class="topbar-slot topbar-left">
                         <div class="menu-container" style={{ position: 'relative' }}>
                             <div class="text-logo" title="YappyDraw — beta">
-                                <span class="text-logo-yappy">Yappy</span><span class="text-logo-draw">Draw</span>
+                                <YappyLogoMark class="text-logo-mark" />
+                                <span class="text-logo-name"><span class="text-logo-yappy">Yappy</span><span class="text-logo-draw">Draw</span></span>
                                 <span class="beta-badge" title="YappyDraw is in beta — expect rapid changes">Beta</span>
                             </div>
                             <button class={`menu-btn ${isMenuOpen() ? 'active' : ''}`} title="Menu" onClick={() => setIsMenuOpen(!isMenuOpen())}>
@@ -1274,8 +1279,20 @@ const Menu: Component = () => {
                                     </div>
                                     </Show>
                                     <div class="menu-separator"></div>
+                                    {/* Reachable at every width. The utility ("More Actions") menu
+                                        that also carries this item only exists on narrow screens. */}
+                                    <Show when={hasSupportLinks()}>
+                                        <button class="menu-item" onClick={() => { openSupport(); setIsMenuOpen(false); }}>
+                                            <Heart size={16} color="#ef4444" />
+                                            <span class="label">{t('menu.support')}</span>
+                                        </button>
+                                    </Show>
+                                    <button class="menu-item" onClick={() => { openAbout(); setIsMenuOpen(false); }}>
+                                        <Info size={16} />
+                                        <span class="label">{t('menu.about')}</span>
+                                    </button>
                                     <div style={{ padding: '4px 12px', "font-size": '12px', color: 'var(--text-secondary)' }}>
-                                        Found a bug? <a href="https://github.com/algorisys-oss/" target="_blank" rel="noopener noreferrer">Report</a>
+                                        Found a bug? <a href="https://github.com/algorisys-oss/yappydraw" target="_blank" rel="noopener noreferrer">Report</a>
                                     </div>
                                 </div>
                             </Show>
@@ -1451,6 +1468,22 @@ const Menu: Component = () => {
                             </div>
                     </Show>
 
+                    {/* Support: a labelled button, deliberately OUTSIDE the utility-toolbar
+                        gate above — it should not disappear when someone hides that toolbar.
+                        The label collapses to icon-only under 1180px so it cannot push the
+                        rest of the top bar off the edge; the accessible name stays either way. */}
+                    <Show when={!isMobile() && hasSupportLinks()}>
+                        <button
+                            class="topbar-support-btn"
+                            onClick={() => openSupport()}
+                            title={t('menu.support')}
+                            aria-label={t('menu.support')}
+                        >
+                            <Heart size={15} />
+                            <span class="topbar-support-label">{t('menu.support')}</span>
+                        </button>
+                    </Show>
+
                     {/* Desktop: standalone palette picker */}
                     <Show when={!isMobile()}>
                             <div class="menu-container" ref={palettePickerRef} style={{ position: 'relative' }}>
@@ -1558,6 +1591,12 @@ const Menu: Component = () => {
                                             <HelpCircle size={16} />
                                             <span class="label">{t('menu.shortcutsHelp')}</span>
                                         </button>
+                                        <Show when={hasSupportLinks()}>
+                                            <button class="menu-item" onClick={() => { openSupport(); setIsUtilityMenuOpen(false); }}>
+                                                <Heart size={16} color="#ef4444" />
+                                                <span class="label">{t('menu.support')}</span>
+                                            </button>
+                                        </Show>
                                         <div class="menu-separator"></div>
                                         <button class="menu-item" onClick={() => { toggleTheme(); setIsUtilityMenuOpen(false); }}>
                                             {store.theme === 'light' ? <Moon size={16} />

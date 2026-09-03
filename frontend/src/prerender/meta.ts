@@ -155,6 +155,23 @@ export const metaFor = (
             };
         }
 
+        case 'founders':
+            return {
+                title: 'Become a YappyDraw Founding Supporter',
+                description: clamp(
+                    'Fund the work behind YappyDraw. Founder badge, early access, a vote on the roadmap and the private founder community. YappyDraw stays free and open source for everyone.',
+                ),
+                canonical: urlFor('founders'),
+                ogType: 'website',
+                jsonLd: [
+                    breadcrumb([
+                        { name: SITE_NAME, url: `${SITE}/` },
+                        { name: 'Founding Supporters', url: urlFor('founders') },
+                    ]),
+                ],
+                noindex: false,
+            };
+
         case 'examples':
             return {
                 title: 'Diagram examples and templates — free to open and edit',

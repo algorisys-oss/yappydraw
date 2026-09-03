@@ -16,7 +16,7 @@
  * same way.
  */
 
-import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, mkdir, writeFile, copyFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { renderHelpDoc, type DocMeta } from '../help-docs/markdown';
@@ -24,6 +24,9 @@ import { pathFor, urlFor, SITE } from '../routes';
 import { metaFor } from './meta';
 import { buildPage, type NavItem } from './page';
 import { exampleTemplates } from '../examples/templates';
+import {
+    FOUNDERS, FOUNDER_BENEFITS, foundersRemaining, foundersSoldOut, foundersAsOfLabel,
+} from '../data/founders';
 
 /** Front matter may carry search-facing overrides; the renderer passes them through. */
 export type PageDocMeta = DocMeta & { seoTitle?: string; seoDescription?: string };
@@ -66,13 +69,52 @@ export const readHelpDocs = async (): Promise<RenderedDocument[]> => {
     );
 };
 
+/**
+ * Copy an article's `images/` folder next to its rendered page.
+ *
+ * The markdown references figures relatively (`images/00-…png`), which is what makes
+ * the same file readable on GitHub, pasteable into Medium, and correct on the web. For
+ * the third of those to be true the files have to exist at that path in `dist`, and
+ * nothing was copying them: the article rendered with six broken images.
+ *
+ * Only what a browser will ask for is copied. The `.json` DSL sources and the render
+ * script live beside the figures in the repo, and they are worth keeping there, but
+ * shipping them would add weight to every deploy for files no page requests.
+ */
+const WEB_ASSET = /\.(png|jpe?g|gif|svg|webp|avif)$/i;
+
+const copyArticleImages = async (source: string, outDir: string): Promise<number> => {
+    const from = path.join(REPO, path.dirname(source), 'images');
+    let names: string[];
+    try {
+        names = (await readdir(from)).filter((f) => WEB_ASSET.test(f));
+    } catch {
+        return 0; // An article without figures is normal, not an error.
+    }
+    if (!names.length) return 0;
+
+    const to = path.join(outDir, 'images');
+    await mkdir(to, { recursive: true });
+    for (const name of names) await copyFile(path.join(from, name), path.join(to, name));
+    return names.length;
+};
+
 /** Long-form articles under `/learn/`. */
 export const readArticles = async (): Promise<RenderedDocument[]> => {
     const dirs = await readdir(ARTICLES, { withFileTypes: true });
     const files: string[] = [];
     for (const dir of dirs.filter((d) => d.isDirectory())) {
         const inner = await readdir(path.join(ARTICLES, dir.name));
-        files.push(...inner.filter((f) => f.endsWith('.md')).map((f) => path.join(ARTICLES, dir.name, f)));
+        files.push(
+            ...inner
+                .filter((f) => f.endsWith('.md'))
+                // An article folder is allowed to carry notes for the people who maintain
+                // it. Treating a README as a `/learn/` page meant one landed in the repo
+                // without front matter and took `npm run build` down for every release
+                // after it, which is a steep price for a file nobody meant to publish.
+                .filter((f) => !/^(README|CONTRIBUTING|NOTES)\.md$/i.test(f) && !f.startsWith('_'))
+                .map((f) => path.join(ARTICLES, dir.name, f)),
+        );
     }
 
     return Promise.all(
@@ -97,6 +139,65 @@ const navFor = (docs: RenderedDocument[], key: 'helpDoc' | 'learnArticle'): NavI
     }));
 
 /** An index page listing what is in a section, so the section URL is worth indexing itself. */
+/**
+ * The /founders/ page body.
+ *
+ * Static HTML with no form and no payment SDK: the button is a link to a Razorpay
+ * page that Razorpay hosts, which is also where the customer's name and email are
+ * collected. Nothing here needs a server.
+ *
+ * The count prints its `asOf` date without exception. A scarcity figure that cannot
+ * say when it was true is a figure a reader is right to distrust, and this one is
+ * updated by hand (see data/founders.ts for why).
+ */
+const foundersBody = (checkoutUrl: string): string => {
+    const remaining = foundersRemaining();
+    const soldOut = foundersSoldOut();
+    const benefits = FOUNDER_BENEFITS.map((b) => `<li>${escapeText(b)}</li>`).join('');
+    const pct = Math.min(100, Math.round((FOUNDERS.claimed / FOUNDERS.total) * 100));
+
+    // The price is quoted inclusive of taxes, and says so. Quoting a price and staying
+    // silent about tax is what produces the argument later, with a payer asking for an
+    // invoice rather than with anyone official.
+    const cta = soldOut
+        ? `<p class="founders-soldout">All ${FOUNDERS.total} founding places have been taken. Thank you.</p>`
+        : checkoutUrl
+            ? `<a class="founders-cta" href="${escapeText(checkoutUrl)}" rel="noopener noreferrer">Become a Founding Supporter &middot; &#8377;${FOUNDERS.priceInr.toLocaleString('en-IN')}</a>
+    <p class="founders-fineprint">One payment of &#8377;${FOUNDERS.priceInr.toLocaleString('en-IN')}, inclusive of all applicable taxes. Not a subscription and nothing recurring.</p>`
+            : '<p class="founders-soldout">Founding places are not open yet. Check back shortly.</p>';
+
+    return `<header class="doc-header">
+    <h1>Become a YappyDraw Founding Supporter</h1>
+    <p class="doc-intro">YappyDraw is free and open source, and it stays that way. This is how the work gets paid for.</p>
+  </header>
+  <section class="doc-section founders">
+    <div class="founders-count">
+      <div class="founders-bar"><span style="width:${pct}%"></span></div>
+      <p><strong>${remaining.toLocaleString('en-IN')} of ${FOUNDERS.total.toLocaleString('en-IN')}</strong> founding places remaining
+      <span class="founders-asof">as of ${escapeText(foundersAsOfLabel())}, counted by hand</span></p>
+    </div>
+    <h2>What you get</h2>
+    <ul class="founders-benefits">${benefits}</ul>
+    ${cta}
+    <h2>What you are not buying</h2>
+    <p>A tier. There is no Pro version and there is no feature behind a payment, now or later.
+    YappyDraw is <a href="https://github.com/algorisys-oss/yappydraw" rel="noopener noreferrer">AGPL-3.0</a>,
+    so anyone can read the source, fork it, and run it without paying anyone anything. What you are
+    funding is the work continuing, and what you get back is recognition, access and a say in it.</p>
+    <h2>Where the money goes</h2>
+    <p>To the people actively working on YappyDraw: developers, artists and testers. None of it is
+    held back as profit. Payments are handled by Razorpay; nothing about your drawings is involved,
+    and they never leave your browser.</p>
+    <h2>What we do with your details</h2>
+    <p>Razorpay collects your name, email and phone number to take the payment, and passes them to
+    us. We use them for one thing: reaching you as a founder, which means the community invite,
+    early-access notes and the occasional roadmap vote. We do not sell them, we do not pass them
+    to anyone else, and there is an unsubscribe link on everything we send. Ask us and we will
+    delete you from the list, which does not affect anything you have already paid for. The
+    <a href="/privacy-policy.html">privacy policy</a> has the full version.</p>
+  </section>`;
+};
+
 const indexBody = (title: string, intro: string, docs: RenderedDocument[], key: 'helpDoc' | 'learnArticle'): string => {
     const categories = [...new Set(docs.map((d) => d.meta.category))];
     const sections = categories
@@ -237,6 +338,28 @@ export const renderAll = async (
         });
     }
 
+    // /founders/ — a single standalone page, always emitted so the URL is never a 404.
+    // The checkout is a Razorpay PAYMENT PAGE, not the razorpay.me link used for general
+    // support: only a Payment Page carries custom fields, and its CSV export is how the
+    // founder list gets built. With the variable unset the page still renders and simply
+    // does not offer to sell, rather than shipping a dead button.
+    await write(
+        pathFor('founders'),
+        buildPage({
+            meta: metaFor('founders'),
+            cssHref,
+            nav: helpNav,
+            heading: 'Founding Supporters',
+            body: foundersBody(process.env.VITE_SUPPORT_FOUNDERS_URL ?? ''),
+        }),
+    );
+    sitemap.push({
+        url: urlFor('founders'),
+        lastmod: FOUNDERS.asOf,
+        changefreq: 'weekly',
+        priority: '0.7',
+    });
+
     // /learn/ and its articles
     if (articles.length) {
         await write(
@@ -272,6 +395,11 @@ export const renderAll = async (
                     heading: 'Learn',
                     body: article.html,
                 }),
+            );
+            // The figures the page references, copied to the path the markdown asks for.
+            await copyArticleImages(
+                article.source,
+                path.join(dist, pathFor('learnArticle', article.meta.id).replace(/^\/+|\/+$/g, '')),
             );
             sitemap.push({
                 url: urlFor('learnArticle', article.meta.id),

@@ -29,6 +29,13 @@
     padding: 0 2px;
 }
 
+/* The wordmark is ONE word. It has to be its own flex item: .text-logo is a flex
+   container with `gap: 4px` for the Beta pill, and without this wrapper that gap fell
+   between "Yappy" and "Draw" too, rendering the brand as "Yappy Draw". */
+.text-logo-name {
+    display: inline-flex;
+}
+
 .text-logo-yappy {
     color: var(--text-primary);
 }
@@ -36,6 +43,78 @@
 .text-logo-draw {
     /* #4f6df5 is 3.84:1 on the dark panel. Per-theme accent instead. */
     color: var(--logo-accent, #4338ca);
+}
+
+/* Support button in the top bar. A labelled pill rather than another icon in the row —
+   it is an invitation, so it should read as one. Tinted rather than solid: a fully filled
+   accent button here would out-shout the drawing tools, which are the point of the app. */
+.topbar-support-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 11px;
+    margin: 0 2px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.09);
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+.topbar-support-btn:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.55);
+}
+.topbar-support-btn:focus-visible {
+    outline: 2px solid #ef4444;
+    outline-offset: 2px;
+}
+
+/* Icon pinned: as a flex item the SVG is otherwise crushed to a sliver, not drawn small. */
+.topbar-support-btn svg {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+    fill: rgba(239, 68, 68, 0.22);
+    transition: fill 0.12s ease, transform 0.12s ease;
+}
+.topbar-support-btn:hover svg {
+    fill: #ef4444;
+    transform: scale(1.1);
+}
+
+/* Dark themes: the tint needs more lift to stay legible on a dark bar. */
+[data-theme="dark"] .topbar-support-btn,
+[data-theme="focus"] .topbar-support-btn {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Under 1180px the label is dropped and the button becomes the icon alone, so the
+   top bar keeps its room for the tools. aria-label carries the name either way. */
+@media (max-width: 1180px) {
+    .topbar-support-label { display: none; }
+    .topbar-support-btn { padding: 0 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .topbar-support-btn,
+    .topbar-support-btn svg { transition: none; }
+    .topbar-support-btn:hover svg { transform: none; }
+}
+
+/* The logo mark that sits before the wordmark. */
+.text-logo-mark {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 /* Small "Beta" pill next to the logo. Gradient pill with a slow sheen sweep;

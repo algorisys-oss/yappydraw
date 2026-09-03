@@ -8,6 +8,7 @@ import { screenToWorld } from "../utils/viewport-transforms";
 import { canvasCenterClient } from "../utils/dock-layout";
 import pkg from '../../../package.json';
 import WhatsNewDialog, { hasUnseenWhatsNew, openWhatsNew } from "./whats-new-dialog";
+import { openAbout } from "./about-dialog";
 import "./status-bar.css";
 
 /** Contextual modifier hint: key combo + action description */
@@ -328,6 +329,12 @@ const StatusBar: Component = () => {
 
             {/* Legal */}
             <div class="status-section status-attribution">
+                {/* A button, not an <a>: the dialog is in-app, so a link here would either
+                    navigate away from the user's drawing or need a href it cannot honour. */}
+                <button type="button" class="status-link-btn" onClick={() => openAbout()}>
+                    {t('statusBar.about')}
+                </button>
+                <span style={{ opacity: 0.4 }}>|</span>
                 <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">
                     {t('statusBar.privacy')}
                 </a>

@@ -130,6 +130,22 @@
     text-decoration: underline;
 }
 
+/* The About trigger. A <button> for correct semantics, dressed to sit beside the
+   Privacy and Terms anchors so the row reads as one set of links. */
+.status-link-btn {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 500;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+}
+.status-link-btn:hover {
+    color: var(--primary-color, #3b82f6);
+    text-decoration: underline;
+}
+
 .status-heart {
     /* The emoji carries its own colour, so `color` no longer applies — it is left
        as a fallback for platforms that render ❤️ as monochrome text. */

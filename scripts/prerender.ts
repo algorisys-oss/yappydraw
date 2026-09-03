@@ -15,9 +15,27 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { loadEnv } from 'vite';
 import { renderAll } from '../frontend/src/prerender/render';
 
 const DIST = path.resolve(import.meta.dirname, '../dist');
+const ROOT = path.resolve(import.meta.dirname, '..');
+
+/**
+ * Load the same `.env` Vite reads, into `process.env`.
+ *
+ * This step runs as a separate `tsx` process, so it does NOT inherit Vite's automatic
+ * `.env` loading. Without this, one `npm run build` produced a site that disagreed with
+ * itself: the bundle had `VITE_SUPPORT_FOUNDERS_URL` baked in and offered the Founding
+ * Supporter option, while the prerendered `/founders/` page — built by this process,
+ * which never saw the variable — said the programme was not open yet.
+ *
+ * Existing `process.env` values win, so a variable set by a CI or host build environment
+ * still overrides the file, which is how the production deploy is configured.
+ */
+for (const [key, value] of Object.entries(loadEnv('production', ROOT, 'VITE_'))) {
+    process.env[key] ??= value;
+}
 
 /**
  * The date a page's source last changed, from git.

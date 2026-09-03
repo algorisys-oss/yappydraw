@@ -1,0 +1,228 @@
+/* "About YappyDraw" — theme-aware via Yappy CSS vars, matching whats-new-dialog. */
+
+.about-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3500;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: about-fade 0.15s ease-out;
+}
+
+@keyframes about-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.about-modal {
+    width: 400px;
+    max-width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel, #1e1e1e);
+    color: var(--text-primary, #f2f2f2);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    animation: about-pop 0.18s ease-out;
+}
+
+@keyframes about-pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.about-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color, #444);
+}
+
+.about-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.about-title svg { flex: 0 0 auto; width: 18px; height: 18px; color: var(--primary-color, #3b82f6); }
+
+.about-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary, #999);
+    cursor: pointer;
+}
+.about-close:hover { background: var(--bg-secondary, #2d2d2d); color: var(--text-primary, #fff); }
+/* Pin the icon — as a flex item it is otherwise crushed to a sliver, not drawn small. */
+.about-close svg { flex: 0 0 auto; width: 18px; height: 18px; }
+
+.about-body {
+    padding: 18px 16px 16px;
+    overflow-y: auto;
+}
+
+.about-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.about-wordmark {
+    /* One word, like the header. Its own inline-flex box so no parent gap splits it. */
+    display: inline-flex;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
+}
+.about-wordmark-yappy { color: var(--text-primary); }
+.about-wordmark-draw { color: var(--logo-accent, #4338ca); }
+
+.about-version {
+    padding: 2px 7px;
+    border: 1px solid var(--border-color, #444);
+    border-radius: 999px;
+    background: var(--bg-secondary, #2d2d2d);
+    color: var(--text-secondary, #999);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.about-version:hover { color: var(--text-primary, #fff); border-color: var(--primary-color, #3b82f6); }
+
+.about-tagline {
+    margin: 0 0 16px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-secondary, #bbb);
+}
+
+.about-facts {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+    margin: 0 0 16px;
+    font-size: 12.5px;
+}
+.about-facts dt {
+    color: var(--text-secondary, #999);
+    white-space: nowrap;
+}
+.about-facts dd {
+    margin: 0;
+    color: var(--text-primary, #fff);
+    font-weight: 600;
+}
+
+.about-artists {
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color, #444);
+    margin-bottom: 4px;
+}
+
+.about-artists-head {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text-secondary, #999);
+    margin-bottom: 5px;
+}
+
+.about-artists-note {
+    margin: 0 0 9px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-secondary, #999);
+}
+
+.about-artist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+.about-artist-list a {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    padding: 6px 9px;
+    border: 1px solid var(--border-color, #444);
+    border-radius: 8px;
+    background: var(--bg-secondary, #2d2d2d);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s ease;
+}
+.about-artist-list a:hover { border-color: var(--primary-color, #3b82f6); }
+
+.about-artist-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+.about-artist-handle {
+    font-size: 11.5px;
+    color: var(--text-secondary, #999);
+}
+
+.about-links {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color, #444);
+}
+.about-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--primary-color, #3b82f6);
+    text-decoration: none;
+}
+.about-links a:hover { text-decoration: underline; }
+.about-links svg { flex: 0 0 auto; width: 13px; height: 13px; opacity: 0.7; }
+
+.about-revenue {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 14px 0 0;
+    padding: 10px 11px;
+    border: 1px solid rgba(239, 68, 68, 0.28);
+    border-radius: 9px;
+    background: rgba(239, 68, 68, 0.07);
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--text-primary, #fff);
+}
+.about-revenue svg {
+    flex: 0 0 auto;
+    width: 13px;
+    height: 13px;
+    margin-top: 2px;
+    color: #ef4444;
+    fill: rgba(239, 68, 68, 0.25);
+}
+
+.about-privacy {
+    margin: 14px 0 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-secondary, #999);
+}
+
+@media (max-width: 480px) {
+    .about-overlay { padding: 12px; }
+    .about-modal { width: 100%; }
+}

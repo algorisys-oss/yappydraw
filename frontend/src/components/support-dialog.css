@@ -1,0 +1,151 @@
+/* "Support YappyDraw" popup — theme-aware via Yappy CSS vars, matching whats-new-dialog. */
+
+.support-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3500;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: support-fade 0.15s ease-out;
+}
+
+@keyframes support-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.support-modal {
+    width: 420px;
+    max-width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel, #1e1e1e);
+    color: var(--text-primary, #f2f2f2);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    animation: support-pop 0.18s ease-out;
+}
+
+@keyframes support-pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.support-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color, #444);
+}
+
+.support-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+.support-title svg { color: #ef4444; }
+
+.support-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary, #999);
+    cursor: pointer;
+}
+.support-close:hover { background: var(--bg-secondary, #2d2d2d); color: var(--text-primary, #fff); }
+/* Pin the icon. As a flex item inside the fixed-size button the SVG is otherwise
+   shrunk to a sliver rather than drawn small — the same crush that hit the Layers
+   panel row actions in v0.8.222. Matches the .ep-icon-btn / .gs-icon-btn convention. */
+.support-close svg { flex: 0 0 auto; width: 18px; height: 18px; }
+
+.support-body {
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.support-lede {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-secondary, #bbb);
+}
+
+.support-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.support-link {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 11px 13px;
+    border: 1px solid var(--border-color, #444);
+    border-radius: 10px;
+    background: var(--bg-secondary, #2d2d2d);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+}
+.support-link:hover {
+    border-color: var(--primary-color, #3b82f6);
+    transform: translateY(-1px);
+}
+
+/* The founders option leads. Tinted with the accent rather than filled solid: it is
+   the primary choice, not the only one, and a solid button here would make the other
+   routes look like errors. */
+.support-link.primary {
+    border-color: rgba(67, 56, 202, 0.45);
+    background: rgba(67, 56, 202, 0.07);
+}
+.support-link.primary:hover {
+    border-color: var(--logo-accent, #4338ca);
+    background: rgba(67, 56, 202, 0.12);
+}
+.support-link.primary .support-link-label {
+    color: var(--logo-accent, #4338ca);
+}
+[data-theme="dark"] .support-link.primary .support-link-label,
+[data-theme="focus"] .support-link.primary .support-link-label {
+    color: #a5b4fc;
+}
+
+.support-link-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+.support-link-label svg { color: var(--text-secondary, #999); flex: 0 0 auto; width: 14px; height: 14px; }
+
+.support-link-note {
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--text-secondary, #999);
+}
+
+.support-foot-note {
+    margin: 14px 0 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-secondary, #999);
+}
+
+/* On a phone the modal takes the width it can get. */
+@media (max-width: 480px) {
+    .support-overlay { padding: 12px; }
+    .support-modal { width: 100%; }
+}
