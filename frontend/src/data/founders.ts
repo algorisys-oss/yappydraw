@@ -31,6 +31,15 @@ export interface FoundersData {
     asOf: string;
     /** Price in whole rupees. */
     priceInr: number;
+    /**
+     * Whether to print the "N of M places remaining" bar on `/founders/`.
+     *
+     * Off by default. The counter is only persuasive once a fair number are taken;
+     * before that it is an honest number that reads as "nobody has bought this",
+     * which is a worse thing to publish than nothing at all. Flip it to `true` when
+     * `claimed` is high enough to be worth showing.
+     */
+    showCount: boolean;
 }
 
 export const FOUNDERS: FoundersData = {
@@ -38,6 +47,7 @@ export const FOUNDERS: FoundersData = {
     total: 1000,
     asOf: '2026-09-03',
     priceInr: 2499,
+    showCount: false,
 };
 
 /** What a founder actually gets. Deliverable without accounts, and safe from a fork. */

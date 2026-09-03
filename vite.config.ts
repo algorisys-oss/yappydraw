@@ -3,6 +3,7 @@ import solid from 'vite-plugin-solid'
 import { VitePWA } from 'vite-plugin-pwa'
 import { assemblyScriptPlugin } from './frontend/src/wasm/vite-plugin-as'
 import { helpMarkdownPlugin } from './frontend/src/help-docs/vite-plugin-help-md'
+import { prerenderDevPlugin } from './frontend/src/prerender/vite-plugin-prerender-dev'
 import { createRequire } from 'node:module'
 
 // Read MathJax's real version rather than hardcoding it, so the `PACKAGE_VERSION`
@@ -12,7 +13,7 @@ const mathjaxVersion: string = createRequire(import.meta.url)('mathjax-full/pack
 export default defineConfig({
   root: 'frontend',
   envDir: '..',  // .env files are in the project root, not in frontend/
-  plugins: [solid(), assemblyScriptPlugin(), helpMarkdownPlugin(), VitePWA({
+  plugins: [solid(), assemblyScriptPlugin(), helpMarkdownPlugin(), prerenderDevPlugin(), VitePWA({
     // 'prompt' (NOT 'autoUpdate'): autoUpdate emits skipWaiting()+clientsClaim()
     // in the SW, so a freshly-deployed SW activates and evicts the old precache
     // *while the previous page is still fetching its old content-hashed chunks*.

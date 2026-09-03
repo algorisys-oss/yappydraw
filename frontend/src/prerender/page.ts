@@ -46,7 +46,13 @@ export interface PageInput {
      * year-long immutable cache rule in `.htaccess` applies safely.
      */
     cssHref: string;
-    /** Sidebar entries, in display order. */
+    /**
+     * Sidebar entries, in display order.
+     *
+     * An empty list drops the sidebar (and the search box that filters it) entirely
+     * rather than rendering an empty 280px rail: a standalone page such as
+     * `/founders/` has nothing to navigate between.
+     */
     nav: NavItem[];
     /** The id of the entry to mark active, if any. */
     activeId?: string;
@@ -130,7 +136,11 @@ const FILTER_SCRIPT = `
   });
 })();`.trim();
 
-export const buildPage = (input: PageInput): string => `<!doctype html>
+export const buildPage = (input: PageInput): string => {
+    // The search box only ever filtered the sidebar, so it goes with it. Leaving it
+    // behind would ship a control that visibly does nothing.
+    const hasNav = input.nav.length > 0;
+    return `<!doctype html>
 <html lang="en">
 
 <head>
@@ -145,13 +155,11 @@ export const buildPage = (input: PageInput): string => `<!doctype html>
         <a class="back-button" href="${pathFor('home')}">← Back to Yappy</a>
         <div class="help-title">${esc(input.heading)}</div>
       </div>
-      <div class="help-header-right">
-        <input type="text" class="search-input" placeholder="Search tools &amp; shapes..." aria-label="Search documentation" />
-      </div>
+      ${hasNav ? '<div class="help-header-right"><input type="text" class="search-input" placeholder="Search tools &amp; shapes..." aria-label="Search documentation" /></div>' : ''}
     </header>
 
     <div class="help-content">
-      ${sidebar(input.nav, input.activeId)}
+      ${hasNav ? sidebar(input.nav, input.activeId) : ''}
       <main class="help-main">
         <div class="doc-container">${input.body}</div>
         <footer class="doc-footer">
@@ -172,3 +180,4 @@ export const buildPage = (input: PageInput): string => `<!doctype html>
 
 </html>
 `;
+};

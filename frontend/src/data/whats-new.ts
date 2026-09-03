@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.232', date: '2026-09-04', items: [
+        'The Founding Supporter page is simpler. The "places remaining" bar has gone, and so has the sidebar full of shapes and tools that sat beside it — it is one page about one decision now. The button to join is exactly where it was.',
+    ] },
     { version: '0.8.231', date: '2026-09-03', items: [
         'If you set a background colour on your canvas, your downloads now have it. Previously every export came out on white paper regardless — so a black canvas with white writing downloaded as a blank white page, with your drawing in the file but impossible to see. PNG, JPG, PDF, PowerPoint and copy-as-image were all affected.',
         'Exporting a PDF with the background switched off no longer gives you a black page. It comes out transparent, as it should, so it sits properly on whatever you place it over.',

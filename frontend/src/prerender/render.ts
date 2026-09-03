@@ -165,15 +165,29 @@ const navFor = (docs: RenderedDocument[], key: 'helpDoc' | 'learnArticle'): NavI
  * page that Razorpay hosts, which is also where the customer's name and email are
  * collected. Nothing here needs a server.
  *
- * The count prints its `asOf` date without exception. A scarcity figure that cannot
- * say when it was true is a figure a reader is right to distrust, and this one is
- * updated by hand (see data/founders.ts for why).
+ * The count is hidden unless `FOUNDERS.showCount` is on, and when shown it prints its
+ * `asOf` date without exception. A scarcity figure that cannot say when it was true is
+ * a figure a reader is right to distrust, and this one is updated by hand (see
+ * data/founders.ts for why).
  */
 const foundersBody = (checkoutUrl: string): string => {
     const remaining = foundersRemaining();
     const soldOut = foundersSoldOut();
     const benefits = FOUNDER_BENEFITS.map((b) => `<li>${escapeText(b)}</li>`).join('');
     const pct = Math.min(100, Math.round((FOUNDERS.claimed / FOUNDERS.total) * 100));
+
+    // The remaining-places bar is opt-in (data/founders.ts `showCount`). An accurate
+    // count is only worth printing once enough places are taken; "1,000 of 1,000
+    // remaining" is true and says the wrong thing. Hidden, the page simply makes its
+    // case. Sold-out handling below does not depend on this flag.
+    const count = FOUNDERS.showCount
+        ? `<div class="founders-count">
+      <div class="founders-bar"><span style="width:${pct}%"></span></div>
+      <p><strong>${remaining.toLocaleString('en-IN')} of ${FOUNDERS.total.toLocaleString('en-IN')}</strong> founding places remaining
+      <span class="founders-asof">as of ${escapeText(foundersAsOfLabel())}, counted by hand</span></p>
+    </div>
+    `
+        : '';
 
     // The price is quoted inclusive of taxes, and says so. Quoting a price and staying
     // silent about tax is what produces the argument later, with a payer asking for an
@@ -190,12 +204,7 @@ const foundersBody = (checkoutUrl: string): string => {
     <p class="doc-intro">YappyDraw is free and open source, and it stays that way. This is how the work gets paid for.</p>
   </header>
   <section class="doc-section founders">
-    <div class="founders-count">
-      <div class="founders-bar"><span style="width:${pct}%"></span></div>
-      <p><strong>${remaining.toLocaleString('en-IN')} of ${FOUNDERS.total.toLocaleString('en-IN')}</strong> founding places remaining
-      <span class="founders-asof">as of ${escapeText(foundersAsOfLabel())}, counted by hand</span></p>
-    </div>
-    <h2>What you get</h2>
+    ${count}<h2>What you get</h2>
     <ul class="founders-benefits">${benefits}</ul>
     ${cta}
     <h2>What you are not buying</h2>
@@ -374,7 +383,9 @@ export const renderAll = async (
         buildPage({
             meta: metaFor('founders'),
             cssHref,
-            nav: helpNav,
+            // No sidebar: this is a standalone page, not part of the help set, and a
+            // shape list beside a payment page is only somewhere else to click.
+            nav: [],
             heading: 'Founding Supporters',
             body: foundersBody(process.env.VITE_SUPPORT_FOUNDERS_URL ?? ''),
         }),
