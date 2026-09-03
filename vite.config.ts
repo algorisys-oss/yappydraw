@@ -100,7 +100,32 @@ export default defineConfig({
       // callback <script> never ran and the sign-in popup hung on "Connecting…".
       // Exclude the callback (matched against url.pathname) so it hits the
       // network/precache and the real static page loads.
-      navigateFallbackDenylist: [/oauth-callback\.html/],
+      //
+      // EVERY prerendered page needs the same exclusion, and for two releases none of
+      // them had it. `navigateFallback` answers *every* navigation with the cached app
+      // shell, so any visitor with the service worker installed — which is everyone
+      // except a first-time visitor — got the editor when they asked for /help/,
+      // /learn/, /examples/ or /founders/. The whole documentation and marketing site
+      // was reachable only by people who had never been to the site before.
+      //
+      // It survived because nothing that checks these pages runs a service worker:
+      // `verify:deploy` uses curl, and so does every crawler. The pages were genuinely
+      // being served correctly; the browser just never asked for them. Reproducing it
+      // needs a real browser that has visited the site once already.
+      navigateFallbackDenylist: [
+          /oauth-callback\.html/,
+          // Prerendered documentation, marketing and legal pages. Matched against
+          // url.pathname, so these cover both `/help/` and `/help/uml/`.
+          /^\/help\//,
+          /^\/learn\//,
+          /^\/examples\//,
+          /^\/founders\//,
+          /^\/privacy-policy\.html/,
+          /^\/terms-of-service\.html/,
+          /^\/404\.html/,
+          /^\/sitemap\.xml/,
+          /^\/robots\.txt/,
+      ],
       runtimeCaching: [
         {
           // The lazy chunks dropped from the precache above. Cache-first is safe

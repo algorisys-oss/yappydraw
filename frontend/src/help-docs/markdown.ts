@@ -40,6 +40,12 @@ export interface DocMeta {
     /** Extra search terms — tool names mentioned inside the page. */
     keywords?: string;
     /**
+     * `internal: true` keeps a document in the repo but out of the published site.
+     *
+     * The value is the raw front-matter string, not a boolean — everything here is.
+     */
+    internal?: string;
+    /**
      * Search-facing overrides for the prerendered page (plan §S4).
      *
      * `name`/`description` are written for the SIDEBAR — short, and phrased as
@@ -343,6 +349,11 @@ export const renderHelpDoc = (source: string, filename = '<doc>'): RenderedDoc =
             category: meta.category,
             description: meta.description,
             ...(meta.keywords ? { keywords: meta.keywords } : {}),
+            // Must be carried through: this object is an allowlist, so a key absent here
+            // is silently discarded no matter what the front matter says. `internal` was
+            // added to a document, parsed correctly, and dropped exactly here — the page
+            // published anyway and the flag looked like it simply did not work.
+            ...(meta.internal ? { internal: meta.internal } : {}),
             ...(meta.seoTitle ? { seoTitle: meta.seoTitle } : {}),
             ...(meta.seoDescription ? { seoDescription: meta.seoDescription } : {}),
         },

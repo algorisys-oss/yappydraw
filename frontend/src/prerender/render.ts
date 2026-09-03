@@ -28,8 +28,23 @@ import {
     FOUNDERS, FOUNDER_BENEFITS, foundersRemaining, foundersSoldOut, foundersAsOfLabel,
 } from '../data/founders';
 
-/** Front matter may carry search-facing overrides; the renderer passes them through. */
-export type PageDocMeta = DocMeta & { seoTitle?: string; seoDescription?: string };
+/**
+ * Front matter may carry search-facing overrides; the renderer passes them through.
+ *
+ * `internal` marks a document that lives in the repo but is NOT published: no page, no
+ * sitemap entry, no listing, no sidebar link. Front matter is the right place for it
+ * because the flag then travels with the document rather than living in a list of
+ * exceptions somewhere else that the next author will not know to update.
+ */
+export type PageDocMeta = DocMeta & {
+    seoTitle?: string;
+    seoDescription?: string;
+    internal?: string;
+};
+
+/** Front matter values arrive as strings, so `internal: false` must not read as true. */
+const isInternal = (meta: PageDocMeta): boolean =>
+    String(meta.internal ?? '').trim().toLowerCase() === 'true';
 
 export interface RenderedDocument {
     meta: PageDocMeta;
@@ -117,16 +132,20 @@ export const readArticles = async (): Promise<RenderedDocument[]> => {
         );
     }
 
-    return Promise.all(
+    const rendered = await Promise.all(
         files.sort().map(async (source) => {
-            const rendered = renderHelpDoc(await readFile(source, 'utf8'), path.relative(REPO, source));
+            const doc = renderHelpDoc(await readFile(source, 'utf8'), path.relative(REPO, source));
             return {
-                meta: rendered.meta as PageDocMeta,
-                html: rendered.html,
+                meta: doc.meta as PageDocMeta,
+                html: doc.html,
                 source: path.relative(REPO, source),
             };
         }),
     );
+
+    // Dropped here rather than at each use, so an internal document cannot reach the page
+    // writer, the sitemap, the /learn/ index or the sidebar by being missed in one of them.
+    return rendered.filter((doc) => !isInternal(doc.meta));
 };
 
 const navFor = (docs: RenderedDocument[], key: 'helpDoc' | 'learnArticle'): NavItem[] =>

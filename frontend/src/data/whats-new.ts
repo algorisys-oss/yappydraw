@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.229', date: '2026-09-03', items: [
+        'The Help, Learn and Examples pages open properly again. If you had used YappyDraw before, going to any of them could land you back on the drawing canvas instead — the app was answering those addresses from its offline copy rather than fetching the real page. Every one of them now loads what you asked for.',
+        'A behind-the-scenes engineering write-up that briefly appeared under Learn has been taken down. It was internal notes rather than something written for you to read.',
+    ] },
     { version: '0.8.227', date: '2026-09-03', items: [
         'You can support YappyDraw now, if you would like to. There is a Support button in the top bar, and it opens a small dialog with the ways to do it. It is entirely optional: nothing in YappyDraw is behind a payment, and nothing ever will be.',
         'There is also a Founding Supporter programme at yappydraw.com/founders — a one-off payment for the first 1,000 people, with a founder badge, early access, a vote on what gets built next, and a private community. It is not a paid tier. There is no Pro version and no feature you have to pay for; what it funds is the work continuing.',
