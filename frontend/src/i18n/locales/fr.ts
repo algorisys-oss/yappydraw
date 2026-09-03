@@ -990,7 +990,7 @@ export const fr: Dictionary = {
         github: 'Devenir sponsor sur GitHub',
         githubNote: 'Ponctuel ou mensuel, dans votre devise. Disponible partout dans le monde.',
         founders: 'Devenir Membre fondateur',
-        foundersNote: '2 499 ₹, une seule fois. Badge de fondateur, accès anticipé, vote sur la feuille de route et communauté privée des fondateurs.',
+        foundersNote: '2 499 ₹, une seule fois. Badge de fondateur, accès anticipé, vote sur la feuille de route, communauté privée des fondateurs et un an de collaboration hébergée offerte dès son lancement.',
         freeForever: 'Entièrement facultatif. Aucune fonction de YappyDraw n’est payante, et cela ne changera pas.',
     },
 

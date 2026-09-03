@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.233', date: '2026-09-04', items: [
+        'Collaboration is being built, and the Founding Supporter page now says what it will mean for you. Every feature in YappyDraw stays free for everyone, collaboration included — you will be able to point it at a server of your own and work with other people without paying anybody. What costs money is the server we run, because hosting live collaboration bills every month for everyone using it.',
+        'Founders get that hosting free for a year from the day it launches, and a founder discount for as long as they want it afterwards. Not free forever, because one payment cannot honestly cover a cost that recurs forever — and a promise we would have to take back later is worth less than a smaller one we can keep.',
+        'None of it exists yet, and the page says so plainly above the button rather than below it.',
+    ] },
     { version: '0.8.232', date: '2026-09-04', items: [
         'The Founding Supporter page is simpler. The "places remaining" bar has gone, and so has the sidebar full of shapes and tools that sat beside it — it is one page about one decision now. The button to join is exactly where it was.',
     ] },

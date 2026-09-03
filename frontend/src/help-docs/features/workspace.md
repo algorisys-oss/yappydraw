@@ -522,7 +522,7 @@ small dialog with the ways to do it.
 
 | Route | Good for |
 |---|---|
-| **Founding Supporter** | A one-off payment for the founding cohort. Founder badge, early access, a vote on the roadmap, and the private founder community. See [/founders/](/founders/). |
+| **Founding Supporter** | A one-off payment for the founding cohort. Founder badge, early access, a vote on the roadmap, the private founder community, and hosted collaboration free for a year once it launches. See [/founders/](/founders/). |
 | **Razorpay** | Cards, UPI and net banking, with an amount you choose. Best from India. |
 | **GitHub Sponsors** | One-off or monthly, in your own currency. Works worldwide. |
 
@@ -533,6 +533,16 @@ All three are ordinary links that open their own page in a new tab.
 feature behind a payment. The project is AGPL-3.0, so anyone can read the source, fork it
 and run it without paying anyone. What a founder funds is the work continuing; what they
 get back is recognition, early access and a say in what gets built.
+:::
+
+:::note
+**Collaboration, when it arrives, does not change that.** It is being built and is not
+available yet. Every feature in the app stays free for everyone — collaboration included —
+and anyone can point it at a server of their own and use it without paying anything. What
+costs money is the server *we* run, because hosting real-time collaboration bills every
+month for every active person on it. Founders get that hosting free for a year from launch,
+then at a founder discount; nobody is promised free hosting forever, because one payment
+cannot honestly fund a cost that recurs forever.
 :::
 
 :::note

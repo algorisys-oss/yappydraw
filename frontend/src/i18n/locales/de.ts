@@ -977,7 +977,7 @@ export const de: Dictionary = {
         github: 'Auf GitHub sponsern',
         githubNote: 'Einmalig oder monatlich, in Ihrer Währung. Weltweit verfügbar.',
         founders: 'Gründungsförderer werden',
-        foundersNote: 'Einmalig 2.499 ₹. Gründer-Badge, früher Zugang, Mitsprache bei der Roadmap und die private Gründer-Community.',
+        foundersNote: 'Einmalig 2.499 ₹. Gründer-Badge, früher Zugang, Mitsprache bei der Roadmap, die private Gründer-Community und ein Jahr gehostete Zusammenarbeit gratis, sobald sie verfügbar ist.',
         freeForever: 'Völlig freiwillig. Keine Funktion von YappyDraw kostet etwas, und das bleibt so.',
     },
 

@@ -976,7 +976,7 @@ export const es: Dictionary = {
         github: 'Patrocinar en GitHub',
         githubNote: 'Puntual o mensual, en tu moneda. Disponible en todo el mundo.',
         founders: 'Hazte Mecenas fundador',
-        foundersNote: 'Pago único de 2499 ₹. Insignia de fundador, acceso anticipado, voto sobre la hoja de ruta y la comunidad privada de fundadores.',
+        foundersNote: 'Pago único de 2499 ₹. Insignia de fundador, acceso anticipado, voto sobre la hoja de ruta, la comunidad privada de fundadores y un año de colaboración alojada gratis cuando se lance.',
         freeForever: 'Totalmente opcional. Ninguna función de YappyDraw es de pago, y nunca lo será.',
     },
 

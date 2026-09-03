@@ -207,6 +207,20 @@ const foundersBody = (checkoutUrl: string): string => {
     ${count}<h2>What you get</h2>
     <ul class="founders-benefits">${benefits}</ul>
     ${cta}
+    <h2>About the collaboration server</h2>
+    <p>Collaboration is being built and is <strong>not available yet</strong>, so nothing on this
+    page is offering it today. When it arrives, it works like this, and it is worth reading before
+    you pay rather than after.</p>
+    <p><strong>Every feature in the app stays free for everyone, always &mdash; collaboration
+    included.</strong> There is no Pro build, no licence check and no feature flag: the
+    collaboration client ships in the ordinary AGPL app, and anyone at all can point it at a server
+    of their own and work together without paying anyone anything.</p>
+    <p>What costs money is the <em>server we run</em>. Hosting real-time collaboration is a bill
+    that arrives every month for every active person on it, and that is the part a payment covers.
+    <strong>Founders get it free for a year from the day it launches</strong>, and afterwards a
+    founder discount for as long as they want to keep using it. We are not promising free hosting
+    forever, because a single payment cannot honestly fund a cost that recurs forever &mdash; and a
+    promise we would have to withdraw later is worth less than a smaller one we can keep.</p>
     <h2>What you are not buying</h2>
     <p>A tier. There is no Pro version and there is no feature behind a payment, now or later.
     YappyDraw is <a href="https://github.com/algorisys-oss/yappydraw" rel="noopener noreferrer">AGPL-3.0</a>,

@@ -991,7 +991,7 @@ export const en = {
         github: 'Sponsor on GitHub',
         githubNote: 'One-off or monthly, in your own currency. Works worldwide.',
         founders: 'Become a Founding Supporter',
-        foundersNote: 'A one-off ₹2,499. Founder badge, early access, a vote on the roadmap and the private founder community.',
+        foundersNote: 'A one-off ₹2,499. Founder badge, early access, a vote on the roadmap, the private founder community, and hosted collaboration free for a year once it launches.',
         freeForever: 'Entirely optional. Nothing in YappyDraw is behind a payment, and nothing ever will be.',
     },
 

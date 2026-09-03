@@ -50,13 +50,28 @@ export const FOUNDERS: FoundersData = {
     showCount: false,
 };
 
-/** What a founder actually gets. Deliverable without accounts, and safe from a fork. */
+/**
+ * What a founder actually gets. Deliverable without accounts, and safe from a fork.
+ *
+ * The hosted-collaboration line is a promise about a service that DOES NOT EXIST YET, so
+ * it says so, says how long it lasts, and says what happens afterwards. Three reasons it
+ * is written that way rather than as "free collaboration forever":
+ *
+ *  - Hosting is a cost per active user per MONTH, funded here by one payment. Unbounded
+ *    free access for 1,000 people is a liability with no revenue behind it.
+ *  - A reader deciding whether to pay ₹2,499 should not have to guess whether a listed
+ *    benefit is available today. It is not, and the page must not imply otherwise.
+ *  - It is a service, not a feature. The collaboration client itself ships free in the
+ *    AGPL app and is self-hostable by anyone, which is what keeps `support.freeForever`
+ *    ("nothing is behind a payment") true — see docs/collaboration-plan.md D1.
+ */
 export const FOUNDER_BENEFITS: string[] = [
     'Founder badge and your name in the credits, permanently',
     'Early access to new features before they ship',
     'A vote on what gets built next',
     'The private founder community',
     'Direct line to the people building it',
+    'Hosted collaboration free for a year once it launches, then at a founder discount for as long as you want it',
 ];
 
 /** Remaining, floored at zero so a miscounted `claimed` cannot render a negative. */

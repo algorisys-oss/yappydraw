@@ -354,8 +354,8 @@ frontend/src/config/support.test.ts | typescript | 44 |
 frontend/src/config/support.ts | typescript | 146 | SupportLink:42 isSafeSupportUrl:61 hasFoundersCheckout:122 hasSupportLinks:141
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/founders.ts | typescript | 82 | FoundersData:25
-frontend/src/data/whats-new.ts | typescript | 740 | WhatsNewEntry:9
+frontend/src/data/founders.ts | typescript | 97 | FoundersData:25
+frontend/src/data/whats-new.ts | typescript | 745 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -441,7 +441,7 @@ frontend/src/help-docs/features/plotting.md | - | 201 |
 frontend/src/help-docs/features/stick-animation.md | - | 162 |
 frontend/src/help-docs/features/stick-library.md | - | 237 |
 frontend/src/help-docs/features/symbols.md | - | 159 |
-frontend/src/help-docs/features/workspace.md | - | 624 |
+frontend/src/help-docs/features/workspace.md | - | 634 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 579 |
 frontend/src/help-docs/help-md.d.ts | typescript | 28 |
 frontend/src/help-docs/help-page.css | - | 587 |
@@ -515,7 +515,7 @@ frontend/src/player.tsx | typescript | 14 |
 frontend/src/prerender/meta.ts | typescript | 195 | RouteKey:15 PageMeta:18
 frontend/src/prerender/page.ts | typescript | 183 | NavItem:30 PageInput:38
 frontend/src/prerender/prerender.test.ts | typescript | 159 | page:24
-frontend/src/prerender/render.ts | typescript | 510 | DocMeta:22 NavItem:25 PageDocMeta:39 RenderedDocument:49 SitemapEntry:262 RenderReport:287
+frontend/src/prerender/render.ts | typescript | 524 | DocMeta:22 NavItem:25 PageDocMeta:39 RenderedDocument:49 SitemapEntry:276 RenderReport:301
 frontend/src/prerender/vite-plugin-prerender-dev.ts | typescript | 94 | Plugin:22
 frontend/src/rendering/CanvasRenderer.ts | typescript | 176 | CanvasRenderer:11{constructor:13 save:18 restore:19 translate:22 rotate:23 scale:24 transform:25 beginPath:28 closePath:29 moveTo:30 lineTo:31 arc:32 ellipse:35 rect:38 roundRect:39 quadraticCurveTo:42 bezierCurveTo:45 arcTo:48 fill:53 stroke:57 fillRect:58 strokeRect:59 clip:60 fillPath:65 strokePath:69 clipPath:72 fillStyle:77 strokeStyle:80 lineWidth:83 lineCap:86 lineJoin:89 setLineDash:92 lineDashOffset:94 globalAlpha:98 globalCompositeOperation:101 shadowColor:105 shadowBlur:108 shadowOffsetX:111 shadowOffsetY:114 filter:118 font:122 letterSpacing:127 textAlign:130 textBaseline:133 fillText:136 strokeText:141 measureText:146 createLinearGradient:151 createRadialGradient:154 createConicGradient:157 createPattern:160 drawImage:165 drawImageCropped:173}
 frontend/src/rendering/IRenderer.ts | typescript | 109 | ICanvasGradient:14{addColorStop:15} ICanvasPattern:18 FillStyle:20 TextMetrics:22 IRenderer:28{save:30 restore:31 translate:34 rotate:35 scale:36 transform:38 beginPath:41 closePath:42 moveTo:43 lineTo:44 arc:45 ellipse:46 rect:47 roundRect:48 quadraticCurveTo:49 bezierCurveTo:50 arcTo:51 fill:54 stroke:55 fillRect:56 strokeRect:57 clip:58 fillPath:62 strokePath:64 clipPath:66 setLineDash:74 fillText:95 strokeText:96 measureText:97 createLinearGradient:100 createRadialGradient:101 createConicGradient:102 createPattern:103 drawImage:106 drawImageCropped:108}
