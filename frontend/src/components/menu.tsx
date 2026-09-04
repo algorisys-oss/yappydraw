@@ -5,7 +5,7 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, togglePathfinderBar, setSelectedTool, toggleTeachingMode,
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, togglePathfinderBar, setSelectedTool, toggleTeachingMode, isDevMode,
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
@@ -961,8 +961,11 @@ const Menu: Component = () => {
                                             <span class="label">{t('menu.aiImage')}</span>
                                         </button>
                                     </Show>
+                                    {/* The Game builder is still being built, so it lives behind Dev Mode
+                                        (Settings -> General -> Dev Mode). The separator is inside the gate too —
+                                        otherwise turning the group off leaves two rules stacked together. */}
+                                    <Show when={isDevMode()}>
                                     <div class="menu-separator"></div>
-                                    {/* Game tools grouped into one collapsible section (Build has a Simple/Graph/Blueprint switcher inside). */}
                                     <button class="menu-item menu-group" classList={{ expanded: gameMenuOpen() }} onClick={() => setGameMenuOpen(o => !o)}>
                                         <Gamepad2 size={16} />
                                         <span class="label">{t('menu.game')}</span>
@@ -1005,6 +1008,7 @@ const Menu: Component = () => {
                                             <Code size={15} />
                                             <span class="label">{t('menu.code')}</span>
                                         </button>
+                                    </Show>
                                     </Show>
                                     <div class="menu-separator"></div>
                                     <button class="menu-item menu-group" classList={{ expanded: panelsMenuOpen() }} onClick={() => setPanelsMenuOpen(o => !o)}>

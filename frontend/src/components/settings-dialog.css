@@ -185,6 +185,19 @@
     white-space: nowrap;
 }
 
+/* An explanatory line rather than a control: it wraps, it is quieter than a label,
+   and it sits under the row it belongs to instead of beside a widget. */
+.settings-row-note {
+    margin-top: -6px;
+}
+
+.settings-row-note label {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    white-space: normal;
+}
+
 .settings-row select,
 .settings-row input[type="number"] {
     padding: 6px 10px;

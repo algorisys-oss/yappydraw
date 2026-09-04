@@ -232,6 +232,30 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 <span class="settings-toggle-slider"></span>
                             </label>
                         </div>
+
+                        {/* Last row in General on purpose: it is the one setting here that
+                            changes what the app *contains* rather than how it behaves, and
+                            burying it below the everyday rows keeps it out of the way of
+                            someone who is not looking for it. */}
+                        <div class="settings-row">
+                            <label title={t("settings.devModeTitle")}>{t("settings.devMode")}</label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.devMode === true}
+                                    onChange={(e) => updateGlobalSettings({ devMode: e.currentTarget.checked })}
+                                />
+                                <span class="settings-toggle-slider"></span>
+                            </label>
+                        </div>
+                        {/* A `.settings-row` and not a bare paragraph: the search effect
+                            walks rows to decide what to show, so anything outside one would
+                            sit there stubbornly while the user filtered for something else. */}
+                        <Show when={store.globalSettings.devMode === true}>
+                            <div class="settings-row settings-row-note">
+                                <label>{t("settings.devModeHint")}</label>
+                            </div>
+                        </Show>
                     </div>
 
                     <div class="settings-section" data-cat="input">

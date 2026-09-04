@@ -2513,6 +2513,27 @@ export const YappyAPI = {
     getTeachingMode() { return store.globalSettings.teachingMode === true; },
     toggleTeachingMode() { return toggleTeachingMode(); },
 
+    /**
+     * **Dev mode** — reveals work-in-progress surfaces that are hidden from everyday users.
+     * Today that is the whole Game group (New Game, My Games, Build, Node Graph, Blueprint,
+     * Play, Code, and the "Edit Behaviors (Game)…" context-menu entry); future half-built
+     * features hang off the same switch.
+     *
+     * Only the *entry points* are hidden. The Game APIs below (`toggleGameBuilder`,
+     * `setGameScript`, …) keep working with Dev Mode off, so a script or an existing game
+     * document is never broken by the setting.
+     *
+     * An app-level preference: persisted to localStorage and never read from a document —
+     * opening someone else's file cannot unlock unfinished UI on your machine. Default off.
+     *
+     * @example
+     * yappy.setDevMode(true);   // Game group appears in the menu
+     * yappy.getDevMode();       // → true
+     */
+    setDevMode(on: boolean) { updateGlobalSettings({ devMode: on }); return on; },
+    getDevMode() { return store.globalSettings.devMode === true; },
+    toggleDevMode() { const next = store.globalSettings.devMode !== true; updateGlobalSettings({ devMode: next }); return next; },
+
     /** Opt-in: bake dimension annotations into PNG/JPG/SVG/PDF exports (default off). */
     setExportIncludeDimensions(on: boolean) { updateGlobalSettings({ exportIncludeDimensions: on }); try { localStorage.setItem('exportIncludeDimensions', on ? '1' : '0'); } catch { /* ignore */ } },
     getExportIncludeDimensions() { return store.globalSettings.exportIncludeDimensions === true; },

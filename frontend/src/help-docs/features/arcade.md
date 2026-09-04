@@ -11,9 +11,16 @@ keywords: game games arcade flash actionscript scratch blueprint no-code visual 
 
 A Flash-style game mode. Build games two ways: the **visual Game Builder** (no code — give your sprites WHEN→DO behaviors from a panel), or write a small **game script** in JavaScript. Press **Play** and it drives the live canvas at 60 fps; **Stop** (or Esc) restores the document exactly. Games run in the editor and the exported HTML player, with keyboard *and* an on-screen touch gamepad, so they're playable on tablets.
 
+:::note
+**Arcade is still being built, so it lives behind Dev Mode.** Turn on **Settings ▸ General ▸
+Dev Mode** and the whole **Game** group appears in the menu; leave it off and the game tools stay
+out of the way of everyday drawing. Nothing else changes — a document that already holds a game
+keeps its behaviors, script and export either way. See *Dev Mode* in the Workspace doc.
+:::
+
 ## Game Builder — no code (start here)
 
-**Menu → Game Builder** (or right-click a sprite → **Edit Behaviors**) opens the Behaviors panel. Brand new? Tap **Load example: Pong** and press ▶ Play. To build your own:
+**Menu → Game → Build** (or right-click a sprite → **Edit Behaviors (Game)…**) opens the Behaviors panel. Brand new? Tap **Load example: Pong** and press ▶ Play. To build your own:
 
 1. Draw shapes for your sprites. Select one and give it a **Name** (e.g. "Ball") in the panel — that's how rules refer to it.
 2. Add rules as **WHEN → DO**: pick a trigger (*when it starts, every moment, key pressed/held, when tapped, when it hits…, when it leaves the screen, when a variable reaches…, every few seconds*) and one or more actions (*move, glide, bounce, change score, set/change/show variable, jump to, spawn, destroy, go to state, play effect, **play sound**, **background music**, go to page, win, game over…*).

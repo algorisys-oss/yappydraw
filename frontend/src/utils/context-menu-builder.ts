@@ -14,7 +14,7 @@ import {
     store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
     blendShapes, blendAlongPath, blendShapesMorph,
-    toggleRecolorPanel, toggleBehaviorsPanel,
+    toggleRecolorPanel, toggleBehaviorsPanel, isDevMode,
     toggleShapeBuilder,
     toggleCutTool,
     toggleLivePaint,
@@ -1484,7 +1484,8 @@ function buildContextMenuItems(
             items.push(
                 { label: 'Eyedropper — pick style from…', icon: '💧', onClick: () => startEyedropper() },
                 { label: 'Recolor Artwork…', icon: '🌈', onClick: () => toggleRecolorPanel(true) },
-                ...(selectionCount === 1 ? [{ label: 'Edit Behaviors (Game)…', icon: '🎮', onClick: () => toggleBehaviorsPanel(true) }] : []),
+                // Game authoring is Dev Mode only (see isDevMode) — it is still being built.
+                ...(selectionCount === 1 && isDevMode() ? [{ label: 'Edit Behaviors (Game)…', icon: '🎮', onClick: () => toggleBehaviorsPanel(true) }] : []),
             );
         }
         if (selectionCount === 2) {

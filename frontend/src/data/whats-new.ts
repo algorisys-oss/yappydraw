@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.234', date: '2026-09-04', items: [
+        'A new Dev Mode switch in Settings, under General. It is off, and it hides the parts of YappyDraw that are still being built — starting with the Game builder, which has been sitting in the menu since it was first sketched. If you never used it, the menu is a little shorter now.',
+        'If you do want it, turn Dev Mode on and the Game group comes straight back. Anything you have already made is safe either way: a drawing that contains a game keeps its rules, its script and its playable HTML export whether the switch is on or off.',
+        'Future half-finished features will appear behind the same switch, so it is worth a look after an update if you like trying things early.',
+    ] },
     { version: '0.8.233', date: '2026-09-04', items: [
         'Collaboration is being built, and the Founding Supporter page now says what it will mean for you. Every feature in YappyDraw stays free for everyone, collaboration included — you will be able to point it at a server of your own and work with other people without paying anybody. What costs money is the server we run, because hosting live collaboration bills every month for everyone using it.',
         'Founders get that hosting free for a year from the day it launches, and a founder discount for as long as they want it afterwards. Not free forever, because one payment cannot honestly cover a cost that recurs forever — and a promise we would have to take back later is worth less than a smaller one we can keep.',

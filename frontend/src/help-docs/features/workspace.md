@@ -402,6 +402,32 @@ of the class doesn't dump you back into the full tool set.
 
 Scripting: `Yappy.setTeachingMode(true)`, `Yappy.getTeachingMode()`, `Yappy.toggleTeachingMode()`.
 
+## Dev Mode
+
+**Settings ▸ General ▸ Dev Mode** shows the parts of Yappy that are still being built. It is
+**off by default**, so an unfinished tool never sits in the menu getting in the way of everyday
+drawing — and on by choice, if you want to try things early.
+
+Today it reveals:
+
+- **Menu → Game** — the whole Arcade group: *New Game*, *My Games*, *Build*, *Node Graph*,
+  *Blueprint*, *Play* and *Code* (see the **Arcade** doc).
+- **Edit Behaviors (Game)…** in the right-click menu of a single selected object.
+
+More work-in-progress features will appear behind this switch as they are built, so it is worth
+checking after an update.
+
+:::tip
+Only the *entry points* are hidden. A document that already contains a game still holds its
+behaviors and script with Dev Mode off, exports normally, and the `Yappy.*` game APIs keep
+working — turning the switch back on shows the builder again with nothing lost.
+:::
+
+Like Teaching mode it is a **per-browser preference**: remembered across reloads, and never read
+from a document, so opening a file someone sent you cannot turn unfinished features on for you.
+
+Scripting: `Yappy.setDevMode(true)`, `Yappy.getDevMode()`, `Yappy.toggleDevMode()`.
+
 ## Paste & drop
 
 <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes whatever the clipboard holds — copied Yappy objects,

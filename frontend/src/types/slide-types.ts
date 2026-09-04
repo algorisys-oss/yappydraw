@@ -142,6 +142,14 @@ export interface GlobalSettings {
      * from a loaded document, so opening someone else's file cannot flip it. Default OFF.
      */
     teachingMode?: boolean;
+    /**
+     * Dev mode: reveal work-in-progress surfaces that are not ready for everyday users
+     * (today the Game builder; more will hang off this flag as they are built). Like
+     * `teachingMode` an app-level preference read from localStorage only, never from a
+     * loaded document — a file someone sent you must not be able to unlock unfinished
+     * features. Default OFF. Gate new WIP UI with `isDevMode()` from the store.
+     */
+    devMode?: boolean;
 }
 
 /**

@@ -174,6 +174,27 @@ export const readTeachingMode = (): boolean => {
 };
 
 /**
+ * Dev mode — the switch that reveals work-in-progress surfaces (today: the whole Game
+ * group; tomorrow whatever is half-built). Same shape as `readTeachingMode`: localStorage
+ * only, never from a loaded document, because a document must not be able to unlock
+ * unfinished UI on someone else's machine. Default OFF.
+ */
+export const readDevMode = (): boolean => {
+    try { return (localStorage.getItem('devMode') ?? '0') !== '0'; } catch { return false; }
+};
+
+/**
+ * The gate for work-in-progress features. Call it (don't read the setting directly) so
+ * every WIP surface is greppable and flips together:
+ *
+ *     <Show when={isDevMode()}> …unfinished thing… </Show>
+ *
+ * It reads the store, so it is reactive — a UI wrapped in it appears and disappears the
+ * moment the Settings toggle changes, with no reload.
+ */
+export const isDevMode = (): boolean => store.globalSettings.devMode === true;
+
+/**
  * What stays reachable in Teaching mode — a WHITELIST, deliberately.
  *
  * `ToolType` is `ElementType | 'lasso' | 'crop'`, so it spans every UML / BPMN / wireframe /
@@ -627,6 +648,7 @@ const initialState: AppState = {
         showQuickToolbar: true, // Default to showing the toolbar
         showDimensions: readShowDimensions(),
         teachingMode: readTeachingMode(),
+        devMode: readDevMode(),
         // P3 by default, falling back to sRGB where the browser can't render it
         // (see defaultPaletteId — an unparseable canvas fillStyle is silently
         // ignored, so an unsupported palette draws in the wrong colour).
@@ -1990,6 +2012,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     if (updates.teachingMode !== undefined) {
         try { localStorage.setItem('teachingMode', updates.teachingMode ? '1' : '0'); } catch { /* ignore */ }
     }
+    if (updates.devMode !== undefined) {
+        try { localStorage.setItem('devMode', updates.devMode ? '1' : '0'); } catch { /* ignore */ }
+    }
     if (updates.defaultTool !== undefined) {
         try { localStorage.setItem('defaultTool', updates.defaultTool); } catch { /* ignore */ }
     }
@@ -2957,6 +2982,7 @@ export const loadDocument = (doc: any) => {
             // not a property of the drawing. Absent preference = OFF.
             gs.showDimensions = readShowDimensions();
             gs.teachingMode = readTeachingMode();
+            gs.devMode = readDevMode();
             gs.defaultTool = readDefaultTool();
             gs.pointerStyle = readPointerStyle();
             gs.penPressure = lsBool('penPressure', gs.penPressure);

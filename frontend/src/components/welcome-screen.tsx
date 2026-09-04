@@ -1,5 +1,5 @@
 import { type Component, Show, createEffect, onCleanup, onMount, createSignal, For } from 'solid-js';
-import { store, setStore } from '../store/app-store';
+import { store, setStore, isDevMode } from '../store/app-store';
 import { YappyMascot } from './mascot';
 import { listDrawings, openDrawing, type DrawingMeta } from '../storage/drawings-store';
 import { setShowDrawingsGallery } from './drawings-gallery-signal';
@@ -48,7 +48,11 @@ export const WelcomeScreen: Component = () => {
         'freehand', 'color', 'fills', 'animationPresets', 'keyframes', 'slides',
         'designStudio', 'games', 'export', 'privacy',
     ];
-    const features = () => FEATURE_ORDER.map((key) => t(`welcomeFeatures.${key}`));
+    /** Features hidden unless Dev Mode is on — promising something the menu doesn't offer is worse than saying nothing. */
+    const DEV_ONLY_FEATURES = new Set<WelcomeFeatureKey>(['games']);
+    const features = () => FEATURE_ORDER
+        .filter((key) => !DEV_ONLY_FEATURES.has(key) || isDevMode())
+        .map((key) => t(`welcomeFeatures.${key}`));
 
     return (
         <Show when={isVisible()}>
