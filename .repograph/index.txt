@@ -922,7 +922,7 @@ scripts/i18n-lint.mjs | javascript | 135 | isProse:39 walk:48 findStrings:59
 scripts/i18n-scaffold.mjs | javascript | 92 | in:6 quote:38 Dictionary:65
 scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 languageName:127 of:147 userContent:181 save:198 parseTranslations:206
 scripts/prerender.ts | typescript | 80 | lastmodFor:48 main:61
-scripts/publish-oss.sh | shell | 223 | info:40 warn:41 error:42
+scripts/publish-oss.sh | shell | 231 | info:40 warn:41 error:42
 scripts/record-gifs.mjs | javascript | 173 | clip:48 toGif:64 run:75
 scripts/record-inflate-demo.mjs | javascript | 435 | performer:33 run:137
 scripts/record-showcase.mjs | javascript | 336 | run:80
