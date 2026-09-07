@@ -9225,6 +9225,14 @@ Two fixes, because either alone leaves the trap set:
   deploy with `/learn/` missing, 404ing an indexed section of the site while the editor
   looked perfectly fine.
 
+**Guarded in v0.8.239.** `publish-oss.sh` now refuses to push a tree missing anything the
+build reads, and the list is *derived* rather than hand-written: the prerenderer declares
+its inputs as `path.join(REPO, '<path>')`, so grepping for that pattern finds them and an
+input added the same way tomorrow is covered without anyone remembering. A `--verify` flag
+additionally runs `npm ci` and `npm run build` inside the published tree, which is the only
+check that tests what the host tests; the ship-it flow passes it. Re-introducing this exact
+bug now fails the publish with an explanatory error instead of a green push.
+
 Three things worth keeping:
 
 - **"No logs" narrows the field, it does not name the culprit.** #344 established that an

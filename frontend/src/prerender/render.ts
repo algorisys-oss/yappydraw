@@ -203,7 +203,7 @@ const foundersBody = (checkoutUrl: string): string => {
     // threshold change in data/founders.ts cannot leave the copy quietly disagreeing with it.
     const tiers = CONTRIBUTION.tiers.map((tier, i) => {
         const benefits = benefitsUpTo(i).map((b) => `<li>${escapeText(b)}</li>`).join('');
-        return `<h2>${escapeText(tier.name)} &mdash; ${from(tier)}</h2>
+        return `<h2>${escapeText(tier.name)}: ${from(tier)}</h2>
     <ul class="founders-benefits">${benefits}</ul>`;
     }).join('\n    ');
 
@@ -215,8 +215,8 @@ const foundersBody = (checkoutUrl: string): string => {
     <p class="founders-fineprint">You choose the amount on the next page, from ${inr(CONTRIBUTION.minInr)}
     upwards, inclusive of all applicable taxes. One payment, not a subscription: nothing recurs and
     there is nothing to cancel. <strong>Payment is taken in rupees.</strong> Cards issued outside
-    India work, and the dollar figures above are approximate &mdash; your bank converts at its own
-    rate, so what you are charged will be close to them rather than exactly them.</p>`
+    India work, and the dollar figures above are approximate. Your bank converts at its own rate,
+    so what you are charged will be close to them rather than exactly them.</p>`
         : '<p class="founders-soldout">Contributions are not open yet. Check back shortly.</p>';
 
     return `<header class="doc-header">
@@ -224,7 +224,7 @@ const foundersBody = (checkoutUrl: string): string => {
     <p class="doc-intro">YappyDraw is free and open source, and it stays that way. This is how the work gets paid for.</p>
   </header>
   <section class="doc-section founders">
-    <p>There is one page and one payment, and you decide the amount &mdash; anything from
+    <p>There is one page and one payment, and you decide the amount, anything from
     ${inr(CONTRIBUTION.minInr)} (about ${usd(CONTRIBUTION.minUsd)}) upwards. Give what the thing
     is worth to you. Two amounts are worth knowing about, because they come with something in
     return.</p>
@@ -236,16 +236,16 @@ const foundersBody = (checkoutUrl: string): string => {
     <p>Collaboration is being built and is <strong>not available yet</strong>, so nothing on this
     page is offering it today. When it arrives, it works like this, and it is worth reading before
     you pay rather than after.</p>
-    <p><strong>Every feature in the app stays free for everyone, always &mdash; collaboration
-    included.</strong> There is no Pro build, no licence check and no feature flag: the
+    <p><strong>Every feature in the app stays free for everyone, always. That includes
+    collaboration.</strong> There is no Pro build, no licence check and no feature flag: the
     collaboration client ships in the ordinary AGPL app, and anyone at all can point it at a server
     of their own and work together without paying anyone anything.</p>
     <p>What costs money is the <em>server we run</em>. Hosting real-time collaboration is a bill
     that arrives every month for every active person on it, and that is the part a payment covers.
     <strong>Founding members get a permanent discount on it</strong> when it launches. We are not
     promising it free, because a single payment cannot honestly fund a cost that recurs every
-    month for as long as you use it &mdash; and a promise we would have to withdraw later is worth
-    less than a smaller one we can keep.</p>
+    month for as long as you use it. A promise we would have to withdraw later is worth less than
+    a smaller one we can keep.</p>
     <p><strong>Founding members also get the server's source.</strong> The app you are using is
     AGPL and public already; the collaboration server is a separate program, and founding members
     get access to its source once it exists, so you can read it, audit it and run it yourself
@@ -253,15 +253,15 @@ const foundersBody = (checkoutUrl: string): string => {
     <h2>About the desktop app</h2>
     <p><strong>The YappyDraw client is free.</strong> The web app is AGPL, it always will be, and
     nothing in it is behind a payment.</p>
-    <p><strong>Desktop builds are extended to founding members</strong> &mdash; packaged, signed
+    <p><strong>Desktop builds are extended to founding members</strong>: packaged, signed
     apps for macOS, Windows and Linux, ready to install. The desktop source is in the same public
     repository as everything else, so anyone can build it themselves; what a founding place gets
     you is the build, already done.</p>
     <h2>What you are not buying</h2>
     <p>A tier in the software. There is no Pro version and there is no feature behind a payment,
     now or later. YappyDraw is <a href="https://github.com/algorisys-oss/yappydraw" rel="noopener noreferrer">AGPL-3.0</a>,
-    so anyone can read the app's source, fork it, and run it without paying anyone anything &mdash;
-    that is true of the collaboration client too. The one thing a contribution buys that a fork
+    so anyone can read the app's source, fork it, and run it without paying anyone anything.
+    That is true of the collaboration client too. The one thing a contribution buys that a fork
     cannot take is source access to the <em>collaboration server</em>, which is a separate
     program and not part of the AGPL app. Everything else you are funding is the work continuing,
     and what you get back is recognition, access and a say in it.</p>

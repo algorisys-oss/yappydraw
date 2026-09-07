@@ -985,7 +985,7 @@ export const de: Dictionary = {
         github: 'Auf GitHub sponsern',
         githubNote: 'Einmalig oder monatlich, in Ihrer Währung. Weltweit verfügbar.',
         founders: 'YappyDraw unterstützen',
-        foundersNote: 'Eine Zahlung, Betrag frei ab 100 ₹. Ab 1.000 ₹ steht Ihr Name dauerhaft in der App; ab 2.499 ₹ werden Sie Gründungsmitglied — mit eigener Gründerseite, Quellcode-Zugang zum Kollaborationsserver, Desktop-Builds, dem Gründer-Kanal, kostenlosen oder vergünstigten Workshops und einem dauerhaften Gründerrabatt auf die gehostete Zusammenarbeit. Ohne Frist. Abgerechnet wird in Rupien; Karten aus dem Ausland funktionieren, Ihre Bank rechnet um (etwa 2 $, 10 $ bzw. 29 $).',
+        foundersNote: 'Eine Zahlung, Betrag frei ab 100 ₹. Ab 1.000 ₹ steht Ihr Name dauerhaft in der App; ab 2.499 ₹ werden Sie Gründungsmitglied, mit eigener Gründerseite, Quellcode-Zugang zum Kollaborationsserver, Desktop-Builds, dem Gründer-Kanal, kostenlosen oder vergünstigten Workshops und einem dauerhaften Gründerrabatt auf die gehostete Zusammenarbeit. Ohne Frist. Abgerechnet wird in Rupien; Karten aus dem Ausland funktionieren, Ihre Bank rechnet um (etwa 2 $, 10 $ bzw. 29 $).',
         freeForever: 'Völlig freiwillig. Keine Funktion von YappyDraw kostet etwas, und das bleibt so.',
     },
 

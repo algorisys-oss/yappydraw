@@ -98,7 +98,7 @@ export const CONTRIBUTION: ContributionData = {
                 'A dedicated founders page thanking you, permanently',
                 'Source access to the collaboration server when it is built',
                 'Desktop builds for macOS, Windows and Linux, ready to install',
-                'The founders-only channel — WhatsApp or Telegram now, Discord or Slack as it grows',
+                'The founders-only channel (WhatsApp or Telegram now, Discord or Slack as it grows)',
                 'Free or discounted places at our paid webinars and workshops',
                 'A permanent founder discount on hosted collaboration when it launches',
             ],

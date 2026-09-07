@@ -999,7 +999,7 @@ export const en = {
         github: 'Sponsor on GitHub',
         githubNote: 'One-off or monthly, in your own currency. Works worldwide.',
         founders: 'Contribute to YappyDraw',
-        foundersNote: 'One payment, any amount from ₹100 up. ₹1,000 or more puts your name in the app permanently; ₹2,499 or more makes you a founding member — a dedicated founders page, source access to the collaboration server, desktop builds, the founders-only channel, free or discounted workshops, and a permanent founder discount on hosted collaboration. No deadline. Payment is in rupees; cards issued abroad work and your bank converts (roughly $2, $10 and $29).',
+        foundersNote: 'One payment, any amount from ₹100 up. ₹1,000 or more puts your name in the app permanently; ₹2,499 or more makes you a founding member, with a dedicated founders page, source access to the collaboration server, desktop builds, the founders-only channel, free or discounted workshops, and a permanent founder discount on hosted collaboration. No deadline. Payment is in rupees; cards issued abroad work and your bank converts (roughly $2, $10 and $29).',
         freeForever: 'Entirely optional. Nothing in YappyDraw is behind a payment, and nothing ever will be.',
     },
 

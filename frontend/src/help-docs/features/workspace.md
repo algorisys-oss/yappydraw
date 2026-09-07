@@ -623,7 +623,7 @@ small dialog with the ways to do it.
 
 Both are ordinary links that open their own page in a new tab.
 
-**There is one contribution and you choose the amount** — anything from ₹100 upwards.
+**There is one contribution and you choose the amount**, anything from ₹100 upwards.
 Two amounts come with something in return:
 
 | Amount | What it reaches |
@@ -634,14 +634,14 @@ Two amounts come with something in return:
 :::note
 **No deadline, and no "places remaining".** These are thresholds, not a countdown: give
 ₹2,499 today or in a year and you are a founding member either way. The page deliberately
-makes no claim about time, because it is a prerendered static site with no server — a
+makes no claim about time, because it is a prerendered static site with no server. A
 deadline there would be one we could not enforce and you could not check.
 :::
 
 :::note
 **Payment is taken in rupees.** Cards issued outside India work, but the charge is still in
 INR and your bank converts at its own rate, so the thresholds are quoted in rupees only.
-They come to roughly $2, $10 and $29 — approximately, which is why the page says "about".
+They come to roughly $2, $10 and $29, which is why the page says "about".
 :::
 
 :::note
@@ -653,8 +653,8 @@ it gets back is recognition, access and a say in what gets built.
 
 :::note
 **Collaboration, when it arrives, does not change that.** It is being built and is not
-available yet. Every feature in the app stays free for everyone — collaboration included —
-and anyone can point it at a server of their own and use it without paying anything. What
+available yet. Every feature in the app stays free for everyone, collaboration included, and
+anyone can point it at a server of their own and use it without paying anything. What
 costs money is the server *we* run, because hosting real-time collaboration bills every
 month for every active person on it. Founding members get a permanent discount on it;
 nobody is promised free hosting, because one payment cannot honestly fund a cost that

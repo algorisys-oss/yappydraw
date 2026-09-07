@@ -92,10 +92,19 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    build` disproved all four in three minutes, and that is the first thing to run). See bug
    #344. The peak still climbs release by release (a 2.7 MB `index` chunk, a 2.0 MB
    `export-game`), and nothing measures it, so the next ceiling arrives as an outage.
+   **But "no logs" is a hypothesis, not a diagnosis, and reading it as "OOM" is one letter
+   too far.** It narrows the field to things that KILL rather than fail; it does not exclude
+   a host that simply never surfaced an error the build did write. v0.8.236/237 failed
+   exactly that way — `npm run prerender` exited 1 on a plain ENOENT and Hostinger showed
+   nothing — and the peak measured 1.62 GB, which disproved OOM rather than confirming it.
+   So run the clean clone FIRST and measure memory second: reproduction beats recognition,
+   and it is usually faster. Note the clone must be of the **OSS mirror**, which is what the
+   host builds; a clone of this repo cannot see anything `.ossignore` removed.
 5. **Commit and tag** — commit on the working branch, then create an annotated tag for the version: `git tag -a v<version> -m "v<version> — <short headline>"` (e.g. `v0.8.124`). One tag per shipped version, `v`-prefixed, matching `package.json`.
 6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
 7. **Fast-forward `dev` to `main` and push it** — `dev` is the branch the next change starts from, so it must not be left behind the release (`git checkout dev && git merge --ff-only main && git push origin dev`).
-8. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
+8. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push --verify` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
+   **Always pass `--verify` on a release.** It runs `npm ci` and `npm run build` inside the published tree before pushing, which is the only check that tests what Hostinger tests: we build THIS repo and the host builds the mirror, so every `.ossignore` edit is an untested change to the deployed artifact. That has now failed three times in one shape — `scripts/` stripped once the prerenderer joined `npm run build` (hence `OSS_KEEP`), and `articles/` stripped in v0.8.236 under a comment reading "not consumed by the build", which broke two consecutive deploys while this repo built fine. A cheap derived check runs unconditionally (it greps the prerenderer for `path.join(REPO, …)` and asserts those paths survived), but it only sees inputs declared that way; `--verify` catches the rest, including a repeat of the #344 OOM.
    **This is where shipping ends.** Hostinger picks the build up from here; there is no
    manual upload step any more. Do not hand back a `dist/` to copy somewhere.
    *(Superseded: releases up to v0.8.203 required uploading `dist/` by hand with

@@ -2,6 +2,30 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## We publish a tree nobody builds
+
+The deploy broke twice because of a one-word change to `.ossignore`, and it was invisible
+here: we test this repo, the host builds the OSS mirror. Every exclusion is an untested edit
+to the deployed artifact, made in a file that looks like configuration and behaves like code.
+
+It had already happened once. `OSS_KEEP` exists in `publish-oss.sh` because `.ossignore`
+dropped all of `scripts/` and then the prerenderer moved into `npm run build`. The comment
+above it explains the whole failure clearly, and the same thing happened again eleven months
+later to a different directory, for the same reason, with a comment that was equally clear
+and equally wrong: *"not consumed by the build"*.
+
+That is the part worth sitting with. Both times someone understood the failure well enough to
+write it down accurately. Writing it down did not help. **A lesson in a doc changes what the
+next person knows; only a check changes what the next person can do.** The fix is not a better
+comment, it is `publish-oss.sh` refusing to push a tree that is missing something the build
+reads.
+
+And the check has to be derived, not listed, or it becomes the same artefact one level up: a
+hand-maintained list of build inputs would go stale exactly the way the comment did. The
+prerenderer already declares its inputs as `path.join(REPO, '<path>')`, so the guard greps for
+that and inherits every future input for free. **When you catch yourself writing a list that
+has to be kept in sync with code, look for the pattern in the code that already encodes it.**
+
 ## A known signature is a hypothesis, not a diagnosis
 
 Hostinger failed a build and showed no logs. We had seen that before: bug #344, where the
