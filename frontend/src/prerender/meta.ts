@@ -157,16 +157,16 @@ export const metaFor = (
 
         case 'founders':
             return {
-                title: 'Become a YappyDraw Founding Supporter',
+                title: 'Contribute to YappyDraw',
                 description: clamp(
-                    'Fund the work behind YappyDraw. Founder badge, early access, a vote on the roadmap and the private founder community. YappyDraw stays free and open source for everyone.',
+                    'Fund the work behind YappyDraw. Give any amount you like; ₹1,000 gets you a permanent credit and ₹2,499 makes you a founding member. YappyDraw stays free and open source for everyone.',
                 ),
                 canonical: urlFor('founders'),
                 ogType: 'website',
                 jsonLd: [
                     breadcrumb([
                         { name: SITE_NAME, url: `${SITE}/` },
-                        { name: 'Founding Supporters', url: urlFor('founders') },
+                        { name: 'Contribute', url: urlFor('founders') },
                     ]),
                 ],
                 noindex: false,

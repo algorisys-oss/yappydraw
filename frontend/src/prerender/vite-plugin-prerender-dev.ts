@@ -58,7 +58,7 @@ export const prerenderDevPlugin = (): Plugin => {
         /**
          * The renderer reads `process.env`, not `import.meta.env`, so it needs the
          * same `.env` Vite has already loaded for the bundle. Without this the dev
-         * page says the Founding Supporter programme "is not open yet" while the
+         * page says contributions "are not open yet" while the
          * built one offers checkout — the same disagreement that once shipped to
          * production (see scripts/prerender.ts). Existing values win.
          */

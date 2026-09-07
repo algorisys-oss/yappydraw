@@ -983,8 +983,8 @@ export const es: Dictionary = {
         razorpayNote: 'Tarjeta, UPI y banca en línea. Tú eliges el importe. Ideal desde la India.',
         github: 'Patrocinar en GitHub',
         githubNote: 'Puntual o mensual, en tu moneda. Disponible en todo el mundo.',
-        founders: 'Hazte Mecenas fundador',
-        foundersNote: 'Pago único de 2499 ₹. Insignia de fundador, acceso anticipado, voto sobre la hoja de ruta, la comunidad privada de fundadores y un año de colaboración alojada gratis cuando se lance.',
+        founders: 'Contribuir a YappyDraw',
+        foundersNote: 'Un solo pago, el importe que quieras desde 100 ₹. A partir de 1000 ₹ tu nombre aparece en la aplicación de forma permanente; a partir de 2499 ₹ te conviertes en miembro fundador: página dedicada a los fundadores, acceso al código fuente del servidor de colaboración, versiones de escritorio, el canal exclusivo de fundadores, talleres gratuitos o con descuento y un descuento permanente en la colaboración alojada. Sin fecha límite. El cobro se realiza en rupias; las tarjetas extranjeras funcionan y tu banco hace la conversión (unos 2 $, 10 $ y 29 $).',
         freeForever: 'Totalmente opcional. Ninguna función de YappyDraw es de pago, y nunca lo será.',
     },
 

@@ -8,7 +8,45 @@ what pulls it in, then check whether it actually reaches users — the `browser`
 parent package, and a fingerprint grep over `dist/assets/*.js`. A vulnerability in code that is
 never bundled and never executed is a different thing from one that ships.
 
-Last reviewed: **2026-08-21** (v0.8.210).
+Last reviewed: **2026-09-07** (v0.8.236).
+
+---
+
+## Fixed by override: four transitive advisories (2026-09-07)
+
+All four were resolved with `overrides` in `package.json` — patch-level bumps, every one inside
+the parent's own declared range, so nothing was forced past what its dependant asked for.
+
+| Package | Advisory | Was → now | Parent's range | Ships to browser? |
+|---|---|---|---|---|
+| `@xmldom/xmldom` | GHSA-6gmq-8vp8-gcm6 — XML fragment injection via `EntityReference.nodeName` | 0.9.10 → 0.9.12 | `speech-rule-engine` pins `0.9.10` | **No** |
+| `dompurify` | GHSA-55q2-fjhq-7xh7 — `IN_PLACE` hook removal leaves a detached subtree executable (XSS) | 3.4.12 → 3.4.15 | `jspdf` optional `^3.3.1` | **Yes** |
+| `fflate` | GHSA-px8p-9vwx-vf98 — `unzipSync` infinite loop on malformed ZIP64 | 0.8.2 → 0.8.3 | `jspdf` `^0.8.1` | No |
+| `qs` | GHSA-x5fp-wj9c-mxmx, GHSA-4mjr-xmp4-gh2g | 6.15.3 → 6.16.0 | `express` (backend only) | **No** |
+
+Only **one of the four was reachable at all**, and it is worth recording why the other three were
+not, because the severity ordering and the exploitability ordering disagree completely:
+
+- **`@xmldom/xmldom`** (the only *open* Dependabot alert, #5) needs two things: the app calling
+  `createEntityReference()` with attacker input, then serializing with
+  `{ requireWellFormed: true }`. `speech-rule-engine` does neither — neither symbol appears
+  anywhere in it. And it never loads the package in a browser at all:
+  `system_external.js` reads `documentSupported ? window : extRequire('@xmldom/xmldom')`, so the
+  native DOM is used and Vite drops the package. Zero hits in `dist/`. Inert twice over.
+- **`fflate`** is used by jspdf for *deflate* when writing a PDF. The vulnerable `unzipSync` does
+  not appear in jspdf's bundle at all (0 hits), so the parser is never reached.
+- **`qs`** arrives via `express`, which is the backend. Fingerprinting `dist/assets/*.js` for
+  `arrayLimit|allowPrototypes` and `X-Powered-By|expressInit` returns nothing, and
+  `publish-oss.sh` strips server dependencies from the published `package.json` — which is why
+  Dependabot never raised it against the OSS repo.
+- **`dompurify` is the real one.** It ships: there is a dedicated `purify.es-*.js` chunk. We only
+  use jsPDF's constructor, not its `.html()` path, so the hook behaviour is not exercised today —
+  but it is *present in the product*, which is a different category from the other three, and a
+  patch bump was free.
+
+Note the grep discipline this repeated: a bare `grep -rl qs dist/` matched 9 files and meant
+nothing, because `qs` is a substring of half the identifiers in minified output. Only a
+package-specific fingerprint answers the question.
 
 ---
 

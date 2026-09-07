@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.237', date: '2026-09-07', items: [
+        'Supporting YappyDraw is one page and one payment now, and you choose the amount — anything from ₹100 upwards. Give what it is worth to you.',
+        'Two amounts come with something in return. ₹1,000 or more puts your name in the app\u2019s supporters list, permanently. ₹2,499 or more makes you a founding member: a founders page thanking you, the founders-only channel, ready-made desktop apps for Mac, Windows and Linux, free or discounted places at our workshops, the collaboration server\u2019s source code once it exists, and a permanent discount on hosted collaboration when that launches.',
+        'No countdown and no "places remaining". Give ₹2,499 today or in a year and you are a founding member either way.',
+        'Every feature in YappyDraw stays free for everyone, as always. None of this is a tier, and there is still nothing behind a payment.',
+        'Payment is taken in rupees. Cards issued outside India work — your bank converts, so the dollar figures on the page are approximate rather than a price we charge.',
+    ] },
     { version: '0.8.236', date: '2026-09-07', items: [
         'Your exports now match your canvas. If a drawing used more than one layer, the PNG or JPG could come out with the shapes stacked in a different order than you were looking at — a shadow buried under the thing it was cast by, a shirt over a neck. Everything that leaves the app (PNG, JPG, SVG, PDF, PowerPoint, copy-as-image) now stacks exactly the way the canvas does.',
         'The tool you pick stays picked. Draw three rectangles in a row without going back to the toolbar between them, the way Illustrator and Figma work. The shape you just drew is still selected so you can restyle it straight away. If you preferred the old way, Settings has a switch for it.',

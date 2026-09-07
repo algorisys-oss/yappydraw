@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.236",
+  "version": "0.8.237",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -37,6 +37,10 @@
     "vite-plugin-solid": "^2.11.10"
   },
   "overrides": {
-    "ejs": "^6.0.1"
+    "ejs": "^6.0.1",
+    "@xmldom/xmldom": "^0.9.12",
+    "dompurify": "^3.4.15",
+    "fflate": "^0.8.3",
+    "qs": "^6.16.0"
   }
 }

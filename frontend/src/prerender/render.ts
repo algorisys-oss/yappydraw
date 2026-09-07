@@ -24,9 +24,7 @@ import { pathFor, urlFor, SITE } from '../routes';
 import { metaFor } from './meta';
 import { buildPage, type NavItem } from './page';
 import { exampleTemplates } from '../examples/templates';
-import {
-    FOUNDERS, FOUNDER_BENEFITS, foundersRemaining, foundersSoldOut, foundersAsOfLabel,
-} from '../data/founders';
+import { CONTRIBUTION, benefitsUpTo } from '../data/founders';
 
 /**
  * Front matter may carry search-facing overrides; the renderer passes them through.
@@ -162,51 +160,56 @@ const navFor = (docs: RenderedDocument[], key: 'helpDoc' | 'learnArticle'): NavI
  * The /founders/ page body.
  *
  * Static HTML with no form and no payment SDK: the button is a link to a Razorpay
- * page that Razorpay hosts, which is also where the customer's name and email are
- * collected. Nothing here needs a server.
+ * Payment Page that Razorpay hosts, which is also where the amount, the payer's name
+ * and their email are collected. Nothing here needs a server.
  *
- * The count is hidden unless `FOUNDERS.showCount` is on, and when shown it prints its
- * `asOf` date without exception. A scarcity figure that cannot say when it was true is
- * a figure a reader is right to distrust, and this one is updated by hand (see
- * data/founders.ts for why).
+ * ONE STATE, NOT THREE. An earlier draft had the page open and close on published
+ * dates. It cannot: this file runs at BUILD time and its output is frozen into static
+ * HTML, so a window would appear to shut only on the next deploy. What is left is the
+ * honest version — a floor, two published thresholds, and no claim about time at all.
+ * The only conditional here is whether a checkout URL is configured.
  */
 const foundersBody = (checkoutUrl: string): string => {
-    const remaining = foundersRemaining();
-    const soldOut = foundersSoldOut();
-    const benefits = FOUNDER_BENEFITS.map((b) => `<li>${escapeText(b)}</li>`).join('');
-    const pct = Math.min(100, Math.round((FOUNDERS.claimed / FOUNDERS.total) * 100));
+    const inr = (n: number) => `&#8377;${n.toLocaleString('en-IN')}`;
+    const usd = (n: number) => `&#36;${n}`;
+    // Rupees first and unqualified, dollars marked approximate: the charge is INR, and a
+    // payer's own bank decides what that costs them. See data/founders.ts on `minUsd`.
+    const from = (t: { minInr: number; minUsd: number }) => `${inr(t.minInr)} or more (about ${usd(t.minUsd)})`;
 
-    // The remaining-places bar is opt-in (data/founders.ts `showCount`). An accurate
-    // count is only worth printing once enough places are taken; "1,000 of 1,000
-    // remaining" is true and says the wrong thing. Hidden, the page simply makes its
-    // case. Sold-out handling below does not depend on this flag.
-    const count = FOUNDERS.showCount
-        ? `<div class="founders-count">
-      <div class="founders-bar"><span style="width:${pct}%"></span></div>
-      <p><strong>${remaining.toLocaleString('en-IN')} of ${FOUNDERS.total.toLocaleString('en-IN')}</strong> founding places remaining
-      <span class="founders-asof">as of ${escapeText(foundersAsOfLabel())}, counted by hand</span></p>
-    </div>
-    `
-        : '';
+    // Tiers are authored as what each ADDS; a reader wants the whole of what they get, so
+    // `benefitsUpTo` flattens them here. Rendered from the data rather than written out, so a
+    // threshold change in data/founders.ts cannot leave the copy quietly disagreeing with it.
+    const tiers = CONTRIBUTION.tiers.map((tier, i) => {
+        const benefits = benefitsUpTo(i).map((b) => `<li>${escapeText(b)}</li>`).join('');
+        return `<h2>${escapeText(tier.name)} &mdash; ${from(tier)}</h2>
+    <ul class="founders-benefits">${benefits}</ul>`;
+    }).join('\n    ');
 
-    // The price is quoted inclusive of taxes, and says so. Quoting a price and staying
-    // silent about tax is what produces the argument later, with a payer asking for an
-    // invoice rather than with anyone official.
-    const cta = soldOut
-        ? `<p class="founders-soldout">All ${FOUNDERS.total} founding places have been taken. Thank you.</p>`
-        : checkoutUrl
-            ? `<a class="founders-cta" href="${escapeText(checkoutUrl)}" rel="noopener noreferrer">Become a Founding Supporter &middot; &#8377;${FOUNDERS.priceInr.toLocaleString('en-IN')}</a>
-    <p class="founders-fineprint">One payment of &#8377;${FOUNDERS.priceInr.toLocaleString('en-IN')}, inclusive of all applicable taxes. Not a subscription and nothing recurring.</p>`
-            : '<p class="founders-soldout">Founding places are not open yet. Check back shortly.</p>';
+    // With no URL configured the page still renders and simply does not offer to sell. A dead
+    // button is worse than an absent one: it takes a decision the reader has already made and
+    // wastes it. See config/support.ts for why no URL is ever committed to the source.
+    const cta = checkoutUrl
+        ? `<a class="founders-cta" href="${escapeText(checkoutUrl)}" rel="noopener noreferrer">Contribute &middot; choose your amount</a>
+    <p class="founders-fineprint">You choose the amount on the next page, from ${inr(CONTRIBUTION.minInr)}
+    upwards, inclusive of all applicable taxes. One payment, not a subscription: nothing recurs and
+    there is nothing to cancel. <strong>Payment is taken in rupees.</strong> Cards issued outside
+    India work, and the dollar figures above are approximate &mdash; your bank converts at its own
+    rate, so what you are charged will be close to them rather than exactly them.</p>`
+        : '<p class="founders-soldout">Contributions are not open yet. Check back shortly.</p>';
 
     return `<header class="doc-header">
-    <h1>Become a YappyDraw Founding Supporter</h1>
+    <h1>Contribute to YappyDraw</h1>
     <p class="doc-intro">YappyDraw is free and open source, and it stays that way. This is how the work gets paid for.</p>
   </header>
   <section class="doc-section founders">
-    ${count}<h2>What you get</h2>
-    <ul class="founders-benefits">${benefits}</ul>
+    <p>There is one page and one payment, and you decide the amount &mdash; anything from
+    ${inr(CONTRIBUTION.minInr)} (about ${usd(CONTRIBUTION.minUsd)}) upwards. Give what the thing
+    is worth to you. Two amounts are worth knowing about, because they come with something in
+    return.</p>
+    ${tiers}
     ${cta}
+    <p class="founders-fineprint">Names are published only if you ask us to when you pay, and you
+    can use any name you like or stay anonymous. Ask and we will take it down.</p>
     <h2>About the collaboration server</h2>
     <p>Collaboration is being built and is <strong>not available yet</strong>, so nothing on this
     page is offering it today. When it arrives, it works like this, and it is worth reading before
@@ -217,31 +220,45 @@ const foundersBody = (checkoutUrl: string): string => {
     of their own and work together without paying anyone anything.</p>
     <p>What costs money is the <em>server we run</em>. Hosting real-time collaboration is a bill
     that arrives every month for every active person on it, and that is the part a payment covers.
-    <strong>Founders get it free for a year from the day it launches</strong>, and afterwards a
-    founder discount for as long as they want to keep using it. We are not promising free hosting
-    forever, because a single payment cannot honestly fund a cost that recurs forever &mdash; and a
-    promise we would have to withdraw later is worth less than a smaller one we can keep.</p>
+    <strong>Founding members get a permanent discount on it</strong> when it launches. We are not
+    promising it free, because a single payment cannot honestly fund a cost that recurs every
+    month for as long as you use it &mdash; and a promise we would have to withdraw later is worth
+    less than a smaller one we can keep.</p>
+    <p><strong>Founding members also get the server's source.</strong> The app you are using is
+    AGPL and public already; the collaboration server is a separate program, and founding members
+    get access to its source once it exists, so you can read it, audit it and run it yourself
+    rather than take our word for what it does with your drawings.</p>
+    <h2>About the desktop app</h2>
+    <p><strong>The YappyDraw client is free.</strong> The web app is AGPL, it always will be, and
+    nothing in it is behind a payment.</p>
+    <p><strong>Desktop builds are extended to founding members</strong> &mdash; packaged, signed
+    apps for macOS, Windows and Linux, ready to install. The desktop source is in the same public
+    repository as everything else, so anyone can build it themselves; what a founding place gets
+    you is the build, already done.</p>
     <h2>What you are not buying</h2>
-    <p>A tier. There is no Pro version and there is no feature behind a payment, now or later.
-    YappyDraw is <a href="https://github.com/algorisys-oss/yappydraw" rel="noopener noreferrer">AGPL-3.0</a>,
-    so anyone can read the source, fork it, and run it without paying anyone anything. What you are
-    funding is the work continuing, and what you get back is recognition, access and a say in it.</p>
+    <p>A tier in the software. There is no Pro version and there is no feature behind a payment,
+    now or later. YappyDraw is <a href="https://github.com/algorisys-oss/yappydraw" rel="noopener noreferrer">AGPL-3.0</a>,
+    so anyone can read the app's source, fork it, and run it without paying anyone anything &mdash;
+    that is true of the collaboration client too. The one thing a contribution buys that a fork
+    cannot take is source access to the <em>collaboration server</em>, which is a separate
+    program and not part of the AGPL app. Everything else you are funding is the work continuing,
+    and what you get back is recognition, access and a say in it.</p>
     <h2>Where the money goes</h2>
     <p>To the people actively working on YappyDraw: developers, artists and testers. None of it is
     held back as profit. Payments are handled by Razorpay; nothing about your drawings is involved,
     and they never leave your browser.</p>
     <h2>Refunds and delivery</h2>
-    <p>A founding place is a one-off payment, not a subscription: nothing recurs and there is
-    nothing to cancel. Because something is promised in return, you can change your mind: email
-    support@algorisys.com within 7 days for a full refund, no reason needed. Founder benefits are
-    delivered by email within two working days of payment. The
+    <p>A contribution is a one-off payment, not a subscription: nothing recurs and there is
+    nothing to cancel. Because a founding place promises something in return, you can change your
+    mind: email support@algorisys.com within 7 days for a full refund, no reason needed. Benefits
+    are delivered by email within two working days of payment. The
     <a href="/refund-policy.html">Refund &amp; Cancellation Policy</a> and the
     <a href="/delivery-policy.html">Delivery Policy</a> have the detail.</p>
     <h2>What we do with your details</h2>
     <p>Razorpay collects your name, email and phone number to take the payment, and passes them to
-    us. We use them for one thing: reaching you as a founder, which means the community invite,
-    early-access notes and the occasional roadmap vote. We do not sell them, we do not pass them
-    to anyone else, and there is an unsubscribe link on everything we send. Ask us and we will
+    us. We use them for one thing: reaching you about your contribution, which means the community
+    invite, early-access notes and the occasional roadmap vote. We do not sell them, we do not pass
+    them to anyone else, and there is an unsubscribe link on everything we send. Ask us and we will
     delete you from the list, which does not affect anything you have already paid for. The
     <a href="/privacy-policy.html">privacy policy</a> has the full version.</p>
   </section>`;
@@ -400,13 +417,13 @@ export const renderAll = async (
             // No sidebar: this is a standalone page, not part of the help set, and a
             // shape list beside a payment page is only somewhere else to click.
             nav: [],
-            heading: 'Founding Supporters',
+            heading: 'Contribute',
             body: foundersBody(process.env.VITE_SUPPORT_FOUNDERS_URL ?? ''),
         }),
     );
     sitemap.push({
         url: urlFor('founders'),
-        lastmod: FOUNDERS.asOf,
+        lastmod: lastmodFor('frontend/src/data/founders.ts'),
         changefreq: 'weekly',
         priority: '0.7',
     });

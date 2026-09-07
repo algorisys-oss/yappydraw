@@ -2,6 +2,49 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A deadline a static site cannot enforce is the same lie as a counter it cannot verify
+
+The founders page has now failed the same way twice, and the second time was dressed as the fix
+for the first.
+
+Version one was a cap: "1,000 places, N claimed", counted by hand from the Razorpay dashboard.
+It was stale between updates by definition, so it was hidden behind a flag and never shown.
+Version two replaced it with **seasons** — a window that opens and closes on published dates,
+scarcity a reader can check against a calendar instead of taking on trust. That reasoning is
+sound and the thing it produced does not work, for a reason visible in the code that implements
+it:
+
+```ts
+/**
+ * Deliberately a hand-set flag rather than a date comparison against `new Date()`. This page
+ * is PRERENDERED at build time, so a date check would decide the season's state at the moment
+ * of the build and then freeze it into static HTML …
+ */
+status: 'open' | 'closed' | 'upcoming';
+```
+
+A window that only shuts on the next deploy is not a window. The comment correctly identifies
+why the automated version is impossible, then ships the manual version — which has exactly the
+property that sank the counter: a claim the site asserts and cannot keep true between deploys.
+Both were honest in intent, carefully built, and unverifiable; the second inherited the flaw
+along with the fix.
+
+What replaced both is a **threshold**: give ₹2,499 or more and you are a founding member, today
+or in a year. Nothing about it can go stale, because it is not a claim about the world — it is a
+promise about what we do, and a static site can keep those indefinitely.
+
+The general form: **a static site can only publish facts about itself.** A count, a deadline, a
+"3 spots left" — anything whose truth is decided by events after the build — degrades silently
+between deploys, and the more carefully you build it the longer it takes anyone to notice. Ask
+"what makes this stop being true, and who finds out?" before building the mechanism, not after.
+
+Corollary from the same rework: the ratchet only tightens. Dropping the cap made the cohort
+unbounded, which killed "hosted collaboration free for a year" — a per-user monthly cost funded
+by one-off payments is survivable against 1,000 people and not against an open number. It became
+a permanent discount. **Every benefit now has to cost the same whether fifty people join or five
+thousand**, which is a one-line test that a generous-sounding addition fails loudly instead of
+quietly.
+
 ## Two code paths for "the same" thing will drift, and only a user will notice
 
 Four of the ten defects in Anshika's Sep 2026 review were one shape: a rule implemented twice,
@@ -137,9 +180,14 @@ number that moves on its own, always stamped with `asOf`). None of that care was
 whether the number should be shown at all, because scarcity displays are copied from products
 that already have customers, where the same widget reads as momentum.
 
-It is now behind `FOUNDERS.showCount`, off by default, to be turned on when `claimed` is high
-enough to be worth showing. Nothing else changed: the sold-out state and the date stamp are
-untouched, so turning it on later is one boolean and no new decisions.
+It went behind `FOUNDERS.showCount`, off by default, to be turned on when `claimed` was high
+enough to be worth showing. Nothing else changed: the sold-out state and the date stamp were
+untouched, so turning it on later was one boolean and no new decisions.
+
+*(Update, 2026-09-07: it was never turned on, and the counter, the cap and the flag are all
+gone — see "A deadline a static site cannot enforce" above. The flag was the right call and it
+bought a year of nothing; the honest reading is that a mechanism kept behind a flag "for later"
+usually wants deleting, not defaulting.)*
 
 The general form is worth keeping: *"is this accurate?"* and *"does this say what I mean?"*
 are two different reviews, and passing the first is not passing the second.

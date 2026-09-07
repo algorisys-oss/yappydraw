@@ -997,8 +997,8 @@ export const fr: Dictionary = {
         razorpayNote: 'Carte bancaire, UPI et virement. Montant libre. Idéal depuis l’Inde.',
         github: 'Devenir sponsor sur GitHub',
         githubNote: 'Ponctuel ou mensuel, dans votre devise. Disponible partout dans le monde.',
-        founders: 'Devenir Membre fondateur',
-        foundersNote: '2 499 ₹, une seule fois. Badge de fondateur, accès anticipé, vote sur la feuille de route, communauté privée des fondateurs et un an de collaboration hébergée offerte dès son lancement.',
+        founders: 'Contribuer à YappyDraw',
+        foundersNote: 'Un seul paiement, du montant de votre choix à partir de 100 ₹. À partir de 1 000 ₹, votre nom figure dans l’application à titre permanent ; à partir de 2 499 ₹, vous devenez membre fondateur : page dédiée aux fondateurs, accès au code source du serveur de collaboration, versions de bureau, canal réservé aux fondateurs, ateliers gratuits ou à tarif réduit et remise permanente sur la collaboration hébergée. Sans date limite. Le paiement est prélevé en roupies ; les cartes étrangères fonctionnent et votre banque effectue la conversion (environ 2 $, 10 $ et 29 $).',
         freeForever: 'Entièrement facultatif. Aucune fonction de YappyDraw n’est payante, et cela ne changera pas.',
     },
 

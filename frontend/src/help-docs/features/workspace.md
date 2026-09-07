@@ -618,17 +618,37 @@ small dialog with the ways to do it.
 
 | Route | Good for |
 |---|---|
-| **Founding Supporter** | A one-off payment for the founding cohort. Founder badge, early access, a vote on the roadmap, the private founder community, and hosted collaboration free for a year once it launches. See [/founders/](/founders/). |
-| **Razorpay** | Cards, UPI and net banking, with an amount you choose. Best from India. |
+| **Contribute** | One payment, any amount you like. Opens [/founders/](/founders/), which explains what the amounts reach, and pays through Razorpay: cards, UPI and net banking. Best from India. |
 | **GitHub Sponsors** | One-off or monthly, in your own currency. Works worldwide. |
 
-All three are ordinary links that open their own page in a new tab.
+Both are ordinary links that open their own page in a new tab.
+
+**There is one contribution and you choose the amount** — anything from ₹100 upwards.
+Two amounts come with something in return:
+
+| Amount | What it reaches |
+|---|---|
+| **₹1,000 or more** | An honourable mention in the app's supporters list, permanently. |
+| **₹2,499 or more** | Founding member: everything above, plus a dedicated founders page thanking you, source access to the collaboration server when it is built, desktop builds for macOS, Windows and Linux, the founders-only channel, free or discounted places at our paid webinars and workshops, and a permanent founder discount on hosted collaboration when it launches. |
 
 :::note
-**Founding Supporter is not a paid tier.** There is no Pro version of YappyDraw and no
+**No deadline, and no "places remaining".** These are thresholds, not a countdown: give
+₹2,499 today or in a year and you are a founding member either way. The page deliberately
+makes no claim about time, because it is a prerendered static site with no server — a
+deadline there would be one we could not enforce and you could not check.
+:::
+
+:::note
+**Payment is taken in rupees.** Cards issued outside India work, but the charge is still in
+INR and your bank converts at its own rate, so the thresholds are quoted in rupees only.
+They come to roughly $2, $10 and $29 — approximately, which is why the page says "about".
+:::
+
+:::note
+**A contribution is not a paid tier.** There is no Pro version of YappyDraw and no
 feature behind a payment. The project is AGPL-3.0, so anyone can read the source, fork it
-and run it without paying anyone. What a founder funds is the work continuing; what they
-get back is recognition, early access and a say in what gets built.
+and run it without paying anyone. What a contribution funds is the work continuing; what
+it gets back is recognition, access and a say in what gets built.
 :::
 
 :::note
@@ -636,9 +656,9 @@ get back is recognition, early access and a say in what gets built.
 available yet. Every feature in the app stays free for everyone — collaboration included —
 and anyone can point it at a server of their own and use it without paying anything. What
 costs money is the server *we* run, because hosting real-time collaboration bills every
-month for every active person on it. Founders get that hosting free for a year from launch,
-then at a founder discount; nobody is promised free hosting forever, because one payment
-cannot honestly fund a cost that recurs forever.
+month for every active person on it. Founding members get a permanent discount on it;
+nobody is promised free hosting, because one payment cannot honestly fund a cost that
+recurs every month for as long as you use it.
 :::
 
 :::note
@@ -651,8 +671,9 @@ static site, and hosted payment pages are the only way to take a payment without
 
 If the **Support YappyDraw** item isn't in your menu, no support link is configured in that
 build. The entry, the command and the API call all hide themselves rather than offer a dead
-link. Self-hosters can set their own with the `VITE_SUPPORT_RAZORPAY_URL` and
-`VITE_SUPPORT_GITHUB_URL` build variables, or leave them empty to switch the feature off.
+link. Self-hosters can set their own with the `VITE_SUPPORT_FOUNDERS_URL`,
+`VITE_SUPPORT_RAZORPAY_URL` and `VITE_SUPPORT_GITHUB_URL` build variables, or leave them
+empty to switch the feature off.
 
 From a script:
 

@@ -93,15 +93,20 @@ const GITHUB_URL: string = import.meta.env.VITE_SUPPORT_GITHUB_URL ?? '';
 //  currently redirects to the plain profile, so a link there would go nowhere useful.)
 
 /**
- * The Founding Supporter checkout, which is a DIFFERENT Razorpay product from the
- * general Support link above and must not be the same URL.
+ * The contribute checkout that `/founders/` links to.
  *
- * `razorpay.me` is a pay-me link: it takes an amount and little else. A **Payment Page**
- * can carry a fixed price and custom input fields, and its monthly CSV export includes
- * email, phone and every custom field the payer filled in. Running a founder community
- * means knowing who the founders are and how to reach them, so the page has to be the
- * Payment Page: create one at a fixed price with fields for a preferred name for the
- * credits and a contact handle.
+ * The variable keeps its old name so an existing deployment does not have to be
+ * reconfigured, but what it points at has changed: it is now a **Customers Decide
+ * Amount** Payment Page, because there is one contribution page and the payer chooses
+ * what to give (see data/founders.ts).
+ *
+ * It must still be a Payment Page rather than a `razorpay.me` link. `razorpay.me` takes
+ * an amount and little else; a Payment Page carries custom input fields, and its monthly
+ * CSV export includes email, phone and every field the payer filled in. That export is
+ * the only record of who contributed and how to reach them — there is no server and no
+ * account system — so it is what the supporters list and the founder invites are built
+ * from. Create it with input fields for a preferred name for the credits and a contact
+ * handle, and set the minimum to match `CONTRIBUTION.minInr`.
  */
 const FOUNDERS_CHECKOUT_URL: string = import.meta.env.VITE_SUPPORT_FOUNDERS_URL ?? '';
 
@@ -118,24 +123,57 @@ const FOUNDERS_CHECKOUT_URL: string = import.meta.env.VITE_SUPPORT_FOUNDERS_URL 
  */
 const FOUNDERS_PATH = '/founders/';
 
-/** True when a founders checkout is configured, so the page can offer to sell. */
+/** True when a contribute checkout is configured, so the page can offer to take a payment. */
 export function hasFoundersCheckout(): boolean {
     return isSafeSupportUrl(FOUNDERS_CHECKOUT_URL);
 }
 
+/**
+ * Build the link list from three URLs, dropping any that is unset or unsafe.
+ *
+ * WHY THE DIRECT RAZORPAY LINK IS CONDITIONAL. There is one contribution now, of any
+ * amount, and `/founders/` is the page that explains what the amounts reach. Offering
+ * "Contribute" and "Support on Razorpay" side by side is two doors into the same room,
+ * and the second one skips the only page that says what a contribution gets you. So the
+ * direct link appears only as a FALLBACK, when no contribute page is configured — which
+ * is the self-hoster who set `VITE_SUPPORT_RAZORPAY_URL` and nothing else. They still get
+ * a working button rather than an empty dialog.
+ *
+ * Pure, and exported for the test: the module constants are baked from `import.meta.env`
+ * at load, so a test cannot vary them, and the fallback rule is exactly the part worth
+ * locking down. Note `primary` moves to whichever option is actually offered — the dialog
+ * draws at most one that way, so the two branches must never both set it.
+ */
+export function buildSupportLinks(
+    foundersCheckout: string,
+    razorpay: string,
+    github: string,
+): SupportLink[] {
+    const hasContribute = isSafeSupportUrl(foundersCheckout);
+    return [
+        // Internal path, so it is not host-checked — it is gated on the CHECKOUT being
+        // configured, because the page is only worth linking to if it can take a payment.
+        ...(hasContribute
+            ? [{
+                id: 'founders', labelKey: 'support.founders', noteKey: 'support.foundersNote',
+                url: FOUNDERS_PATH, primary: true,
+            } as SupportLink]
+            : []),
+        ...([
+            ...(hasContribute
+                ? []
+                : [{
+                    id: 'razorpay', labelKey: 'support.razorpay', noteKey: 'support.razorpayNote',
+                    url: razorpay, primary: true,
+                }]),
+            { id: 'github', labelKey: 'support.github', noteKey: 'support.githubNote', url: github },
+        ] as SupportLink[]).filter((link) => isSafeSupportUrl(link.url)),
+    ];
+}
+
 /** The configured, validated links, in the order they are shown. */
-export const SUPPORT_LINKS: SupportLink[] = [
-    ...(hasFoundersCheckout()
-        ? [{
-            id: 'founders', labelKey: 'support.founders', noteKey: 'support.foundersNote',
-            url: FOUNDERS_PATH, primary: true,
-        } as SupportLink]
-        : []),
-    ...([
-        { id: 'razorpay', labelKey: 'support.razorpay', noteKey: 'support.razorpayNote', url: RAZORPAY_URL },
-        { id: 'github', labelKey: 'support.github', noteKey: 'support.githubNote', url: GITHUB_URL },
-    ] as SupportLink[]).filter((link) => isSafeSupportUrl(link.url)),
-];
+export const SUPPORT_LINKS: SupportLink[] =
+    buildSupportLinks(FOUNDERS_CHECKOUT_URL, RAZORPAY_URL, GITHUB_URL);
 
 /** False when nothing is configured — the caller then hides the entry point entirely. */
 export function hasSupportLinks(): boolean {
@@ -143,4 +181,4 @@ export function hasSupportLinks(): boolean {
 }
 
 /** Exported for the unit test; not part of the public surface. */
-export const __testing = { isSafeSupportUrl, ALLOWED_HOSTS };
+export const __testing = { isSafeSupportUrl, ALLOWED_HOSTS, FOUNDERS_PATH };
