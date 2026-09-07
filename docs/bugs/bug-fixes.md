@@ -9194,6 +9194,49 @@ Failing right after publishing means "you ran it too early", and says so. That i
 the point of the check: "not yet" is worth more than a tick describing the last
 release.
 
+## Two releases never deployed, because .ossignore stripped a directory the build reads
+
+The live site served v0.8.235 for a day while v0.8.236 and v0.8.237 sat published in the
+OSS repo. Hostinger reported a failed build **with no logs**, which is the signature bug
+#344 taught us to read as OOM — and that is the wrong answer this time.
+
+The right first move was the one that settled #344: clean `git clone` of the OSS mirror,
+`npm ci`, `npm run build`. Three minutes, and it fails in a way nothing on the host said:
+
+```
+✓ built in 38.65s
+ Error: ENOENT: no such file or directory, scandir '.../ossbuild/articles'
+Exit status: 1
+```
+
+`vite build` succeeds. `npm run prerender` then dies, because `readArticles()` in
+`prerender/render.ts` scans `articles/` to generate `/learn/`, and the previous day's
+`fix(publish-oss): stop publishing articles/` (e57c6007) had added `articles` to
+`.ossignore` under the comment *"authoring source, not consumed by the build"*. It is
+consumed by the build. `git tag --contains e57c6007` returns exactly v0.8.236 and
+v0.8.237 — both failures, and no others.
+
+Two fixes, because either alone leaves the trap set:
+
+- `.ossignore` excludes `articles/vibe-architecting-yappydraw` — the one article marked
+  `internal: true` — instead of the parent. The directory the build needs now ships.
+- `readArticles()` turns a missing `articles/` into an error naming `.ossignore` as the
+  cause. It deliberately does **not** skip and carry on: that would produce a *successful*
+  deploy with `/learn/` missing, 404ing an indexed section of the site while the editor
+  looked perfectly fine.
+
+Three things worth keeping:
+
+- **"No logs" narrows the field, it does not name the culprit.** #344 established that an
+  empty log means killed-not-failed. It does not follow that every silent host failure is
+  the same kill. Here the build exited 1 with a real error the host simply never surfaced.
+- **A comment asserting something is unused is a claim, and claims rot.** "not consumed by
+  the build" was checkable in one grep at the time it was written.
+- **The exact same failure had already happened at file scope**, and the comment recording
+  it is eleven lines above the crash: a README landing in an article folder without front
+  matter "took `npm run build` down for every release after it". That was fixed by
+  filtering READMEs rather than by asking what else could make the scan fail.
+
 ## The default palette could paint a colour but never take one away
 
 *"The palette displayed by default is P3 wide gamut, and there is no option to

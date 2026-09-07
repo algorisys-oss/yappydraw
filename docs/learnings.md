@@ -2,6 +2,28 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A known signature is a hypothesis, not a diagnosis
+
+Hostinger failed a build and showed no logs. We had seen that before: bug #344, where the
+empty log *was* the diagnosis, because a process that fails writes an error and a process
+that is OOM-killed cannot. That reasoning is still correct. The conclusion drawn from it —
+"no logs means OOM" — is not, and it is one letter away.
+
+"No logs" narrows the field to things that kill rather than fail. It does not say which,
+and it does not exclude a host that simply never surfaced an error the build did write.
+This time the build exited 1 with a perfectly ordinary ENOENT, three minutes from being
+found by the procedure #344 itself established: clean `git clone`, `npm ci`, `npm run
+build` on the tree the host actually builds.
+
+Measuring memory first was not wasted — it *disproved* the OOM theory (1.62 GB peak,
+where the fix in v0.8.235 had left it) rather than confirming it. But it was the second
+thing to run, and it was chosen because the symptom pattern-matched a story we already
+had. A remembered failure makes a cheap hypothesis and an expensive assumption.
+
+The tell that you are in this trap: you are reasoning about *why the known cause would
+explain this*, rather than running the cheapest thing that could distinguish the causes.
+Reproduction beats recognition, and it is usually faster.
+
 ## A deadline a static site cannot enforce is the same lie as a counter it cannot verify
 
 The founders page has now failed the same way twice, and the second time was dressed as the fix

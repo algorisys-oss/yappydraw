@@ -112,9 +112,31 @@ const copyArticleImages = async (source: string, outDir: string): Promise<number
     return names.length;
 };
 
-/** Long-form articles under `/learn/`. */
+/**
+ * Long-form articles under `/learn/`.
+ *
+ * A MISSING `articles/` IS FATAL, AND SAYS SO. It is a build input, not an optional extra,
+ * and the one way it goes missing is a publish that strips it: `.ossignore` excluded the
+ * whole directory in v0.8.236, so every OSS-built deploy died here on a bare ENOENT that
+ * named a path and nothing else. The site served the previous release for a day.
+ *
+ * Skipping silently would be worse than failing. `/learn/` would vanish from the build,
+ * the deploy would succeed, and a whole indexed section of the site would start 404ing
+ * while the editor looked perfectly fine. So this throws, and the message names the cause
+ * rather than making the next person derive it from a path.
+ */
 export const readArticles = async (): Promise<RenderedDocument[]> => {
-    const dirs = await readdir(ARTICLES, { withFileTypes: true });
+    let dirs;
+    try {
+        dirs = await readdir(ARTICLES, { withFileTypes: true });
+    } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+        throw new Error(
+            `Cannot prerender /learn/: no articles directory at ${ARTICLES}.\n`
+            + 'It is a required build input. If this is a published/OSS tree, .ossignore is '
+            + 'excluding it — exclude individual articles, never the whole directory.',
+        );
+    }
     const files: string[] = [];
     for (const dir of dirs.filter((d) => d.isDirectory())) {
         const inner = await readdir(path.join(ARTICLES, dir.name));
