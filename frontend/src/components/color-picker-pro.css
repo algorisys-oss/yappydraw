@@ -13,6 +13,24 @@
     align-items: center;
     gap: 6px;
 }
+/* Segmented pill: the two picker-style buttons are joined and inset so they read as a
+   toggle rather than as two more colour swatches. */
+.cpp-seg {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    border-radius: 8px;
+    background: var(--bg-tertiary, rgba(0, 0, 0, 0.06));
+}
+.cpp-seg .cpp-mode {
+    width: 30px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+}
+.cpp-seg .cpp-mode:hover:not(.active) {
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.05));
+}
 .cpp-mode {
     display: inline-flex;
     align-items: center;

@@ -6,7 +6,7 @@
 
 import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
 import { Maximize2, List, ListOrdered } from "lucide-solid";
-import { store, setSelectedTool } from "../store/app-store";
+import { store, setSelectedTool, shouldRevertToSelect } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { resolveFontFamily } from "../utils/text-utils";
 import { lineHeightPx as lineHeightOf } from "../utils/text-line-height";
@@ -134,7 +134,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
         if (related?.closest('.rt-color-popover')) return;
         if (related?.closest('.rt-font-popover')) return;
         handleCommit();
-        if ((store.selectedTool === 'text' || store.selectedTool === 'richtext') && !store.toolLocked) {
+        if ((store.selectedTool === 'text' || store.selectedTool === 'richtext') && shouldRevertToSelect()) {
             setSelectedTool('selection');
         }
     };
@@ -345,7 +345,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                         e.preventDefault();
                                         e.stopImmediatePropagation();
                                         handleCommit();
-                                        if (!store.toolLocked) {
+                                        if (shouldRevertToSelect()) {
                                             setSelectedTool('selection');
                                         }
                                         return;
@@ -355,7 +355,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                         e.preventDefault();
                                         e.stopImmediatePropagation();
                                         handleCommit();
-                                        if (!store.toolLocked) {
+                                        if (shouldRevertToSelect()) {
                                             setSelectedTool('selection');
                                         }
                                         return;

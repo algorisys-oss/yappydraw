@@ -440,8 +440,14 @@ export function toMonochromeSvg(svg: string): string {
             if (!fill || fill === 'none') return;
             // Roles inherit from an ancestor `<g data-sf-role>` (hair, props…).
             const role = el.closest('[data-sf-role]')?.getAttribute('data-sf-role') ?? null;
-            const isAccent = role === 'accent' || role === 'hair' || (!role && roleFromFill(fill) === 'accent');
-            if (isAccent) el.setAttribute('fill', 'none');
+            // Must match the roles prepareStickFigureElements() clears when it DROPS a mono
+            // figure — accent, hair AND garment. 'garment' was missing here, so every female /
+            // girl pose (whose skirt is tagged `data-sf-role="garment"`) kept its blue fill in
+            // the panel and the Mono tab looked identical to Colour, even though the figure
+            // dropped correctly (reported by Anshika, Sep 2026).
+            const drop = role === 'accent' || role === 'hair' || role === 'garment'
+                || (!role && roleFromFill(fill) === 'accent');
+            if (drop) el.setAttribute('fill', 'none');
         });
         const out = doc.documentElement.outerHTML;
         _monoCache.set(svg, out);

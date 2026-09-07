@@ -125,14 +125,21 @@ export const ColorPickerPro: Component<Props> = (props) => {
 
     // ── Triangle mode: draw hue ring + SV triangle to a canvas ──
     const RING = 150, R_OUT = 74, R_IN = 58;
+    // The triangle used to be inscribed in the ring itself (vertices at R_IN), while the ring's
+    // hit test claimed everything from R_IN - 4 outwards — so the pure-black and pure-white
+    // corners, the two colours you most often want exactly, sat INSIDE the ring's grab band and
+    // reaching for them span the hue instead (reported by Anshika, Sep 2026: "when we try to
+    // change the value to 100% dark black or completely white, the hue changes"). Pull the
+    // triangle in so there is real dead space between its corners and the ring.
+    const R_TRI = R_IN - 12;
     const triVerts = () => {
-        // Equilateral triangle inscribed in the inner ring, rotated so the pure-hue
-        // vertex sits at the current hue angle on the ring.
+        // Equilateral triangle inscribed in R_TRI, rotated so the pure-hue vertex points at
+        // the current hue angle on the ring.
         const cx = RING / 2, cy = RING / 2, a0 = (h() - 90) * Math.PI / 180;
         return {
-            hue: [cx + R_IN * Math.cos(a0), cy + R_IN * Math.sin(a0)] as [number, number],
-            white: [cx + R_IN * Math.cos(a0 + 2 * Math.PI / 3), cy + R_IN * Math.sin(a0 + 2 * Math.PI / 3)] as [number, number],
-            black: [cx + R_IN * Math.cos(a0 + 4 * Math.PI / 3), cy + R_IN * Math.sin(a0 + 4 * Math.PI / 3)] as [number, number],
+            hue: [cx + R_TRI * Math.cos(a0), cy + R_TRI * Math.sin(a0)] as [number, number],
+            white: [cx + R_TRI * Math.cos(a0 + 2 * Math.PI / 3), cy + R_TRI * Math.sin(a0 + 2 * Math.PI / 3)] as [number, number],
+            black: [cx + R_TRI * Math.cos(a0 + 4 * Math.PI / 3), cy + R_TRI * Math.sin(a0 + 4 * Math.PI / 3)] as [number, number],
             cx, cy,
         };
     };
@@ -184,12 +191,18 @@ export const ColorPickerPro: Component<Props> = (props) => {
 
     const onTriDown = (e: PointerEvent) => {
         e.preventDefault(); e.stopPropagation(); props.onStart?.(); dragging = true;
+        // Which control this gesture belongs to is decided ONCE, on the press, and held for the
+        // whole drag. Re-deciding on every move let a drag hop between the ring and the triangle
+        // mid-gesture, so pushing the handle into a corner changed the hue out from under you.
+        // Same capture rule Krita and Illustrator use for their wheel pickers.
+        let target: 'ring' | 'tri' | null = null;
         const run = (ev: PointerEvent) => {
             if (!triCanvas) return;
             const rect = triCanvas.getBoundingClientRect();
             const px = (ev.clientX - rect.left) * (RING / rect.width), py = (ev.clientY - rect.top) * (RING / rect.height);
             const cx = RING / 2, cy = RING / 2, r = Math.hypot(px - cx, py - cy);
-            if (r >= R_IN - 4 && r <= R_OUT + 6) {
+            if (target === null) target = (r >= R_IN - 2 && r <= R_OUT + 6) ? 'ring' : 'tri';
+            if (target === 'ring') {
                 setH((Math.atan2(py - cy, px - cx) * 180 / Math.PI + 90 + 360) % 360);
             } else {
                 const t = triVerts();
@@ -235,8 +248,16 @@ export const ColorPickerPro: Component<Props> = (props) => {
     return (
         <div class="cpp" onPointerDown={(e) => e.stopPropagation()}>
             <div class="cpp-modes">
-                <button class={`cpp-mode ${mode() === 'square' ? 'active' : ''}`} title="Square (SV + hue)" onClick={() => setMode2('square')}><SquareIcon size={14} /></button>
-                <button class={`cpp-mode ${mode() === 'triangle' ? 'active' : ''}`} title="Triangle (hue ring)" onClick={() => setMode2('triangle')}><TriangleIcon size={14} /></button>
+                {/* A joined segmented pill, not two loose squares. As separate bordered 26px
+                    buttons sitting directly under a grid of swatches these read as two MORE
+                    swatches, so the hue-wheel picker went unfound ("it may look like the above
+                    swatches are the only color options available" — Anshika, Sep 2026). */}
+                <div class="cpp-seg" role="group" aria-label="Colour picker style">
+                    <button class={`cpp-mode ${mode() === 'square' ? 'active' : ''}`} title="Square picker — saturation/value box with a hue slider"
+                        aria-label="Square picker" aria-pressed={mode() === 'square'} onClick={() => setMode2('square')}><SquareIcon size={14} /></button>
+                    <button class={`cpp-mode ${mode() === 'triangle' ? 'active' : ''}`} title="Wheel picker — hue ring with a shade triangle"
+                        aria-label="Wheel picker" aria-pressed={mode() === 'triangle'} onClick={() => setMode2('triangle')}><TriangleIcon size={14} /></button>
+                </div>
                 <div class="cpp-swatch" style={{ background: hsvToHex(h(), s(), v()) }} />
                 <button
                     class="cpp-mode"

@@ -13,6 +13,16 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.236', date: '2026-09-07', items: [
+        'Your exports now match your canvas. If a drawing used more than one layer, the PNG or JPG could come out with the shapes stacked in a different order than you were looking at — a shadow buried under the thing it was cast by, a shirt over a neck. Everything that leaves the app (PNG, JPG, SVG, PDF, PowerPoint, copy-as-image) now stacks exactly the way the canvas does.',
+        'The tool you pick stays picked. Draw three rectangles in a row without going back to the toolbar between them, the way Illustrator and Figma work. The shape you just drew is still selected so you can restyle it straight away. If you preferred the old way, Settings has a switch for it.',
+        'Deleting a layer group asks first, and can keep what is inside. Before, deleting a group took all the artwork in it with no warning at all.',
+        'The colour wheel works at its corners. Dragging into the black or white corner used to spin the hue instead of setting the shade, so a true black was almost impossible to pick by hand.',
+        'The Pen can put a corner in mid-path: hold Alt and click an anchor you have already placed to switch it between corner and curve. That fixes the one where every segment after a curve came out curved too, with no way back. A ring now appears on the first anchor when clicking will close the shape.',
+        'Layers: Shift-click for a range and Ctrl-click to pick out individual ones. A new layer lands just above the one you were on, inside the same group, instead of jumping to the top. Duplicating a group now copies everything in it. Reordering layers works with a stylus. And a locked layer no longer stops you panning around the canvas.',
+        'Exporting asks where to put the file and what to call it (Chrome, Edge and the desktop app).',
+        'Stick figures: the Mono tab now actually looks different from Colour — skirts and tops were keeping their colour in the thumbnails.',
+    ] },
     { version: '0.8.234', date: '2026-09-04', items: [
         'A new Dev Mode switch in Settings, under General. It is off, and it hides the parts of YappyDraw that are still being built — starting with the Game builder, which has been sitting in the menu since it was first sketched. If you never used it, the menu is a little shorter now.',
         'If you do want it, turn Dev Mode on and the Game group comes straight back. Anything you have already made is safe either way: a drawing that contains a game keeps its rules, its script and its playable HTML export whether the switch is on or off.',

@@ -673,6 +673,24 @@ const Canvas: Component = () => {
             ctx.restore();
         }
 
+        // Pen "click here to close" ring — shown while building once the cursor is inside the
+        // close tolerance of the FIRST anchor. Hollow, to read as "snap to this point" rather
+        // than the filled "continue from here" dot above. Illustrator's ○ pen cursor badge.
+        const closeHint = store.penCloseHint;
+        if (closeHint && store.selectedTool === 'path') {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(closeHint.x, closeHint.y, 7 / scale, 0, Math.PI * 2);
+            ctx.lineWidth = 2 / scale;
+            ctx.strokeStyle = '#4c8dff';
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(closeHint.x, closeHint.y, 2.5 / scale, 0, Math.PI * 2);
+            ctx.fillStyle = '#4c8dff';
+            ctx.fill();
+            ctx.restore();
+        }
+
         // 7. Crop mode overlay
         if (store.cropModeElementId && store.cropRect) {
             const cropEl = store.elements.find(e => e.id === store.cropModeElementId);
@@ -1848,6 +1866,15 @@ const Canvas: Component = () => {
             return;
         }
 
+        // Pan and Laser change nothing in the document, so a hidden or locked ACTIVE layer
+        // must not block them — they are dispatched above the guard below for that reason.
+        // Pan especially: it is a view operation with no relationship to any layer, and
+        // space-hold pan works by selecting the 'pan' tool, so gating it here made a locked
+        // layer freeze the whole canvas in place (reported by Anshika, Sep 2026). No editor
+        // — Illustrator, Affinity, Figma, Krita — gates the Hand tool on layer lock.
+        if (store.selectedTool === 'pan') { panOnDown(pState, pHelpers); return; }
+        if (store.selectedTool === 'laser') { laserOnDown(x, y, pState); return; }
+
         // ... existing creation logic for text/shapes ...
         // Check if active layer is visible and unlocked
         const activeLayer = store.layers.find(l => l.id === store.activeLayerId);
@@ -1862,12 +1889,10 @@ const Canvas: Component = () => {
 
         if (store.selectedTool === 'text') { textOnDown(x, y, pState, pSignals); return; }
         if (store.selectedTool === 'richtext') { richTextOnDown(x, y, pState, pSignals); return; }
-        if (store.selectedTool === 'laser') { laserOnDown(x, y, pState); return; }
         if (store.selectedTool === 'ink') { inkOnDown(x, y, pState); return; }
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
-        if (store.selectedTool === 'pan') { panOnDown(pState, pHelpers); return; }
         if (store.selectedTool === 'polyline' || pState.isPolylineBuilding) { polylineOnDown(x, y, pState, pHelpers); return; }
-        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.ctrlKey || e.metaKey); requestAnimationFrame(draw); return; }
+        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.ctrlKey || e.metaKey, e.altKey); requestAnimationFrame(draw); return; }
 
         drawOnDown(x, y, pState, pHelpers);
         smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled
@@ -2590,6 +2615,10 @@ const Canvas: Component = () => {
                     onDblClick={handleDoubleClick}
                     onContextMenu={(e) => {
                         e.preventDefault();
+                        // The eyedropper owns the next click on the canvas. Popping the context
+                        // menu underneath the picking gesture put a menu over the very colour
+                        // being aimed at (reported by Anshika, Sep 2026).
+                        if (store.eyedropper.active) return;
                         // Suppress context menu when triggered by touch/pen long-press
                         // (e.g. iPad palm rest). Only show on real mouse right-click.
                         // contextmenu MouseEvents from a real right-click report button=2;

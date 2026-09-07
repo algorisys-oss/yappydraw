@@ -286,6 +286,18 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
+                            <label title={t("settings.keepToolActiveTitle")}>{t("settings.keepToolActive")}</label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.keepToolActive !== false}
+                                    onChange={(e) => updateGlobalSettings({ keepToolActive: e.currentTarget.checked })}
+                                />
+                                <span class="settings-toggle-slider" />
+                            </label>
+                        </div>
+
+                        <div class="settings-row">
                             <label title={t("settings.smartShapesTitle")}>{t("settings.smartShapes")}</label>
                             <label class="settings-toggle">
                                 <input

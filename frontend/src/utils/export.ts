@@ -1,6 +1,7 @@
 import { lineHeightPx } from './text-line-height';
-import { store, isLayerVisible } from "../store/app-store";
+import { store, isLayerVisible, elementsInRenderOrder } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
+import { saveBlob, saveCanvas } from './save-file';
 import { ownerSlideIndex } from './slide-utils';
 import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
@@ -480,7 +481,7 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
         ctx.translate(destX - sX, destY - sY);
         ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
         renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
-        for (const el of store.elements) {
+        for (const el of elementsInRenderOrder(store.elements)) {
             if (el.isClipMask || !isExportable(el)) continue;
             // One page owns each element, and only that page draws it — an overlap test
             // put a shape hanging over an edge on the neighbouring page as well.
@@ -515,14 +516,11 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     if (isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected) {
         const canvas = renderPagedDocToCanvas(scale, background);
         if (!canvas) return;
-        const link = document.createElement('a');
-        link.download = store.docType === 'design' ? 'yappy_design.png' : 'yappy_slides.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        await saveCanvas(canvas, store.docType === 'design' ? 'yappy_design.png' : 'yappy_slides.png', 'image/png');
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = elementsInRenderOrder(store.elements).filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -561,11 +559,8 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     });
     paintDimensions(ctx, elements, scale);
 
-    // Download
-    const link = document.createElement('a');
-    link.download = 'yappy_drawing.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    // Save — prompts for a name and folder where the browser supports it (see save-file.ts).
+    await saveCanvas(canvas, 'yappy_drawing.png', 'image/png');
 };
 
 /**
@@ -605,8 +600,9 @@ export const rasterizeElements = async (
 ): Promise<{ dataURL: string; x: number; y: number; width: number; height: number; pixelWidth: number; pixelHeight: number } | null> => {
     await ensureExportImages();
     const idSet = new Set(ids);
-    // Keep document order so the raster stacks the same way the canvas does.
-    const elements = store.elements.filter(el => idSet.has(el.id) && !el.isNullObject && !el.isClipMask && isExportable(el));
+    // Layer order first, then document order — the order the CANVAS draws in, so the raster
+    // stacks the same way the artwork does (see elementsInRenderOrder).
+    const elements = elementsInRenderOrder(store.elements).filter(el => idSet.has(el.id) && !el.isNullObject && !el.isClipMask && isExportable(el));
     if (elements.length === 0) return null;
 
     const { minX, minY, maxX, maxY } = elementsBounds(elements);
@@ -658,7 +654,7 @@ export const exportRegion = (x: number, y: number, w: number, h: number, name = 
     ctx.translate(-x, -y);
     ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
     const rc = rough.canvas(canvas);
-    for (const el of store.elements) {
+    for (const el of elementsInRenderOrder(store.elements)) {
         if (el.isClipMask || !isExportable(el)) continue;
         if (el.x + el.width < x || el.x > x + w || el.y + el.height < y || el.y > y + h) continue;
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
@@ -684,7 +680,7 @@ export const exportArtboard = (artboardId: string, scale = 1, download = true): 
     ctx.translate(-ab.x, -ab.y);
     ctx.beginPath(); ctx.rect(ab.x, ab.y, ab.width, ab.height); ctx.clip();
     const rc = rough.canvas(canvas);
-    for (const el of store.elements) {
+    for (const el of elementsInRenderOrder(store.elements)) {
         if (el.isClipMask || !isExportable(el)) continue;
         if (el.x + el.width < ab.x || el.x > ab.x + ab.width || el.y + el.height < ab.y || el.y > ab.y + ab.height) continue; // outside the artboard
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
@@ -719,7 +715,7 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
     ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
     const rc = rough.canvas(canvas);
     renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
-    for (const el of store.elements) {
+    for (const el of elementsInRenderOrder(store.elements)) {
         if (el.isClipMask || !isExportable(el)) continue;
         // Ownership (not overlap) — see renderPagedDocToCanvas.
         if (ownerSlideIndex(el, store.slides) !== pageIndex) continue;
@@ -742,14 +738,11 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
     if (isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected) {
         const canvas = renderPagedDocToCanvas(scale, true); // JPEG has no transparency
         if (!canvas) return;
-        const link = document.createElement('a');
-        link.download = store.docType === 'design' ? 'yappy_design.jpg' : 'yappy_slides.jpg';
-        link.href = canvas.toDataURL('image/jpeg', 0.92);
-        link.click();
+        await saveCanvas(canvas, store.docType === 'design' ? 'yappy_design.jpg' : 'yappy_slides.jpg', 'image/jpeg', 0.92);
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = elementsInRenderOrder(store.elements).filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -784,15 +777,12 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
     });
     paintDimensions(ctx, elements, scale);
 
-    const link = document.createElement('a');
-    link.download = 'yappy_drawing.jpg';
-    link.href = canvas.toDataURL('image/jpeg', 0.92);
-    link.click();
+    await saveCanvas(canvas, 'yappy_drawing.jpg', 'image/jpeg', 0.92);
 };
 
 export const copyCanvasAsPng = async (scale: number) => {
     await ensureExportImages();
-    const elements = store.elements;
+    const elements = elementsInRenderOrder(store.elements);
     if (elements.length === 0) return;
 
     const __eb = elementsBounds(elements);
@@ -834,7 +824,7 @@ export const copyCanvasAsPng = async (scale: number) => {
 };
 
 export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) => {
-    let elements = store.elements.filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = elementsInRenderOrder(store.elements).filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -1477,11 +1467,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
     const s = new XMLSerializer();
     const str = s.serializeToString(svg);
     const blob = new Blob([str], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = 'yappy_drawing.svg';
-    link.href = url;
-    link.click();
+    void saveBlob(blob, 'yappy_drawing.svg', { description: 'SVG image', accept: { 'image/svg+xml': ['.svg'] } });
     return str;
 };
 
@@ -1508,7 +1494,7 @@ const pdfImage = (canvas: HTMLCanvasElement, background: boolean) =>
 export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
     // Hidden objects never reach a PDF/PPTX page (see isExportable).
-    const allElements = store.elements.filter(isExportable);
+    const allElements = elementsInRenderOrder(store.elements).filter(isExportable);
     if (allElements.length === 0) return;
     const { jsPDF } = await import("jspdf");
 
@@ -1627,7 +1613,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 export const exportToPptx = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
     // Hidden objects never reach a PDF/PPTX page (see isExportable).
-    const allElements = store.elements.filter(isExportable);
+    const allElements = elementsInRenderOrder(store.elements).filter(isExportable);
     if (allElements.length === 0) return;
 
     const { default: PptxGenJS } = await import("pptxgenjs");

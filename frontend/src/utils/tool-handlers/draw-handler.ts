@@ -684,10 +684,15 @@ export function drawOnUp(
         // stray clicks and ghosts are never replicated.
         finishLiveSymmetry(pState.currentId!);
 
-        // Switch back to selection tool after drawing (except for continuous tools or locked tools)
-        if (!CONTINUOUS_TOOLS.includes(store.selectedTool) && !store.toolLocked) {
-            setSelectedTool('selection');
-            // Auto-select the newly drawn element so property panel shows immediately
+        // The shape just drawn stays selected either way, so the properties panel is about the
+        // thing you just made — that is true in Illustrator whether or not the tool persists.
+        // What is conditional is only whether the TOOL is thrown away with it: continuous tools
+        // and explicitly locked tools always persist, and by default so does everything else
+        // (globalSettings.keepToolActive). Escape / Enter still return to Select.
+        if (!CONTINUOUS_TOOLS.includes(store.selectedTool)) {
+            const revert = !store.toolLocked && store.globalSettings.keepToolActive === false;
+            if (revert) setSelectedTool('selection');
+            // setSelectedTool clears the selection, so select AFTER switching, not before.
             setStore('selection', [pState.currentId]);
         }
 

@@ -445,11 +445,19 @@ Grab the **Pen** (<kbd>P</kbd>): *click* drops a corner anchor, *click-drag* dro
 
 It works in both places you touch a handle — while *drawing* with the Pen (hold <kbd>Alt</kbd> partway through the drag that pulls the handles out), and when *editing* an existing anchor with the Node tool (<kbd>N</kbd>, or double-click the path). The break is permanent, not just for that drag: the anchor becomes a *corner*, so letting go of <kbd>Alt</kbd> won't snap the two sides back into line. To pair them up again, <kbd>Alt</kbd>-click the anchor to convert it back to smooth.
 
+**Corner ↔ smooth *while you are still drawing*.** <kbd>Alt</kbd>-click an anchor you have already placed and it flips between the two — no need to finish the path and come back with the Node tool. This is the one to reach for after a curve: the anchor that ended it keeps an outgoing handle, so the *next* segment leaves curved too whether you wanted that or not. <kbd>Alt</kbd>-click that anchor to retract its handles and the path carries on straight from the cusp. <kbd>Alt</kbd>-clicking a plain corner does the reverse, fitting a smooth pair aimed along its neighbours.
+
+:::note
+<kbd>Alt</kbd>-clicking the **first** anchor converts it like any other rather than closing the path — so you can put a cusp at the start of a shape you are about to close. Click it without <kbd>Alt</kbd> to close.
+:::
+
+**Knowing when a click will close the path.** Bring the cursor within a few pixels of the first anchor and a **hollow blue ring** appears on it: that is the "this click closes the shape" signal. No ring means the click adds another anchor instead. (The filled blue dot is a different thing — it marks the end of an *existing* open path you can continue from.)
+
 **Editing anchors** (**Node tool** — press <kbd>N</kbd> or double-click the path; the Select tool moves and resizes, it no longer shows anchors):
 
 | Action | Desktop | Tablet / touch |
 | --- | --- | --- |
-| Smooth ↔ Corner | <kbd>Alt</kbd>-click the anchor | **Tap** the anchor, or long-press → *Make Smooth/Corner* |
+| Smooth ↔ Corner | <kbd>Alt</kbd>-click the anchor (also works mid-draw with the Pen) | **Tap** the anchor, or long-press → *Make Smooth/Corner* |
 | Break the handle pair (cusp) | <kbd>Alt</kbd>-drag the *handle* | Long-press the anchor → *Make Corner*, then drag each handle |
 | Delete anchor | <kbd>Ctrl/⌘</kbd>-click the anchor | Long-press the anchor → *Delete Anchor* |
 | Insert anchor | <kbd>Alt</kbd>-click the path outline | Long-press the outline → *Insert Point Here* |

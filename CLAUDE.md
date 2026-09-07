@@ -81,6 +81,17 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
 2. **Bump the version** in `package.json` (patch unless I say otherwise).
 3. **Write a release note** — ALWAYS create `release-notes/<version>.md` for the version being shipped (e.g. `release-notes/0.5.2.md`). Use the template in `release-notes/README.md`: date, highlights, features, fixes, internal/test changes, and any breaking changes / migration notes. One file per version; never skip this step. If older shipped versions are missing notes, backfill them as applicable. **Also add a matching entry (newest first) to `frontend/src/data/whats-new.ts`** — the in-app "What's new" popup (opened by clicking the version number). Keep that copy user-facing (what it does FOR them), skipping purely internal/test-only releases.
 4. **Refresh the repo map** (`npm run repograph`) and verify the build passes (`npm run build`).
+   **The build is memory-bound.** `vite build` needs ~1.3 GB of V8 heap and would grow to
+   ~2.2 GB RSS left alone, so the `build` script pins it
+   (`node --max-old-space-size=1536 node_modules/vite/bin/vite.js build`) to keep the peak at
+   ~1.65 GB. Do not remove that without re-measuring the floor. If a *host* build ever fails
+   **with no logs at all**, that is the signature to recognise: a process that fails writes an
+   error, a process that is OOM-killed cannot, so an empty log points at OOM/timeout, not at
+   missing dependencies — whatever the host's own "analysis" claims (v0.8.234's blamed missing
+   `tsx`/`typescript`/`vite` and a bad tsconfig; a clean `git clone` + `npm ci` + `npm run
+   build` disproved all four in three minutes, and that is the first thing to run). See bug
+   #344. The peak still climbs release by release (a 2.7 MB `index` chunk, a 2.0 MB
+   `export-game`), and nothing measures it, so the next ceiling arrives as an outage.
 5. **Commit and tag** — commit on the working branch, then create an annotated tag for the version: `git tag -a v<version> -m "v<version> — <short headline>"` (e.g. `v0.8.124`). One tag per shipped version, `v`-prefixed, matching `package.json`.
 6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
 7. **Fast-forward `dev` to `main` and push it** — `dev` is the branch the next change starts from, so it must not be left behind the release (`git checkout dev && git merge --ff-only main && git push origin dev`).
@@ -110,6 +121,16 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    re-run, and treat every check below it as describing the older build.
    **There is no standing failure any more — every check must pass.** Do not wave any red
    line through as "known".
+   **Do not verify a deploy by opening the site in a browser you have used before.** The
+   service worker is `prompt`-strategy: it keeps serving the build it has until every client
+   is gone, so a browser can load an *older* chunk while the origin serves the new one —
+   which looks exactly like a broken deploy, and will have you debugging a release that is
+   perfectly fine. Same behaviour as the "Reload does nothing" fix in v0.8.192. After
+   v0.8.235 a browser profile reported the new API as missing while `curl` showed the origin
+   serving it correctly on three consecutive fetches. **`curl` is the arbiter, not the
+   browser**; to check in a browser, unregister the service worker and clear `caches` first.
+   Note also that the host's bot protection 403s automated browsers on odd query strings
+   (a `?cachebust=` was enough) — use plain URLs.
    *(Two were retired. Up to v0.8.206 it was `sw.js is cacheable: public, max-age=604800`
    (bug #280) — genuinely fixed on the host; sw.js now returns `no-cache, must-revalidate,
    max-age=0`. In v0.8.207–v0.8.208 the *Alternate hostname* check failed because every

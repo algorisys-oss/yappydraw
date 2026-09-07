@@ -152,6 +152,7 @@ function penDropIfOrphaned(pState: PointerState): void {
 function resetPen(pState: PointerState): void {
     setPerspectiveSnapGuide(null);
     setPenResumeHint(null);
+    setStore('penCloseHint', null);
     pState.isPenBuilding = false;
     pState.isDrawing = false;
     pState.penAnchors = [];
@@ -254,9 +255,49 @@ export function penResume(target: PenResumeTarget, pState: PointerState): boolea
 
 // ─── Pointer Down ────────────────────────────────────────────────────
 
-export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false, suppressPerspective = false, finishOpen = false): void {
+export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false, suppressPerspective = false, finishOpen = false, altClick = false): void {
     penDropIfOrphaned(pState);   // an undo may have removed the path we were building
     const { x: px, y: py } = snap(x, y);
+
+    // Alt-click an anchor you have already placed → convert it between SMOOTH and CORNER,
+    // Illustrator's Convert Anchor Point gesture. Without it, the anchor that ends a curve keeps
+    // its outgoing handle and every following segment is dragged into a curve too, with no way
+    // back mid-path: "after a curve the anchor has handles and the next line becomes curved too,
+    // there is no way we can make it a corner right now" (Anshika, Sep 2026). Alt-clicking a
+    // smooth anchor retracts its handles to make a cusp; alt-clicking a corner restores a smooth
+    // pair aimed along its neighbours. Checked before the close test so alt-clicking the FIRST
+    // anchor converts it rather than closing the path.
+    if (altClick && pState.isPenBuilding && pState.currentId && pState.penAnchors.length >= 1) {
+        const tol = 12 / store.viewState.scale;
+        let hit = -1, best = tol;
+        for (let i = 0; i < pState.penAnchors.length; i++) {
+            const a = pState.penAnchors[i];
+            const d = Math.hypot(px - (pState.startX + a.x), py - (pState.startY + a.y));
+            if (d < best) { best = d; hit = i; }
+        }
+        if (hit >= 0) {
+            const a = pState.penAnchors[hit];
+            const hasHandles = a.inX !== undefined || a.outX !== undefined;
+            if (a.kind === 'smooth' || hasHandles) {
+                pState.penAnchors[hit] = { x: a.x, y: a.y, kind: 'corner' };   // retract → cusp
+            } else {
+                // Corner → smooth: aim a symmetric handle pair down the chord between neighbours,
+                // which is what "make this a curve" means with no handles to preserve.
+                const prev = pState.penAnchors[hit - 1] ?? pState.penAnchors[pState.penAnchors.length - 1];
+                const next = pState.penAnchors[hit + 1] ?? pState.penAnchors[0];
+                const dx = (next.x - prev.x) / 4, dy = (next.y - prev.y) / 4;
+                pState.penAnchors[hit] = {
+                    x: a.x, y: a.y, kind: 'smooth',
+                    inX: -dx, inY: -dy, outX: dx, outY: dy,
+                };
+            }
+            // Placing the next anchor must continue from the end, not from the converted one.
+            pState.penActiveIdx = -1;
+            pState.penDragging = false;
+            writePenElement(pState);
+            return;
+        }
+    }
 
     // Ctrl/Cmd + click ends the path where it is, OPEN, without adding an anchor there —
     // Photoshop's "click away to drop the pen". Enter/Esc/double-click already did this,
@@ -340,6 +381,18 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
 
 export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false, breakHandle = false, suppressPerspective = false): void {
     penDropIfOrphaned(pState);
+    // Hovering near the first anchor with 2+ anchors down means the next click CLOSES the path.
+    // Say so: the 12px close tolerance existed but nothing was drawn for it, so whether a click
+    // would close the shape or add another anchor was pure guesswork (Anshika, Sep 2026).
+    // Illustrator shows a small circle on the pen cursor for exactly this.
+    if (pState.isPenBuilding && pState.penAnchors.length >= 2 && !pState.penDragging) {
+        const near = Math.hypot(x - pState.startX, y - pState.startY) < 12 / store.viewState.scale;
+        const hint = near ? { x: pState.startX, y: pState.startY } : null;
+        const cur = store.penCloseHint;
+        if ((hint === null) !== (cur === null)) setStore('penCloseHint', hint);
+    } else if (store.penCloseHint) {
+        setStore('penCloseHint', null);
+    }
     if (!pState.isPenBuilding || !pState.currentId) return;
     signals.setSuggestedBinding(null);
     const { x: px, y: py } = snap(x, y);

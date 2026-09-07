@@ -85,7 +85,7 @@ Figures render in the clean **architectural** style by default. Convert a select
 
 ## Browse faster
 
-- **Colour / Mono** toggle (next to search) — drop figures with their flat colour accents, or in pure monochrome (outline only — solid hair loses its fill too). Your choice is remembered.
+- **Colour / Mono** toggle (next to search) — drop figures with their flat colour accents, or in pure monochrome: outline only, with accents, solid hair **and garments** (skirts, tops, trousers, shoes) losing their fill. The thumbnails show exactly what will drop, so you can see the difference before you place anything. Your choice is remembered.
 - **★ Favourites** — tap the star on any figure to save it; the Favourites chip gathers them.
 - **Recent** — figures you add are listed under the Recent chip so you can re-drop them fast.
 - **Keyboard** — Tab into the grid, move with the arrow keys, and press **Enter** to add the focused figure.

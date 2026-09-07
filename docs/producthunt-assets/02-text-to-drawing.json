@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "meta": { "title": "Text to drawing", "seed": 20260903 },
+  "layout": { "strategy": "manual" },
+  "palette": {
+    "ink":    { "light": "#0f172a", "dark": "#e2e8f0" },
+    "accent": { "light": "#4338ca", "dark": "#a5b4fc" },
+    "line":   { "light": "#94a3b8", "dark": "#475569" },
+    "code":   { "light": "#f1f5f9", "dark": "#1e293b" },
+    "card":   { "light": "#eef2ff", "dark": "#1e1b4b" },
+    "warm":   { "light": "#fef3c7", "dark": "#422006" }
+  },
+  "defaults": {
+    "node": {
+      "renderStyle": "sketch", "roughness": 1.2, "strokeWidth": 2,
+      "fontFamily": "hand-drawn", "fontSize": 18, "textColor": "@ink",
+      "textAlign": "center", "verticalAlign": "middle",
+      "backgroundColor": "@card", "strokeColor": "@accent"
+    },
+    "edge": { "strokeColor": "@line", "strokeWidth": 2.5 }
+  },
+  "nodes": [
+    { "id": "t1", "shape": "text", "label": "Type it. Or draw it. Same canvas.",
+      "x": 60, "y": 34, "width": 1000, "height": 60,
+      "style": { "fontSize": 46, "fontWeight": true, "textAlign": "left" } },
+
+    { "id": "src", "shape": "rect",
+      "label": "flowchart TD\n  A[Idea] --> B{Worth it?}\n  B -->|yes| C[Draw it]\n  B -->|no| D[Think again]",
+      "x": 60, "y": 150, "width": 330, "height": 190,
+      "style": { "backgroundColor": "@code", "strokeColor": "@line", "fontSize": 16,
+                 "fontFamily": "code", "textAlign": "left" } },
+    { "id": "srcL", "shape": "text", "label": "Mermaid, pasted",
+      "x": 60, "y": 350, "width": 330, "height": 30,
+      "style": { "fontSize": 17, "textAlign": "left", "textColor": "@line" } },
+
+    { "id": "o1", "shape": "rect", "label": "Idea",  "x": 640, "y": 155, "width": 150, "height": 62 },
+    { "id": "o2", "shape": "diamond", "label": "Worth it?", "x": 610, "y": 258, "width": 210, "height": 110 },
+    { "id": "o3", "shape": "rect", "label": "Draw it", "x": 505, "y": 410, "width": 150, "height": 62,
+      "style": { "backgroundColor": "@warm", "strokeColor": "#ca8a04" } },
+    { "id": "o4", "shape": "rect", "label": "Think again", "x": 780, "y": 410, "width": 165, "height": 62 },
+    { "id": "outL", "shape": "text", "label": "A real, editable drawing — not an image",
+      "x": 505, "y": 486, "width": 520, "height": 30,
+      "style": { "fontSize": 17, "textAlign": "left", "textColor": "@line" } },
+
+    { "id": "also", "shape": "note",
+      "label": "Also reads its own YSL script,\nand exports SVG, PNG, PDF, PPTX.",
+      "x": 60, "y": 400, "width": 330, "height": 96,
+      "style": { "backgroundColor": "@warm", "strokeColor": "#ca8a04", "fontSize": 17 } }
+  ],
+  "edges": [
+    { "from": "src", "to": "o1", "label": "import" },
+    { "from": "o1", "to": "o2" },
+    { "from": "o2", "to": "o3", "label": "yes" },
+    { "from": "o2", "to": "o4", "label": "no" }
+  ]
+}

@@ -1,4 +1,4 @@
-import { type Component, For, createSignal, Show } from 'solid-js';
+import { type Component, For, createSignal, createEffect, Show } from 'solid-js';
 import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
 import { X, Eye, EyeOff, Plus, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2, Box } from 'lucide-solid';
 import ObjectTree from './object-tree';
@@ -50,6 +50,8 @@ const LayerPanel: Component = () => {
         return next;
     });
     const clearSelection = () => setSelectedIds(new Set<string>());
+    /** The row a Shift-click measures its range from — the last plainly-clicked row. */
+    const [rangeAnchor, setRangeAnchor] = createSignal<string | null>(null);
 
     const onSwipeMove = (e: PointerEvent) => {
         if (!swipeStart) return;
@@ -129,7 +131,32 @@ const LayerPanel: Component = () => {
     };
 
 
-    const handleLayerClick = (id: string) => {
+    /**
+     * Click selects. Shift-click extends the selection to a RANGE, Ctrl/Cmd-click toggles one
+     * row — the convention in every file list and every layers panel there is. Multi-select
+     * existed here but the only way to reach it was to SWIPE a row sideways, a touch gesture on
+     * a desktop panel, so "pressing shift should select multiple layer" was effectively a
+     * missing feature (Anshika, Sep 2026). The anchor is the last plainly-clicked row.
+     */
+    const handleLayerClick = (id: string, e?: MouseEvent) => {
+        const rows = displayLayers().items.map((l: any) => l.id);
+        if (e?.shiftKey && rangeAnchor()) {
+            const a = rows.indexOf(rangeAnchor()!), b = rows.indexOf(id);
+            if (a >= 0 && b >= 0) {
+                const [lo, hi] = a < b ? [a, b] : [b, a];
+                setSelectedIds(new Set(rows.slice(lo, hi + 1)));
+                setActiveLayer(id);
+                return;
+            }
+        }
+        if (e && (e.ctrlKey || e.metaKey)) {
+            toggleSelected(id);
+            setRangeAnchor(id);
+            setActiveLayer(id);
+            return;
+        }
+        clearSelection();
+        setRangeAnchor(id);
         setActiveLayer(id);
     };
 
@@ -278,9 +305,26 @@ const LayerPanel: Component = () => {
         window.removeEventListener('pointercancel', endDrag);
     };
 
+    // Selecting artwork on the canvas already moves the ACTIVE layer to the one that owns it
+    // (see the effect in canvas.tsx). On a long list that highlight is often scrolled out of
+    // sight, which reads as "selecting an object doesn't select its layer" — so bring the row
+    // to the user rather than making them hunt for it (Anshika, Sep 2026).
+    createEffect(() => {
+        const id = store.activeLayerId;
+        const el = rowEls.get(id);
+        if (el) el.scrollIntoView({ block: 'nearest' });
+    });
+
     const startDrag = (id: string, e: PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        // A pen or finger dragging DOWN a scrollable list is a pan gesture as far as the browser
+        // is concerned: it claims the pointer and fires `pointercancel`, which tore the reorder
+        // down mid-drag. preventDefault() on pointerdown does not stop that — only `touch-action:
+        // none` does (set on .drag-handle in the CSS), and capturing the pointer keeps the move
+        // events coming even if the row re-renders under the stylus. This is why reordering
+        // "works fine with the touchpad" but not with a pen (reported by Anshika, Sep 2026).
+        try { (e.currentTarget as HTMLElement)?.setPointerCapture?.(e.pointerId); } catch { /* not captureable */ }
         setDraggedId(id);
         setDropTarget(null);
         const row = rowEls.get(id)?.closest('.layer-row') as HTMLElement | null;
@@ -512,7 +556,7 @@ const LayerPanel: Component = () => {
                                         classList={{ swiping: !!swipe() && swipe()!.id === layer.id }}
                                         style={{ 'padding-left': store.layerGroupingModeEnabled ? `${depth() * 24}px` : '0', transform: `translateX(${swipeOffset(layer.id)}px)` }}
                                         onPointerDown={(e) => startSwipe(layer.id, e)}
-                                        onClick={() => { if (Date.now() - lastSwipeEndAt < 400) return; if (revealedId()) { setRevealedId(null); return; } handleLayerClick(layer.id); }}
+                                        onClick={(e) => { if (Date.now() - lastSwipeEndAt < 400) return; if (revealedId()) { setRevealedId(null); return; } handleLayerClick(layer.id, e as unknown as MouseEvent); }}
                                         onContextMenu={(e) => {
                                             e.preventDefault();
                                             setContextMenu({ x: e.clientX, y: e.clientY, layerId: layer.id });

@@ -7,7 +7,7 @@
 
 import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
-import { store, setSelectedTool, updateElement } from "../store/app-store";
+import { store, setSelectedTool, updateElement, shouldRevertToSelect } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { lineHeightPx as lineHeightOf } from "../utils/text-line-height";
 import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString, containerTextAvailableWidth, containerTextWrapWidth } from "../utils/text-utils";
@@ -53,7 +53,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
         if (props.editingId()) {
             props.onCommitText();
             // After creating a new text element, switch back to selection (unless tool is locked)
-            if (store.selectedTool === 'text' && !store.toolLocked) {
+            if (store.selectedTool === 'text' && shouldRevertToSelect()) {
                 setSelectedTool('selection');
             }
         }
@@ -483,7 +483,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                         e.preventDefault();
                                         e.stopImmediatePropagation();
                                         props.onCommitText();
-                                        if (!store.toolLocked) {
+                                        if (shouldRevertToSelect()) {
                                             setSelectedTool('selection');
                                         }
                                         return;
@@ -494,7 +494,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                         e.preventDefault();
                                         e.stopImmediatePropagation();
                                         props.onCommitText();
-                                        if (!store.toolLocked) {
+                                        if (shouldRevertToSelect()) {
                                             setSelectedTool('selection');
                                         }
                                         return;

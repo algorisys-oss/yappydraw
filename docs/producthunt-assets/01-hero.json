@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "meta": { "title": "YappyDraw — hero", "seed": 20260903 },
+  "layout": { "strategy": "manual" },
+  "palette": {
+    "ink":    { "light": "#0f172a", "dark": "#e2e8f0" },
+    "accent": { "light": "#4338ca", "dark": "#a5b4fc" },
+    "line":   { "light": "#94a3b8", "dark": "#475569" },
+    "card":   { "light": "#eef2ff", "dark": "#1e1b4b" },
+    "warm":   { "light": "#fef3c7", "dark": "#422006" },
+    "mint":   { "light": "#d1fae5", "dark": "#064e3b" }
+  },
+  "defaults": {
+    "node": {
+      "renderStyle": "sketch", "roughness": 1.2, "strokeWidth": 2,
+      "fontFamily": "hand-drawn", "fontSize": 19, "textColor": "@ink",
+      "textAlign": "center", "verticalAlign": "middle",
+      "backgroundColor": "@card", "strokeColor": "@accent"
+    },
+    "edge": { "strokeColor": "@line", "strokeWidth": 2 }
+  },
+  "nodes": [
+    { "id": "t1", "shape": "text", "label": "Draw. Diagram. Animate.",
+      "x": 60, "y": 40, "width": 900, "height": 70,
+      "style": { "fontSize": 58, "fontWeight": true, "textAlign": "left", "textColor": "@ink" } },
+    { "id": "t2", "shape": "text", "label": "One infinite canvas that does the whole job.",
+      "x": 62, "y": 118, "width": 900, "height": 44,
+      "style": { "fontSize": 26, "textAlign": "left", "textColor": "@accent" } },
+
+    { "id": "c1", "shape": "rect", "label": "Diagrams\nUML · BPMN · flowcharts\nmindmaps · wireframes",
+      "x": 60, "y": 215, "width": 250, "height": 130 },
+    { "id": "c2", "shape": "rect", "label": "Illustration\npressure inking · 100+ shapes\npen, nodes, pathfinder",
+      "x": 335, "y": 215, "width": 250, "height": 130,
+      "style": { "backgroundColor": "@warm", "strokeColor": "#ca8a04" } },
+    { "id": "c3", "shape": "rect", "label": "Animation\nframe timeline · tweens\nonion skin · GIF & MP4",
+      "x": 610, "y": 215, "width": 250, "height": 130,
+      "style": { "backgroundColor": "@mint", "strokeColor": "#059669" } },
+    { "id": "c4", "shape": "rect", "label": "Slides & design\ndecks · posters · PPTX\nMagic Resize",
+      "x": 885, "y": 215, "width": 250, "height": 130 },
+
+    { "id": "b1", "shape": "note", "label": "No account. Nothing uploaded.\nYour drawings stay in your browser.",
+      "x": 60, "y": 395, "width": 340, "height": 96,
+      "style": { "backgroundColor": "@warm", "strokeColor": "#ca8a04", "fontSize": 18 } },
+    { "id": "b2", "shape": "note", "label": "Works fully offline.\nInstall it like an app.",
+      "x": 425, "y": 395, "width": 340, "height": 96,
+      "style": { "backgroundColor": "@mint", "strokeColor": "#059669", "fontSize": 18 } },
+    { "id": "b3", "shape": "note", "label": "Free and open source.\nAGPL-3.0, forever.",
+      "x": 790, "y": 395, "width": 345, "height": 96,
+      "style": { "fontSize": 18 } },
+
+    { "id": "foot", "shape": "text", "label": "yappydraw.com — every frame in this gallery was drawn in YappyDraw",
+      "x": 62, "y": 520, "width": 1080, "height": 34,
+      "style": { "fontSize": 19, "textAlign": "left", "textColor": "@line" } }
+  ],
+  "edges": []
+}

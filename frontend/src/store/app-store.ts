@@ -399,6 +399,13 @@ interface AppState {
      * ('style'), or reports the exact colour under the pointer to whoever armed it ('color').
      */
     eyedropper: { active: boolean; targets: string[]; mode: 'style' | 'color' };
+
+    /**
+     * While the Pen is building a path and the cursor is within the close tolerance of the FIRST
+     * anchor, the world point to draw a "clicking here closes the path" ring at. Null otherwise.
+     * The tolerance always existed; nothing drew it, so closing a shape was guesswork.
+     */
+    penCloseHint: { x: number; y: number } | null;
     /**
      * Which of the two paint channels the Fill & Stroke control is aimed at (Illustrator's
      * X). A swatch click, the palette's eyedropper and the None button all act on this one.
@@ -655,6 +662,20 @@ const initialState: AppState = {
         colorPalette: (localStorage.getItem('colorPalette') || defaultPaletteId()),
         smartShape: (localStorage.getItem('smartShape') ?? '1') !== '0',
         defaultTool: readDefaultTool(),
+        /**
+         * Keep the drawing tool active after each shape instead of snapping back to Select.
+         *
+         * Default ON, which is what every other vector editor does — Illustrator, Affinity,
+         * Figma and Inkscape all leave the tool you chose selected until you choose another.
+         * Auto-reverting made drawing three rectangles a nine-step job: pick the tool, draw,
+         * get thrown into Select, re-open the flyout, pick again ("if i am making shapes and I
+         * need to make 2 rectangles and a circle... the process becomes unnecessarily lengthy"
+         * — Anshika, Sep 2026, who had raised it once before). The per-tool `toolLocked` flag
+         * already existed but the only way to set it was to double-click an item INSIDE a tool
+         * flyout, which is documented nowhere. Set this to false for the old snap-back
+         * behaviour; Escape and Enter still return to Select.
+         */
+        keepToolActive: (localStorage.getItem('keepToolActive') ?? '1') !== '0',
         pointerStyle: readPointerStyle(),
         penPressure: (localStorage.getItem('penPressure') ?? '1') !== '0',
         penStabilization: (() => { const v = parseFloat(localStorage.getItem('penStabilization') ?? '0'); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0; })(),
@@ -739,6 +760,7 @@ const initialState: AppState = {
     alignToKeyObject: false,
     isolatedGroupIds: [],
     eyedropper: { active: false, targets: [], mode: 'style' as const },
+    penCloseHint: null as { x: number; y: number } | null,
     activePaint: 'fill' as PaintChannel,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -1885,7 +1907,7 @@ export const setSelectedTool = (tool: ToolType) => {
     setStore('toolLocked', false);
     // The Pen's "continue from here" ring belongs to the Pen only — leaving the tool must
     // take it with it, or it hangs on the canvas over whatever the next tool is doing.
-    if (tool !== 'path') setStore('penResumeHint', null);
+    if (tool !== 'path') { setStore('penResumeHint', null); setStore('penCloseHint', null); }
     if (tool !== 'selection' && tool !== 'lasso' && tool !== 'pan' && tool !== 'eraser') {
         setStore('selection', []);
     }
@@ -1934,6 +1956,16 @@ export const setDefaultTool = (tool: DefaultToolChoice) => {
     if (tool !== 'selection') setStore('selectedPenType', tool);
     setSelectedTool(tool);
 };
+
+/**
+ * Should finishing a shape / a text edit throw the tool away and go back to Select?
+ *
+ * Only when the user has explicitly turned `keepToolActive` off and the tool is not pinned.
+ * One predicate so every finish-path answers this the same way — the draw handler and both
+ * text overlays used to each spell out their own `!store.toolLocked` test and could drift.
+ */
+export const shouldRevertToSelect = (): boolean =>
+    !store.toolLocked && store.globalSettings.keepToolActive === false;
 
 export const setToolLocked = (locked: boolean) => {
     setStore('toolLocked', locked);
@@ -2017,6 +2049,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.defaultTool !== undefined) {
         try { localStorage.setItem('defaultTool', updates.defaultTool); } catch { /* ignore */ }
+    }
+    if (updates.keepToolActive !== undefined) {
+        try { localStorage.setItem('keepToolActive', updates.keepToolActive ? '1' : '0'); } catch { /* ignore */ }
     }
     if (updates.pointerStyle !== undefined) {
         try { localStorage.setItem('pointerStyle', updates.pointerStyle); } catch { /* ignore */ }
@@ -4824,17 +4859,28 @@ export const addLayer = (name?: string, parentId?: string) => {
     }
     pushToHistory();
     const newId = generateId('layer');
+
+    // Land the new layer directly ABOVE the active one, in the SAME parent — Illustrator's and
+    // Affinity's behaviour. It used to go to the very top of the stack and always at the root,
+    // so adding a layer while working inside a group jumped it out of that group and over
+    // everything else, and it had to be dragged back every time (reported by Anshika, Sep 2026).
+    // An explicit `parentId` from the caller still wins. `+ 0.5` slots between neighbours the
+    // way duplicateLayer does; reorderLayers renumbers on the next drag.
+    const active = store.layers.find(l => l.id === store.activeLayerId);
+    const nestUnder = parentId !== undefined ? parentId : active?.parentId;
     const maxOrder = Math.max(...store.layers.map(l => l.order), -1);
+    const order = parentId === undefined && active ? active.order + 0.5 : maxOrder + 1;
+
     const newLayer: Layer = {
         id: newId,
         name: name || `Layer ${store.layers.length + 1}`,
         visible: true,
         locked: false,
         opacity: 1,
-        order: maxOrder + 1,
+        order,
         backgroundColor: 'transparent',
         colorTag: undefined,
-        parentId,
+        parentId: nestUnder,
         isGroup: false,
         expanded: true
     };
@@ -4850,6 +4896,15 @@ export const addLayer = (name?: string, parentId?: string) => {
     return newId;
 };
 
+/** `id` plus every layer nested under it, at any depth. */
+export const layerSubtreeIds = (id: string): string[] => {
+    const out = [id];
+    for (let i = 0; i < out.length; i++) {
+        for (const l of store.layers) if (l.parentId === out[i]) out.push(l.id);
+    }
+    return out;
+};
+
 export const deleteLayer = (id: string) => {
     // Cannot delete the last layer
     if (store.layers.length <= 1) {
@@ -4860,8 +4915,20 @@ export const deleteLayer = (id: string) => {
     const layer = store.layers.find(l => l.id === id);
     if (!layer) return;
 
-    // Check if layer has elements
-    const elementsOnLayer = store.elements.filter(el => el.layerId === id);
+    // A GROUP layer holds no elements itself — its artwork lives on its child layers. Counting
+    // only `el.layerId === id` therefore reported "0 elements" for a group full of work, skipped
+    // the confirm entirely, and deleted just the group row. The children survived in `store.layers`
+    // with a `parentId` pointing at nothing, which made them invisible everywhere: the panel's
+    // tree walk only descends from parentless roots so they vanished from the list, and
+    // isLayerVisible() recurses into the missing parent and returns false, so their artwork
+    // disappeared from the canvas AND from every export. Deleting a group was silent data loss.
+    // Count the whole subtree, and offer to keep the contents by promoting the children.
+    const subtree = layerSubtreeIds(id);
+    const subtreeSet = new Set(subtree);
+    const childLayers = store.layers.filter(l => l.id !== id && subtreeSet.has(l.id));
+
+    // Check if layer (or anything nested under it) has elements
+    const elementsOnLayer = store.elements.filter(el => subtreeSet.has(el.layerId));
 
     // Animation mode: a layer IS its frames — deleting it always deletes its cels'
     // content (Animate semantics; the "move elements" option would orphan them
@@ -4877,40 +4944,49 @@ export const deleteLayer = (id: string) => {
         return;
     }
 
-    if (elementsOnLayer.length > 0) {
-        // Ask user what to do with elements
-        const shouldDelete = confirm(
-            `Layer "${layer.name}" contains ${elementsOnLayer.length} element(s).\n\n` +
-            `Click "OK" to delete the layer AND all its elements.\n` +
-            `Click "Cancel" to delete the layer but move elements to another layer.`
-        );
-
-        pushToHistory();
-
-        if (shouldDelete) {
-            // Delete all elements on this layer
-            setStore('elements', store.elements.filter(el => el.layerId !== id));
-        } else {
-            // Move all elements from this layer to the first remaining layer
-            const remainingLayer = store.layers.find(l => l.id !== id);
-            if (remainingLayer) {
-                store.elements.forEach((el, idx) => {
-                    if (el.layerId === id) {
-                        setStore('elements', idx, 'layerId', remainingLayer.id);
-                    }
-                });
-            }
-        }
-    } else {
-        // No elements, just delete
-        pushToHistory();
+    // Deleting a group that contains every other layer would empty the document.
+    if (subtree.length >= store.layers.length) {
+        showToast('Cannot delete every layer.', 'error');
+        return;
     }
 
-    // Remove the layer
-    setStore('layers', store.layers.filter(l => l.id !== id));
+    let dropContents = true;
+
+    if (elementsOnLayer.length > 0 || childLayers.length > 0) {
+        const what = childLayers.length > 0
+            ? `${childLayers.length} layer(s) and ${elementsOnLayer.length} element(s)`
+            : `${elementsOnLayer.length} element(s)`;
+        dropContents = confirm(
+            `Layer "${layer.name}" contains ${what}.\n\n` +
+            `Click "OK" to delete the layer AND everything inside it.\n` +
+            `Click "Cancel" to delete only "${layer.name}" and keep its contents.`
+        );
+    }
+
+    pushToHistory();
+
+    if (dropContents) {
+        // The whole subtree goes: its elements, its nested layers, and the layer itself.
+        setStore('elements', store.elements.filter(el => !subtreeSet.has(el.layerId)));
+        setAnimTimeline(tl => tl && ({ ...tl, layers: tl.layers.filter(l => !subtreeSet.has(l.layerId)) }));
+        setStore('layers', store.layers.filter(l => !subtreeSet.has(l.id)));
+    } else {
+        // Keep the contents: promote the direct children into the deleted layer's own parent
+        // (Affinity's behaviour) and move loose elements onto a layer that still exists, so
+        // nothing is left pointing at a layer that is gone.
+        setStore('layers', store.layers.map(l => (l.parentId === id ? { ...l, parentId: layer.parentId } : l)));
+        const survivor = childLayers[0] ?? store.layers.find(l => l.id !== id);
+        if (survivor) {
+            store.elements.forEach((el, idx) => {
+                if (el.layerId === id) setStore('elements', idx, 'layerId', survivor.id);
+            });
+        }
+        setAnimTimeline(tl => tl && ({ ...tl, layers: tl.layers.filter(l => l.layerId !== id) }));
+        setStore('layers', store.layers.filter(l => l.id !== id));
+    }
 
     // Update active layer if needed
-    if (store.activeLayerId === id) {
+    if (!store.layers.some(l => l.id === store.activeLayerId)) {
         setStore('activeLayerId', store.layers[0]?.id || 'default-layer');
     }
 };
@@ -4924,31 +5000,46 @@ export const updateLayer = (id: string, updates: Partial<Layer>) => {
 };
 
 export const duplicateLayer = (id: string) => {
-    if (store.layers.length >= store.maxLayers) {
-        console.warn(`Layer limit reached (${store.maxLayers} layers max)`);
-        return;
-    }
     const original = store.layers.find(l => l.id === id);
     if (!original) return;
 
+    // Duplicating a GROUP has to copy what is inside it. This used to copy the one layer row and
+    // the elements whose `layerId` was literally this layer — which for a group is none of them,
+    // since a group's artwork lives on its child layers. The result was an empty group copy
+    // (reported by Anshika, Sep 2026). Duplicate the whole subtree instead, remapping layer ids,
+    // parent links, element ids, group ids and bindings together so the copy is fully
+    // independent of the original.
+    const subtree = layerSubtreeIds(id);                       // root first, then descendants
+    if (store.layers.length + subtree.length > store.maxLayers) {
+        showToast(`Layer limit reached (${store.maxLayers} layers max)`, 'error');
+        return;
+    }
+
     pushToHistory();
 
-    // Create new layer with incremented name
-    const newLayerId = generateId('layer');
-    const newLayer: Layer = {
-        ...original,
-        id: newLayerId,
-        name: `${original.name} Copy`,
-        opacity: original.opacity ?? 1,
-        order: original.order + 0.5, // Place right above original
-        backgroundColor: original.backgroundColor || 'transparent',
-        parentId: original.parentId,
-        isGroup: original.isGroup,
-        expanded: original.expanded
-    };
+    const layerIdMap = new Map<string, string>();
+    for (const lid of subtree) layerIdMap.set(lid, generateId('layer'));
+    const newLayerId = layerIdMap.get(id)!;
 
-    // Duplicate all elements on this layer with binding remapping
-    const elementsOnLayer = store.elements.filter(el => el.layerId === id);
+    const newLayers: Layer[] = subtree.map(lid => {
+        const src = store.layers.find(l => l.id === lid)!;
+        const isRoot = lid === id;
+        return {
+            ...src,
+            id: layerIdMap.get(lid)!,
+            name: isRoot ? `${src.name} Copy` : src.name,
+            opacity: src.opacity ?? 1,
+            // The root copy sits right above the original; descendants keep their relative order.
+            order: isRoot ? src.order + 0.5 : src.order,
+            backgroundColor: src.backgroundColor || 'transparent',
+            parentId: isRoot ? src.parentId : layerIdMap.get(src.parentId!) ?? src.parentId,
+            isGroup: src.isGroup,
+            expanded: src.expanded,
+        };
+    });
+
+    // Duplicate every element across the whole subtree, with binding remapping
+    const elementsOnLayer = store.elements.filter(el => layerIdMap.has(el.layerId));
     const layerBatchIds = new Set<string>();
     const idMap = new Map<string, string>();
     elementsOnLayer.forEach(el => idMap.set(el.id, generateId(el.type, layerBatchIds)));
@@ -4967,7 +5058,7 @@ export const duplicateLayer = (id: string) => {
     const duplicatedElements = elementsOnLayer.map(el => {
         const newEl: DrawingElement = JSON.parse(JSON.stringify(el));
         newEl.id = idMap.get(el.id)!;
-        newEl.layerId = newLayerId;
+        newEl.layerId = layerIdMap.get(el.layerId) ?? newLayerId;
         newEl.x += 10;
         newEl.y += 10;
 
@@ -5006,8 +5097,8 @@ export const duplicateLayer = (id: string) => {
         return newEl;
     });
 
-    // Add new layer and elements
-    setStore('layers', [...store.layers, newLayer]);
+    // Add new layers and elements
+    setStore('layers', [...store.layers, ...newLayers]);
     setStore('elements', [...store.elements, ...duplicatedElements]);
 
     // Recalculate layer orders
@@ -5125,6 +5216,32 @@ export const flattenLayers = () => {
     setStore('activeLayerId', bottomLayer.id);
 };
 
+
+/**
+ * Elements in the order the CANVAS actually draws them: layer by layer in `layer.order`,
+ * and within a layer in document order.
+ *
+ * The canvas renderer buckets elements by `layerId` and walks the buckets in layer order
+ * (`renderLayersAndElements`). Every exporter used to iterate `store.elements` in raw array
+ * order instead, so as soon as a drawing used more than one layer the exported z-order was
+ * whatever order the elements happened to sit in the array — a shape drawn on a lower layer
+ * after a shape on a higher one exported ON TOP of it. The canvas looked right and the PNG,
+ * JPG, SVG, PDF and PPTX all disagreed with it, which is the single worst thing an export
+ * can do. Anything that flattens the document must order it through here.
+ *
+ * Elements whose layer no longer exists sort last, matching the canvas: it never draws a
+ * bucket with no layer, and `isLayerVisible` returns false for a missing layer, so an
+ * exporter that filters with `isExportable` has already dropped them.
+ */
+export const elementsInRenderOrder = <T extends { layerId: string }>(els: readonly T[]): T[] => {
+    const rank = new Map<string, number>();
+    [...store.layers].sort((a, b) => a.order - b.order).forEach((l, i) => rank.set(l.id, i));
+    const orphan = store.layers.length;
+    return els
+        .map((el, i) => ({ el, i, r: rank.get(el.layerId) ?? orphan }))
+        .sort((a, b) => (a.r - b.r) || (a.i - b.i))
+        .map(x => x.el);
+};
 
 export const isLayerVisible = (layerId: string): boolean => {
     const layer = store.layers.find(l => l.id === layerId);
@@ -8772,11 +8889,19 @@ export const commitShapeBuilderFaces = (ids: string[], touchedKeys: string[], mo
     const untouched = faces.filter(f => !touchedSet.has(f.key));
     if (!touched.length) return [];
 
-    const base = els[0];
-    const style: Partial<DrawingElement> = {
-        strokeColor: base.strokeColor, backgroundColor: base.backgroundColor,
-        fillStyle: base.fillStyle, strokeWidth: base.strokeWidth, strokeStyle: base.strokeStyle,
-        renderStyle: base.renderStyle, opacity: base.opacity, roughness: base.roughness, layerId: base.layerId,
+    // Each face is coloured by the TOPMOST shape covering it, which is what Illustrator does and
+    // what this file's own applyPathfinderRegion already did. Shape Builder instead handed every
+    // face `els[0]` — the BACKMOST shape's appearance — so a merge repainted the untouched parts
+    // of the artwork with the wrong fill and the result read as having moved or changed shape
+    // (reported by Anshika, Sep 2026).
+    const topOf = (subset: number[]) => Math.max(...subset);
+    const styleOf = (i: number): Partial<DrawingElement> => {
+        const b = els[i];
+        return {
+            strokeColor: b.strokeColor, backgroundColor: b.backgroundColor,
+            fillStyle: b.fillStyle, strokeWidth: b.strokeWidth, strokeStyle: b.strokeStyle,
+            renderStyle: b.renderStyle, opacity: b.opacity, roughness: b.roughness, layerId: b.layerId,
+        };
     };
     const created: DrawingElement[] = [];
     const batchIds = new Set<string>();
@@ -8787,10 +8912,12 @@ export const commitShapeBuilderFaces = (ids: string[], touchedKeys: string[], mo
         }
     };
     if (mode === 'merge') {
-        polysToPaths(unionFaces(touched), style);            // fused region as one path (per disjoint piece)
-        for (const f of untouched) polysToPaths(f.region, style); // remaining faces stay separate
+        // The fused region takes the topmost appearance among the faces the user painted over.
+        const mergedStyle = styleOf(topOf(touched.flatMap(f => f.subset)));
+        polysToPaths(unionFaces(touched), mergedStyle);              // fused region as one path (per disjoint piece)
+        for (const f of untouched) polysToPaths(f.region, styleOf(topOf(f.subset))); // remaining faces keep their own look
     } else {
-        for (const f of untouched) polysToPaths(f.region, style); // drop the touched faces (carve)
+        for (const f of untouched) polysToPaths(f.region, styleOf(topOf(f.subset))); // drop the touched faces (carve)
     }
     if (!created.length) {
         // Everything was deleted (e.g. merge-delete consumed all faces) — just remove originals.

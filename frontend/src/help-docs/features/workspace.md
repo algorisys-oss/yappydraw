@@ -21,6 +21,22 @@ A tool group's **flyout** (the submenu under Shapes, Pen, UML, BPMN and the rest
 The position sticks between sessions. Scripted: `Yappy.getState().globalSettings.toolbarDock` reports it.
 :::
 
+### The tool you picked stays picked
+
+Choose the Rectangle tool and it **stays** the Rectangle tool: draw three rectangles in a row
+without going back to the toolbar between them, the way Illustrator, Affinity, Figma and Inkscape
+all behave. The shape you just drew is left selected, so the Properties panel is about it, but the
+tool is not thrown away with it. <kbd>Esc</kbd> or <kbd>Enter</kbd> returns to Select when you
+actually want it, and <kbd>V</kbd> gets you there directly.
+
+If you prefer the old behaviour — every shape snapping you back to Select — turn off
+**Keep tool active after drawing** in Settings.
+
+:::tip
+Scripted: `Yappy.getState().globalSettings.keepToolActive`. Double-clicking a tool inside a
+flyout still *pins* that specific tool, which is independent of this preference.
+:::
+
 ### The top bar's view controls
 
 The tool column holds things you *draw* with. Everything else lives in the cluster at the right of the top bar: **Pan** (<kbd>H</kbd>), **Commands & Tools** (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd>), the **Vector Tools** palette, **Shape Builder** (<kbd>Shift</kbd>+<kbd>M</kbd>), **Settings**, **Properties** (<kbd>Alt</kbd>+<kbd>Enter</kbd>), **Show Dimensions**, and **Help** — then the colour palette and the theme toggle. Buttons that are toggles light up while they're on; Pan is a tool, so clicking it again returns you to Select.
@@ -44,6 +60,19 @@ At the **foot of the tool column** sits the Illustrator swatch pair: a solid squ
 - **Pick** — the **eyedropper**. Click anything on the canvas and its colour lands in the channel. It reads the colour out of the *document*, so what you pick is exactly what is there; over an image (a **reference photo** you pasted in, say) it samples the pixel under the cursor, which is what makes matching a palette from a reference straightforward.
 - **Swap** and **Reset** — swap fill ⇄ stroke, or go back to a black stroke with no fill.
 - A full **colour picker** with a hex field and recents. It **follows the swatch you pick** — choose a colour from any palette and the saturation square, the hue slider and the hex field all move to it, so the picker is always a live readout of the current channel rather than a separate control. That includes the wide-gamut **P3** palette: those swatches are stored as `color(display-p3 …)`, and the picker shows the closest sRGB equivalent while the object keeps the true P3 colour.
+
+**Two picker styles.** The small **segmented toggle** above the picker switches between them:
+the **square** (a saturation/value box with a hue slider below) and the **wheel** (a hue ring with
+a shade triangle inside it). Your choice is remembered. The wheel's corners are pure white, pure
+black and the full-strength hue, and they sit clear of the ring — so dragging into a corner for a
+true black or white sets exactly that, without the ring catching the gesture and spinning the hue.
+
+:::tip
+**Trying lots of colours quickly?** The eyedropper is a one-shot pick, so it is the slow way round
+if you are experimenting. Click swatches in the palette instead — each one applies to the
+selection immediately — and the picker's **recents** strip keeps the last dozen you used, so
+going back to one you had two tries ago is a single click.
+:::
 
 | Key | Does |
 | --- | --- |
@@ -184,6 +213,35 @@ const gid = Yappy.getElement(id).groupIds.at(-1);  // outermost group of an obje
 Yappy.setGroupName(gid, 'Front panel');    // '' clears it → back to "Group (n)"
 Yappy.getGroupName(gid);
 ```
+
+### Working with layers themselves
+
+The rows above the object lists are the **layers**. A layer is a container with its own
+visibility, lock, opacity, background and colour tag; the artwork on it stacks as a unit.
+
+- **Click a layer row** to make it active — that is where the next thing you draw lands.
+  **<kbd>Shift</kbd>-click** selects a whole **range** of layers, **<kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click**
+  toggles one in and out. With more than one selected, the header grows *Group* and *Delete*
+  buttons that act on all of them.
+- **Selecting artwork on the canvas makes its layer active**, and the panel scrolls that row into
+  view — so on a long list you can always see which layer you are working on.
+- **The + button adds a layer directly above the active one, inside the same group**, rather than
+  at the very top of the stack. Adding a layer while you are working inside a group keeps it in
+  that group.
+- **Duplicating a group** copies everything inside it — nested layers, their artwork, and the
+  groups within that artwork — as an independent copy.
+- **Deleting a layer that has contents asks first**, and that includes a group whose artwork is
+  on its child layers. *OK* deletes the layer and everything in it; *Cancel* deletes only that
+  layer and keeps the contents, lifting its children up into whatever contained it.
+- **Drag the grip** at the left of a row to restack. This works with a mouse, a trackpad **and a
+  stylus** — the handle claims the gesture so a pen drag isn't mistaken for a scroll.
+- **A locked layer only blocks editing.** Panning (the Hand tool, or holding <kbd>Space</kbd>) and
+  zooming always work, whatever is locked.
+
+:::tip
+Layer lock and object lock are separate. The padlock on a layer row locks everything on that
+layer at once; <kbd>Ctrl+Shift+L</kbd> locks the selected *objects*.
+:::
 
 ## Arrange — stacking order
 
@@ -507,6 +565,18 @@ A language is only offered once it is complete, so you will never get a half-tra
 ## Export
 
 From the menu (or right-click → Export) save your work as **PNG**, **JPG**, **SVG**, **PDF** or copy it to the clipboard — the whole canvas or just the selection. **Artboards** export their region to a fixed-size PNG (see the Artboards doc).
+
+### Naming the file and choosing where it goes
+
+On **Chrome, Edge and the desktop app**, exporting opens the system's Save dialog: rename the
+file, pick the folder, and *Cancel* really cancels. On **Firefox and Safari**, which have no such
+API, the file goes to the browser's download folder under a default name as before.
+
+### Layer order is export order
+
+An export stacks exactly the way the canvas does — layer by layer, bottom layer first, and in
+drawing order within each layer. If the canvas looks right, the PNG, JPG, SVG, PDF and PPTX will
+match it.
 
 ### What ends up in the file
 

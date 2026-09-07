@@ -265,6 +265,9 @@
 }
 
 .drag-handle {
+    /* The handle owns its gesture. Without this a pen/touch drag down the layer list is claimed
+       by the browser as a scroll and the reorder is cancelled mid-drag (see startDrag). */
+    touch-action: none;
     cursor: grab;
     font-size: 12px;
     color: var(--text-secondary);

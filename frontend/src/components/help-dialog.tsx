@@ -126,6 +126,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'editor-penConstrainHandles9045', keys: 'Shift+Drag handle' },
             { key: 'editor-penNodeBreakTheHandlePair', keys: 'Alt+Drag handle' },
             { key: 'editor-pathNodeConvertCornerSmooth', keys: 'Alt+Click anchor' },
+            { key: 'editor-penConvertAnchorWhileDrawing', keys: 'Alt+Click placed anchor' },
             { key: 'editor-pathInsertAPointOnASegment', keys: 'Alt+Click segment' },
             { key: 'editor-pathNodeDelete', keys: 'Ctrl+Click anchor' },
             { key: 'editor-penFinishOpenPath', keys: 'Ctrl+Click canvas' },
@@ -218,6 +219,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         shortcuts: [
             { key: 'layersSlides-switchLayer', keys: 'Alt+1-9' },
             { key: 'layersSlides-newLayer', keys: 'Ctrl+Shift+N' },
+            { key: 'layersSlides-selectLayerRange', keys: 'Shift+Click layer row' },
+            { key: 'layersSlides-toggleLayerSelection', keys: 'Ctrl+Click layer row' },
             { key: 'layersSlides-reorderLayer', keys: 'Alt+[ / Alt+]' },
             { key: 'layersSlides-newSlidePage', keys: 'Ctrl+M' },
             { key: 'layersSlides-nextStateSlide', keys: 'Alt+Right' },

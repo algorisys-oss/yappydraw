@@ -2462,6 +2462,10 @@ export const YappyAPI = {
      */
     setDefaultTool(tool: 'inkbrush' | 'fineliner' | 'selection') { setDefaultToolAction(tool); },
     getDefaultTool() { return store.globalSettings.defaultTool ?? DEFAULT_TOOL_FALLBACK; },
+
+    /** Keep the drawing tool selected after each shape instead of reverting to Select (default true). */
+    setKeepToolActive(on: boolean) { updateGlobalSettings({ keepToolActive: on }); },
+    getKeepToolActive() { return store.globalSettings.keepToolActive !== false; },
     /** Canvas cursor while a drawing tool is active: 'crosshair' (default) | 'circle' | 'arrow'. */
     setPointerStyle(style: 'crosshair' | 'circle' | 'arrow') { updateGlobalSettings({ pointerStyle: style }); },
     getPointerStyle() { return store.globalSettings.pointerStyle ?? 'crosshair'; },
