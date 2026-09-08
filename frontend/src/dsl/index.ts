@@ -12,7 +12,7 @@ export type {
 } from './types';
 
 // Parser — imports trigger MermaidAdapter registration as side effect
-export { parseDSL, parseJsonDSL, parseTextDSL, validateDiagram } from './parser';
+export { parseDSL, parseJsonDSL, parseTextDSL, validateDiagram, detectDSLFormat, looksLikeDiagramDSL } from './parser';
 
 // Engine
 export { renderDiagram } from './engine/dsl-engine';

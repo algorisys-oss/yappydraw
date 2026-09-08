@@ -5,6 +5,21 @@ import * as presentations from './data/presentations';
 import { allDesignTemplates } from './data/designs';
 import { allAnimationTemplates } from './data/animations';
 import { listUserTemplates } from './user-templates';
+import { isDevMode } from '../store/app-store';
+
+/**
+ * Categories hidden unless Dev Mode is on.
+ *
+ * `dsl-examples` (the "Text Diagrams" tab) is parked here while text-diagram import is
+ * being fixed. Filtering on read rather than skipping registration means the toggle takes
+ * effect immediately, and the templates come straight back when Dev Mode goes on.
+ */
+const DEV_ONLY_CATEGORIES: readonly TemplateCategory[] = ['dsl-examples'];
+
+/** Is this category currently reachable from the UI? */
+function isCategoryVisible(category: TemplateCategory): boolean {
+    return !DEV_ONLY_CATEGORIES.includes(category) || isDevMode();
+}
 
 /**
  * Template Registry
@@ -173,6 +188,8 @@ class TemplateRegistry {
      * Get all templates for a category
      */
     getTemplatesByCategory(category: TemplateCategory): Template[] {
+        if (!isCategoryVisible(category)) return [];
+
         const templates = Array.from(this.templates.values())
             .filter(t => t.metadata.category === category)
             .sort((a, b) => (a.metadata.order || 999) - (b.metadata.order || 999));
@@ -194,6 +211,7 @@ class TemplateRegistry {
         const activeCategories = new Set<TemplateCategory>();
 
         this.templates.forEach(template => {
+            if (!isCategoryVisible(template.metadata.category)) return;
             activeCategories.add(template.metadata.category);
         });
 
@@ -209,6 +227,8 @@ class TemplateRegistry {
         const lowercaseQuery = query.toLowerCase();
 
         return Array.from(this.templates.values()).filter(template => {
+            if (!isCategoryVisible(template.metadata.category)) return false;
+
             const matchesName = template.metadata.name.toLowerCase().includes(lowercaseQuery);
             const matchesDescription = template.metadata.description.toLowerCase().includes(lowercaseQuery);
             const matchesTags = template.metadata.tags.some(tag =>
@@ -223,7 +243,7 @@ class TemplateRegistry {
      * Get all templates
      */
     getAllTemplates(): Template[] {
-        return Array.from(this.templates.values());
+        return Array.from(this.templates.values()).filter(t => isCategoryVisible(t.metadata.category));
     }
 }
 
@@ -234,7 +254,7 @@ export const templateRegistry = new TemplateRegistry();
 export const getTemplateById = (id: string) => templateRegistry.getTemplateById(id);
 export const getTemplatesByCategory = (category: TemplateCategory) =>
     templateRegistry.getTemplatesByCategory(category);
-export const getAllCategories = () => templateRegistry.getAllCategories();
+export const getAllCategories = () => templateRegistry.getAllCategories().filter(c => isCategoryVisible(c.id));
 export const getActiveCategories = () => templateRegistry.getActiveCategories();
 export const searchTemplates = (query: string) => templateRegistry.searchTemplates(query);
 export const registerTemplate = (template: Template) => templateRegistry.registerTemplate(template);

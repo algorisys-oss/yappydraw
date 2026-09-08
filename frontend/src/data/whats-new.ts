@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.241', date: '2026-09-08', items: [
+        'Fixed: pasting a text diagram that starts with a `---` settings block built a stack of blank slides instead of drawing the diagram \u2014 and wiped whatever you had on the canvas. Every YSL example did this. It now recognises the diagram, draws it, and leaves your work alone.',
+        'Importing a diagram no longer clears the page. It lands where you are looking, alongside what you already drew, so you can bring one in partway through a drawing.',
+        'Import from Text is hidden for the moment while the rest of it is sorted out. If you use it, turn on Dev Mode in Settings and it comes back, templates and all.',
+    ] },
     { version: '0.8.240', date: '2026-09-08', items: [
         'You can export an animated GIF from the infinite canvas now. Menu \u2192 Export offered PNG, PDF, MP4 and the rest there, but not GIF \u2014 even though the app could make one perfectly well. Pick Animated GIF, choose a frame rate, and it records the canvas as you see it.',
         'While a GIF is recording, a blue GIF badge sits at the top of the canvas showing how long it has been going and how big the file is so far, with a Stop button. A GIF stores every frame whole, so the size climbs faster than you would expect \u2014 now you can watch it and stop when you have enough.',

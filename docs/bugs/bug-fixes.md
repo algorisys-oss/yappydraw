@@ -2,6 +2,54 @@
 
 ## 2026-09-08
 
+### 359. Every YSL text diagram imported as an empty slide deck
+
+**Symptom:** reported as "most import text diagrams are not working … it's only importing
+into slides". **Menu → Templates → Text Diagrams**, pick any of the 15 YSL templates, and the
+import dialog badged it *Markdown → Slides*, the button read **Import Slides**, and clicking it
+replaced the document with a deck of blank slides. No diagram, and whatever you had been
+drawing was gone. The 14 Mermaid templates were fine, which is why it read as "most" rather
+than "all".
+
+**Cause:** three separate faults, stacked.
+
+1. **Format detection.** The dialog sniffed the format itself, and its Markdown test
+   (`isMarkdownSlideContent`) claims any text containing a `^---$` line, because Markdown uses
+   that as a slide break. Every YSL source *opens* with `---` frontmatter. So all 15 YSL
+   templates — and any DSL a user pastes with a `layout:` block — were routed to the slide
+   importer. The dialog also carried its own short list of Mermaid headers, which had drifted
+   from the adapter's: `gantt`, `gitGraph`, `journey`, `quadrantChart`, `xychart-beta` and
+   `block-beta` parsed correctly but were labelled *Text DSL*.
+2. **Parser routing.** Three templates failed even on the DSL path. `isYSLScript` treated a
+   bare keyword prefix — `/^(let|const|fn|for|if|else|end|…)\b/` — as proof of a script, so a
+   flowchart's last box (`end [circle] "End"`) or a sequence diagram's `loop … end` fragment
+   sent plain text DSL to the YSL parser, where both are syntax errors. The text parser
+   handles those `loop/alt/else/end` fragments itself.
+3. **Destructive import.** The dialog passed `clearCanvas: true`, which deletes every element
+   and forces the document back to an infinite canvas. Importing a diagram onto work in
+   progress threw the work away. That flag came from v0.25.6 ("fix AI drawing/DSL import adding
+   to existing slides"), aimed at the AI path.
+
+**Fix:**
+- Detection moved into the DSL module as `detectDSLFormat`, which asks the Mermaid adapter
+  directly and recognises a diagram by structure Markdown cannot produce — DSL frontmatter
+  keys, an edge operator, or a node's `[shape]` bracket. Markdown is now the fallback, claimed
+  only when the text is not a diagram. The dialog calls it instead of keeping a second copy.
+- `isYSLScript` matches full statement forms (`let x =`, `fn name(`, `for x in`, …) instead of
+  bare keywords. `end` and `else` are gone from the list: neither can *open* a script.
+- Import draws into the document you are in — placed at the viewport when there is already
+  content, fit to screen only on an empty canvas.
+
+**Verified:** all 29 templates and all 24 `examples/dsl/` files parse; all 29 render through the
+real app (the five chart types — pie, gantt, journey, quadrant, xychart — are one element each
+by design). In the browser: badge *Text DSL*, "Valid — 6 nodes, 6 edges", **Import Diagram**,
+12 elements added, and a pre-existing rectangle and text both still there afterwards. Markdown
+decks still detect as Markdown.
+
+**Also:** text-diagram import is parked behind **Settings → Dev Mode** while the rest of it is
+worked through — the menu item, its `Ctrl+Shift+I` palette command and the *Text Diagrams*
+template category all disappear with Dev Mode off. `Yappy.importDSL()` is unaffected.
+
 ### 358. The Export dialog hid Animated GIF on an infinite canvas
 
 **Symptom:** on an infinite-canvas document, **Menu → Export** offered PNG, JPG, SVG, PDF,

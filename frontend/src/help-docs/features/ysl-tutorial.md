@@ -10,11 +10,13 @@ description: Create diagrams from text using the Yappy Scripting Language
 
 YSL is a compact text format for creating diagrams. Write plain text and Yappy renders it as a fully interactive diagram with automatic layout, connectors, and styling. Open the import dialog with <kbd>Ctrl+Shift+I</kbd> or **File > Import from Text**.
 
+> **Currently behind Dev Mode.** Text-diagram import is being reworked, so the *Import from Text* menu item, its <kbd>Ctrl+Shift+I</kbd> shortcut, and the *Text Diagrams* template category only appear when **Dev Mode** is on (Settings → Dev Mode). The scripting API (`Yappy.importDSL(...)`) works either way.
+
 ## How to run it (in the app)
 
 You don't need the console to use YSL — it's built into the menu:
 
-1. Open the import dialog: **Menu → Import from Text**, or press <kbd>Ctrl+Shift+I</kbd>.
+1. Turn on **Dev Mode** in Settings (see the note above), then open the import dialog: **Menu → Import from Text**, or press <kbd>Ctrl+Shift+I</kbd>.
 2. **Paste your YSL** (or JSON / Mermaid) into the text box. A badge shows the format Yappy detected — *Text DSL*, *JSON*, *Mermaid*, or *Markdown → Slides*.
 3. Optionally pick a **Layout** from the dropdown to override the ` layout:` in your frontmatter.
 4. Click **Import Diagram**. Yappy creates the shapes, wires up the connectors, and auto-arranges everything on the canvas.

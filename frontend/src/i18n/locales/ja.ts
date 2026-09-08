@@ -638,7 +638,7 @@ export const ja: Dictionary = {
         includeDimensionsTitle: '書き出す PNG / JPG / SVG / PDF に寸法注釈を焼き込みます',
         devMode: '開発モード',
         devModeTitle: '開発途中の機能を表示します。未完成のツールが普段の作図の邪魔にならないよう、既定ではオフです。',
-        devModeHint: '開発途中の機能が表示されています。ゲームビルダーはメニュー → ゲーム に表示されます。',
+        devModeHint: '開発途中の機能が表示されています。ゲームビルダーはメニュー → ゲーム に、「テキストから読み込む」と「テキスト図」テンプレートも表示されます。',
         sectionInput: 'ペンと入力',
         defaultTool: '既定のツール',
         defaultToolTitle: 'Yappy を開いたときに有効なツール。今すぐ切り替わります。',

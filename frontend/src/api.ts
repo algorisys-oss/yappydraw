@@ -2981,7 +2981,9 @@ export const YappyAPI = {
     async storageEstimate() { const m = await import('./storage/persistent-storage'); return m.getStorageEstimate(); },
 
     // Templates
-    /** List template metadata, optionally filtered by category (e.g. 'designs', 'my-templates'). */
+    /** List template metadata, optionally filtered by category (e.g. 'designs', 'my-templates').
+     * `dsl-examples` ("Text Diagrams") is hidden unless Dev Mode is on, so it lists empty by
+     * default while text-diagram import is reworked. `importDSL` is unaffected. */
     getTemplates(category?: string) {
         const all = category
             ? getTemplatesByCategory(category as any)

@@ -16,7 +16,8 @@ import {
     toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical,
     toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
     toggleNodeTool, exitAllToolModes,
-    applyFeather, applyGlow, applyScribble, setExtrude, toggleRevolve, setTransformEffect
+    applyFeather, applyGlow, applyScribble, setExtrude, toggleRevolve, setTransformEffect,
+    isDevMode
 } from "../store/app-store";
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
 import { flipSelected, lockSelected, unlockAllElements } from "./object-context-actions";
@@ -455,8 +456,12 @@ export const getCommands = (): Command[] => {
         },
         { id: 'action-add-layer', label: t('commands.action-add-layer'), category: 'Layers', action: () => addLayer(), shortcut: 'Ctrl+Shift+N' },
 
-        // DSL Import
-        { id: 'file-import-dsl', label: t('commands.file-import-dsl'), category: 'File', action: () => setIsDSLImportOpen(true), shortcut: 'Ctrl+Shift+I' },
+        // DSL Import — parked behind Dev Mode while text-diagram import is fixed, so the
+        // palette entry and its shortcut disappear with the menu item rather than being the
+        // one way left in.
+        ...(isDevMode()
+            ? [{ id: 'file-import-dsl', label: t('commands.file-import-dsl'), category: 'File' as const, action: () => setIsDSLImportOpen(true), shortcut: 'Ctrl+Shift+I' }]
+            : []),
         { id: 'file-save-gallery', label: t('commands.file-save-gallery'), category: 'File', action: () => { void quickSaveToGallery(); }, shortcut: 'Ctrl+S' },
         { id: 'file-open-gallery', label: t('commands.file-open-gallery'), category: 'File', action: () => setShowDrawingsGallery(true) },
     ];

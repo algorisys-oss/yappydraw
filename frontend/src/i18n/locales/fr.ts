@@ -653,7 +653,7 @@ export const fr: Dictionary = {
         includeDimensionsTitle: 'Intégrer les cotes dans les fichiers PNG / JPG / SVG / PDF exportés',
         devMode: 'Mode développement',
         devModeTitle: 'Affiche les fonctionnalités encore en cours de construction. Désactivé par défaut, pour qu’un outil inachevé ne gêne jamais le dessin au quotidien.',
-        devModeHint: 'Les fonctionnalités en cours sont visibles. Le créateur de jeux apparaît désormais dans Menu → Jeu.',
+        devModeHint: 'Les fonctionnalités en cours sont visibles : le créateur de jeux dans Menu → Jeu, ainsi que « Importer depuis du texte » et les modèles « Diagrammes texte ».',
         sectionInput: 'Stylet et saisie',
         defaultTool: 'Outil par défaut',
         defaultToolTitle: 'Outil actif à l’ouverture de Yappy. Bascule aussi dessus immédiatement.',

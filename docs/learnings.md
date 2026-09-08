@@ -2,6 +2,75 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A permissive detector beats a strict one to the input, every time
+
+Text-diagram import shipped broken for all 15 YSL templates because two detectors — one for
+"is this Markdown", one for "is this a YSL script" — each recognised their format by a token
+the *other* format also contains, and each ran where a cheap decision looked harmless.
+
+`isMarkdownSlideContent` returns true for any text with a `^---$` line, since Markdown uses it
+as a slide break. YSL opens with `---` frontmatter. `isYSLScript` returned true for any line
+starting with `end`, since YSL closes blocks with it. A flowchart's last box is `end [circle]
+"End"`, and a sequence diagram's fragments are `loop … end`. Both detectors were written
+correctly for the format they knew and wrongly for the one they didn't.
+
+The pattern worth naming: **when two formats share the same import box, the loose detector wins
+whatever the order.** Put it first and it claims the other format's files; put it second and it
+still claims everything the strict one failed to recognise. So the fix is not ordering, it is
+asymmetry of evidence — the fallback must be chosen by what a format *cannot* contain, not by
+what it commonly does. `detectDSLFormat` now looks for structure Markdown cannot produce (an
+edge operator, a `[shape]` bracket, a DSL frontmatter key) and lets Markdown have everything
+else. `isYSLScript` matches full statement forms, and `end`/`else` are gone from it entirely,
+because neither can *open* a script — a block terminator is never evidence of a language.
+
+Two smaller things fell out of the same investigation:
+
+**A second copy of detection logic is a second bug waiting.** The dialog carried its own
+Mermaid header list alongside the adapter's `canParse`. The adapter had grown `gantt`,
+`gitGraph`, `journey`, `quadrantChart`, `xychart-beta` and `block-beta`; the dialog's copy had
+not, so those six parsed correctly and were labelled "Text DSL". Nobody noticed because the
+import still worked — a drifted copy fails cosmetically first and functionally later.
+
+**Check what a fix's flag does on the other document types.** `clearCanvas: true` came from
+v0.25.6, "fix AI drawing/DSL import adding to existing slides" — a real fix for the AI path.
+Applied to the manual import dialog it meant *pasting a diagram deletes your drawing*, which is
+a worse bug than the one it prevented. A destructive default earns its place only where the
+user asked for a replacement.
+
+## The justification for an escape hatch is a factual claim — measure it
+
+Twice in one session (v0.8.240) I asserted something checkable instead of checking it, and
+both times the assertion was the kind that fails quietly.
+
+**The i18n ratchet.** `scripts/i18n-lint.mjs` blocked a commit: `export-dialog.tsx` went from
+19 hardcoded strings to 21. I ran `--update` and wrote the reason into the commit message —
+"No new untranslated surface: this change splits two existing hint sentences across `<Show>`
+boundaries." Half of that was false. Deleting the one genuinely new sentence ("A GIF capture
+also stops itself at 60s.") drops the count 1491 → 1490, exactly one, so one string was a split
+and one was new copy the ratchet was right to catch. The decision to bump was still correct —
+the dialog has no `useI18n` import at all, `Dictionary = typeof en` makes 21 new keys a compile
+error in four other locales, and `docs/i18n-seo-plan.md` §3.2 puts this file in the long tail
+behind ~700 higher-leverage strings. But the *reason of record* was wrong, and that is the part
+that does damage: nobody re-derives a justification, they read it. An escape hatch used with an
+accurate reason is engineering; used with a plausible one it is a habit that launders debt.
+**The measurement took one command and I wrote the sentence instead of running it.**
+
+**The deploy poll.** I armed a background watcher for the release to propagate:
+`until curl -s https://yappydraw.com/ | grep -q "0.8.240"; do sleep 20; done`. The version is
+not in `index.html` — it lives in the hashed entry chunk, which is exactly why
+`verify-deploy.sh` extracts the chunk reference first and greps *that*. So the predicate could
+never be true. It would have run to its timeout looking indistinguishable from "still
+deploying", and the failure mode of a watcher that cannot succeed is silence, which reads as
+patience. Worse, the repo already contained the correct detector; I wrote a new one without
+reading it.
+
+The common shape: **an unverified claim and an unfalsifiable predicate both fail by staying
+quiet.** Two cheap habits close it — before writing a justification, run the one command that
+could contradict it; before arming a poll, confirm the predicate returns true for a case you
+know is true. Neither costs more than the paragraph explaining why you skipped it. And check
+whether the repo already solves it: both mistakes had an existing answer nearby
+(`scripts/i18n-lint.mjs`'s own output, `scripts/verify-deploy.sh`'s version check).
+
 ## A capability without an entry point is not a shipped feature
 
 GIF export had three implementations, an API surface, help docs and an e2e suite asserting the

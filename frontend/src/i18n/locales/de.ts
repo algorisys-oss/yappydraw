@@ -638,7 +638,7 @@ export const de: Dictionary = {
         includeDimensionsTitle: 'Bemaßungen fest in exportierte PNG-/JPG-/SVG-/PDF-Dateien einrechnen',
         devMode: 'Entwicklermodus',
         devModeTitle: 'Zeigt Funktionen, die noch entstehen. Standardmäßig aus, damit ein unfertiges Werkzeug beim alltäglichen Zeichnen nie im Weg steht.',
-        devModeHint: 'Funktionen in Arbeit sind sichtbar. Der Spiel-Baukasten erscheint jetzt unter Menü → Spiel.',
+        devModeHint: 'Funktionen in Arbeit sind sichtbar: der Spiel-Baukasten unter Menü → Spiel sowie „Aus Text importieren“ und die Vorlagen unter „Textdiagramme“.',
         sectionInput: 'Stift & Eingabe',
         defaultTool: 'Standardwerkzeug',
         defaultToolTitle: 'Welches Werkzeug beim Start von Yappy aktiv ist. Wird auch sofort ausgewählt.',

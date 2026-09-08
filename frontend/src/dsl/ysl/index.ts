@@ -55,6 +55,32 @@ export function parseYSL(source: string): ParseResult {
 }
 
 /**
+ * Statement openers that mean "this is a script", matched in their full YSL form.
+ *
+ * The full form matters. An earlier version tested a bare keyword prefix
+ * (`/^(let|const|fn|for|if|else|end|…)\b/`), which sent any plain text-DSL source
+ * containing a line starting with one of those words to the YSL parser — where it is
+ * a syntax error. Two ordinary things trip that: a node whose id is `end`
+ * (`end [circle] "End"`, the last box of a flowchart) and a sequence diagram's
+ * `loop … end` / `alt … else … end` fragments, which are text-DSL syntax the text
+ * parser handles itself. So `end` and `else` are deliberately absent here: neither can
+ * *open* a YSL script — they only ever close or continue a block that one of the
+ * openers below already introduced.
+ */
+const YSL_STATEMENT_OPENERS: readonly RegExp[] = [
+    /^(?:let|const)\s+[A-Za-z_$][\w$]*\s*=/,      // let x = 3
+    /^fn\s+[A-Za-z_$][\w$]*\s*\(/,                // fn name(a, b)
+    /^for\s+[A-Za-z_$][\w$]*\s+in\b/,             // for i in 1..5
+    /^if\s+(?!\[|")/,                             // if count > 3   (not: if [rect] "…")
+    /^template\s+[A-Za-z_$][\w$]*\s*\(/,          // template box(id)
+    /^use\s+[A-Za-z_$][\w$]*\s*\(/,               // use box("a")
+    /^group\s+[A-Za-z_$][\w$]*(?:\s+"|\s*$)/,     // group g1 "Label"
+    /^animate\s*$/,                               // animate
+    /^on\s+(?:click|hover|leave)\b/,               // on click node1
+    /^Yappy\./,                                    // Yappy.setBackground(…)
+];
+
+/**
  * Detect if the input looks like a YSL script (vs plain text DSL).
  * YSL scripts contain scripting constructs: let, const, fn, for, if, etc.
  */
@@ -75,8 +101,8 @@ export function isYSLScript(input: string): boolean {
         // Skip comments and empty lines
         if (trimmed.startsWith('#') || !trimmed) continue;
 
-        // Check for YSL-specific keywords at line start
-        if (/^(let|const|fn|for|if|else|end|template|use|group|animate|on|Yappy\.)\b/.test(trimmed)) {
+        // Check for YSL-specific statement openers at line start
+        if (YSL_STATEMENT_OPENERS.some(re => re.test(trimmed))) {
             return true;
         }
 

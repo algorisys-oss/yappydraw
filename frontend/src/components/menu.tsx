@@ -859,13 +859,16 @@ const Menu: Component = () => {
                                         <Layout size={16} />
                                         <span class="label">{t('menu.templates')}</span>
                                     </button>
-                                    <button class="menu-item" onClick={() => { setIsDSLImportOpen(true); setIsMenuOpen(false); }}>
-                                        <FileText size={16} />
-                                        <span class="label">{t('menu.importFromText')}</span>
-                                        <div class="menu-item-right">
-                                            <span class="shortcut">Ctrl+Shift+I</span>
-                                        </div>
-                                    </button>
+                                    {/* Text-diagram import is parked behind Dev Mode while it is fixed. */}
+                                    <Show when={isDevMode()}>
+                                        <button class="menu-item" onClick={() => { setIsDSLImportOpen(true); setIsMenuOpen(false); }}>
+                                            <FileText size={16} />
+                                            <span class="label">{t('menu.importFromText')}</span>
+                                            <div class="menu-item-right">
+                                                <span class="shortcut">Ctrl+Shift+I</span>
+                                            </div>
+                                        </button>
+                                    </Show>
                                     </Show>
                                     <div class="menu-separator"></div>
                                     {/* File tools (open / save / export / history / time-lapse) — placed right

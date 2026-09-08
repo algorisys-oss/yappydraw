@@ -6,11 +6,12 @@
 
 import { type Component, createSignal, createEffect, onCleanup, Show, For } from "solid-js";
 import { X, FileText, AlertTriangle, Check } from "lucide-solid";
-import { parseDSL, renderDiagram } from "../dsl";
+import { parseDSL, detectDSLFormat, renderDiagram } from "../dsl";
 import type { ParseResult, DSLLayoutStrategy } from "../dsl";
 import { isMarkdownSlideContent, parseMarkdownToSlides } from "../utils/markdown-to-slides";
-import { loadDocument } from "../store/app-store";
+import { store, loadDocument } from "../store/app-store";
 import { showToast } from "./toast";
+import { viewportCenter } from "../utils/image-actions";
 import "./dsl-import-dialog.css";
 
 interface DSLImportDialogProps {
@@ -69,11 +70,14 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
             return;
         }
 
+        // Ask the DSL module what it will do with this text rather than sniffing it
+        // here — a second, looser copy of that logic is what made every YSL source
+        // (which opens with `---` frontmatter) look like a Markdown slide break.
+        // Markdown is the fallback, claimed only when this is not a diagram.
         const trimmed = text.trim();
-        if (trimmed.startsWith('{')) {
-            setDetectedFormat('json');
-        } else if (/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|pie|mindmap)\b/m.test(trimmed)) {
-            setDetectedFormat('mermaid');
+        const dslFormat = detectDSLFormat(trimmed);
+        if (dslFormat) {
+            setDetectedFormat(dslFormat);
         } else if (isMarkdownSlideContent(trimmed)) {
             setDetectedFormat('markdown');
             // Don't parse as DSL — markdown handled separately
@@ -114,7 +118,19 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
             diagram.layout = { ...diagram.layout, strategy: override as DSLLayoutStrategy };
         }
 
-        renderDiagram(diagram, { clearCanvas: true, zoomToFit: true });
+        // Draw into the document you are in. Importing used to pass `clearCanvas: true`,
+        // which deletes every element and forces the document back to an infinite canvas —
+        // so importing a diagram onto a drawing you were working on threw the drawing away.
+        // With content already on the canvas, place the diagram at the viewport instead and
+        // leave the view where it is; an empty canvas still gets the fit-to-screen treatment.
+        const hasContent = store.elements.length > 0;
+        const origin = hasContent ? viewportCenter() : { x: 0, y: 0 };
+        renderDiagram(diagram, {
+            clearCanvas: false,
+            offsetX: origin.x,
+            offsetY: origin.y,
+            zoomToFit: !hasContent,
+        });
         props.onClose();
         setInputText('');
         setParseResult(null);

@@ -638,7 +638,7 @@ export const es: Dictionary = {
         includeDimensionsTitle: 'Fija las cotas en los archivos PNG / JPG / SVG / PDF exportados',
         devMode: 'Modo desarrollo',
         devModeTitle: 'Muestra las funciones que aún se están construyendo. Desactivado por defecto, para que una herramienta sin terminar nunca estorbe al dibujar.',
-        devModeHint: 'Las funciones en desarrollo están visibles. El constructor de juegos aparece ahora en Menú → Juego.',
+        devModeHint: 'Las funciones en desarrollo están visibles: el constructor de juegos en Menú → Juego, además de «Importar desde texto» y las plantillas de «Diagramas de texto».',
         sectionInput: 'Lápiz y entrada',
         defaultTool: 'Herramienta predeterminada',
         defaultToolTitle: 'Herramienta activa al abrir Yappy. También cambia a ella ahora.',

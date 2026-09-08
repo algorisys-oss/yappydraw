@@ -645,7 +645,7 @@ export const en = {
         includeDimensionsTitle: 'Bake dimension annotations into exported PNG / JPG / SVG / PDF files',
         devMode: 'Dev Mode',
         devModeTitle: 'Show features that are still being built. Off by default, so an unfinished tool never gets in the way of everyday drawing.',
-        devModeHint: 'Work-in-progress features are visible. The Game builder now appears under Menu → Game.',
+        devModeHint: 'Work-in-progress features are visible: the Game builder under Menu → Game, and Import from Text plus the Text Diagrams templates.',
         sectionInput: 'Pen & Input',
         defaultTool: 'Default Tool',
         defaultToolTitle: 'Which tool is active when Yappy opens. Switches to it now, too.',

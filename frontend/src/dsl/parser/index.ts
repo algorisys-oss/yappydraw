@@ -13,6 +13,64 @@ import { MermaidAdapter } from '../adapters/mermaid/mermaid-adapter';
 // Register built-in adapters
 adapterRegistry.register(new MermaidAdapter());
 
+/** A `---` fence on its own line — YAML/DSL frontmatter, and also Markdown's slide break. */
+const FRONTMATTER_FENCE = /^---+\s*$/;
+
+/** Frontmatter keys the text DSL understands (see `parseFrontmatterLine`). */
+const DSL_FRONTMATTER_KEYS = /^(title|description|layout|hspacing|vspacing|columns|targetwidth)\s*:/i;
+
+/** `a -> b`, `a ->> b`, … — an edge line. Nothing in Markdown looks like this. */
+const DSL_EDGE_LINE = /^\s*\S+\s*(?:-->>|->>|-->|->|--|~>|=>)\s*\S+/;
+
+/** `id [shape] …` — a node declaration with an explicit shape. */
+const DSL_NODE_LINE = /^\s*\S+\s*\[[^\]]+\]/;
+
+/**
+ * Does this text describe a diagram, rather than a Markdown deck?
+ *
+ * Both formats are offered by the same import box, and the two overlap: a DSL source
+ * opens with `---` frontmatter, which Markdown reads as a slide break, and `#` starts a
+ * comment in the DSL but a heading in Markdown. Detecting Markdown on those alone sent
+ * every frontmatter-led DSL source to the slide importer, so pasting a flowchart built
+ * a deck of empty slides instead of drawing it (all 15 YSL templates did this).
+ *
+ * So look for structure Markdown cannot produce: DSL frontmatter keys, an edge operator,
+ * or a node's `[shape]` bracket. A prose document has none of the three.
+ */
+export function looksLikeDiagramDSL(input: string): boolean {
+    const lines = input.split('\n');
+
+    // A leading frontmatter block whose keys are DSL keys.
+    if (FRONTMATTER_FENCE.test(lines[0]?.trim() ?? '')) {
+        for (let i = 1; i < lines.length; i++) {
+            const trimmed = lines[i].trim();
+            if (FRONTMATTER_FENCE.test(trimmed)) break;
+            if (DSL_FRONTMATTER_KEYS.test(trimmed)) return true;
+        }
+    }
+
+    // Or an edge / shaped-node line anywhere in the body.
+    return lines.some(line => DSL_EDGE_LINE.test(line) || DSL_NODE_LINE.test(line));
+}
+
+/**
+ * Which format `parseDSL` will actually use for this input.
+ *
+ * Exported so the import dialog can label the input and choose between the diagram and
+ * Markdown-slides importers without re-implementing (and drifting from) the detection
+ * here. It previously matched Mermaid with its own short list of diagram headers, which
+ * is why `gantt`, `gitGraph`, `journey`, `quadrantChart`, `xychart-beta` and `block-beta`
+ * were labelled "Text DSL" even though the Mermaid adapter parsed them.
+ */
+export function detectDSLFormat(input: string): 'json' | 'mermaid' | 'text' | null {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
+    if (adapterRegistry.get('mermaid')?.canParse(trimmed)) return 'mermaid';
+    if (looksLikeDiagramDSL(trimmed)) return 'text';
+    return null;
+}
+
 /**
  * Parse DSL input (auto-detects format).
  * Checks: JSON → Mermaid → YSL script → Text DSL.
