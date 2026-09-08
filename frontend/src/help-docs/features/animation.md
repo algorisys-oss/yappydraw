@@ -516,7 +516,7 @@ This is the part worth knowing before you record — the same buttons behave dif
 | Document | What you get |
 | --- | --- |
 | **Presentation or Design**<br />(pages) | An **offline render of the page** — exactly the page bounds at its own resolution, animations playing, with no workspace grey, no neighbouring pages, and no dependence on your current zoom or pan. You don't have to play anything: the export drives the animation clock itself. Runs for the duration you set, then stops. |
-| **Infinite canvas** | A **live screen capture** of the canvas as you see it — your zoom, pan and anything you do while it runs. It keeps going until you stop it (see below), so the Duration field doesn't apply. The Export dialog offers no GIF here — there are no page bounds to frame one to — but the presentation toolbar's film button captures the viewport as a GIF just fine. |
+| **Infinite canvas** | A **live screen capture** of the canvas as you see it — your zoom, pan and anything you do while it runs. It keeps going until you stop it (see below), so the Duration field doesn't apply. **Animated GIF** works here too and takes the same live route: there are no page bounds to frame an offline render to, so it captures the viewport. The **Frame rate** still applies; the duration estimate doesn't. |
 
 :::tip
 For a clean animation file, export from a **presentation or design page**. Use live capture when you want the recording to show what you're *doing* — a walkthrough, a demo, or the whole presentation played end to end.
@@ -524,7 +524,7 @@ For a clean animation file, export from a **presentation or design page**. Use l
 
 ### Live screen capture
 
-Start it from **Menu → Export → MP4/WebM** on an infinite-canvas document, or from a script with `Yappy.recordAnimation()`. A red **REC** badge with a timer appears at the top of the canvas — press its **Stop** button to finish and download.
+Start it from **Menu → Export → MP4/WebM/Animated GIF** on an infinite-canvas document, or from a script with `Yappy.recordAnimation()` / `Yappy.startGifCapture()`. A badge with a timer appears at the top of the canvas — red **REC** for video, blue **GIF** (with the running file size beside it) for a GIF capture. Press its **Stop** button to finish and download.
 
 It records the **canvas surface only**, at 60fps. Toolbars, panels, dialogs and the REC badge are normal page UI and never appear in the recording, so you get a clean picture of the drawing even while you work around it.
 
@@ -546,7 +546,10 @@ Yappy.stopRecording();             // stop + download now
 
 ### Capturing a looping GIF
 
-Next to Record is a **film** button that captures a looping GIF the same way: press it to start, press it again to stop and download. While it runs it shows the elapsed time and the file size as it grows — `0:04 · 210 KB` — because a GIF stores every frame whole, so length costs bytes directly.
+Two ways in, both landing on the same capture:
+
+- **Menu → Export → Animated GIF** on an infinite-canvas document. Set the frame rate, press Export, and stop it from the blue **GIF** badge at the top of the canvas.
+- While **presenting** (<kbd>F5</kbd>), the **film** button in the presentation toolbar, next to Record: press it to start, press it again to stop and download. Either way it shows the elapsed time and the file size as it grows — `0:04 · 210 KB` — because a GIF stores every frame whole, so length costs bytes directly.
 
 It's start/stop rather than a fixed length on purpose. Animations fire on clicks, build steps and conditions, so there's usually no duration to pick in advance — and stopping by hand is what gives a clean loop: press Stop the moment the motion returns to where it began, and the join is invisible. Captures auto-stop at 60 seconds as a backstop.
 
@@ -574,7 +577,7 @@ await Yappy.exportGif(5, 24);        // 5s GIF at 24 fps
 | --- | --- | --- |
 | **MP4** (H.264) | Sharing anywhere — messaging apps, video editors, Windows/macOS players | Up to 120s; long side capped at 1920px |
 | **WebM** (VP9) | The web; smaller files at the same quality | Up to 120s; long side capped at 1920px |
-| **Animated GIF** | Loops forever; drops into docs, chat and README files with no player | Page export up to 30s; live capture up to 60s. Long side capped at 960px (GIFs get enormous beyond that); 256 colours. Frame rate is set in the export dialog (default 12 — 20–24 suits fast motion). |
+| **Animated GIF** | Loops forever; drops into docs, chat and README files with no player | Page export up to 30s; live capture (infinite canvas, or the presentation film button) up to 60s. Long side capped at 960px (GIFs get enormous beyond that); 256 colours. Frame rate is set in the export dialog (default 12 — 20–24 suits fast motion). |
 
 :::tip
 Recording a **time-lapse** of your drawing process is a separate feature — see *Menu → Record Time-lapse* (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+ <kbd>T</kbd>), not this export.

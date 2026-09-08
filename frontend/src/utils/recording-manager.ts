@@ -46,6 +46,18 @@ export const [gifElapsedMs, setGifElapsedMs] = createSignal(0);
 /** Bytes written so far — the cost of a long capture, visible while it accrues. */
 export const [gifBytes, setGifBytes] = createSignal(0);
 
+// Readout for a running capture. Shared rather than inlined per surface because
+// there is now more than one — the presentation toolbar button and the
+// editing-mode overlay — and they must not drift apart on formatting.
+export const gifElapsedText = (): string => {
+    const s = Math.floor(gifElapsedMs() / 1000);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+export const gifSizeText = (): string => {
+    const kb = gifBytes() / 1024;
+    return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
+};
+
 // Backstop so a forgotten capture can't quietly produce a huge file. Memory is
 // NOT the constraint: frames are encoded and appended as they arrive and raw
 // frames are never retained, so a capture costs about its own output size

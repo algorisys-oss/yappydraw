@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.240', date: '2026-09-08', items: [
+        'You can export an animated GIF from the infinite canvas now. Menu \u2192 Export offered PNG, PDF, MP4 and the rest there, but not GIF \u2014 even though the app could make one perfectly well. Pick Animated GIF, choose a frame rate, and it records the canvas as you see it.',
+        'While a GIF is recording, a blue GIF badge sits at the top of the canvas showing how long it has been going and how big the file is so far, with a Stop button. A GIF stores every frame whole, so the size climbs faster than you would expect \u2014 now you can watch it and stop when you have enough.',
+        'On a page or slide, Animated GIF still does what it always did: renders that page on its own, at its own size, whatever your zoom happens to be.',
+    ] },
     { version: '0.8.237', date: '2026-09-07', items: [
         'Supporting YappyDraw is one page and one payment now, and you choose the amount — anything from ₹100 upwards. Give what it is worth to you.',
         'Two amounts come with something in return. ₹1,000 or more puts your name in the app\u2019s supporters list, permanently. ₹2,499 or more makes you a founding member: a founders page thanking you, the founders-only channel, ready-made desktop apps for Mac, Windows and Linux, free or discounted places at our workshops, the collaboration server\u2019s source code once it exists, and a permanent discount on hosted collaboration when that launches.',

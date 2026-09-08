@@ -1,5 +1,41 @@
 # Bug Fixes Log
 
+## 2026-09-08
+
+### 358. The Export dialog hid Animated GIF on an infinite canvas
+
+**Symptom:** on an infinite-canvas document, **Menu → Export** offered PNG, JPG, SVG, PDF,
+PPTX, WebM Video and MP4 Video — but no **Animated GIF**. Reported as "we do have GIF export,
+so why can't I see it?", which is exactly right: the feature was complete, the file format was
+shipped, and the entry point was missing on one document type.
+
+**Cause:** the GIF radio was wrapped in `<Show when={isPaged()}>` in `export-dialog.tsx`.
+`isPagedDocType` matches only `slides | design | game | animation`, so `infinite` failed it.
+The gate was defensible when written — `exportPageGif` renders offline against page bounds and
+toasts "GIF export needs a page/slide document" without them — but WebM and MP4 have the *same*
+constraint and stayed visible, because `handleExport` gives them a fallback: no page bounds
+means capture the live canvas instead. GIF never got that fallback, so it was hidden rather
+than wired up. And outside presentation mode it had no other route either: the film button
+lives in `PresentationCaptureButtons`, which only mounts in the two presentation toolbars. Net
+effect — a working feature with no way to reach it while editing.
+
+**Fix:** three changes, all mirroring what the video formats already do.
+- The GIF radio is offered on every document type.
+- `handleExport` routes a non-paged GIF to `startCanvasGif({ fps })` — the live capture — and
+  keeps the paged case on the offline page-framed `exportPageGif`.
+- `RecordingOverlay` gained optional `label` / `accent` / `elapsedMs` / `detail` props, and
+  `canvas.tsx` renders a blue **GIF** instance of it whenever a capture runs outside
+  presentation mode. Without that there is a Start with no Stop while editing, and the capture
+  could only end by hitting the 60s cap.
+
+The elapsed/size readout moved to `gifElapsedText()` / `gifSizeText()` in `recording-manager.ts`
+so the toolbar button and the overlay cannot drift apart on formatting.
+
+**Guard:** `tests/recording-capture.spec.ts` — one test drives the dialog on an infinite canvas
+and asserts the downloaded bytes are a valid looping GIF; a second asserts a paged document
+still takes the offline route (no capture overlay), so the fallback cannot swallow the case it
+was added beside.
+
 ## 2026-09-07 — Anshika's week-one review of the vector workflow
 
 Ten defects from a designer's first sustained week in the app (31 Aug – 4 Sep). Grouped because

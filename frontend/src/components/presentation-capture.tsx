@@ -14,7 +14,7 @@ import { Video, Square, Film } from 'lucide-solid';
 import { store } from '../store/app-store';
 import {
     setRequestRecording, startCanvasGif, stopCanvasGif,
-    gifCapturing, gifElapsedMs, gifBytes,
+    gifCapturing, gifElapsedText, gifSizeText,
 } from '../utils/recording-manager';
 
 // Height to lift toasts by while a presentation toolbar is docked at the
@@ -29,15 +29,6 @@ export const PresentationCaptureButtons: Component<{ onInteract?: () => void }> 
     // buttons once did.
     onMount(() => document.documentElement.style.setProperty('--toast-bottom', TOOLBAR_CLEARANCE));
     onCleanup(() => document.documentElement.style.removeProperty('--toast-bottom'));
-
-    const elapsed = () => {
-        const s = Math.floor(gifElapsedMs() / 1000);
-        return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-    };
-    const size = () => {
-        const kb = gifBytes() / 1024;
-        return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
-    };
 
     const btn = (active: boolean, activeColor: string) => ({
         background: active ? `${activeColor}1f` : 'none',
@@ -104,7 +95,7 @@ export const PresentationCaptureButtons: Component<{ onInteract?: () => void }> 
                         'font-variant-numeric': 'tabular-nums',
                         'white-space': 'nowrap',
                     }}>
-                        {elapsed()} · {size()}
+                        {gifElapsedText()} · {gifSizeText()}
                     </span>
                 </Show>
             </button>

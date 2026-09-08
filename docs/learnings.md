@@ -2,6 +2,33 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A capability without an entry point is not a shipped feature
+
+GIF export had three implementations, an API surface, help docs and an e2e suite asserting the
+downloaded bytes. On an infinite canvas a user still could not find it, because the one radio
+button that would have offered it was behind `<Show when={isPaged()}>` and the only other
+control lived in a toolbar that mounts in presentation mode. Every test passed. Every test was
+testing the mechanism.
+
+The gate itself was reasonable when written: the offline exporter genuinely needs page bounds.
+What made it a bug is that the two formats sitting immediately beside it — WebM and MP4 — have
+the identical constraint and were handled the opposite way, with a fallback rather than a hide.
+So the file already contained the answer, eight lines below the gate. **When you disable a
+control because a backend cannot serve one case, look at what its neighbours do with the same
+case first** — a lone `Show` among siblings that all cope is usually an unfinished branch, not
+a decision.
+
+Hiding is also the failure mode that leaves no trace. A disabled control invites a question; an
+absent one reads as "this app doesn't do that", and the user goes elsewhere. This one survived
+because nobody who knew the feature existed ever looked for it on the document type where it
+was missing.
+
+And "start" without "stop" is half a control. Wiring the dialog to the live capture would have
+produced a capture the user could not end while editing — the Stop lived in a presentation-only
+toolbar — which is a worse bug than the one being fixed. The check is cheap: for any action a
+UI can begin, find the control that ends it *in the same context*, not merely somewhere in the
+codebase.
+
 ## We publish a tree nobody builds
 
 The deploy broke twice because of a one-word change to `.ossignore`, and it was invisible

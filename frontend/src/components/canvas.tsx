@@ -79,7 +79,7 @@ import RecordingOverlay from "./recording-overlay";
 import TimelapseOverlay from "./timelapse-overlay";
 import TimelapsePlayer from "./timelapse-player";
 import VideoOverlay from "./video-overlay";
-import { setupRecording, pageVideoExporting } from "../utils/recording-manager";
+import { setupRecording, pageVideoExporting, gifCapturing, stopCanvasGif, gifElapsedMs, gifSizeText } from "../utils/recording-manager";
 import { setupTimelapse } from "../utils/timelapse-manager";
 export { requestRecording, setRequestRecording } from "../utils/recording-manager";
 import ScrollBackButton from "./scroll-back-button";
@@ -2772,6 +2772,20 @@ const Canvas: Component = () => {
             {/* Recording Overlay */}
             <Show when={store.isRecording}>
                 <RecordingOverlay onStop={handleStopRecording} />
+            </Show>
+
+            {/* GIF capture indicator. Presentation mode has its own Stop on the
+                capture toolbar, but that toolbar is not mounted while editing —
+                so without this a capture started from the Export dialog could
+                only end by reaching the 60s cap. */}
+            <Show when={gifCapturing() && store.appMode !== 'presentation'}>
+                <RecordingOverlay
+                    label="GIF"
+                    accent="#0ea5e9"
+                    elapsedMs={gifElapsedMs}
+                    detail={gifSizeText}
+                    onStop={stopCanvasGif}
+                />
             </Show>
 
             {/* Time-lapse capture indicator + replay player */}

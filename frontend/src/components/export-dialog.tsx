@@ -79,8 +79,17 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
         } else if (format() === 'pptx') {
             exportToPptx(scale(), hasBackground(), onlySelected());
         } else if (format() === 'gif') {
-            const { exportPageGif } = await import('../utils/recording-manager');
-            exportPageGif({ seconds: videoSeconds(), fps: gifFps() });
+            const m = await import('../utils/recording-manager');
+            if (isPaged()) {
+                m.exportPageGif({ seconds: videoSeconds(), fps: gifFps() });
+            } else {
+                // Infinite canvas has no page bounds to frame an offline render
+                // to, so capture the live canvas instead — the same fallback the
+                // video formats below take. Open-ended rather than timed: the
+                // Stop is on the capture overlay, and stopping by hand is what
+                // lands a clean loop seam.
+                void m.startCanvasGif({ fps: gifFps() });
+            }
         } else if (format() === 'webm' || format() === 'mp4') {
             const videoFormat = format() as 'webm' | 'mp4';
             if (isPaged()) {
@@ -139,12 +148,10 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                     <input type="radio" name="format" checked={format() === 'mp4'} onChange={() => setFormat('mp4')} />
                                     MP4 Video
                                 </label>
-                                <Show when={isPaged()}>
-                                    <label class="radio-label">
-                                        <input type="radio" name="format" checked={format() === 'gif'} onChange={() => setFormat('gif')} />
-                                        Animated GIF
-                                    </label>
-                                </Show>
+                                <label class="radio-label">
+                                    <input type="radio" name="format" checked={format() === 'gif'} onChange={() => setFormat('gif')} />
+                                    Animated GIF
+                                </label>
                             </div>
                         </div>
 
@@ -177,7 +184,11 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                         <Show when={isVideo()}>
                             <div class="option-group">
                                 <Show when={isPaged()} fallback={
-                                    <span class="hint">Records the live canvas — use the recording indicator's Stop, or it keeps going until stopped.</span>
+                                    <span class="hint">
+                                        Records the live canvas — use the capture indicator's Stop, or it keeps
+                                        going until stopped.
+                                        <Show when={format() === 'gif'}> A GIF capture also stops itself at 60s.</Show>
+                                    </span>
                                 }>
                                     <label>Duration (seconds)</label>
                                     <input type="number" min="1" max="120" step="1" value={videoSeconds()}
@@ -193,7 +204,7 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                             the file, so fps multiplies size directly — unlike the
                             video encoders, which are fixed at 60fps capture and
                             compress between frames. */}
-                        <Show when={format() === 'gif' && isPaged()}>
+                        <Show when={format() === 'gif'}>
                             <div class="option-group">
                                 <label>Frame rate (fps)</label>
                                 <input type="number" min="5" max="30" step="1" value={gifFps()}
@@ -201,7 +212,8 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                     onChange={(e) => setGifFps(Math.max(5, Math.min(30, parseInt(e.currentTarget.value) || 12)))} />
                                 <span class="hint">
                                     Higher is smoother but bigger — every frame is stored whole. 12 suits most
-                                    animations; 20–24 is worth it for fast motion. Roughly {Math.round(videoSeconds() * gifFps())} frames.
+                                    animations; 20–24 is worth it for fast motion.
+                                    <Show when={isPaged()}> Roughly {Math.round(videoSeconds() * gifFps())} frames.</Show>
                                 </span>
                             </div>
                         </Show>
