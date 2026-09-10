@@ -85,7 +85,7 @@ frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildV
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
 frontend/src/api.ts | typescript | 5087 | Theme:3 PaintChannel:19 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:681 as:681 Window:5076
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1609 | Component:1 App:102 moves:127 onPenMove:128 hidePen:132 handleKeyUp:171 handleKeyDown:181 as:835 handleFullscreenChange:987 handleBeforeUnload:993 handlePaste:997 of:1111 isInternalPanelDrag:1114 handleGlobalDragEnter:1117 handleGlobalDragOver:1131 showDropFallbackPrompt:1149 cleanup:1179 outsideClick:1207 isImageFile:1219 first:1220 must:1233 extractDropData:1235 processExtractedDrop:1290 handleGlobalDrop:1411 handleDocumentDrop:1457
+frontend/src/app.tsx | typescript | 1644 | Component:1 App:102 moves:127 onPenMove:128 hidePen:132 handleKeyUp:171 handleKeyDown:181 as:852 the:903 handleFullscreenChange:1022 handleBeforeUnload:1028 handlePaste:1032 of:1146 isInternalPanelDrag:1149 handleGlobalDragEnter:1152 handleGlobalDragOver:1166 showDropFallbackPrompt:1184 cleanup:1214 outsideClick:1242 isImageFile:1254 first:1255 must:1268 extractDropData:1270 processExtractedDrop:1325 handleGlobalDrop:1446 handleDocumentDrop:1492
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -119,7 +119,7 @@ frontend/src/components/bpmn-tool-group.tsx | typescript | 241 | Component:1 Bpm
 frontend/src/components/brand-kit-panel.css | - | 88 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
 frontend/src/components/canvas-toolbar.tsx | typescript | 135 | Component:1 CanvasToolbar:7 resetHideTimeout:11 toolBtnStyle:33
-frontend/src/components/canvas.tsx | typescript | 2822 | Component:1 TextEditingContext:64 CanvasEventContext:66 MeasureSegment:71 CropHandle:72 Canvas:91 setEditingId:205 flushPenPoints:252 handleResize:281 canvasCursor:336 buildAnchorMenu:359 samplePixelHex:402 draw:418 and:746 viewportTransform:824 getWorldCoordinates:833 getWheelCtx:841 onWheel:847 normalizePencil:850 applyMasterProjection:886 canInteractWithElement:896 checkBinding:920 refreshLinePoints:923 refreshBoundLine:926 commitText:945 commitRichText:953 isPenDrawingTool:982 pickStylusTouch:991 findTouchById:999 finalizeTouchStroke:1007 smartShapeEnabled:1037 cancelShapeHold:1041 resetActiveStroke:1049 fireShapeHold:1060 armShapeHold:1118 noteShapeMove:1126 beginTouchPenStroke:1142 handleTouchStart:1162 handleTouchMove:1193 handleTouchEnd:1246 isTouchBlockedByGesture:1289 cancelLongPress:1310 clearUndoRepeat:1357 fitView:1362 armUndoRepeat:1366 cancelInflightForGesture:1387 beginGesture:1414 updateGesture:1445 endGesture:1496 fireTap:1503 handleTouchStartGesture:1509 handleTouchMoveGesture:1544 handleTouchEndGesture:1629 handlePointerDown:1676 move:1698 up:1708 selectionRect:1904 artboardForRect:1915 updateMeasureHover:1930 handlePointerMove:1946 handlePointerUp:2089 handleDoubleClick:2171 onFontsLoaded:2328 clearMeasureOnAltUp:2337 handleCropKeys:2367 handlePolylineKeys:2398 handlePenKeys:2416 dropHandler:2434 for:2470
+frontend/src/components/canvas.tsx | typescript | 2836 | Component:1 TextEditingContext:64 CanvasEventContext:66 MeasureSegment:71 CropHandle:72 Canvas:91 setEditingId:205 flushPenPoints:252 handleResize:281 canvasCursor:336 buildAnchorMenu:359 samplePixelHex:402 draw:418 and:746 viewportTransform:824 getWorldCoordinates:833 getWheelCtx:841 onWheel:847 normalizePencil:850 applyMasterProjection:886 canInteractWithElement:896 checkBinding:920 refreshLinePoints:923 refreshBoundLine:926 commitText:945 commitRichText:953 isPenDrawingTool:982 pickStylusTouch:991 findTouchById:999 finalizeTouchStroke:1007 smartShapeEnabled:1037 cancelShapeHold:1041 resetActiveStroke:1049 fireShapeHold:1060 armShapeHold:1118 noteShapeMove:1126 beginTouchPenStroke:1142 handleTouchStart:1162 handleTouchMove:1193 handleTouchEnd:1246 isTouchBlockedByGesture:1289 cancelLongPress:1310 clearUndoRepeat:1357 fitView:1362 armUndoRepeat:1366 cancelInflightForGesture:1387 beginGesture:1414 updateGesture:1445 endGesture:1496 fireTap:1503 handleTouchStartGesture:1509 handleTouchMoveGesture:1544 handleTouchEndGesture:1629 handlePointerDown:1676 move:1698 up:1708 selectionRect:1904 artboardForRect:1915 updateMeasureHover:1930 handlePointerMove:1946 handlePointerUp:2089 handleDoubleClick:2171 onFontsLoaded:2328 clearMeasureOnAltUp:2337 handleCropKeys:2367 handlePolylineKeys:2398 handlePenKeys:2416 dropHandler:2434 for:2483
 frontend/src/components/cloud-infra-tool-group.tsx | typescript | 213 | Component:1 CloudInfraToolGroup:107 handler:115 getActiveTool:125 handleToolClick:134 as:142 as:148 handleRightClick:156 toggleMenu:161 activeTool:168 isActive:169
 frontend/src/components/cloud-storage-dialog.css | - | 475 |
 frontend/src/components/cloud-storage-dialog.tsx | typescript | 498 | CloudDialogMode:21 CloudStorageDialogProps:23 CloudStorageDialog:32 handleKeyDown:49 loadFiles:94 handleSignIn:118 handleSignOut:137 handleSave:147 handleLoad:197 handleDelete:212 handleSearch:225 formatDate:233 formatSize:244
@@ -184,7 +184,7 @@ frontend/src/components/graphic-styles-panel.tsx | typescript | 88 | Component:1
 frontend/src/components/group-isolation-banner.css | - | 51 |
 frontend/src/components/group-isolation-banner.tsx | typescript | 58 | GroupIsolationBanner:16 onKey:18 depth:32 memberCount:33
 frontend/src/components/help-dialog.css | - | 233 |
-frontend/src/components/help-dialog.tsx | typescript | 476 | HotkeyKey:5 ShortcutEntry:9 ShortcutCategory:15 LocalizedCategory:21 parseKeys:264 Props:283 HelpDialog:288 handleKeyDown:329
+frontend/src/components/help-dialog.tsx | typescript | 477 | HotkeyKey:5 ShortcutEntry:9 ShortcutCategory:15 LocalizedCategory:21 parseKeys:265 Props:284 HelpDialog:289 handleKeyDown:330
 frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 129 | Component:1 InfraToolGroup:23 handler:31 getActiveTool:41 handleToolClick:50 as:58 as:64 handleRightClick:72 toggleMenu:77 activeTool:84 isActive:85
@@ -355,7 +355,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 777 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 782 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -448,7 +448,7 @@ frontend/src/help-docs/help-page.css | - | 587 |
 frontend/src/help-docs/help-page.tsx | typescript | 326 | Component:6 ShapeDoc:45 markdownDoc:68 shapeFromPath:202 HelpPage:207 navigateToShape:219 filteredShapes:224 currentDoc:235 handleBackToApp:237
 frontend/src/help-docs/markdown.test.ts | typescript | 299 | the:4 render:20 and:102
 frontend/src/help-docs/markdown.ts | typescript | 363 | Token:32 Tokens:32 DocMeta:34 RenderedDoc:60
-frontend/src/help-docs/shapes/basic-shapes.md | - | 194 |
+frontend/src/help-docs/shapes/basic-shapes.md | - | 205 |
 frontend/src/help-docs/shapes/bpmn.md | - | 226 |
 frontend/src/help-docs/shapes/connectors.md | - | 184 |
 frontend/src/help-docs/shapes/drawing-tools.md | - | 224 |
@@ -473,11 +473,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1091 |
-frontend/src/i18n/locales/en.ts | typescript | 1121 | Dictionary:1121
-frontend/src/i18n/locales/es.ts | typescript | 1090 |
-frontend/src/i18n/locales/fr.ts | typescript | 1112 | de:108
-frontend/src/i18n/locales/ja.ts | typescript | 1090 |
+frontend/src/i18n/locales/de.ts | typescript | 1092 |
+frontend/src/i18n/locales/en.ts | typescript | 1122 | Dictionary:1122
+frontend/src/i18n/locales/es.ts | typescript | 1091 |
+frontend/src/i18n/locales/fr.ts | typescript | 1113 | de:108
+frontend/src/i18n/locales/ja.ts | typescript | 1091 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -1033,7 +1033,7 @@ tests/group-isolation.spec.ts | typescript | 172 | makeGroup:23 get:37 get:62 ge
 tests/help-doc-recovery.spec.ts | typescript | 53 |
 tests/help-docs.spec.ts | typescript | 23 |
 tests/history-panel.spec.ts | typescript | 44 | survives:21
-tests/hotkeys.spec.ts | typescript | 248 |
+tests/hotkeys.spec.ts | typescript | 352 |
 tests/html-player-check.spec.ts | typescript | 113 | Page:1 Window:7 inkedPixels:11 exportDoc:26
 tests/idb-storage.spec.ts | typescript | 97 | Window:6
 tests/image-and-swatches.spec.ts | typescript | 324 | snap:108 snap:157 geom:253

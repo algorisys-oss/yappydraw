@@ -756,7 +756,24 @@ const App: Component = () => {
         // any `e.shiftKey && key === ...` branch further down this same chain. Shift+S (toggle
         // stroke stabilization, further down) silently cycled the stroke style instead until
         // this guard was added. Same hazard 'f' avoids by putting its Shift variant first.
-        if (key === 's' && !e.shiftKey) {
+        // Nothing in this chain fires while a pointer interaction is in flight. Every
+        // branch below yanks the canvas out from under a live drag, and the keys sit right
+        // under the hand that is already dragging — `1`/`2`/`v`/`r` switch tool, which makes
+        // the eventual pointerup take a different early return in handlePointerUp than the
+        // one that finalises the drag (selectionOnUp/drawOnUp), so the shape is left
+        // uncommitted and `pState.isDrawing` stays stuck true, blocking every later stroke;
+        // Delete/Backspace deletes the element being dragged; the arrow keys nudge against
+        // the drag; F2/Tab/Enter open a text overlay on top of it; Space arms the pan tool
+        // that one pointer cannot drive anyway (dragging to the viewport edge already
+        // auto-scrolls). Deferring costs nothing — the key works again on release.
+        // Escape is NOT in this chain (it cancels the drag, handled earlier and by the
+        // mode-scoped capture listeners in canvas.tsx), and Shift/Alt/Ctrl are read off the
+        // pointer event rather than here, so constrain/duplicate modifiers are unaffected.
+        // This is also what will make typing mid-drag safe for type-to-label F3
+        // (docs/type-to-label-spec.md).
+        if ((window as any).__canvasPointerBusy?.()) {
+          // deliberately inert while dragging
+        } else if (key === 's' && !e.shiftKey) {
           e.preventDefault();
           cycleStrokeStyle();
         } else if (key === 'f' && e.shiftKey) {
@@ -871,12 +888,30 @@ const App: Component = () => {
           }
         } else if (key === 'enter') {
           if (store.selection.length === 1) {
-            // Only intercept Enter for mindmap nodes (elements with parentId)
             const selEl = store.elements.find(el => el.id === store.selection[0]);
             if (selEl?.parentId) {
+              // Mindmap nodes keep the outline flow: Enter adds a SIBLING, as in every
+              // outliner. Tested first so the label editor below cannot shadow it.
               e.preventDefault();
               const newId = addSiblingNode(store.selection[0], { animate: false });
               if (newId) (window as any).__nodeTextEdit?.startEditing(newId);
+            } else if ((window as any).__nodeTextEdit?.startEditing(store.selection[0], { selectAll: true })) {
+              // On anything else Enter opens the label editor — the Excalidraw/tldraw
+              // convention, and the key people actually reach for (F2 does the same thing
+              // but needs Fn on most laptops). Select-all, so typing replaces. A freshly
+              // drawn shape is left selected by draw-handler, which makes "drag out a box,
+              // press Enter, type the label" work end to end.
+              //
+              // Deliberately NOT extended to bare printable characters, the other way
+              // PowerPoint and draw.io start a label: single letters are this app's tool
+              // shortcut namespace (`r`, `v`, `1`, `2`…), so type-to-replace would either
+              // cost tool switching or make it silently conditional on selection — an
+              // invisible mode, worse than the problem. See docs/type-to-label-spec.md.
+              //
+              // Only claim the key when the editor actually opened: startEditing declines
+              // bare connectors and anything the rotation guard blocks, and Enter must
+              // stay free for whatever would otherwise handle it.
+              e.preventDefault();
             }
           }
         } else if (key === ' ') {

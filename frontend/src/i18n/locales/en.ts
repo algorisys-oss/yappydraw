@@ -502,6 +502,7 @@ export const en = {
         'editor-addChildNode': 'Add Child Node (+ edit)',
         'editor-addSiblingNode': 'Add Sibling Node (+ edit)',
         'editor-editNodeText': 'Edit Node Text',
+        'editor-editShapeLabel': 'Edit Shape Label',
         'editor-toggleCollapseHoldToPan': 'Toggle Collapse (tap) · Hold to Pan',
         'editor-navigateMindmap': 'Navigate Mindmap',
         'editor-nudgeElement': 'Nudge Element',

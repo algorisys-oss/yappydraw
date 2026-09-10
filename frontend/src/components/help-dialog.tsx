@@ -137,6 +137,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'editor-editNodeText', keys: 'F2' },
             { key: 'editor-toggleCollapseHoldToPan', keys: 'Space' },
             { key: 'editor-navigateMindmap', keys: 'Arrow Keys' },
+            { key: 'editor-editShapeLabel', keys: 'Enter or F2' },
             { key: 'editor-nudgeElement', keys: 'Arrow' },
             { key: 'editor-nudgeCoarseFine', keys: 'Shift+Arrow / Ctrl+Arrow' },
             { key: 'editor-starPolygonPointCount', keys: 'Up/Down (when selected)' },

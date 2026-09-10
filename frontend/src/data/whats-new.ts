@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.242', date: '2026-09-10', items: [
+        'Select a shape and press Enter to label it. Draw a box, press Enter, type \u2014 no double-click, no reaching for the mouse again. F2 still does the same thing. (On a mindmap node Enter keeps adding a sibling, as before; use F2 to edit the node itself.)',
+        'Fixed: brushing a key while dragging \u2014 1, 2, V, R, Space, Delete, an arrow \u2014 threw away the shape you were drawing and left the canvas unable to draw anything at all until you reloaded. Those keys are now simply ignored until you let go of the mouse.',
+        'The help page had been telling you to label a shape by selecting it and typing. That never worked, because single letters pick tools. It now says Enter, which does.',
+    ] },
     { version: '0.8.241', date: '2026-09-08', items: [
         'Fixed: pasting a text diagram that starts with a `---` settings block built a stack of blank slides instead of drawing the diagram \u2014 and wiped whatever you had on the canvas. Every YSL example did this. It now recognises the diagram, draws it, and leaves your work alone.',
         'Importing a diagram no longer clears the page. It lands where you are looking, alongside what you already drew, so you can bring one in partway through a drawing.',

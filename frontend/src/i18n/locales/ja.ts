@@ -495,6 +495,7 @@ export const ja: Dictionary = {
         'editor-addChildNode': '子ノードを追加（＋編集）',
         'editor-addSiblingNode': '兄弟ノードを追加（＋編集）',
         'editor-editNodeText': 'ノードのテキストを編集',
+        'editor-editShapeLabel': '図形のラベルを編集',
         'editor-toggleCollapseHoldToPan': '折りたたみを切り替え（タップ）・長押しでパン',
         'editor-navigateMindmap': 'マインドマップ内を移動',
         'editor-nudgeElement': '要素を微調整',

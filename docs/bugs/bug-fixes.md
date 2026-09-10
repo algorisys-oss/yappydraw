@@ -1,5 +1,48 @@
 # Bug Fixes Log
 
+## 2026-09-10
+
+### 360. A tool hotkey pressed mid-drag stranded the drag and jammed the canvas
+
+**Symptom:** start dragging out a shape, and while the mouse button is still down brush a
+single-key shortcut — `1`, `2`, `v`, `r`, Space, Delete, an arrow key. The shape you were
+drawing never appears, and from then on the canvas is *stuck*: later strokes do nothing.
+Easy to hit by accident, because those keys sit right under the hand that is already
+dragging.
+
+**Cause:** `handlePointerUp` (`components/canvas.tsx`) dispatches on `store.selectedTool`,
+and tests `'pan'` / `'laser'` / `'eraser'` **before** the branches that actually finalise an
+interaction (`selectionOnUp`, `drawOnUp`). The app-wide single-key shortcut chain in
+`app.tsx` had no guard against running mid-drag, so a tool switch changed
+`store.selectedTool` out from under a live drag. The release then took the wrong early
+return: `drawOnUp` never ran, so the element was never committed **and
+`pState.isDrawing` was never reset** — and `draw-handler.ts` sets that flag false only at
+the end of the path that was skipped. A stuck `isDrawing = true` blocks every subsequent
+stroke, which is the "canvas is dead" half of the symptom.
+
+Space was the clearest case: it arms the pan tool, which one pointer cannot drive anyway
+while it is busy sizing a shape. Nothing was gained by allowing it — dragging toward the
+viewport edge already auto-scrolls (`handleAutoScroll`), which is how you draw a shape
+bigger than the viewport. Delete/Backspace was the nastiest: it deleted the element being
+dragged.
+
+**Fix:** the single-key chain in `app.tsx` is now inert while a pointer interaction is in
+flight, gated on a small `__canvasPointerBusy()` probe exposed by `canvas.tsx`
+(`isDrawing || isDragging || isSelecting`), alongside the existing `__tableCellNav` /
+`__nodeTextEdit` bridges. One guard at the head of the chain rather than per-branch, since
+every branch in it is disruptive mid-drag.
+
+Deliberately *not* guarded inside `setSelectedTool` itself: `finishDrawing` legitimately
+calls it to revert to the selection tool while `isDrawing` is still true, so a guard there
+would have broken the tool revert after every draw.
+
+Escape is unaffected (it is not in this chain — it cancels the drag, via the mode-scoped
+capture listeners in `canvas.tsx`), and Shift/Alt/Ctrl are read off the pointer event
+rather than the keyboard chain, so constrain- and duplicate-drag modifiers still work.
+
+Pinned by `tests/hotkeys.spec.ts` — "single-key shortcuts are inert while a drag is in
+flight", which A/B-fails on the pre-fix tree at the first mid-drag assertion.
+
 ## 2026-09-08
 
 ### 359. Every YSL text diagram imported as an empty slide deck

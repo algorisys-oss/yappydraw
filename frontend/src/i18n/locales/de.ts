@@ -495,6 +495,7 @@ export const de: Dictionary = {
         'editor-addChildNode': 'Unterknoten hinzufügen (+ bearbeiten)',
         'editor-addSiblingNode': 'Geschwisterknoten hinzufügen (+ bearbeiten)',
         'editor-editNodeText': 'Knotentext bearbeiten',
+        'editor-editShapeLabel': 'Formbeschriftung bearbeiten',
         'editor-toggleCollapseHoldToPan': 'Einklappen umschalten (tippen) · Halten zum Verschieben',
         'editor-navigateMindmap': 'In der Mindmap navigieren',
         'editor-nudgeElement': 'Element verschieben',

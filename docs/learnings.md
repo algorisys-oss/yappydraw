@@ -2,6 +2,60 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Check whether the feature you are about to build is already documented as existing
+
+The type-to-label spec started as a "does anyone else do this?" question. The audit that
+answered it found `help-docs/shapes/basic-shapes.md` telling users to label a shape by
+selecting it "and start typing" — a thing that has never worked, because single letters are
+the tool namespace. The doc was not describing a bug; it was describing a feature nobody
+built.
+
+Worth doing deliberately, because it cuts both ways. Docs that over-promise generate support
+load and make users think the app is broken. Docs that under-promise hide features — v0.8.240
+shipped a GIF export that had existed the whole time, and #343 was a help page naming a menu
+path that had moved releases earlier. **The help docs are a claim about the product; audit
+them against the code when you touch a feature, not just when someone complains.**
+
+The other half of that audit was deciding *not* to make the doc true as written. Adopting
+type-to-replace would have meant either losing single-letter tool switching or making it
+conditional on whether something is selected — an invisible mode. Excalidraw and tldraw both
+use Enter instead, which is free here. **When documentation and code disagree, the code is not
+automatically the thing that is wrong** — but neither is the doc, and picking which to change
+is a design decision, not a cleanup.
+
+## A keyboard shortcut is a state transition, so it needs the same guards as one
+
+Bug #360: pressing `1`, `2`, `v`, Space or Delete *during* a drag stranded the shape and left
+the canvas unable to draw at all. The keys were never wrong on their own — they were wrong
+because they fired while another interaction owned the pointer.
+
+Two things worth keeping from it.
+
+**The failure was in the seam, not in either half.** `handlePointerUp` dispatches on
+`store.selectedTool` to decide which `*OnUp` finalises the interaction; the shortcut chain
+mutates `store.selectedTool`. Each is reasonable read alone. Together they mean a keypress
+can silently re-route the *end* of a gesture that already started, so the release runs a
+finaliser belonging to a different tool — and `pState.isDrawing`, cleared only at the end of
+the branch that got skipped, stays true forever. Any state a pointer gesture reads on
+`pointerup` but a keystroke can write in between is this same bug waiting to happen.
+
+**The guard belongs at the shortcut layer, not the API.** The obvious fix — refuse inside
+`setSelectedTool` while a drag is live — breaks the app, because `finishDrawing` itself calls
+`setSelectedTool('selection')` to revert the tool while `isDrawing` is *still true*; it clears
+the flag afterwards. The legitimate caller and the illegitimate one are indistinguishable at
+the API. They are trivially distinguishable one level up: user-initiated keystroke vs.
+internal call. **Guard where intent is known, not where the damage happens.**
+
+A corollary on scope: the first instinct was to guard Space, because Space was the case that
+prompted the question. The right move was to ask what *else* reaches the same seam — and the
+answer was the entire single-key chain, ~20 branches, one guard at its head. Fixing the
+reported instance would have left the bug in place under a different key.
+
+Also worth recording because it settled a design question cheaply: pan-during-drag is not a
+feature anyone lost. One pointer cannot pan and size a shape at once, and the real need
+("draw something bigger than the viewport") was already solved by `handleAutoScroll` on the
+move path. A shortcut that cannot physically do its job is not a trade-off to preserve.
+
 ## A permissive detector beats a strict one to the input, every time
 
 Text-diagram import shipped broken for all 15 YSL templates because two detectors — one for

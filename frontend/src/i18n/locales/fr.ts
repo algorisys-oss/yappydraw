@@ -510,6 +510,7 @@ export const fr: Dictionary = {
         'editor-addChildNode': 'Ajouter un nœud enfant (+ édition)',
         'editor-addSiblingNode': 'Ajouter un nœud frère (+ édition)',
         'editor-editNodeText': 'Modifier le texte du nœud',
+        'editor-editShapeLabel': "Modifier l'étiquette de la forme",
         'editor-toggleCollapseHoldToPan': 'Réduire/développer (appui) · maintenir pour faire glisser',
         'editor-navigateMindmap': 'Naviguer dans la carte mentale',
         'editor-nudgeElement': 'Décaler l’élément',

@@ -495,6 +495,7 @@ export const es: Dictionary = {
         'editor-addChildNode': 'Añadir nodo hijo (+ editar)',
         'editor-addSiblingNode': 'Añadir nodo hermano (+ editar)',
         'editor-editNodeText': 'Editar el texto del nodo',
+        'editor-editShapeLabel': 'Editar la etiqueta de la forma',
         'editor-toggleCollapseHoldToPan': 'Alternar plegado (toque) · Mantener para desplazar',
         'editor-navigateMindmap': 'Navegar por el mapa mental',
         'editor-nudgeElement': 'Desplazar elemento',

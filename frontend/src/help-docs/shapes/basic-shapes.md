@@ -136,8 +136,19 @@ All basic shapes share these styling options:
 
 ### Text labels
 
-Double-click a shape (or select it and start typing) to give it a label. Text is
-**centred by default** — both horizontally and vertically — which is what you want for
+Give a shape a label in whichever way suits your hands: **double-click** it, or select it
+and press <kbd>Enter</kbd> (<kbd>F2</kbd> does the same). Either way the existing text comes
+up selected, so typing replaces it. A shape you have just drawn is already selected — so
+drag out a box, press <kbd>Enter</kbd>, and type, without touching the mouse again.
+
+<kbd>Enter</kbd> means "add a sibling" on a **mindmap** node, which keeps the outline flow;
+use <kbd>F2</kbd> there. And once the editor is open <kbd>Enter</kbd> is a line break again —
+commit with <kbd>Esc</kbd> or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>.
+
+Note that typing a bare letter on a selected shape does **not** start a label — single letters
+are tool shortcuts (<kbd>R</kbd> for rectangle, <kbd>V</kbd> for select), and they keep that job.
+
+Text is **centred by default** — both horizontally and vertically — which is what you want for
 almost every diagram box. Change it per shape with the alignment buttons in the Properties panel or
 the smart toolbar, or set `textAlign` to `'left'` / `'right'` from
 the API. Code blocks and UML attribute/method sections stay left-aligned, and table cells keep their

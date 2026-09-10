@@ -2467,6 +2467,19 @@ const Canvas: Component = () => {
             untrack(handleResize);
         });
 
+        // Is a pointer interaction mid-flight? Read by the single-key shortcut chain in
+        // app.tsx, which is inert while one is. The sharp edge is tool switching:
+        // handlePointerUp dispatches on `store.selectedTool` and checks 'pan'/'laser'/
+        // 'eraser' BEFORE selectionOnUp and drawOnUp, so a tool change mid-drag makes the
+        // release take an early return instead of the branch that finalises the drag —
+        // the shape is left uncommitted and `pState.isDrawing` stays stuck true, which
+        // blocks every later stroke (see the note further up in this file). Deleting,
+        // nudging and opening a text overlay mid-drag are wrong for the same reason.
+        // Nothing is lost by refusing: one pointer cannot pan and drag at the same time,
+        // and dragging to the viewport edge already auto-scrolls (handleAutoScroll).
+        (window as any).__canvasPointerBusy = () =>
+            pState.isDrawing || pState.isDragging || pState.isSelecting;
+
         // Expose table cell navigation interface for global keyboard handler (app.tsx)
         (window as any).__tableCellNav = {
             getCellSelection: () => tableCellSelectionSignal(),
@@ -2576,6 +2589,7 @@ const Canvas: Component = () => {
         onCleanup(() => {
             delete (window as any).__tableCellNav;
             delete (window as any).__nodeTextEdit;
+            delete (window as any).__canvasPointerBusy;
             clearUndoRepeat();
             registerColorDropCommit(null);
             dropZone.removeEventListener('dragover', handleDragOver);
