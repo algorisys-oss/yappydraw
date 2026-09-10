@@ -37,7 +37,7 @@ import {
     connectorHandleOnUp,
     handleAutoScroll
 } from "../utils/tool-handlers/minor-handlers";
-import { drawOnDown, drawOnMove, drawOnUp } from "../utils/tool-handlers/draw-handler";
+import { drawOnDown, drawOnMove, drawOnUp, acceptsDragLabel } from "../utils/tool-handlers/draw-handler";
 import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
 import { setPointUndoHandler } from "../utils/point-undo";
@@ -2429,6 +2429,49 @@ const Canvas: Component = () => {
         };
         window.addEventListener('keydown', handlePenKeys, true);
 
+        // Type-to-label: while a shape's creation drag is in flight, typing goes into that
+        // shape's label instead of nowhere. Press, drag, type "A", release — a labelled
+        // shape, in one gesture, without ever leaving the mouse.
+        //
+        // The element already exists during the drag (`pState.currentId`) and is mutated on
+        // every pointermove — that is how the live preview resizes. So a keystroke is just
+        // `updateElement(id, { containerText })`, which means the label renders through the
+        // ordinary containerText path: live, in the right place, in BOTH sketch and
+        // architectural styles, with no drawing code of its own. `updateElement` defaults to
+        // recordHistory:false, so the letters do not each become an undo step — the label
+        // lands in the same history entry as the shape it belongs to.
+        //
+        // Capture phase, like the crop/polyline/pen handlers above, and scoped to the drag
+        // by the isDrawing guard. Claiming printable keys here is safe because the app-wide
+        // single-key chain (app.tsx) is already inert mid-drag — see bug #360, which had to
+        // be fixed before this could exist at all.
+        const handleDragLabelKeys = (e: KeyboardEvent) => {
+            if (!pState.isDrawing || !pState.currentId) return;
+            if (e.ctrlKey || e.metaKey || e.altKey) return;   // shortcuts and modifiers stay theirs
+
+            const el = store.elements.find(x => x.id === pState.currentId);
+            if (!el || !acceptsDragLabel(el.type)) return;
+
+            if (e.key === 'Backspace') {
+                // Deletes a CHARACTER, never the element being dragged.
+                if (!pState.dragLabelBuffer) return;
+                pState.dragLabelBuffer = pState.dragLabelBuffer.slice(0, -1);
+            } else if (e.key.length === 1) {
+                // One printable character (this excludes Escape/Enter/Tab/Arrow*/F-keys,
+                // whose `key` is a multi-character name). Escape must stay cancel-drag and
+                // the arrows must stay available to the drag itself.
+                pState.dragLabelBuffer += e.key;
+            } else {
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+            updateElement(pState.currentId, { containerText: pState.dragLabelBuffer });
+            requestAnimationFrame(draw);
+        };
+        window.addEventListener('keydown', handleDragLabelKeys, true);
+
         // Drag-and-drop for color/URL drops on canvas elements (image file drops handled globally in app.tsx)
         // Attach to parent wrapper div instead of canvas directly — canvas is a weak drop target on Linux/Wayland
         const dropHandler = (e: DragEvent) => handleDropHandler(e, canvasEventCtx);
@@ -2597,6 +2640,7 @@ const Canvas: Component = () => {
             window.removeEventListener('keydown', handleCropKeys, true);
             window.removeEventListener('keydown', handlePolylineKeys, true);
             window.removeEventListener('keydown', handlePenKeys, true);
+            window.removeEventListener('keydown', handleDragLabelKeys, true);
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("fullscreenchange", handleResize);
             if (canvasRef) {

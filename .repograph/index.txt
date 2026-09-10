@@ -119,7 +119,7 @@ frontend/src/components/bpmn-tool-group.tsx | typescript | 241 | Component:1 Bpm
 frontend/src/components/brand-kit-panel.css | - | 88 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
 frontend/src/components/canvas-toolbar.tsx | typescript | 135 | Component:1 CanvasToolbar:7 resetHideTimeout:11 toolBtnStyle:33
-frontend/src/components/canvas.tsx | typescript | 2836 | Component:1 TextEditingContext:64 CanvasEventContext:66 MeasureSegment:71 CropHandle:72 Canvas:91 setEditingId:205 flushPenPoints:252 handleResize:281 canvasCursor:336 buildAnchorMenu:359 samplePixelHex:402 draw:418 and:746 viewportTransform:824 getWorldCoordinates:833 getWheelCtx:841 onWheel:847 normalizePencil:850 applyMasterProjection:886 canInteractWithElement:896 checkBinding:920 refreshLinePoints:923 refreshBoundLine:926 commitText:945 commitRichText:953 isPenDrawingTool:982 pickStylusTouch:991 findTouchById:999 finalizeTouchStroke:1007 smartShapeEnabled:1037 cancelShapeHold:1041 resetActiveStroke:1049 fireShapeHold:1060 armShapeHold:1118 noteShapeMove:1126 beginTouchPenStroke:1142 handleTouchStart:1162 handleTouchMove:1193 handleTouchEnd:1246 isTouchBlockedByGesture:1289 cancelLongPress:1310 clearUndoRepeat:1357 fitView:1362 armUndoRepeat:1366 cancelInflightForGesture:1387 beginGesture:1414 updateGesture:1445 endGesture:1496 fireTap:1503 handleTouchStartGesture:1509 handleTouchMoveGesture:1544 handleTouchEndGesture:1629 handlePointerDown:1676 move:1698 up:1708 selectionRect:1904 artboardForRect:1915 updateMeasureHover:1930 handlePointerMove:1946 handlePointerUp:2089 handleDoubleClick:2171 onFontsLoaded:2328 clearMeasureOnAltUp:2337 handleCropKeys:2367 handlePolylineKeys:2398 handlePenKeys:2416 dropHandler:2434 for:2483
+frontend/src/components/canvas.tsx | typescript | 2880 | Component:1 TextEditingContext:64 CanvasEventContext:66 MeasureSegment:71 CropHandle:72 Canvas:91 setEditingId:205 flushPenPoints:252 handleResize:281 canvasCursor:336 buildAnchorMenu:359 samplePixelHex:402 draw:418 and:746 viewportTransform:824 getWorldCoordinates:833 getWheelCtx:841 onWheel:847 normalizePencil:850 applyMasterProjection:886 canInteractWithElement:896 checkBinding:920 refreshLinePoints:923 refreshBoundLine:926 commitText:945 commitRichText:953 isPenDrawingTool:982 pickStylusTouch:991 findTouchById:999 finalizeTouchStroke:1007 smartShapeEnabled:1037 cancelShapeHold:1041 resetActiveStroke:1049 fireShapeHold:1060 armShapeHold:1118 noteShapeMove:1126 beginTouchPenStroke:1142 handleTouchStart:1162 handleTouchMove:1193 handleTouchEnd:1246 isTouchBlockedByGesture:1289 cancelLongPress:1310 clearUndoRepeat:1357 fitView:1362 armUndoRepeat:1366 cancelInflightForGesture:1387 beginGesture:1414 updateGesture:1445 endGesture:1496 fireTap:1503 handleTouchStartGesture:1509 handleTouchMoveGesture:1544 handleTouchEndGesture:1629 handlePointerDown:1676 move:1698 up:1708 selectionRect:1904 artboardForRect:1915 updateMeasureHover:1930 handlePointerMove:1946 handlePointerUp:2089 handleDoubleClick:2171 onFontsLoaded:2328 clearMeasureOnAltUp:2337 handleCropKeys:2367 handlePolylineKeys:2398 handlePenKeys:2416 handleDragLabelKeys:2448 dropHandler:2477 for:2526
 frontend/src/components/cloud-infra-tool-group.tsx | typescript | 213 | Component:1 CloudInfraToolGroup:107 handler:115 getActiveTool:125 handleToolClick:134 as:142 as:148 handleRightClick:156 toggleMenu:161 activeTool:168 isActive:169
 frontend/src/components/cloud-storage-dialog.css | - | 475 |
 frontend/src/components/cloud-storage-dialog.tsx | typescript | 498 | CloudDialogMode:21 CloudStorageDialogProps:23 CloudStorageDialog:32 handleKeyDown:49 loadFiles:94 handleSignIn:118 handleSignOut:137 handleSave:147 handleLoad:197 handleDelete:212 handleSearch:225 formatDate:233 formatSize:244
@@ -184,7 +184,7 @@ frontend/src/components/graphic-styles-panel.tsx | typescript | 88 | Component:1
 frontend/src/components/group-isolation-banner.css | - | 51 |
 frontend/src/components/group-isolation-banner.tsx | typescript | 58 | GroupIsolationBanner:16 onKey:18 depth:32 memberCount:33
 frontend/src/components/help-dialog.css | - | 233 |
-frontend/src/components/help-dialog.tsx | typescript | 477 | HotkeyKey:5 ShortcutEntry:9 ShortcutCategory:15 LocalizedCategory:21 parseKeys:265 Props:284 HelpDialog:289 handleKeyDown:330
+frontend/src/components/help-dialog.tsx | typescript | 478 | HotkeyKey:5 ShortcutEntry:9 ShortcutCategory:15 LocalizedCategory:21 parseKeys:266 Props:285 HelpDialog:290 handleKeyDown:331
 frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 129 | Component:1 InfraToolGroup:23 handler:31 getActiveTool:41 handleToolClick:50 as:58 as:64 handleRightClick:72 toggleMenu:77 activeTool:84 isActive:85
@@ -280,7 +280,7 @@ frontend/src/components/slide-transition-picker.tsx | typescript | 123 | SlideTr
 frontend/src/components/state-panel.css | - | 164 |
 frontend/src/components/state-panel.tsx | typescript | 110 | Component:1 StatePanel:6 handleAdd:10 handleReset:19 handlePlayAll:25 handleStopPlayback:43
 frontend/src/components/status-bar.css | - | 257 |
-frontend/src/components/status-bar.tsx | typescript | 366 | Component:1 Hint:15 isMindmapNode:26 getContextHints:33 ToolLabelKey:86 isToolLabelKey:87 StatusBar:89 handleZoomIn:92 handleZoomOut:97 zoomToCenter:102 resetZoom:114 rotationDeg:119 toolLabel:121
+frontend/src/components/status-bar.tsx | typescript | 373 | Component:1 Hint:15 isMindmapNode:26 getContextHints:33 ToolLabelKey:93 isToolLabelKey:94 StatusBar:96 handleZoomIn:99 handleZoomOut:104 zoomToCenter:109 resetZoom:121 rotationDeg:126 toolLabel:128
 frontend/src/components/status-tool-group.tsx | typescript | 154 | Component:1 StatusToolGroup:48 handler:56 getActiveTool:66 handleToolClick:75 as:83 as:89 handleRightClick:97 toggleMenu:102 activeTool:109 isActive:110
 frontend/src/components/stick-face-controls.css | - | 62 |
 frontend/src/components/stick-face-controls.tsx | typescript | 256 | Component:15 TrouserStyle:21 FaceHairChoice:25 thumb:37 legThumb:47 topThumb:57 StickFaceControls:72 pref:73 apply:105
@@ -355,7 +355,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 782 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 787 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -448,7 +448,7 @@ frontend/src/help-docs/help-page.css | - | 587 |
 frontend/src/help-docs/help-page.tsx | typescript | 326 | Component:6 ShapeDoc:45 markdownDoc:68 shapeFromPath:202 HelpPage:207 navigateToShape:219 filteredShapes:224 currentDoc:235 handleBackToApp:237
 frontend/src/help-docs/markdown.test.ts | typescript | 299 | the:4 render:20 and:102
 frontend/src/help-docs/markdown.ts | typescript | 363 | Token:32 Tokens:32 DocMeta:34 RenderedDoc:60
-frontend/src/help-docs/shapes/basic-shapes.md | - | 205 |
+frontend/src/help-docs/shapes/basic-shapes.md | - | 221 |
 frontend/src/help-docs/shapes/bpmn.md | - | 226 |
 frontend/src/help-docs/shapes/connectors.md | - | 184 |
 frontend/src/help-docs/shapes/drawing-tools.md | - | 224 |
@@ -473,11 +473,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1092 |
-frontend/src/i18n/locales/en.ts | typescript | 1122 | Dictionary:1122
-frontend/src/i18n/locales/es.ts | typescript | 1091 |
-frontend/src/i18n/locales/fr.ts | typescript | 1113 | de:108
-frontend/src/i18n/locales/ja.ts | typescript | 1091 |
+frontend/src/i18n/locales/de.ts | typescript | 1094 |
+frontend/src/i18n/locales/en.ts | typescript | 1124 | Dictionary:1124
+frontend/src/i18n/locales/es.ts | typescript | 1093 |
+frontend/src/i18n/locales/fr.ts | typescript | 1115 | de:108
+frontend/src/i18n/locales/ja.ts | typescript | 1093 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -785,7 +785,7 @@ frontend/src/utils/point-snapping.test.ts | typescript | 84 | el:4
 frontend/src/utils/point-snapping.ts | typescript | 108 | SnapPoint:15 SnapElement:17 PointSnapResult:25 bboxAnchors:35 pathAnchorsOf:46 getPointSnap:63
 frontend/src/utils/point-undo.ts | typescript | 22 | setPointUndoHandler:19 tryPointUndo:22
 frontend/src/utils/pointer-helpers.ts | typescript | 57 | PointerHelpers:15 PointerSignals:33
-frontend/src/utils/pointer-state.ts | typescript | 220 | PointerState:7 createPointerState:139
+frontend/src/utils/pointer-state.ts | typescript | 230 | PointerState:7 createPointerState:148
 frontend/src/utils/points.ts | typescript | 20 |
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
 frontend/src/utils/popover-placement.test.ts | typescript | 102 | place:55
@@ -844,7 +844,7 @@ frontend/src/utils/text-utils.ts | typescript | 379 | TextMetrics:7 VerticalText
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
 frontend/src/utils/tool-flyout.ts | typescript | 87 | FlyoutStyle:36 FlyoutPlacement:43 createFlyoutPlacement:50
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 317 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 applyAssetAtClientPoint:96 any:154 as:154 WheelContext:192 handleUmlSectionScroll:199 handleWheel:270
-frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 738 | drawOnDown:77 drawOnMove:325 drawOnUp:492 normalizeOrganicBranch:713
+frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 764 | acceptsDragLabel:96 drawOnDown:102 drawOnMove:351 drawOnUp:518 normalizeOrganicBranch:739
 frontend/src/utils/tool-handlers/minor-handlers.ts | typescript | 1005 | triggerOpenBoxReveal:28 presentationOnDown:156 presentationOnMove:237 presentationOnUp:269 panOnDown:300 panOnMove:308 panOnUp:322 laserOnDown:332 laserOnMove:342 laserOnUp:368 textOnDown:389 textOnMove:416 textOnUp:437 richTextOnDown:498 richTextOnMove:526 richTextOnUp:547 inkOnDown:605 appendEraseStroke:653 splitFreehandStroke:687 getEraserRadius:764 eraseAtPoint:770 eraserOnDown:806 eraserOnMove:819 eraserOnUp:827 connectorHandleOnDown:834 connectorHandleOnUp:915 handleAutoScroll:980
 frontend/src/utils/tool-handlers/pen-angle-constrain.test.ts | typescript | 207 | penOnUpish:203
 frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14
@@ -1169,6 +1169,7 @@ tests/toolbar-grid-align.spec.ts | typescript | 116 | setup:20 metrics:42
 tests/toolbar-persist.spec.ts | typescript | 16 |
 tests/toolbar-pos.spec.ts | typescript | 20 |
 tests/touch-type.spec.ts | typescript | 16 |
+tests/type-to-label.spec.ts | typescript | 161 |
 tests/types/motion-types.spec.ts | typescript | 90 |
 tests/ui-panels.spec.ts | typescript | 249 |
 tests/uml-tools.spec.ts | typescript | 185 |

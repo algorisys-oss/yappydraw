@@ -70,6 +70,15 @@ export interface PointerState {
     polylinePoints: { x: number; y: number }[];
     // Pen tool (editable vector path) build state.
     isPenBuilding: boolean;
+
+    /**
+     * Label typed DURING a draw-drag (type-to-label). Lives on the pointer state rather
+     * than a signal because it is owned by one gesture: it is cleared in `drawOnDown` and
+     * is meaningless once the pointer is up. Each keystroke writes it straight onto the
+     * in-progress element's `containerText`, which is what makes the label render live in
+     * both sketch and architectural styles with no extra drawing code.
+     */
+    dragLabelBuffer: string;
     penAnchors: import('../types').PathAnchor[]; // committed anchors, relative to startX/startY
     penActiveIdx: number;                         // index of the anchor being dragged (curving), or -1
     penDragging: boolean;                         // pointer is down on the active anchor
@@ -174,6 +183,7 @@ export function createPointerState(): PointerState {
         lastPointerType: null,
         secondaryContact: false,
         isPenBuilding: false,
+        dragLabelBuffer: '',
         penTapAnchor: null,
         penAnchors: [],
         penActiveIdx: -1,

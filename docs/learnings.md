@@ -2,6 +2,37 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## The cheapest place to add a feature is inside state something else already maintains
+
+Type-to-label (typing during a shape's creation drag) looked like it needed a ghost overlay:
+render the pending text somewhere, in both sketch and architectural styles, tracking a shape
+that is being resized under the cursor. That would have been the expensive half, and the one
+with render-parity risk.
+
+It needed none of it. The element **already exists in the store during the drag** — it is
+created on `pointerdown` and mutated on every `pointermove`, because that is how the live
+preview resizes. So a keystroke is `updateElement(id, { containerText })`, and the label rides
+the ordinary containerText path: live, correctly placed, in both render styles, with zero
+drawing code. `updateElement` also defaults to `recordHistory: false`, so the letters do not
+each become an undo step and the label lands in the same history entry as the shape.
+
+The general move: **before building a parallel representation for something transient, check
+whether the real one is already live.** A preview that looks like a ghost is often the actual
+object, already in the store, already being drawn.
+
+Two smaller things from the same feature:
+
+- **The opt-out list beat the opt-in list.** The shapes that *can* hold a label number ~200
+  and grow; the ones that must not swallow keystrokes are about a dozen and stable (bare
+  connectors, freehand, the text tools, the Pen). Writing `acceptsDragLabel` as a reject-list
+  means a newly added shape gets the feature by default, which is the direction that ages
+  well — an allow-list would have silently excluded every future shape.
+- **A spec is not evidence.** The F3 design table asserted Escape "cancels the drag
+  (existing)". It never has — Escape is wired only for crop, polyline and pen, which are
+  multi-click construction. A test written from the spec failed, and the spec was what was
+  wrong. Worth remembering when a plan and a test disagree: the plan is the newer, less
+  tested artefact.
+
 ## Check whether the feature you are about to build is already documented as existing
 
 The type-to-label spec started as a "does anyone else do this?" question. The audit that

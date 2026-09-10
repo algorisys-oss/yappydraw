@@ -1,6 +1,6 @@
 # Type-to-Label — spec
 
-**Status:** F1 shipped in v0.8.242; F2 and F3 proposed, not implemented
+**Status:** F1 shipped v0.8.242, F3 shipped v0.8.243; F2 (auto-increment) proposed, not implemented
 **Date:** 2026-09-10
 **Motivation:** workshop/training speed — dropping a row of nodes labelled A, B, C or 1, 2, 3
 should not cost a double-click and a mode switch per shape.
@@ -136,7 +136,7 @@ drifts on undo/redo.
 
 **Off by default.** It changes what a plain drag produces; it must be opted into.
 
-### F3 — Type during the drag (the novel one)
+### F3 — Type during the drag (the novel one) — **SHIPPED v0.8.243**
 
 Press, drag, and while the button is still down, type. Characters accumulate into the
 shape's label and are visible inside the live preview. Release drops a labelled shape.
@@ -148,7 +148,7 @@ pointerdown (draw tool)     → element created, drag begins        [existing]
 pointermove                 → element resized live                [existing]
 keydown, printable char     → append to pending label, redraw     [NEW]
 keydown, Backspace          → remove last char                    [NEW]
-keydown, Escape             → cancel the whole drag               [existing, unchanged]
+keydown, Escape             → passed through (see note below)      [unchanged]
 pointerup                   → commit shape + label together       [existing + label]
 ```
 
@@ -166,7 +166,7 @@ scoped to the drag, following `handlePenKeys` (`canvas.tsx:2416`):
 |---|---|
 | Printable char (no Ctrl/Meta) | Appended to the label — **shadows the tool shortcut** |
 | Shift, Alt, Ctrl, Meta | Unchanged — constrain / duplicate / snap modifiers must survive |
-| Escape | Cancel the drag (existing) — **must not** mean "clear the label" |
+| Escape | Passed through — **must not** mean "clear the label" |
 | Backspace / Delete | Delete one character — **must not** delete the element |
 | Enter | Commit the label, keep dragging (do not end the drag) |
 | Space | **Open question — see §6** |
@@ -174,6 +174,14 @@ scoped to the drag, following `handlePenKeys` (`canvas.tsx:2416`):
 | Tab | Pass through |
 
 Shadowing tool shortcuts is safe here: switching tools mid-drag is already meaningless.
+
+**Correction (found while implementing):** an earlier draft of this table said Escape
+"cancels the drag (existing)". It does not — Escape is wired only for crop, polyline and pen,
+which are multi-click *construction*; a plain single-drag shape has never been cancellable
+with Escape, and still is not. F3 leaves that unchanged: `'Escape'.length !== 1`, so the
+label handler never sees the key and the drag commits as it always did. Whether draw-drags
+*should* be Escape-cancellable is a separate question, now that typing a label makes an
+in-progress shape worth more — logged in `todo.md`, not bundled into F3.
 
 **Scope: newly-created shapes only.** Dragging an *existing* shape must not swallow
 keystrokes — someone will destroy a label they only meant to move. Move-drag typing is

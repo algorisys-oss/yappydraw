@@ -145,8 +145,24 @@ drag out a box, press <kbd>Enter</kbd>, and type, without touching the mouse aga
 use <kbd>F2</kbd> there. And once the editor is open <kbd>Enter</kbd> is a line break again —
 commit with <kbd>Esc</kbd> or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>.
 
-Note that typing a bare letter on a selected shape does **not** start a label — single letters
-are tool shortcuts (<kbd>R</kbd> for rectangle, <kbd>V</kbd> for select), and they keep that job.
+**Type while you drag.** The fastest way of all: pick a shape tool, start dragging, and just
+type — the characters go straight into the label of the shape you are drawing, and you can see
+them land as you size it. Release, and the shape arrives already labelled. Drag, type `A`,
+release; drag, type `B`, release. No double-click, no <kbd>Enter</kbd>, no mode to leave.
+Handy for lettering a diagram live in a workshop.
+
+<kbd>Backspace</kbd> deletes a character while you drag (it will not delete the shape), and
+<kbd>Space</kbd> is a space, so multi-word labels like `Load Balancer` work. Modifier keys are
+untouched — <kbd>Shift</kbd> still constrains the proportions while you type. The whole thing
+is one undo step: <kbd>Ctrl</kbd> + <kbd>Z</kbd> removes the shape and its label together.
+
+Freehand strokes (Fineliner, Marker, Ink Brush), connectors and the text tools deliberately
+ignore typing while drawing — those drags last a long time, and a stray keystroke should not
+end up as a caption.
+
+Note that typing a bare letter on a selected shape that you are **not** dragging does **not**
+start a label — single letters are tool shortcuts (<kbd>R</kbd> for rectangle, <kbd>V</kbd> for
+select), and they keep that job.
 
 Text is **centred by default** — both horizontally and vertically — which is what you want for
 almost every diagram box. Change it per shape with the alignment buttons in the Properties panel or

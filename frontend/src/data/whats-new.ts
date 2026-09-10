@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.243', date: '2026-09-10', items: [
+        'Start dragging out a shape and just type \u2014 what you type becomes its label, and you can watch it land while you size the shape. Let go and the shape is already labelled. Drag, type A, release. Drag, type B, release. Lettering a diagram in front of a room is about as fast as it can get.',
+        'Backspace fixes a typo while you drag (it will not delete the shape), Space is a space so \u201cLoad Balancer\u201d works, and Shift still constrains the proportions while you type. Undo takes the shape and its label together, in one go.',
+        'Freehand pens, connectors and the text tools ignore typing on purpose \u2014 those drags go on for a while, and a stray key should not turn into a caption.',
+    ] },
     { version: '0.8.242', date: '2026-09-10', items: [
         'Select a shape and press Enter to label it. Draw a box, press Enter, type \u2014 no double-click, no reaching for the mouse again. F2 still does the same thing. (On a mindmap node Enter keeps adding a sibling, as before; use F2 to edit the node itself.)',
         'Fixed: brushing a key while dragging \u2014 1, 2, V, R, Space, Delete, an arrow \u2014 threw away the shape you were drawing and left the canvas unable to draw anything at all until you reloaded. Those keys are now simply ignored until you let go of the mouse.',

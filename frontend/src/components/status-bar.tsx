@@ -61,7 +61,14 @@ function getContextHints(tool: string, hasSelection: boolean): Hint[] {
         return [{ key: 'Click', action: t('hintAction.placeMindmap') }, { key: 'Alt+Drag', action: t('hintAction.moveRootNode') }];
     }
     if (SHAPE_TOOLS.includes(tool)) {
-        return [{ key: 'Drag', action: t('hintAction.drawShape') }, { key: 'Shift', action: t('hintAction.constrain') }];
+        // "Type" is type-to-label: characters typed while the drag is still in flight go
+        // into the shape's label. Nobody discovers that by accident, so it is advertised
+        // here for as long as a shape tool is armed.
+        return [
+            { key: 'Drag', action: t('hintAction.drawShape') },
+            { key: 'Shift', action: t('hintAction.constrain') },
+            { key: 'Type', action: t('hintAction.labelWhileDrawing') },
+        ];
     }
     if (DRAWING_TOOLS.includes(tool)) {
         return [{ key: 'Drag', action: t('hintAction.draw') }, { key: 'Shift', action: t('hintAction.straightLine') }];

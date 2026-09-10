@@ -72,6 +72,31 @@ const CONTINUOUS_TOOLS = [
     'text', 'richtext', 'ink', 'polyline'
 ];
 
+/**
+ * Element types that must NOT swallow keystrokes typed during their creation drag
+ * (type-to-label). Everything else is fair game, matching `__nodeTextEdit.startEditing`'s
+ * own reject-list rather than duplicating the ~200-entry list of shapes that CAN hold a
+ * label — a new shape then opts in by default, which is the right way round.
+ *
+ *  - bare connectors have no `containerText` box to draw a label in;
+ *  - freehand strokes drag for seconds at a time, so a stray keystroke is likely and the
+ *    result would be a label floating over a squiggle;
+ *  - the text tools already open their own editor on release, so a buffer here would be
+ *    typed twice;
+ *  - `path` (the vector Pen) is multi-click construction, not one drag, and it owns
+ *    Enter/Escape/Backspace itself via handlePenKeys.
+ */
+const NO_DRAG_LABEL = [
+    'line', 'arrow', 'bezier', 'polyline', 'organicBranch',
+    'fineliner', 'inkbrush', 'marker', 'ink',
+    'text', 'richtext', 'path', 'image', 'eraser', 'laser',
+];
+
+/** Can a label be typed into this element while its creation drag is still in flight? */
+export function acceptsDragLabel(type: string): boolean {
+    return !NO_DRAG_LABEL.includes(type);
+}
+
 // ─── Pointer Down: Create element ───────────────────────────────────
 
 export function drawOnDown(
@@ -81,6 +106,7 @@ export function drawOnDown(
     helpers: PointerHelpers
 ): void {
     pState.isDrawing = true;
+    pState.dragLabelBuffer = '';   // type-to-label is per-gesture; never carries over
     pState.penPointsBuffer = [];
     pState.lastPenUpdateTime = 0;
     pState.elbowCommittedPoints = [{ x: 0, y: 0 }];
