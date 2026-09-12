@@ -1,5 +1,50 @@
 # Bug Fixes Log
 
+## 2026-09-12
+
+### 361. The mid-drag guard could outlive the drag and kill every single-key shortcut
+
+**Symptom:** "did we break the delete key?" — Ctrl+A selects everything, Delete does
+nothing. Select one shape, Delete, nothing. Nothing on screen explains it, and it does not
+clear until the page is reloaded. Delete is just the one you notice first: the arrow
+nudges, every tool letter, `S`/`F`, F2/Enter/Tab and Space-pan are all equally dead,
+because they are all branches of the same chain.
+
+**Cause:** the guard added for #360. `__canvasPointerBusy()` answered from
+`pState.isDrawing || pState.isDragging || pState.isSelecting` alone. Those flags are set by
+the tool handlers on pointer-down and cleared by whichever pointer-**up** branch finalises
+the gesture — so a gesture that never reaches its branch strands one set, with nobody left
+to clear it. `handlePointerUp` has a dozen early returns before `selectionOnUp`/`drawOnUp`,
+and a release can also miss the canvas entirely: `setPointerCapture` is inside a try/catch
+(it throws on iPad), a button let go outside the window delivers its `pointerup` to the
+window, and an alt-tab mid-drag may deliver no release at all. Nothing on the mouse path
+ever heals a stranded flag either — `selectionOnUp` clears `isDragging`/`isSelecting` but
+**never** `isDrawing`, and the two self-heals for `isDrawing` (`handleTouchStart`,
+`cancelInflightForGesture`) are both on the touch path.
+
+Before #360 a stranded `isDrawing` only blocked new strokes, which is the documented
+pre-existing nuisance. #360 quietly widened that same stranded bit into an app-wide
+keyboard lockout for the rest of the session.
+
+**Fix:** the probe is gated on a pointer being *physically* down —
+`activePointerIds`, a `Set` of pointer ids added in `handlePointerDown` and removed in
+`handlePointerUp`, both ahead of every early return, plus window-level capture-phase
+`pointerup`/`pointercancel` listeners for a release the canvas never sees and a `blur`
+listener for a window that loses focus mid-drag. Ids are added and removed by the browser's
+own events rather than inferred from handler state, so the guard cannot outlive the
+gesture. `touchDrivingPenStroke` is OR'd in because a touch-driven pen stroke runs on
+TouchEvents with no pointer down. During a real drag a pointer is always down, so #360
+stays fixed — its test still passes.
+
+**Lesson:** a guard that suppresses input must fail *open*. This one derived "is a gesture
+in flight" from state owned by someone else and cleared on the happy path only, so one
+stranded bit disabled the keyboard with no way back and no clue why. Gate on the thing the
+browser itself maintains.
+
+**Test:** `tests/hotkeys.spec.ts` — "a lost pointer release cannot deaden the shortcut
+chain". A/B verified: it fails on the pre-fix tree at the `__canvasPointerBusy()`
+assertion (`true`, expected `false`).
+
 ## 2026-09-10
 
 ### 360. A tool hotkey pressed mid-drag stranded the drag and jammed the canvas

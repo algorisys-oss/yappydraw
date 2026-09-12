@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.244', date: '2026-09-12', items: [
+        'Fixed: the Delete key could stop working for the rest of a session. Select everything, press Delete, nothing happens — and nothing on screen tells you why. Reloading the page was the only way out.',
+        'It was never really about Delete. The arrow keys, the single-letter tool shortcuts, F2, Enter, Tab and hold-Space-to-pan all went quiet at the same moment, for the same reason — Delete is just the one you notice first.',
+        'The cause was last week’s fix for keys interfering with a drag: it could keep believing you were still dragging long after you had let go. It now checks whether a mouse or pen is actually pressed, so it cannot get stuck that way again.',
+    ] },
     { version: '0.8.243', date: '2026-09-10', items: [
         'Start dragging out a shape and just type \u2014 what you type becomes its label, and you can watch it land while you size the shape. Let go and the shape is already labelled. Drag, type A, release. Drag, type B, release. Lettering a diagram in front of a room is about as fast as it can get.',
         'Backspace fixes a typo while you drag (it will not delete the shape), Space is a space so \u201cLoad Balancer\u201d works, and Shift still constrains the proportions while you type. Undo takes the shape and its label together, in one go.',

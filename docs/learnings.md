@@ -2,6 +2,40 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A guard that suppresses input must fail open, and must not outlive what it guards
+
+The mid-drag guard from #360 — the single-key shortcut chain goes inert while a pointer
+interaction is in flight — was right in intent and wrong in what it asked. It asked
+`pState.isDrawing || isDragging || isSelecting`: three flags set by the tool handlers on
+pointer-down and cleared by whichever pointer-**up** branch finalises the gesture. State
+owned by someone else, cleared on the happy path only.
+
+So any gesture that ended off the happy path stranded one flag true, and the guard then
+answered "busy" for the rest of the session. Delete, the arrow nudges, every tool letter,
+F2/Enter/Tab, Space-pan: all silently dead, with nothing on screen to explain it and no way
+back short of a reload. It reached me as "did we break the delete key?", which is exactly
+how this class of bug reports — as one visible symptom of a whole disabled subsystem.
+
+Two things worth carrying:
+
+- **Ask the browser, not your own handlers.** The fix gates on a `Set` of pointer ids that
+  the browser's own `pointerdown`/`pointerup`/`pointercancel` events add and remove, with
+  window-level listeners for the releases the canvas never sees (capture can fail — it is in
+  a try/catch for iPad; a button let go outside the window reports to the window; an alt-tab
+  may report nothing). A physical pointer cannot get stuck the way a derived flag can. The
+  guard is now structurally unable to outlive the gesture.
+
+- **Suppression must fail open.** When a guard is wrong in the "allow" direction you get the
+  original bug back, visibly, on one gesture. When it is wrong in the "suppress" direction
+  you get a dead keyboard with no error, no log line, and no user-reachable reset — far
+  worse, and much harder to report. Prefer the failure you can see.
+
+A related smell this exposed, left as-is on purpose: `selectionOnUp` clears
+`isDragging`/`isSelecting` but never `isDrawing`, and both self-heals for a stranded
+`isDrawing` live on the touch path only (`handleTouchStart`, `cancelInflightForGesture`).
+The mouse path has no heal at all. That is a real gap, but it is a stroke-start concern, not
+a keyboard one — the keyboard must not depend on it either way, which is the point above.
+
 ## The cheapest place to add a feature is inside state something else already maintains
 
 Type-to-label (typing during a shape's creation drag) looked like it needed a ghost overlay:

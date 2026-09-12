@@ -979,6 +979,19 @@ const Canvas: Component = () => {
     // win when both fire — this flag lets pointer handlers skip cleanly.
     let touchDrivingPenStroke = false;
     let activeTouchIdentifier = -1; // identifier of the Touch we're tracking
+
+    /**
+     * Pointer ids currently held down on the canvas — the ground truth for "is a gesture
+     * in flight", used by the __canvasPointerBusy probe the single-key shortcut chain in
+     * app.tsx reads. Deliberately NOT derived from pState's isDrawing/isDragging/isSelecting:
+     * those are owned by the tool handlers, and a gesture that ends on one of the early
+     * returns in handlePointerUp leaves one set with no owner to clear it, which would make
+     * the probe answer "busy" for the rest of the session. A pointer id, by contrast, is
+     * added and removed by the browser's own events, including the window-level listeners
+     * below that catch a release the canvas never sees (pointer capture lost, the button
+     * let go outside the window, a drag that ends over devtools).
+     */
+    const activePointerIds = new Set<number>();
     const isPenDrawingTool = (): boolean => {
         const t = store.selectedTool;
         return t === 'fineliner' || t === 'inkbrush' || t === 'marker' || t === 'ink';
@@ -1674,6 +1687,9 @@ const Canvas: Component = () => {
     };
 
     const handlePointerDown = (e: PointerEvent) => {
+        // Before every early return below: the matching release must always be able to
+        // clear this, so the set is keyed on the raw event, not on whether a tool claimed it.
+        activePointerIds.add(e.pointerId);
         if (store.appMode === 'embed') return;
         // TouchEvent path is handling this stroke — skip pointer duplicate.
         if (touchDrivingPenStroke) return;
@@ -2087,6 +2103,9 @@ const Canvas: Component = () => {
     };
 
     const handlePointerUp = (e: PointerEvent) => {
+        // First, ahead of every early return below — this must be released even on the
+        // paths that decline to finalise the gesture, or the shortcut chain stays gated.
+        activePointerIds.delete(e.pointerId);
         cancelLongPress();
         pState.secondaryContact = false; // stylus drag ended — drop the constrain modifier
         if (touchDrivingPenStroke) return;
@@ -2472,6 +2491,19 @@ const Canvas: Component = () => {
         };
         window.addEventListener('keydown', handleDragLabelKeys, true);
 
+        // Safety net for a release the canvas element never sees: pointer capture can fail
+        // (setPointerCapture is in a try/catch for iPad), and a button let go outside the
+        // window delivers its pointerup to the window, not to the canvas. Either way the
+        // gesture is over, so the id must not stay in the set — it is the only thing
+        // standing between a lost pointerup and a dead single-key shortcut chain.
+        const releasePointer = (e: PointerEvent) => { activePointerIds.delete(e.pointerId); };
+        window.addEventListener('pointerup', releasePointer, true);
+        window.addEventListener('pointercancel', releasePointer, true);
+        // A window that loses focus mid-drag (alt-tab, a dialog stealing focus) may never
+        // deliver the release at all.
+        const releaseAllPointers = () => { activePointerIds.clear(); };
+        window.addEventListener('blur', releaseAllPointers);
+
         // Drag-and-drop for color/URL drops on canvas elements (image file drops handled globally in app.tsx)
         // Attach to parent wrapper div instead of canvas directly — canvas is a weak drop target on Linux/Wayland
         const dropHandler = (e: DragEvent) => handleDropHandler(e, canvasEventCtx);
@@ -2520,8 +2552,23 @@ const Canvas: Component = () => {
         // nudging and opening a text overlay mid-drag are wrong for the same reason.
         // Nothing is lost by refusing: one pointer cannot pan and drag at the same time,
         // and dragging to the viewport edge already auto-scrolls (handleAutoScroll).
+        //
+        // Gated on a pointer being PHYSICALLY down, not on the three flags alone. Those
+        // flags are set by the tool handlers and cleared by whichever pointer-up branch
+        // finalises the gesture — so a gesture that never reaches its branch strands one
+        // true, and nothing on the mouse path ever heals it: selectionOnUp clears
+        // isDragging/isSelecting but never isDrawing, and the self-heals for a stuck
+        // isDrawing live only on the touch path (handleTouchStart, cancelInflightForGesture).
+        // On the flags alone that stranded bit made this probe answer "busy" forever, which
+        // silently deadened the WHOLE single-key chain — Delete, the arrow nudges, every
+        // tool letter, F2/Enter/Tab, Space-pan — for the rest of the session, with nothing
+        // on screen to explain it. A keyboard lockout is a far worse failure than the
+        // mid-drag mix-up this guard exists to prevent, so the guard must not be able to
+        // outlive the gesture: no pointer down, no interaction in flight, whatever the
+        // flags say. During a real drag a pointer is always down, so #360 stays fixed.
         (window as any).__canvasPointerBusy = () =>
-            pState.isDrawing || pState.isDragging || pState.isSelecting;
+            (activePointerIds.size > 0 || touchDrivingPenStroke) &&
+            (pState.isDrawing || pState.isDragging || pState.isSelecting);
 
         // Expose table cell navigation interface for global keyboard handler (app.tsx)
         (window as any).__tableCellNav = {
@@ -2641,6 +2688,9 @@ const Canvas: Component = () => {
             window.removeEventListener('keydown', handlePolylineKeys, true);
             window.removeEventListener('keydown', handlePenKeys, true);
             window.removeEventListener('keydown', handleDragLabelKeys, true);
+            window.removeEventListener('pointerup', releasePointer, true);
+            window.removeEventListener('pointercancel', releasePointer, true);
+            window.removeEventListener('blur', releaseAllPointers);
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("fullscreenchange", handleResize);
             if (canvasRef) {
