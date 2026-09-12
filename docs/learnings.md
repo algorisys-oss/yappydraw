@@ -2,6 +2,47 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Shipping is not the same as delivered, and an offline-first app hides the difference
+
+`curl` showed the origin serving v0.8.244 on eight consecutive fetches. `verify:deploy`
+passed every check. A browser that had used the app before was running the previous build,
+and would have gone on running it indefinitely.
+
+Both facts were true. A service worker makes "what the server serves" and "what a user runs"
+two different questions, and every deploy check we own answers only the first. The second is
+a client-side property with its own clock, and until this release nothing wound it: the SW
+never checked for a new build after the page loaded, so a tab left open — which for a drawing
+app means days — sat on its own precache, offline-first and perfectly content, on whatever it
+had cached.
+
+The trap is that this failure looks like success from every angle we routinely check. There
+is no error, no 404, no log line. `stale-build.ts` recovers the case where an old build
+*breaks*; nothing at all covered the case where it keeps working. A stale build that works is
+strictly harder to notice than one that crashes, and the one that crashes is the one we had
+already built machinery for.
+
+Two things worth keeping:
+
+- **An update mechanism can only ever be fixed forward.** The clients that need this fix most
+  are precisely the ones that cannot receive it, because the code that would fetch it is the
+  code they are missing. That is not an argument against fixing it — it is an argument for
+  treating update plumbing as something you get right early, because every release you ship
+  without it is a cohort you cannot reach. Say so in the release notes rather than implying
+  the problem is over.
+
+- **"The user can just refresh" is not a mechanism.** Nor is a ten-second toast, which leaves
+  no trace if it is missed. If the recovery requires knowing what a service worker is, it is
+  a developer workaround wearing a user-facing hat. The bar is that a correct outcome happens
+  on its own; here, applying the build while the tab has been hidden for three minutes, with
+  the visible affordance as the shortcut for people who want it sooner rather than as the
+  plan.
+
+The reason it stayed prompt-strategy rather than becoming `autoUpdate` is worth recording
+too: the fix for "users are stuck on an old build" must not be "reload the page under their
+hands", which is a worse failure in a drawing app and the documented cause of the blank-page
+race. Hidden-tab auto-apply gets the same outcome without ever interrupting anyone — and
+"never while visible, never while recording" are both cheaper to enforce than to debug.
+
 ## A guard that suppresses input must fail open, and must not outlive what it guards
 
 The mid-drag guard from #360 — the single-key shortcut chain goes inert while a pointer

@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.245', date: '2026-09-12', items: [
+        'Yappy now keeps itself up to date. It checks for new releases, and when one is ready it installs it while you are away from the tab — so you come back already running it. Nothing to refresh, nothing to clear.',
+        'It will never reload while you are looking at the page, and never in the middle of a recording. Your drawing is saved first, so nothing in progress is lost.',
+        'In a hurry? An amber dot appears on the version number when an update is waiting — click it and you get the new version straight away. (The blue dot still means there are release notes you have not read.)',
+        'Before this, Yappy checked for a new version once when the page loaded and never again. If you kept a tab open for days, you could stay on an old version indefinitely without any sign of it.',
+    ] },
     { version: '0.8.244', date: '2026-09-12', items: [
         'Fixed: the Delete key could stop working for the rest of a session. Select everything, press Delete, nothing happens — and nothing on screen tells you why. Reloading the page was the only way out.',
         'It was never really about Delete. The arrow keys, the single-letter tool shortcuts, F2, Enter, Tab and hold-Space-to-pan all went quiet at the same moment, for the same reason — Delete is just the one you notice first.',

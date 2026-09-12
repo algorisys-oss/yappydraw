@@ -742,6 +742,7 @@ export const ja: Dictionary = {
         redo: 'やり直し（Ctrl+Y）',
         present: '最初からプレゼン（F5）',
         whatsNew: '新機能',
+        updateReady: '新しいバージョンがあります — タップして今すぐ更新',
         privacy: 'プライバシー',
         about: 'このアプリについて',
         terms: '利用規約',

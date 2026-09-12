@@ -159,6 +159,7 @@ import { cloudStorageManager } from "./storage/cloud";
 import { drawingId } from "./components/menu";
 import { assignToPoolLane, unassignFromPool, shiftLaneIndicesOnRemove, shiftLaneIndicesOnInsert } from "./utils/pool-containment";
 import { getUIShapeDef } from "./config/ui-shape-defs";
+import { updateWaiting, applyPwaUpdate } from "./utils/pwa";
 import { parseDSL as dslParse, renderDiagram, adapterRegistry, exportToRocket as rocketExport, rocketSchemaToDSL as rocketToDSL } from "./dsl";
 import type { RenderOptions, RenderResult } from "./dsl";
 import type { RocketExportResult } from "./dsl/adapters/rocket/types";
@@ -2822,6 +2823,23 @@ export const YappyAPI = {
     startTour() { void import('./components/onboarding-tour').then(m => m.startTour()); },
     /** Open the "What's new" popup (recent user-facing changes). */
     showWhatsNew() { void import('./components/whats-new-dialog').then(m => m.openWhatsNew()); },
+
+    /**
+     * Is a newly deployed build installed and waiting to be applied?
+     *
+     * Yappy caches itself for offline use, so a release does not arrive the moment it is
+     * published: the new build installs alongside the running one and waits. It is taken
+     * automatically once the tab has been in the background a few minutes, so nothing needs
+     * to call this — it is here for a kiosk or embedded host that would rather choose its
+     * own moment. See utils/pwa.ts.
+     */
+    isUpdateWaiting(): boolean { return updateWaiting(); },
+
+    /**
+     * Apply a waiting build now and reload into it. No-op when nothing is waiting.
+     * The document is autosaved first, so in-progress work survives the reload.
+     */
+    applyUpdate() { void applyPwaUpdate(); },
 
     /**
      * Open the "Support YappyDraw" dialog (outbound payment links only — no payment

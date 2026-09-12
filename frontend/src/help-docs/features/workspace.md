@@ -103,7 +103,22 @@ Replay it whenever you like from **Help (?) → “Take the tour”**, or from a
 
 ## What's new
 
-Click the **version number** in the bottom-right status bar to open the **What's new** popup — a running list of recent updates in plain language. A small dot appears on the version when there are changes since you last looked. The popup also has a **Reload latest** button that clears the cache and reloads the newest build (handy on iPad/iOS). Open it from a script with `window.Yappy.showWhatsNew()`.
+Click the **version number** in the bottom-right status bar to open the **What's new** popup — a running list of recent updates in plain language. A small **blue dot** appears on the version when there are changes since you last looked. The popup also has a **Reload latest** button that clears the cache and reloads the newest build (handy on iPad/iOS). Open it from a script with `window.Yappy.showWhatsNew()`.
+
+### Getting the latest version
+
+Yappy keeps a copy of itself on your device so it works offline, which means a new release does not arrive the instant it is published. You do not have to do anything about that:
+
+- Yappy checks for a new version about once an hour, whenever you come back to the tab, and whenever your connection returns.
+- When one is ready you get a short message, and the version number grows an **amber dot** that stays there until you take it.
+- **It then updates itself the next time you step away.** Leave the tab in the background for a few minutes and Yappy quietly reloads into the new version, so you come back to it already running. It will never reload while you are looking at the page, and it will never interrupt a recording.
+- Do not want to wait? **Click the version number while the amber dot is showing** and the update applies straight away.
+
+Your drawings are saved before any update is applied, so nothing in progress is lost.
+
+:::note
+Two dots, two meanings: **blue** means there are release notes you have not read (click to read them), **amber** means a newer version of Yappy is ready to install (click to install it).
+:::
 
 :::note
 **If a page says it can't load and asks you to reload**, use the button it offers. It does the same full clear as **Reload latest** — dropping the cached copy of the old build and fetching the current one. A plain browser refresh (F5) is *not* enough: Yappy keeps a copy of itself for offline use, and that copy is only replaced once the app is fully closed, which is why refreshing sometimes appeared to do nothing while closing the tab and returning fixed it. Your drawings are never affected either way — they live in local storage, not in the cached build.

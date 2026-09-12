@@ -749,6 +749,7 @@ export const en = {
         redo: 'Redo (Ctrl+Y)',
         present: 'Present from beginning (F5)',
         whatsNew: "What's new",
+        updateReady: 'A new version is ready — tap to update now',
         privacy: 'Privacy',
         about: 'About',
         terms: 'Terms',

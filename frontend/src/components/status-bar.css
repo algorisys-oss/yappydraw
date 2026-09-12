@@ -214,6 +214,32 @@
 
 /* "What's new" indicator dot on the version button */
 .version-btn { position: relative; }
+/* A new BUILD is waiting, as opposed to unread release notes — deliberately a
+   different colour from .version-news-dot, because the two dots sit in the same
+   place and mean different things: blue "there is something to read", amber
+   "there is something to take". Amber also survives the dark theme without a
+   second rule, and animates so it reads as a state rather than decoration. */
+.version-update-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--warning-color, #f59e0b);
+    vertical-align: middle;
+    animation: version-update-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes version-update-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+}
+
+/* Respect a reduced-motion preference: keep the dot, drop the pulse. */
+@media (prefers-reduced-motion: reduce) {
+    .version-update-dot { animation: none; }
+}
+
 .version-news-dot {
     display: inline-block;
     width: 6px;

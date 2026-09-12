@@ -2,6 +2,49 @@
 
 ## 2026-09-12
 
+### 362. A tab left open never discovered a new release
+
+**Symptom:** the site serves the current build — `curl` proves it on three consecutive
+fetches — and a browser that has used the app before keeps running last week's. A new API
+reads as "missing", a shipped fix reads as "not shipped". Noticed after v0.8.235 and again
+while verifying v0.8.244. The workaround was to unregister the service worker and clear
+`caches` by hand, which is fine for a developer and impossible to ask of users.
+
+**Cause:** not the service worker strategy — `prompt` is the right choice and stays (see
+vite.config.ts for the blank-page race `autoUpdate` causes). The gap was that nothing ever
+*looked* for a new build after boot. `registerSW` checks for a new worker when it registers
+and never again, and `utils/pwa.ts` passed no `onRegisteredSW`, so there was no
+`registration.update()` poll. A tab left open — the normal case for a drawing app, which
+people leave running for days — served its own precache offline-first and perfectly happily,
+forever, on whatever build it had cached.
+
+Two smaller faults on top: the only notification was a ten-second toast, so missing it left
+no trace at all; and the dot on the version button is `hasUnseenWhatsNew(pkg.version)`, where
+`pkg.version` is baked into the RUNNING bundle — it reports unread release notes for the
+build you are already on and structurally cannot know a newer one exists.
+
+Note this is distinct from #280-era stale-build *failures*, which `utils/stale-build.ts`
+already recovers from automatically. This is the case where the old build keeps working —
+no error, no chunk 404, nothing to recover from, so no recovery ever fires.
+
+**Fix:** `utils/pwa.ts` now polls (`registration.update()` hourly, on tab re-focus, and on
+`online`), exposes an `updateWaiting()` signal so the version button can carry a persistent
+amber badge, and — the part that means users need do nothing — applies the waiting build
+itself once the tab has been CONTINUOUSLY hidden for three minutes. The timer resets on every
+re-focus, so glancing at another tab is not mistaken for consent, and it never fires while
+the tab is visible or while a recording is running. `applyPwaUpdate` flushes the autosave
+first, because the save is debounced and the auto-apply path fires precisely when someone has
+just walked away from a fresh edit.
+
+**Known limit, stated rather than solved:** this can only fix things forward. A client on a
+pre-v0.8.245 build has no polling code, so it still will not discover updates until every tab
+closes or a chunk 404 triggers the existing recovery. This release is the last one with that
+property; it does not rescue the ones before it.
+
+**Test:** `frontend/src/utils/pwa-update-policy.test.ts` — 5 tests over the pure policy
+function, which is split into its own module precisely so it is reachable (`pwa.ts` imports
+`virtual:pwa-register` and cannot be loaded outside a Vite build).
+
 ### 361. The mid-drag guard could outlive the drag and kill every single-key shortcut
 
 **Symptom:** "did we break the delete key?" — Ctrl+A selects everything, Delete does

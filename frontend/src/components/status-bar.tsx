@@ -8,6 +8,7 @@ import { screenToWorld } from "../utils/viewport-transforms";
 import { canvasCenterClient } from "../utils/dock-layout";
 import pkg from '../../../package.json';
 import WhatsNewDialog, { hasUnseenWhatsNew, openWhatsNew } from "./whats-new-dialog";
+import { updateWaiting, applyPwaUpdate } from "../utils/pwa";
 import { openAbout } from "./about-dialog";
 import "./status-bar.css";
 
@@ -317,17 +318,33 @@ const StatusBar: Component = () => {
 
             {/* Version — tap to see what's new (the popup also carries the
                 hard-refresh action). A dot appears when there are updates since
-                the user last looked. */}
+                the user last looked.
+
+                When a NEW BUILD is waiting the button changes job: an amber dot
+                instead of blue, and one tap takes the update rather than opening
+                the popup. `pkg.version` is baked into the running bundle, so it
+                names the build you are ON — it cannot tell you a newer one exists,
+                which is why that has to come from the service worker via
+                updateWaiting(). Most people will never see this: the update
+                applies itself once the tab has been in the background a while
+                (utils/pwa.ts). It is here for whoever wants it sooner. */}
             <div class="status-section">
                 <button
                     class="status-btn version-btn"
                     style={{ "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
-                    title={t('statusBar.whatsNew')}
-                    aria-label="What's new"
-                    onClick={() => { openWhatsNew(); setHasNews(false); }}
+                    title={updateWaiting() ? t('statusBar.updateReady') : t('statusBar.whatsNew')}
+                    aria-label={updateWaiting() ? t('statusBar.updateReady') : "What's new"}
+                    onClick={() => {
+                        if (updateWaiting()) { void applyPwaUpdate(); return; }
+                        openWhatsNew();
+                        setHasNews(false);
+                    }}
                 >
                     v{pkg.version}
-                    <Show when={hasNews()}>
+                    <Show when={updateWaiting()}>
+                        <span class="version-update-dot" aria-hidden="true" />
+                    </Show>
+                    <Show when={hasNews() && !updateWaiting()}>
                         <span class="version-news-dot" aria-hidden="true" />
                     </Show>
                 </button>

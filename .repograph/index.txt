@@ -83,7 +83,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 5087 | Theme:3 PaintChannel:19 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:681 as:681 Window:5076
+frontend/src/api.ts | typescript | 5105 | Theme:3 PaintChannel:19 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:173 normalizeElementType:403 plotRuns:434 ElementType:682 as:682 Window:5094
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1644 | Component:1 App:102 moves:127 onPenMove:128 hidePen:132 handleKeyUp:171 handleKeyDown:181 as:852 the:903 handleFullscreenChange:1022 handleBeforeUnload:1028 handlePaste:1032 of:1146 isInternalPanelDrag:1149 handleGlobalDragEnter:1152 handleGlobalDragOver:1166 showDropFallbackPrompt:1184 cleanup:1214 outsideClick:1242 isImageFile:1254 first:1255 must:1268 extractDropData:1270 processExtractedDrop:1325 handleGlobalDrop:1446 handleDocumentDrop:1492
 frontend/src/assets/solid.svg | - | 1 |
@@ -279,8 +279,8 @@ frontend/src/components/slide-transition-picker.css | - | 130 |
 frontend/src/components/slide-transition-picker.tsx | typescript | 123 | SlideTransitionPickerProps:9 SlideTransitionPicker:15 slide:16 transition:17 handleKeyDown:20 handleTypeChange:35 handleDurationChange:40 handleEasingChange:47 handlePreview:52
 frontend/src/components/state-panel.css | - | 164 |
 frontend/src/components/state-panel.tsx | typescript | 110 | Component:1 StatePanel:6 handleAdd:10 handleReset:19 handlePlayAll:25 handleStopPlayback:43
-frontend/src/components/status-bar.css | - | 257 |
-frontend/src/components/status-bar.tsx | typescript | 373 | Component:1 Hint:15 isMindmapNode:26 getContextHints:33 ToolLabelKey:93 isToolLabelKey:94 StatusBar:96 handleZoomIn:99 handleZoomOut:104 zoomToCenter:109 resetZoom:121 rotationDeg:126 toolLabel:128
+frontend/src/components/status-bar.css | - | 283 |
+frontend/src/components/status-bar.tsx | typescript | 390 | Component:1 Hint:16 isMindmapNode:27 getContextHints:34 ToolLabelKey:94 isToolLabelKey:95 StatusBar:97 handleZoomIn:100 handleZoomOut:105 zoomToCenter:110 resetZoom:122 rotationDeg:127 toolLabel:129
 frontend/src/components/status-tool-group.tsx | typescript | 154 | Component:1 StatusToolGroup:48 handler:56 getActiveTool:66 handleToolClick:75 as:83 as:89 handleRightClick:97 toggleMenu:102 activeTool:109 isActive:110
 frontend/src/components/stick-face-controls.css | - | 62 |
 frontend/src/components/stick-face-controls.tsx | typescript | 256 | Component:15 TrouserStyle:21 FaceHairChoice:25 thumb:37 legThumb:47 topThumb:57 StickFaceControls:72 pref:73 apply:105
@@ -355,7 +355,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 792 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 798 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -441,7 +441,7 @@ frontend/src/help-docs/features/plotting.md | - | 201 |
 frontend/src/help-docs/features/stick-animation.md | - | 162 |
 frontend/src/help-docs/features/stick-library.md | - | 237 |
 frontend/src/help-docs/features/symbols.md | - | 159 |
-frontend/src/help-docs/features/workspace.md | - | 751 |
+frontend/src/help-docs/features/workspace.md | - | 766 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 581 |
 frontend/src/help-docs/help-md.d.ts | typescript | 28 |
 frontend/src/help-docs/help-page.css | - | 587 |
@@ -473,11 +473,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1094 |
-frontend/src/i18n/locales/en.ts | typescript | 1124 | Dictionary:1124
-frontend/src/i18n/locales/es.ts | typescript | 1093 |
-frontend/src/i18n/locales/fr.ts | typescript | 1115 | de:108
-frontend/src/i18n/locales/ja.ts | typescript | 1093 |
+frontend/src/i18n/locales/de.ts | typescript | 1095 |
+frontend/src/i18n/locales/en.ts | typescript | 1125 | Dictionary:1125
+frontend/src/i18n/locales/es.ts | typescript | 1094 |
+frontend/src/i18n/locales/fr.ts | typescript | 1116 | de:108
+frontend/src/i18n/locales/ja.ts | typescript | 1094 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -790,7 +790,9 @@ frontend/src/utils/points.ts | typescript | 20 |
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
 frontend/src/utils/popover-placement.test.ts | typescript | 102 | place:55
 frontend/src/utils/popover-placement.ts | typescript | 114 | Box:11 Placement:18 placeBesideAnchor:34 placeFlyout:78
-frontend/src/utils/pwa.ts | typescript | 45 | initPWA:20 applyPwaUpdate:43
+frontend/src/utils/pwa-update-policy.test.ts | typescript | 34 |
+frontend/src/utils/pwa-update-policy.ts | typescript | 47 | AutoApplyState:18 shouldAutoApply:42
+frontend/src/utils/pwa.ts | typescript | 150 | isBusy:52 initPWA:60 armAutoApply:112 applyPwaUpdate:147
 frontend/src/utils/rasterize.ts | typescript | 96 | RasterizeOptions:14
 frontend/src/utils/recording-manager.ts | typescript | 591 | VideoFormat:9 stopCanvasGif:70 liveCaptureRect:84 startCanvasGif:111 recordCanvasGif:224 makePageFrameRenderer:236 exportPageVideo:337 exportPageGif:390 setupRecording:442
 frontend/src/utils/render-element.ts | typescript | 236 | cubicBezier:16 cubicBezierAngle:22 renderNullGizmo:95 renderVariableWidthStroke:201 adjustColor:232

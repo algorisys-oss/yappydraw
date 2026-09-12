@@ -742,6 +742,7 @@ export const de: Dictionary = {
         redo: 'Wiederholen (Strg+Y)',
         present: 'Von Anfang an präsentieren (F5)',
         whatsNew: 'Neuerungen',
+        updateReady: 'Eine neue Version ist bereit – zum Aktualisieren tippen',
         privacy: 'Datenschutz',
         about: 'Über',
         terms: 'Nutzungsbedingungen',

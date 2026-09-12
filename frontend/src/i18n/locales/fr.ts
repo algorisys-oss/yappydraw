@@ -756,6 +756,7 @@ export const fr: Dictionary = {
         redo: 'Rétablir (Ctrl+Y)',
         present: 'Présenter depuis le début (F5)',
         whatsNew: 'Nouveautés',
+        updateReady: 'Une nouvelle version est prête — appuyez pour mettre à jour',
         privacy: 'Confidentialité',
         about: 'À propos',
         terms: 'Conditions',

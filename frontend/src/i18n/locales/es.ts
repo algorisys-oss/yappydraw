@@ -742,6 +742,7 @@ export const es: Dictionary = {
         redo: 'Rehacer (Ctrl+Y)',
         present: 'Presentar desde el principio (F5)',
         whatsNew: 'Novedades',
+        updateReady: 'Hay una nueva versión lista: toca para actualizar ahora',
         privacy: 'Privacidad',
         about: 'Acerca de',
         terms: 'Términos',
