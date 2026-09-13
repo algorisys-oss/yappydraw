@@ -760,6 +760,11 @@ export interface DrawingElement {
     qrData?: string;               // Encoded text or URL
     qrErrorCorrection?: 'L' | 'M' | 'Q' | 'H'; // Error-correction level (default 'M')
     qrQuietZone?: number;          // Blank margin in modules, 0-10 (default 2)
+    qrModuleStyle?: 'square' | 'rounded' | 'dots'; // Shape of the data modules (default 'square')
+    qrFinderStyle?: 'square' | 'rounded' | 'circle'; // Shape of the three corner eyes (default 'square')
+    qrFinderColor?: string;        // Corner-eye colour (default: strokeColor)
+    qrLogo?: string;               // Image URL or data URL drawn in the centre; modules behind it are cleared
+    qrLogoSize?: number;           // Logo width as a fraction of the code, 0.1-0.35 (default 0.2)
     // Data Structure visualization properties
     dsShowIndices?: boolean;       // Show index/position labels
     dsDirection?: 'horizontal' | 'vertical';  // Layout direction

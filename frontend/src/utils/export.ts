@@ -81,9 +81,14 @@ interface Bounds { minX: number; minY: number; maxX: number; maxY: number; }
  *  first — exporters render synchronously, so an un-cached image (e.g. one just placed on top of
  *  another) would otherwise export blank. */
 export async function ensureExportImages(): Promise<void> {
+    // Every field a renderer passes to getImage(). This once read `fillImageUrl`, a key nothing
+    // writes, so image fills that the canvas had not drawn yet exported blank.
     await preloadImages([
         ...store.elements.filter(e => e.type === 'image').map(e => e.dataURL),
-        ...store.elements.map(e => (e as any).fillImageUrl),
+        ...store.elements.map(e => e.backgroundImage),
+        ...store.elements.map(e => e.patternFill?.type === 'custom' ? e.patternFill.tile : undefined),
+        ...store.elements.map(e => e.videoPosterDataURL || e.videoPosterURL),
+        ...store.elements.map(e => e.qrLogo),
         ...store.slides.map(s => (s as any).backgroundImage),
     ]);
 }

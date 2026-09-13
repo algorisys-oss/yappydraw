@@ -59,7 +59,7 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
-import { qrCodeDefaults, qrWarnings } from "./utils/qr-code";
+import { qrCodeDefaults, qrWarnings, QR_LOGO_MIN, QR_LOGO_MAX } from "./utils/qr-code";
 import { fontsReady as awaitFontsReady, fontsAreLoaded } from "./utils/font-loading";
 // Type-only import: the element-search module statically pulls in the bundled
 // illustration search index (~120 KB) + template data, so it must stay OUT of the eager
@@ -243,6 +243,11 @@ interface ElementOptions {
     qrData?: string;
     qrErrorCorrection?: 'L' | 'M' | 'Q' | 'H';
     qrQuietZone?: number;
+    qrModuleStyle?: 'square' | 'rounded' | 'dots';
+    qrFinderStyle?: 'square' | 'rounded' | 'circle';
+    qrFinderColor?: string;
+    qrLogo?: string;
+    qrLogoSize?: number;
 
     // Data Structure
     dsShowIndices?: boolean;
@@ -1642,7 +1647,11 @@ export const YappyAPI = {
      * The code's colour is `strokeColor` and the area behind it is `backgroundColor`;
      * a non-square element keeps the code square and centres it.
      * @param data - Text or URL to encode (default "https://yappydraw.com")
-     * @param options - e.g. `{ qrErrorCorrection: 'H', qrQuietZone: 4, strokeColor: '#1e3a8a' }`
+     * @param options - e.g. `{ qrErrorCorrection: 'H', qrQuietZone: 4, strokeColor: '#1e3a8a' }`.
+     *   Styling: `qrModuleStyle` ('square' | 'rounded' | 'dots'), `qrFinderStyle` ('square' |
+     *   'rounded' | 'circle') and `qrFinderColor` for the three corner eyes.
+     *   Logo: `qrLogo` (image URL or data URL) and `qrLogoSize` (0.1-0.35 of the code's width);
+     *   the modules behind it are cleared, so pair it with `qrErrorCorrection: 'H'`.
      */
     createQrCode(x: number, y: number, width: number, height: number, data?: string, options?: ElementOptions): string {
         return this.createElement('qrCode', x, y, width, height, {
@@ -1657,6 +1666,21 @@ export const YappyAPI = {
         const el = this.getElement(qrCodeId);
         if (!el || el.type !== 'qrCode') return null;
         return el.qrData ?? '';
+    },
+
+    /**
+     * Put a logo in the middle of a QR code, or remove it with `null` (undoable). `size` is the
+     * logo's width as a fraction of the code, clamped to 0.1-0.35. Check getQrCodeWarnings
+     * afterwards: a logo too large for the error-correction level stops the code scanning.
+     */
+    setQrCodeLogo(qrCodeId: string, logo: string | null, size?: number): void {
+        const el = this.getElement(qrCodeId);
+        if (!el || el.type !== 'qrCode') return;
+        const updates: Partial<DrawingElement> = { qrLogo: logo || undefined };
+        if (typeof size === 'number' && Number.isFinite(size)) {
+            updates.qrLogoSize = Math.max(QR_LOGO_MIN, Math.min(QR_LOGO_MAX, size));
+        }
+        updateElement(qrCodeId, updates, true);
     },
 
     /** Change what a QR code encodes (undoable). */

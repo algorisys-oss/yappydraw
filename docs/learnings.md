@@ -9758,3 +9758,42 @@ output *looks* like a QR code. The codes exported from the running app were also
 payload in navy on cream at level H in a 360×200 element all decoded to the exact input.
 The unit tests in `utils/*.test.ts` import `bun:test`, so run them with `bun test`, not
 `vitest` (which reports a misleading missing-`jsdom` error).
+
+## Styled QR codes: keep the parts scanners navigate by, and calibrate with a decoder
+
+Rounded modules, dot modules, corner-eye shapes and a centre logo went in after the plain QR
+element, and two things were only visible by decoding real exports with `jsqr`:
+
+- **Dots broke every code — because of the alignment pattern, not the dots.** Every dot
+  combination failed to decode, even without a logo, while rounded modules passed, and the
+  renders looked right. The cause was the 5×5 alignment pattern: drawn as separate dots its ring
+  is no longer continuous, and jsQR (like several phone decoders) uses it to lock onto the grid.
+  Tracing alignment patterns as whole rings in the module style (`traceQrAlignment`) took the
+  failures to zero, including every dot code under a logo. The centres use the reference
+  encoder's formula; a unit test checks each one against the pattern `uqr` actually emits,
+  across versions 2–40.
+- **"How big can the logo be?" has no constant answer.** It depends on the error-correction
+  level and on the code's size, because longer data gives a larger version with more
+  redundancy. So the warning compares *coverage* (cleared modules ÷ non-eye modules) against a
+  per-level budget. The budgets came from decoding 144 exports (2 data lengths × 4 levels × 6
+  sizes × 3 styles) and sit ~25% below the smallest coverage that failed. The first guess was
+  too cautious, at 33 false warnings and 0 misses; the calibrated values give 15 and still 0.
+  The harness is kept at `temp/qr-calibrate.spec.ts`.
+
+Smaller things that had to be right:
+
+- **`arc()` joins the previous point.** Both canvas and `SvgRenderer` draw a line from the
+  current point to an arc's start, so hundreds of dots in one path become a web of hairlines
+  unless each circle starts with `moveTo`. A unit test asserts every `arc` follows a `moveTo`.
+- **Per-corner radii can't use `roundRect`.** `SvgRenderer.roundRect` honours only the first
+  radius, so rounded modules (rounded only where no neighbour touches) are traced with
+  `bezierCurveTo` quarter circles, which export identically.
+- **Eyes are one `evenodd` fill.** Outer ring, inner edge and pupil nest, so evenodd paints ring
+  and pupil and leaves the gap. Modules stay a single nonzero fill with every sub-shape wound
+  clockwise, which is what lets neighbouring rounded modules merge without seams.
+- **Never clear into a finder zone.** The logo's cleared square is capped at the 8×8 eye plus
+  separator, so on a version-2 code a "35%" logo comes out smaller. Covering an eye loses the
+  code outright; no error-correction level rebuilds it.
+- **A literal NUL byte in source makes git call the file binary.** The first `qr-code.ts` joined
+  its cache key with a raw NUL. It ran fine, but `git diff` showed only `Bin 5666 -> 13177 bytes`.
+  Write the `\u0000` escape instead.

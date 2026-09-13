@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.248', date: '2026-09-13', items: [
+        'Make your QR codes match your design: choose rounded or dot-shaped squares, rounded or circular corners, and a colour of their own for the corners.',
+        'Put your logo in the middle of a QR code. Upload it, pick a size, and the code makes room for it. If the logo gets too big to scan, Yappy tells you \u2014 switch Error Correction to High to fit a bigger one.',
+        'Fixed: a shape filled with an image could come out empty in an export if it was not on screen at the time. Pattern fills and video thumbnails had the same problem, and all of them now export properly.',
+    ] },
     { version: '0.8.247', date: '2026-09-13', items: [
         'Add a QR code to any design \u2014 open Elements and click QR Code, or search for \u201cqr\u201d. Paste in your link and it is ready to scan.',
         'It stays editable. Change the link, the colours, the error correction or the margin whenever you like, and the code updates on the spot. Fixing a typo in a URL no longer means making the code again somewhere else.',

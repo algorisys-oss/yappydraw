@@ -9497,3 +9497,18 @@ One real bug surfaced while wiring the shortcut: `Shift+X` was guarded by
 `if (store.selection.length > 0)`, so on an empty canvas — precisely when you are
 setting up the colours for the next shape — the key did nothing at all. It now
 swaps the armed defaults, and `fill-stroke-paint.test.ts` pins that.
+
+## Image fills, custom patterns and video posters could export blank
+
+Exporters render synchronously, so `ensureExportImages()` decodes every image an export will
+draw before it starts. Its list read `fillImageUrl` for element image fills, a key nothing in
+the codebase writes: the image-fill property is `backgroundImage`. An image fill the canvas had
+already drawn was in the cache anyway, so the bug only showed for a fill the canvas had not
+painted yet (off-screen, on another page, just loaded or just set by a script), which then
+exported as an empty shape.
+
+Found while adding QR code logos, which have the same need. Checking every `getImage()` call
+site found two more fields with the same gap: custom pattern tiles (`patternFill.tile`) and video
+posters (`videoPosterDataURL` / `videoPosterURL`). All of them, plus `qrLogo`, are now preloaded.
+`tests/export-image-fill.spec.ts` places an image-filled shape far off-screen and rasterizes
+it; it failed (transparent centre pixel) before the fix and passes after.

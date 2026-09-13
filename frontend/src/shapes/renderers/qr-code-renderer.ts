@@ -2,7 +2,10 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { resolveFontFamily } from "../../utils/text-utils";
-import { buildQrMatrix, qrRuns, qrLayout, QR_DEFAULTS } from "../../utils/qr-code";
+import { getImage } from "../../utils/image-cache";
+import {
+    buildQrMatrix, qrLayout, qrLogoBox, traceQrModules, traceQrAlignment, traceQrFinders, QR_DEFAULTS,
+} from "../../utils/qr-code";
 
 /**
  * QR code — generated from `qrData` each frame (the matrix is cached). Both drawing styles
@@ -49,14 +52,36 @@ export class QrCodeRenderer extends ShapeRenderer {
         }
 
         const { cell, originX, originY } = qrLayout(el, matrix.size, el.qrQuietZone ?? QR_DEFAULTS.quietZone);
+        const logo = el.qrLogo ? qrLogoBox(matrix.size, el.qrLogoSize ?? QR_DEFAULTS.logoSize) : null;
+
         // One path, one fill: adjacent modules filled as separate shapes leave anti-aliased
         // hairline seams between them at fractional zoom.
         renderer.fillStyle = dark;
         renderer.beginPath();
-        for (const run of qrRuns(matrix.modules)) {
-            renderer.rect(originX + run.x * cell, originY + run.y * cell, run.w * cell, cell);
-        }
+        const moduleStyle = el.qrModuleStyle ?? 'square';
+        traceQrModules(renderer, matrix.modules, originX, originY, cell, moduleStyle, logo);
         renderer.fill();
+        renderer.beginPath();
+        if (traceQrAlignment(renderer, matrix.size, originX, originY, cell, moduleStyle, logo)) renderer.fill('evenodd');
+
+        // Ring, gap and pupil in one evenodd path — the ring's inner edge cuts the gap.
+        renderer.fillStyle = el.qrFinderColor || dark;
+        renderer.beginPath();
+        traceQrFinders(renderer, matrix.size, originX, originY, cell, el.qrFinderStyle ?? 'square');
+        renderer.fill('evenodd');
+
+        if (logo) {
+            // Not loaded yet: getImage starts the load and redraws when it lands; the cleared
+            // square shows the background meanwhile.
+            const img = getImage(el.qrLogo!);
+            if (img && img.width && img.height) {
+                const box = logo.side * cell;
+                const scale = Math.min(box / img.width, box / img.height);
+                const iw = img.width * scale, ih = img.height * scale;
+                const cx = originX + (matrix.size / 2) * cell, cy = originY + (matrix.size / 2) * cell;
+                renderer.drawImage(img, cx - iw / 2, cy - ih / 2, iw, ih);
+            }
+        }
         renderer.restore();
     }
 
