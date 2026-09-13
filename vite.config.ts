@@ -88,7 +88,9 @@ export default defineConfig({
           // config below, so it no longer depends on a document's filename.
           const LAZY_HEAVY = /(export-game|jspdf|pptxgen|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|helpdoc-|search-)/i
           return {
-            manifest: entries.filter(e => !e.url.includes('fonts/outline/') && !LAZY_HEAVY.test(e.url)),
+            // `illustrations/` is ~1,600 SVGs (~4 MB) of which a user sees a handful; they
+            // are fetched on demand and kept by the runtimeCaching rule below.
+            manifest: entries.filter(e => !e.url.includes('fonts/outline/') && !e.url.includes('illustrations/') && !LAZY_HEAVY.test(e.url)),
             warnings: [],
           }
         },
@@ -148,6 +150,18 @@ export default defineConfig({
             // opaque/failed one, and storing that in a *CacheFirst* cache with a
             // 30-day life poisons the URL permanently — every later load is served
             // an unparseable body and the chunk import fails for a month.
+            cacheableResponse: { statuses: [200] },
+          },
+        },
+        {
+          // Elements-panel illustrations (excluded from the precache above). Cache-first is
+          // safe for the same reason as the chunks: the directory is named after the
+          // upstream commit, so a given URL never changes content. 200 only, as above.
+          urlPattern: ({ url }) => /\/illustrations\/fluent-[0-9a-f]+\/[^/]+\.svg$/.test(url.pathname),
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'yappy-illustrations',
+            expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 90 },
             cacheableResponse: { statuses: [200] },
           },
         },

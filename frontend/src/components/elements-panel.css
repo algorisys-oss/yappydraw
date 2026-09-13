@@ -68,7 +68,8 @@
 /* Photo result cell — image fills the square tile. */
 .ep-cell-photo { padding: 0; overflow: hidden; border-color: var(--border-color); background: var(--bg-secondary); }
 .ep-cell-photo img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 5px; }
-/* SVG result cells (icons/shapes/illustrations) size their glyph to the tile. */
+.ep-cell-illustration img { width: 72%; height: 72%; object-fit: contain; display: block; }
+/* SVG result cells (icons/shapes) size their glyph to the tile. */
 .ep-results-grid .ep-cell svg { width: 24px; height: 24px; }
 
 /* Template result cell — full-bleed page preview with a caption bar. */

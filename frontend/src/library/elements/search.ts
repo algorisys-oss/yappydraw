@@ -1,22 +1,20 @@
 /**
  * Unified element search — fan a single query across multiple asset providers
- * (icons, shapes, photos today; illustrations land in Phase 2) and return a
- * blended, uniformly-typed result list the Elements panel renders in one grid.
+ * (icons, illustrations, shapes, photos, templates) and return a blended,
+ * uniformly-typed result list the Elements panel renders in one grid.
  *
- * Offline providers (icons/shapes) resolve synchronously; the photo provider is
- * async (Wikimedia Commons). The panel renders offline hits instantly and
- * appends photo hits when they resolve — mirroring the existing Photos pattern.
- *
- * Phase 2 wires an IllustrationProvider (bundled OpenMoji) and a keyword-alias
- * map here; the `AssetHit`/kind contract below is designed to absorb both
- * without touching the panel.
+ * Offline providers resolve synchronously; the photo provider is async
+ * (Wikimedia Commons). The panel renders offline hits instantly and appends
+ * photo hits when they resolve. Illustrations are matched offline against a
+ * bundled index, but their SVGs are fetched on demand (thumbnail via URL,
+ * markup on insert).
  */
 import { render } from 'solid-js/web';
 import { store } from '../../store/app-store';
 import { importSvgToCanvas } from '../../utils/svg-import';
 import { searchStockPhotos, insertStockPhoto, type StockPhoto } from '../../utils/stock-photos';
 import { YappyAPI } from '../../api';
-import { searchIllustrations } from './illustrations/registry';
+import { searchIllustrations, illustrationUrl, loadIllustrationSvg } from './illustrations/registry';
 import { aliasesFor } from './aliases';
 import { searchTemplates } from '../../templates/registry';
 import { templatePreviewSvg } from '../../templates/template-preview';
@@ -29,9 +27,9 @@ export interface AssetHit {
     kind: AssetKind;
     id: string;
     label: string;
-    /** Inline SVG markup — icons, illustrations, shapes (rendered via innerHTML). */
+    /** Inline SVG markup — icons, shapes, templates (rendered via innerHTML). */
     thumbSvg?: string;
-    /** Thumbnail URL — photos (rendered via <img>). */
+    /** Thumbnail URL — photos and illustrations (rendered via <img>). */
     thumbUrl?: string;
     /** Raw stock-photo payload, kept for drag-to-canvas. */
     photo?: StockPhoto;
@@ -105,9 +103,16 @@ function insertIconEl(svg: string, at?: { x: number; y: number }) {
     importSvgToCanvas(svg, { x: o.x, y: o.y, targetWidth: SIZE });
 }
 
-function insertIllustrationEl(svg: string, at?: { x: number; y: number }) {
+async function insertIllustrationEl(id: string, at?: { x: number; y: number }) {
     const SIZE = 160;
     const o = at ? { x: at.x - SIZE / 2, y: at.y - SIZE / 2 } : insertOrigin(SIZE);
+    let svg: string;
+    try {
+        svg = await loadIllustrationSvg(id);
+    } catch {
+        showToast('Could not load that illustration — check your connection and try again', 'error');
+        return;
+    }
     importSvgToCanvas(svg, { x: o.x, y: o.y, targetWidth: SIZE });
 }
 
@@ -152,18 +157,18 @@ function iconHits(q: string, lucide: any): AssetHit[] {
 }
 
 /**
- * Illustration hits from the bundled OpenMoji subset. Matched by the query plus
- * its alias expansions against illustration name + tags. Inserted as editable
- * coloured vector paths (same path as icons → render-style parity for free).
+ * Illustration hits from the Fluent Emoji index. Matched by the query plus its
+ * alias expansions against name + keywords; the query itself ranks first.
+ * Inserted as editable coloured vector paths (same path as icons → render-style
+ * parity for free).
  */
 function illustrationHits(q: string): AssetHit[] {
     const nq = normalize(q);
     if (!nq) return [];
-    const tokens = [nq, ...aliasesFor(nq)];
-    return searchIllustrations(tokens).map(a => ({
+    return searchIllustrations([nq, ...aliasesFor(nq)]).map(a => ({
         kind: 'illustration' as const, id: `illustration:${a.id}`, label: a.name,
-        thumbSvg: a.svg,
-        insert: (at: { x: number; y: number } | undefined) => insertIllustrationEl(a.svg, at),
+        thumbUrl: illustrationUrl(a.id),
+        insert: (at: { x: number; y: number } | undefined) => insertIllustrationEl(a.id, at),
     }));
 }
 

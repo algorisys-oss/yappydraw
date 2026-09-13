@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.246', date: '2026-09-13', items: [
+        'The illustration library grew from 85 to 1,582. Search the Elements panel for almost anything \u2014 people and jobs, animals, food, travel, objects, symbols, flags \u2014 and drop in a colourful illustration that stays fully editable: recolour it, pull it apart, resize it without losing sharpness.',
+        'Search understands keywords, not just names: \u201cdeveloper\u201d finds the technologist, \u201ccelebrate\u201d finds the party popper. The closest matches are shown first.',
+        'The new set is Microsoft Fluent Emoji under the MIT licence, so you can use it in anything you make, commercial work included, with no credit needed in the design.',
+        'Pictures load the first time you see them and then work offline, so the bigger library does not slow down opening Yappy.',
+    ] },
     { version: '0.8.245', date: '2026-09-12', items: [
         'Yappy now keeps itself up to date. It checks for new releases, and when one is ready it installs it while you are away from the tab — so you come back already running it. Nothing to refresh, nothing to clear.',
         'It will never reload while you are looking at the page, and never in the middle of a recording. Your drawing is saved first, so nothing in progress is lost.',

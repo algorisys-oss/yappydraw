@@ -1,17 +1,20 @@
 # Illustration assets — attribution
 
-The illustrations bundled in `assets.ts` are a curated subset of **OpenMoji**
-(https://openmoji.org), the open-source emoji and icon project of HfG Schwäbisch
-Gmünd.
+The Elements-panel illustrations are **Microsoft Fluent Emoji**, flat style
+(https://github.com/microsoft/fluentui-emoji).
 
-- **License:** Creative Commons Attribution-ShareAlike 4.0 International
-  (CC BY-SA 4.0) — https://creativecommons.org/licenses/by-sa/4.0/
-- **Source:** https://github.com/hfg-gmuend/openmoji (`color/svg/<HEX>.svg`)
-- **Modifications:** SVGs are inlined and whitespace-minified for offline bundling;
-  they are inserted onto the canvas as editable vector paths. No visual changes.
+- **License:** MIT — the full text ships next to the SVGs as
+  `frontend/public/illustrations/LICENSE.txt` (Copyright (c) Microsoft Corporation).
+- **Source:** `assets/<name>/Flat/*.svg` (or `Default/Flat/` for skin-toned emoji), with
+  names and keywords from each folder's `metadata.json`.
+- **Modifications:** coordinates rounded to 2 decimals and whitespace minified; SVGs that
+  use gradients, clip paths, masks or filters are excluded because the canvas importer
+  cannot reproduce them. No other visual changes.
 
-CC BY-SA 4.0 requires attribution and share-alike. Keep this notice with the
-assets, and retain the OpenMoji credit surfaced in the Elements panel.
+Regenerate `index-data.ts` and `public/illustrations/` with `scripts/build-illustrations.mjs`
+(its header has the checkout commands).
 
-Regenerate the bundle with `scripts/build-illustrations.mjs` (see its `TABLE`
-for the codepoint → name/tags mapping).
+Earlier releases (v0.8.88–v0.8.245) bundled 85 OpenMoji illustrations (CC BY-SA 4.0). They
+were replaced because ShareAlike is awkward for users' own designs and the two styles clashed;
+documents that already contain them are unaffected, since an inserted illustration is plain
+vector paths with no link back to the library.

@@ -9690,3 +9690,39 @@ collection brings the peak to 1.65 GB. Two details made it safe to ship:
 The thing this did not fix is the reason the number keeps climbing: a 2.7 MB `index` chunk and
 a 2.0 MB `export-game` chunk. The cap buys headroom; it does not buy a smaller app.
 
+
+## Twenty times the library for half the bytes: bundle the index, not the assets
+
+The Elements panel shipped 85 OpenMoji illustrations inlined into the search chunk (~229 KB).
+Replacing them with Microsoft Fluent Emoji (flat style, MIT) raised the count to 1,582, which
+is ~4 MB of SVG — far too much to bundle, and pointless to bundle, because a user sees a handful
+per search. So the split is: a compact `[id, name, keywords]` index is bundled (~120 KB, in the
+lazy `search` chunk), and each SVG is a static file under `public/illustrations/fluent-<commit>/`,
+loaded by `<img>` for the thumbnail and fetched as markup only on insert.
+
+What had to be right:
+
+- **Versioned directory, not versioned files.** `.htaccess` marks every `.svg` immutable for a
+  year and the service worker caches illustrations CacheFirst. A regeneration that reused
+  `illustrations/rocket.svg` with new content would be served stale for a year. Naming the
+  directory after the upstream commit makes every URL change when the content can.
+- **Keep them out of the precache.** Workbox's manifest would otherwise add 1,582 files to
+  every install. They are filtered out of `manifestTransforms` and picked up by a runtime rule
+  (200 responses only, capped at 400 entries).
+- **Validate the body, not just the status.** A dev server or host can answer a missing file
+  with a 200 HTML page, which `importSvgToCanvas` would turn into garbage. The loader rejects
+  anything that does not start with `<svg`, and a failed load is dropped from the cache so one
+  bad network moment does not poison the id for the session.
+- **Drop what the importer can't draw.** 12 of the 1,594 use gradients, clip paths or masks.
+  The canvas importer draws plain shapes only, so those would insert as the wrong picture;
+  they are excluded at build time rather than shipped broken.
+- **Rank now that there is something to rank.** With 85 assets, "any substring matches" was
+  fine. With 1,582, "e" matches most of the library, so search scores exact name → prefix →
+  substring → keyword, ranks alias-only matches behind direct ones, and caps at 60.
+- **`insertElement` became async for illustrations.** It returns the promise, and the help doc
+  and `api.ts` say to await it — a script that read `elements` straight after the call used to
+  work and would now see nothing.
+
+A blobless sparse clone (`--filter=blob:none` + sparse-checkout of `Flat/*.svg` and
+`metadata.json`) pulls the source in seconds; the upstream repo is multi-GB because of its 3D
+PNGs. The commands live in the header of `scripts/build-illustrations.mjs`.

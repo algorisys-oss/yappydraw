@@ -1,7 +1,7 @@
 /**
  * Keyword alias map — the highest-leverage relevance win for element search.
  *
- * Yappy's icon (Lucide) and illustration (OpenMoji) searches are name/tag
+ * Yappy's icon (Lucide) and illustration (Fluent Emoji) searches are name/keyword
  * substring matches, so a natural word the user types ("money", "idea", "chat")
  * often misses assets named differently ("DollarSign", "Lightbulb",
  * "MessageSquare"). This map expands a query into extra concept tokens that ARE
@@ -14,7 +14,7 @@
 
 const norm = (s: string) => s.trim().toLowerCase().replace(/[\s\-_]+/g, '');
 
-/** natural word → concept tokens found in Lucide names / OpenMoji tags. */
+/** natural word → concept tokens found in Lucide names / illustration keywords. */
 const RAW_ALIASES: Record<string, string[]> = {
     love: ['heart', 'valentine', 'romance', 'like'],
     like: ['thumbsup', 'heart', 'star'],

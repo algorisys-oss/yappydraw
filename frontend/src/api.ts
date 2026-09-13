@@ -61,7 +61,7 @@ import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBra
 import { importSvgToCanvas } from "./utils/svg-import";
 import { fontsReady as awaitFontsReady, fontsAreLoaded } from "./utils/font-loading";
 // Type-only import: the element-search module statically pulls in the bundled
-// illustration library (~229 KB) + template data, so it must stay OUT of the eager
+// illustration search index (~120 KB) + template data, so it must stay OUT of the eager
 // api.ts graph. `searchElements` below loads it on demand (same lazy chunk the
 // Elements panel uses), keeping it off the app's startup path.
 import type { AssetHit, SearchElementsOptions } from "./library/elements/search";
@@ -3078,8 +3078,8 @@ export const YappyAPI = {
     /** Show/hide the Elements library panel (shapes, frames, icon library). */
     toggleElementsPanel(visible?: boolean) { toggleElementsPanel(visible); },
     /**
-     * Unified element search — fan a single query across icons (Lucide), bundled
-     * illustrations (OpenMoji), shapes and photos (Wikimedia), the same feed the
+     * Unified element search — fan a single query across icons (Lucide),
+     * illustrations (Fluent Emoji), shapes and photos (Wikimedia), the same feed the
      * Elements panel shows. Returns typed hits; call `insertElement(hit)` (or
      * `hit.insert()`) to drop one onto the canvas. `opts.kinds` restricts the
      * scope (e.g. `{ kinds: ['icon','illustration'] }`); photos are async and are
@@ -3091,6 +3091,8 @@ export const YappyAPI = {
     /**
      * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to drop it
      * in the middle of the visible drawing area, or pass a world point (e.g. for drag-drop).
+     * Illustration hits load their SVG over the network first, so this returns a
+     * promise for them — await it before inspecting the new elements.
      */
     insertElement(hit: AssetHit, at?: { x: number; y: number }) {
         return hit?.insert?.(at);

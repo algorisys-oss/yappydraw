@@ -206,7 +206,7 @@ const ElementsPanel: Component = () => {
         );
     };
 
-    /** One result cell — svg thumb (icon/shape/illustration) or img thumb (photo). */
+    /** One result cell — svg thumb (icon/shape/template) or img thumb (photo/illustration). */
     const ResultCell: Component<{ hit: AssetHit }> = (props) => {
         const h = props.hit;
         if (h.thumbUrl && h.photo) {
@@ -219,6 +219,13 @@ const ElementsPanel: Component = () => {
                         if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
                     }}
                     onClick={() => { void insertStockPhoto(h.photo!); }}>
+                    <img src={h.thumbUrl} alt={h.label} loading="lazy" />
+                </button>
+            );
+        }
+        if (h.kind === 'illustration' && h.thumbUrl) {
+            return (
+                <button class="ep-cell ep-cell-illustration" title={h.label} onClick={() => insertHit(h)}>
                     <img src={h.thumbUrl} alt={h.label} loading="lazy" />
                 </button>
             );
@@ -290,7 +297,7 @@ const ElementsPanel: Component = () => {
                             <div class="ep-attribution">Openly licensed via Wikimedia Commons — source link kept on each image.</div>
                         </Show>
                         <Show when={(kindFilter() === 'illustration' || kindFilter() === 'all') && results().some(h => h.kind === 'illustration')}>
-                            <div class="ep-attribution">Illustrations from OpenMoji (openmoji.org) — CC BY-SA 4.0.</div>
+                            <div class="ep-attribution">Illustrations from Microsoft Fluent Emoji — MIT licence, free to use in your designs.</div>
                         </Show>
                     </Show>
                 </div>
