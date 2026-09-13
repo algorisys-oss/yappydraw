@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.246",
+  "version": "0.8.247",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -20,7 +20,8 @@
     "pptxgenjs": "^4.0.1",
     "roughjs": "^4.6.6",
     "solid-js": "^1.9.11",
-    "sweetalert2": "^11.26.18"
+    "sweetalert2": "^11.26.18",
+    "uqr": "^0.1.3"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

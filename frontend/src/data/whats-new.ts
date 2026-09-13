@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.247', date: '2026-09-13', items: [
+        'Add a QR code to any design \u2014 open Elements and click QR Code, or search for \u201cqr\u201d. Paste in your link and it is ready to scan.',
+        'It stays editable. Change the link, the colours, the error correction or the margin whenever you like, and the code updates on the spot. Fixing a typo in a URL no longer means making the code again somewhere else.',
+        'Yappy warns you before you print a code that may not scan \u2014 when the link is too long, the colours are too close, or the code is lighter than its background.',
+        'It exports as crisp vector squares, so the code stays sharp on a poster at any size.',
+    ] },
     { version: '0.8.246', date: '2026-09-13', items: [
         'The illustration library grew from 85 to 1,582. Search the Elements panel for almost anything \u2014 people and jobs, animals, food, travel, objects, symbols, flags \u2014 and drop in a colourful illustration that stays fully editable: recolour it, pull it apart, resize it without losing sharpness.',
         'Search understands keywords, not just names: \u201cdeveloper\u201d finds the technologist, \u201ccelebrate\u201d finds the party popper. The closest matches are shown first.',

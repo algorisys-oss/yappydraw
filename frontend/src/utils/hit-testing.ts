@@ -316,7 +316,7 @@ function hitTestGeometry(
         el.type === 'puzzlePiece' || el.type === 'chainLink' || el.type === 'bridge' ||
         el.type === 'magnet' || el.type === 'scale' || el.type === 'seedling' ||
         el.type === 'tree' || el.type === 'mountain' ||
-        el.type === 'codeBlock' ||
+        el.type === 'codeBlock' || el.type === 'qrCode' ||
         el.type === 'dsArray' || el.type === 'dsStack' || el.type === 'dsQueue' ||
         el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable' ||
         el.type === 'solidButton' || el.type === 'dropdown' || el.type === 'uiCheckbox' ||

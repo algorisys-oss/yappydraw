@@ -95,6 +95,7 @@ const shapeToolCatalog: { type: ToolType & ShapeKey; group: string }[] = [
     { type: 'text', group: 'Text' },
     { type: 'richtext', group: 'Text' },
     { type: 'codeBlock', group: 'Text' },
+    { type: 'qrCode', group: 'Text' },
 
     // Infrastructure
     { type: 'server', group: 'Infrastructure' },

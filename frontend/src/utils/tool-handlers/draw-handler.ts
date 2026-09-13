@@ -18,6 +18,7 @@ import { getUIShapeDef } from '../../config/ui-shape-defs';
 import { hitTestPoolLane, assignToPoolLane } from '../pool-containment';
 import { computeAnchorFractions, expandToPortGroups } from '../binding-logic';
 import { createStrokeStabilizer, finishStabilizer } from '../stroke-stabilizer';
+import { qrCodeDefaults } from '../qr-code';
 
 // Freehand pen tools that support the pulled-string stabilizer. (The ephemeral
 // 'ink' presentation tool has its own pointer-down path and is left unchanged.)
@@ -32,7 +33,7 @@ const SOLID_STROKE_SHAPES = [
     'umlClass', 'umlEnum', 'umlInterface', 'umlActor', 'umlComponent', 'umlState',
     'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlNode', 'umlArtifact',
     'umlObject', 'umlPort', 'umlHistory', 'umlAction',
-    'table', 'codeBlock',
+    'table', 'codeBlock', 'qrCode',
     'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
     'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
     'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
@@ -55,7 +56,7 @@ const NORMALIZABLE_SHAPES = [
     'table',
     // 3D shapes need normalization too
     'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox',
-    'codeBlock',
+    'codeBlock', 'qrCode',
     'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
     'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
     'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
@@ -293,6 +294,10 @@ export function drawOnDown(
         newElement.codeShowLineNumbers = true;
         newElement.codeStartLineNumber = 1;
         newElement.borderRadius = 4;
+    }
+
+    if (actualType === 'qrCode') {
+        Object.assign(newElement, qrCodeDefaults());
     }
 
     // Apply specific defaults for Data Structure shapes

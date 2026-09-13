@@ -1235,7 +1235,8 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
         // (data-structures, BPMN, tables): record the clean render pipeline's
         // draw calls as real SVG via SvgRenderer. Safe — discards on anything it
         // can't represent, letting the raster fallback below take over.
-        if (!node && el.type !== 'text' && (el.renderStyle ?? 'sketch') === 'architectural') {
+        // A QR code draws identically in both styles, so it takes the vector path in sketch too.
+        if (!node && el.type !== 'text' && ((el.renderStyle ?? 'sketch') === 'architectural' || el.type === 'qrCode')) {
             try {
                 const svgR = new SvgRenderer(defs);
                 const tmpC = document.createElement('canvas');

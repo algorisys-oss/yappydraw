@@ -9726,3 +9726,35 @@ What had to be right:
 A blobless sparse clone (`--filter=blob:none` + sparse-checkout of `Flat/*.svg` and
 `metadata.json`) pulls the source in seconds; the upstream repo is multi-GB because of its 3D
 PNGs. The commands live in the header of `scripts/build-illustrations.mjs`.
+
+## A QR code is the one shape where "sketch style" must mean nothing
+
+The QR code element (`qrCode`, `utils/qr-code.ts` + `QrCodeRenderer`) regenerates from
+`qrData` on every frame, using `uqr` (~5 KB, no dependencies). Most of what made it work is
+about stopping the rest of the render pipeline from being helpful:
+
+- **No rough.js, and no dark-mode colour adjustment.** A wobble or a lightened "dark" module
+  stops the code scanning, so both drawing styles call the same clean renderer, and colours
+  bypass `RenderPipeline.adjustColor`. The Playwright spec asserts the sketch and
+  architectural PNG exports are byte-identical, which fails the moment anything stylises it.
+- **SVG export takes the vector path even in sketch style.** `exportToSvg` only records
+  architectural elements through `SvgRenderer`; sketch ones fall back to an embedded bitmap.
+  A QR code draws identically either way, so it is special-cased onto the vector path.
+- **One path, one fill.** Filling each module as its own rect leaves anti-aliased hairline
+  seams between neighbours at fractional zoom. Dark modules are merged into horizontal runs
+  (a few hundred rects, not thousands) and filled as a single path.
+- **Cache the matrix.** Reed-Solomon plus scoring all 8 masks is far too slow per frame; a
+  64-entry cache keyed by `ecc + data` covers every code on a page.
+- **Encode with `border: 0`.** The quiet zone is the element's own setting, applied in
+  `qrLayout`, which also keeps the code square and centred inside a non-square element (and
+  copes with the negative width/height of an element still being dragged out).
+- **Too-long data is an exception, not a return value.** `uqr` throws once no version 1–40
+  fits, so the builder turns that into `{ error: 'too-long' }` for the canvas placeholder and
+  the property-panel warning.
+
+Verification that could actually fail: the spec's finder/timing-pattern checks only show the
+output *looks* like a QR code. The codes exported from the running app were also decoded with
+`jsqr` (installed in a scratch directory, not the repo): a URL in both styles, and a Unicode
+payload in navy on cream at level H in a 360×200 element all decoded to the exact input.
+The unit tests in `utils/*.test.ts` import `bun:test`, so run them with `bun test`, not
+`vitest` (which reports a misleading missing-`jsdom` error).

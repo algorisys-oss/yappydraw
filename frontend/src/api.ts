@@ -59,6 +59,7 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
+import { qrCodeDefaults, qrWarnings } from "./utils/qr-code";
 import { fontsReady as awaitFontsReady, fontsAreLoaded } from "./utils/font-loading";
 // Type-only import: the element-search module statically pulls in the bundled
 // illustration search index (~120 KB) + template data, so it must stay OUT of the eager
@@ -237,6 +238,11 @@ interface ElementOptions {
     codeStartLineNumber?: number;
     codeHighlightLine?: number;
     codeScrollOffset?: number;
+
+    // QR Code
+    qrData?: string;
+    qrErrorCorrection?: 'L' | 'M' | 'Q' | 'H';
+    qrQuietZone?: number;
 
     // Data Structure
     dsShowIndices?: boolean;
@@ -1629,6 +1635,45 @@ export const YappyAPI = {
         const el = this.getElement(codeBlockId);
         if (!el || el.type !== 'codeBlock' || !el.text) return 0;
         return el.text.split('\n').length;
+    },
+
+    /**
+     * Create an editable QR code. It regenerates whenever its data or settings change.
+     * The code's colour is `strokeColor` and the area behind it is `backgroundColor`;
+     * a non-square element keeps the code square and centres it.
+     * @param data - Text or URL to encode (default "https://yappydraw.com")
+     * @param options - e.g. `{ qrErrorCorrection: 'H', qrQuietZone: 4, strokeColor: '#1e3a8a' }`
+     */
+    createQrCode(x: number, y: number, width: number, height: number, data?: string, options?: ElementOptions): string {
+        return this.createElement('qrCode', x, y, width, height, {
+            ...qrCodeDefaults(),
+            ...options,
+            qrData: data ?? options?.qrData ?? qrCodeDefaults().qrData,
+        });
+    },
+
+    /** The text or URL a QR code encodes, or null if the id is not a QR code. */
+    getQrCodeData(qrCodeId: string): string | null {
+        const el = this.getElement(qrCodeId);
+        if (!el || el.type !== 'qrCode') return null;
+        return el.qrData ?? '';
+    },
+
+    /** Change what a QR code encodes (undoable). */
+    setQrCodeData(qrCodeId: string, data: string): void {
+        const el = this.getElement(qrCodeId);
+        if (!el || el.type !== 'qrCode') return;
+        updateElement(qrCodeId, { qrData: data }, true);
+    },
+
+    /**
+     * Reasons a QR code may not scan — no data, data too long for its error-correction
+     * level, low contrast, or an inverted (light-on-dark) code. Empty means it looks fine.
+     */
+    getQrCodeWarnings(qrCodeId: string): string[] {
+        const el = this.getElement(qrCodeId);
+        if (!el || el.type !== 'qrCode') return [];
+        return qrWarnings(el);
     },
 
     // --- Data Structure API ---

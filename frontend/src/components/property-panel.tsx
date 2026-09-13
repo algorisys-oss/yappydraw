@@ -56,6 +56,7 @@ import StickFaceControls from "./stick-face-controls";
 import { selectionHasStickFigure, selectionHasAnimatedFigure } from "../library/stick-figures";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
 import { readJsonArray } from "../utils/safe-storage";
+import { qrWarnings } from "../utils/qr-code";
 import {
     pixelRevealLTR, pixelDissolve, pixelWaveCenter, pixelScanLines,
     pixelGlitch, pixelBlockReveal, pixelSpiral, pixelCurtainV, pixelRandomScatter, pixelRain
@@ -2753,6 +2754,11 @@ const PropertyPanel: Component = () => {
                                                     Fill so the two fill controls are adjacent. */}
                                                 <Show when={group === 'background' && isElement() && targetData()}>
                                                     <AppearanceEditor el={() => targetData()} />
+                                                </Show>
+                                                <Show when={group === 'dimensions' && isElement() && targetData()?.type === 'qrCode'}>
+                                                    <For each={qrWarnings(targetData()!)}>
+                                                        {(msg) => <div class="qr-warning" role="status">{msg}</div>}
+                                                    </For>
                                                 </Show>
                                                 {/* Crop button for image elements in filter group */}
                                                 <Show when={group === 'filter' && (() => {

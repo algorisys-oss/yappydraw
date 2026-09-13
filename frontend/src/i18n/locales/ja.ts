@@ -208,6 +208,7 @@ export const ja: Dictionary = {
         text: 'テキスト',
         richtext: 'リッチテキスト',
         codeBlock: 'コードブロック',
+        qrCode: 'QRコード',
         server: 'サーバー',
         loadBalancer: 'ロードバランサー',
         firewall: 'ファイアウォール',

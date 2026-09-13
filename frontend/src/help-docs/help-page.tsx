@@ -23,6 +23,7 @@ import { meta as effectsMeta } from './features/effects.md?meta';
 import { meta as masksAppearanceTraceMeta } from './features/masks-appearance-trace.md?meta';
 import { meta as symbolsMeta } from './features/symbols.md?meta';
 import { meta as elementsSearchMeta } from './features/elements-search.md?meta';
+import { meta as qrCodeMeta } from './features/qr-code.md?meta';
 import { meta as stickLibraryMeta } from './features/stick-library.md?meta';
 import { meta as stickAnimationMeta } from './features/stick-animation.md?meta';
 import { meta as artboardsMeta } from './features/artboards.md?meta';
@@ -86,6 +87,7 @@ const EffectsDoc = markdownDoc(() => import('./features/effects.md'));
 const MasksAppearanceTraceDoc = markdownDoc(() => import('./features/masks-appearance-trace.md'));
 const SymbolsDoc = markdownDoc(() => import('./features/symbols.md'));
 const ElementsSearchDoc = markdownDoc(() => import('./features/elements-search.md'));
+const QrCodeDoc = markdownDoc(() => import('./features/qr-code.md'));
 const StickLibraryDoc = markdownDoc(() => import('./features/stick-library.md'));
 const StickAnimationDoc = markdownDoc(() => import('./features/stick-animation.md'));
 const ArtboardsDoc = markdownDoc(() => import('./features/artboards.md'));
@@ -123,6 +125,7 @@ const shapeDocuments: ShapeDoc[] = [
     { ...masksAppearanceTraceMeta, content: MasksAppearanceTraceDoc },
     { ...symbolsMeta, content: SymbolsDoc },
     { ...elementsSearchMeta, content: ElementsSearchDoc },
+    { ...qrCodeMeta, content: QrCodeDoc },
     { ...stickLibraryMeta, content: StickLibraryDoc },
     { ...stickAnimationMeta, content: StickAnimationDoc },
     { ...artboardsMeta, content: ArtboardsDoc },

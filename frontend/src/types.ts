@@ -7,7 +7,7 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
     | 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield'
     | 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'ganttChart' | 'journeyDiagram' | 'quadrantChart' | 'xyChart' | 'table'
     | 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
-    | 'polyline' | 'elbow' | 'codeBlock'
+    | 'polyline' | 'elbow' | 'codeBlock' | 'qrCode'
     | 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
     | 'solidButton' | 'dropdown' | 'uiCheckbox' | 'radioButton' | 'toggleSwitch'
     | 'card' | 'searchBar' | 'progressBar' | 'avatar' | 'navbar'
@@ -756,6 +756,10 @@ export interface DrawingElement {
     codeStartLineNumber?: number;  // First line number (default 1)
     codeHighlightLine?: number;    // Currently highlighted line (for animation, -1 = none)
     codeScrollOffset?: number;     // Vertical scroll offset in px (for animation auto-scroll)
+    // QR code properties (modules use strokeColor, the area behind uses backgroundColor)
+    qrData?: string;               // Encoded text or URL
+    qrErrorCorrection?: 'L' | 'M' | 'Q' | 'H'; // Error-correction level (default 'M')
+    qrQuietZone?: number;          // Blank margin in modules, 0-10 (default 2)
     // Data Structure visualization properties
     dsShowIndices?: boolean;       // Show index/position labels
     dsDirection?: 'horizontal' | 'vertical';  // Layout direction

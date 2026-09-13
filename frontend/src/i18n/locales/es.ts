@@ -208,6 +208,7 @@ export const es: Dictionary = {
         text: 'Texto',
         richtext: 'Texto enriquecido',
         codeBlock: 'Bloque de código',
+        qrCode: 'Código QR',
         server: 'Servidor',
         loadBalancer: 'Balanceador de carga',
         firewall: 'Cortafuegos',

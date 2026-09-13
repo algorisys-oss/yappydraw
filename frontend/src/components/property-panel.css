@@ -801,3 +801,14 @@ input[type="text"] {
     color: var(--text-primary, #222);
     font-weight: 600;
 }
+
+.qr-warning {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.12);
+    border-left: 3px solid #f59e0b;
+    border-radius: 3px;
+    padding: 6px 8px;
+    margin-top: 6px;
+}

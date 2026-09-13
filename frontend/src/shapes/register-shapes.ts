@@ -18,6 +18,7 @@ import { ConnectorRenderer } from "./renderers/connector-renderer";
 import { FreehandRenderer } from "./renderers/freehand-renderer";
 import { SpecialtyShapeRenderer } from "./renderers/specialty-shape-renderer";
 import { UmlClassRenderer } from "./renderers/uml-class-renderer";
+import { QrCodeRenderer } from "./renderers/qr-code-renderer";
 import { UmlGeneralRenderer } from "./renderers/uml-general-renderer";
 import { UmlStateRenderer } from "./renderers/uml-state-renderer";
 import { UmlInterfaceRenderer } from "./renderers/uml-interface-renderer";
@@ -130,6 +131,7 @@ export function registerShapes() {
 
     shapeRegistry.register('table', new TableRenderer());
     shapeRegistry.register('codeBlock', new CodeBlockRenderer());
+    shapeRegistry.register('qrCode', new QrCodeRenderer());
 
     const dsRenderer = new DataStructureRenderer();
     const dsTypes = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'] as const;

@@ -208,6 +208,7 @@ export const de: Dictionary = {
         text: 'Text',
         richtext: 'Formatierter Text',
         codeBlock: 'Codeblock',
+        qrCode: 'QR-Code',
         server: 'Server',
         loadBalancer: 'Load Balancer',
         firewall: 'Firewall',

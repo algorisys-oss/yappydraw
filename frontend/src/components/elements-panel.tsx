@@ -12,7 +12,7 @@ import { importSvgToCanvas } from '../utils/svg-import';
 import { showToast } from './toast';
 import {
     Search,
-    Square, Circle as CircleIcon, Triangle, Star, Heart, Hexagon, MessageSquare, ArrowRight,
+    Square, Circle as CircleIcon, Triangle, Star, Heart, Hexagon, MessageSquare, ArrowRight, QrCode,
 } from 'lucide-solid';
 import './elements-panel.css';
 
@@ -157,7 +157,9 @@ const ElementsPanel: Component = () => {
     const insertShape = (type: string, options: any = {}) => {
         const SIZE = 240;
         const { x, y } = insertOrigin(SIZE);
-        const id = (YappyAPI as any).createElement(type, x, y, SIZE, SIZE, options);
+        const id = type === 'qrCode'
+            ? YappyAPI.createQrCode(x, y, SIZE, SIZE, undefined, options)
+            : (YappyAPI as any).createElement(type, x, y, SIZE, SIZE, options);
         YappyAPI.setSelected([id]);
     };
 
@@ -179,6 +181,7 @@ const ElementsPanel: Component = () => {
         { type: 'hexagon', label: 'Hexagon', icon: Hexagon },
         { type: 'speechBubble', label: 'Speech', icon: MessageSquare },
         { type: 'arrowRight', label: 'Arrow', icon: ArrowRight },
+        { type: 'qrCode', label: 'QR Code', icon: QrCode },
     ];
 
     const FRAMES: { type: string; label: string; icon: any }[] = [

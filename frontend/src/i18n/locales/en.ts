@@ -215,6 +215,7 @@ export const en = {
         text: 'Text',
         richtext: 'Rich Text',
         codeBlock: 'Code Block',
+        qrCode: 'QR Code',
         server: 'Server',
         loadBalancer: 'Load Balancer',
         firewall: 'Firewall',

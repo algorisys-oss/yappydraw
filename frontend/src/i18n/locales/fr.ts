@@ -230,6 +230,7 @@ export const fr: Dictionary = {
         text: 'Texte',
         richtext: 'Texte enrichi',
         codeBlock: 'Bloc de code',
+        qrCode: 'Code QR',
         server: 'Serveur',
         loadBalancer: 'Répartiteur de charge',
         firewall: 'Pare-feu',

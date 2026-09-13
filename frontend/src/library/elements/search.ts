@@ -88,12 +88,15 @@ const SHAPE_CATALOG: ShapeDef[] = [
     { type: 'diamond', label: 'Diamond', icon: 'Diamond', aliases: ['rhombus', 'gem'] },
     { type: 'speechBubble', label: 'Speech', icon: 'MessageSquare', aliases: ['bubble', 'chat', 'talk', 'comment'] },
     { type: 'arrowRight', label: 'Arrow', icon: 'ArrowRight', aliases: ['arrow', 'pointer'] },
+    { type: 'qrCode', label: 'QR Code', icon: 'QrCode', aliases: ['qr', 'qrcode', 'barcode', 'scan'] },
 ];
 
 function insertShapeEl(type: string, at?: { x: number; y: number }) {
     const SIZE = 240;
     const o = at ? { x: at.x - SIZE / 2, y: at.y - SIZE / 2 } : insertOrigin(SIZE);
-    const id = (YappyAPI as any).createElement(type, o.x, o.y, SIZE, SIZE, {});
+    const id = type === 'qrCode'
+        ? YappyAPI.createQrCode(o.x, o.y, SIZE, SIZE)
+        : (YappyAPI as any).createElement(type, o.x, o.y, SIZE, SIZE, {});
     YappyAPI.setSelected([id]);
 }
 
