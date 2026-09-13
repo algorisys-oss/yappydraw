@@ -223,6 +223,45 @@ Yappy.createSolidBlock(100, 100, 200, 150, { depth: 50, viewAngle: 45 })
 // And 100+ more functions for elements, layers, view, themes, clipboard, history...
 ```
 
+### Use the API from a CDN (no editor)
+
+Every release publishes the drawing API as an ES module to the `cdn/` folder of
+[algorisys-oss/yappydraw](https://github.com/algorisys-oss/yappydraw), tagged with the
+version, and [jsDelivr](https://www.jsdelivr.com/) serves it straight from GitHub. Use it
+when you want the drawing without the editor, for example sketchy SVG to animate with
+[tinyfly](https://github.com/algorisys-oss/tinyfly), GSAP or CSS:
+
+```html
+<div id="stage"></div>
+<script type="module">
+  import { Yappy, mount, fontsReady } from 'https://cdn.jsdelivr.net/gh/algorisys-oss/yappydraw@v{version}/cdn/yappy.js'
+  import * as tinyfly from 'https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{version}/cdn/tinyfly.esm.js'
+
+  await fontsReady()                       // before creating text
+  const sun = Yappy.createCircle(40, 40, 120, 120, { backgroundColor: '#ffd166', fillStyle: 'hachure' })
+  mount('#stage')                          // inline SVG; each shape is a <g data-yappy-id="…">
+  tinyfly.to(`[data-yappy-id="${sun}"]`, { rotate: 360, duration: 4, repeat: -1 })
+</script>
+```
+
+| Export | What |
+|---|---|
+| `Yappy` | The full `window.Yappy` API: `create*`, `importDSL`, `loadDocument`, … |
+| `toSVG(options?)` | SVG markup with element ids on by default. Never downloads a file. |
+| `mount(target, options?)` | Render into an element as inline SVG and return the `<svg>` |
+| `fontsReady()` | Load the built-in fonts; await it before creating text |
+| `clear()` | Start a fresh drawing |
+| `version` | The YappyDraw version it was built from |
+
+Each element's `<g data-yappy-id>` wrapper has no transform of its own, so animating it
+composes with the shape's rotation instead of replacing it. In the editor, the same markup
+comes from `Yappy.exportSVG(false, { elementIds: true })`.
+
+Limits: ES module only (the core, ~600 KB gzipped, and lazily loaded features such as
+MathJax live in `chunks/` next to `yappy.js`); one drawing per page; AGPL-3.0 like the
+rest of the project. Pin a version tag in production, since tags never move. Build and
+smoke-test it locally with `npm run build:sdk && npm run verify:sdk` (output in `dist-sdk/`).
+
 ### Additional Features
 
 - **Command palette** (Ctrl+K) — searchable tool/action/view/layer commands
@@ -417,6 +456,13 @@ you can verify what would be published — no changes are pushed.
 
 Commits the snapshot to the OSS remote with a message like
 `chore: sync from upstream YYYY-MM-DD` plus the source commit SHA.
+
+Every run (dry run included) also builds the [CDN SDK](#use-the-api-from-a-cdn-no-editor)
+from the published tree into `cdn/` and smoke-tests it in headless Chromium, refusing to
+continue if either step fails. A push then tags the OSS commit `v<package.json version>`,
+which is what jsDelivr URLs pin to. An existing tag is never moved, so bump the version to
+publish a new SDK. Add `--verify` to also run `npm ci && npm run build` on the published
+tree, as the release flow does.
 
 **Configuration (env vars, all optional):**
 

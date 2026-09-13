@@ -41,6 +41,7 @@ examples/dsl/20-mermaid-mindmap.mmd | - | 18 |
 examples/dsl/21-mermaid-er.mmd | - | 27 |
 examples/dsl/21-mermaid-state.mmd | - | 9 |
 examples/dsl/README.md | - | 65 |
+examples/ganesh-chaturthi.js | javascript | 903 | composition:18 random:56 mul:64 chain:69 T:70 S:71 R:72 apply:76 applyVec:77 scaleOf:78 parsePathData:85 num:89 toAnchors:152 styleFor:173 path:181 ellipse:194 circle:201 roundRect:204 text:213 nullAt:220 artPoint:228 adopt:230 newLayer:232 key:240 easeInOutQuad:251 oscillate:258 valueAt:260 wiggle:277 scaleKey:287 modak:299 marigold:305 drawBackdrop:311 drawRangoliAndHalo:319 polar:320 P:324 drawLotus:376 drawEar:387 limb:393 drawGanesh:398 diya:535 drawOfferings:560 drawMooshak:567 drawToran:616 drawGreeting:650 glyphRuns:653 drawPetals:682 animate:702 el:703 haloGlow:721 yAt:814 rise:830 build:855 play:893
 examples/manim-gradient-descent.js | javascript | 80 | f:21 grad:22 build:25 play:69
 examples/pixel-effects-demo.html | - | 208 |
 frontend/index.html | - | 290 |
@@ -1666,7 +1667,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 5202 | Theme:3 PaintChannel:19 MandalaRing:46 HarmonyType:80 PlayOptions:85 PlaySpec:85 PlayTargets:85 TexPart:86 AxesOptions:93 AxesSpec:93 PlotFn:93 VectorFieldOptions:93 VectorFn:93 DimensionMeasure:101 ElementOptions:175 normalizeElementType:415 plotRuns:446 ElementType:694 as:694 Window:5191
+frontend/src/api.ts | typescript | 5206 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:46 HarmonyType:79 PlayOptions:84 PlaySpec:84 PlayTargets:84 TexPart:85 AxesOptions:92 AxesSpec:92 PlotFn:92 VectorFieldOptions:92 VectorFn:92 DimensionMeasure:100 ElementOptions:174 normalizeElementType:414 plotRuns:445 ElementType:693 as:693 Window:5195
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1644 | Component:1 App:102 moves:127 onPenMove:128 hidePen:132 handleKeyUp:171 handleKeyDown:181 as:852 the:903 handleFullscreenChange:1022 handleBeforeUnload:1028 handlePaste:1032 of:1146 isInternalPanelDrag:1149 handleGlobalDragEnter:1152 handleGlobalDragOver:1166 showDropFallbackPrompt:1184 cleanup:1214 outsideClick:1242 isImageFile:1254 first:1255 must:1268 extractDropData:1270 processExtractedDrop:1325 handleGlobalDrop:1446 handleDocumentDrop:1492
 frontend/src/assets/solid.svg | - | 1 |
@@ -1938,7 +1939,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 821 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 826 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2016,7 +2017,7 @@ frontend/src/help-docs/features/bulk-editing.md | - | 103 |
 frontend/src/help-docs/features/design-studio.md | - | 211 |
 frontend/src/help-docs/features/effects.md | - | 227 |
 frontend/src/help-docs/features/elements-search.md | - | 73 |
-frontend/src/help-docs/features/embedding.md | - | 182 |
+frontend/src/help-docs/features/embedding.md | - | 233 |
 frontend/src/help-docs/features/illustrator-tools.md | - | 538 |
 frontend/src/help-docs/features/logo-toolkit.md | - | 357 |
 frontend/src/help-docs/features/masks-appearance-trace.md | - | 309 |
@@ -2109,6 +2110,7 @@ frontend/src/rendering/index.ts | typescript | 2 |
 frontend/src/rendering/pen-construction.ts | typescript | 103 | PenPathLike:23 renderPenConstruction:39
 frontend/src/routes.test.ts | typescript | 103 |
 frontend/src/routes.ts | typescript | 156 | RouteKey:28 Route:39
+frontend/src/sdk/index.ts | typescript | 95 | SvgExportOptions:25 ToSvgOptions:31 toSVG:41 mount:52 fontsReady:75 clear:93
 frontend/src/shapes/base/erase-mask.ts | typescript | 203 | CoreRender:23 acquirePool:41 readLocalPoints:56 paddedWorldAABB:68 applyEraseStrokes:87 renderWithEraseMask:141
 frontend/src/shapes/base/render-pipeline.ts | typescript | 1122 | parseColorRgba:21 hslToRgb:39 RenderPipeline:54{adjustColor:66 shadeColor:91 applyTransformations:140 restoreTransformations:200 applyStrokeStyle:207 buildStrokeGradient:227 buildRenderOptions:256 applyComplexFills:317 applyImageFill:397 applyHatchFill:460 drawHatchLines:491 applyMeshFill:525 applyInflateFill:569 applyPatternFill:595 applyGradient:626}
 frontend/src/shapes/base/shape-renderer.ts | typescript | 405 | TracedPath:9 ShapeRenderer:13{render:21}
@@ -2293,7 +2295,7 @@ frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19
 frontend/src/utils/excalidraw-io.ts | typescript | 269 | ExcalidrawFile:23 pointPairs:52 anchorsToPairs:64 baseExc:70 ToExcalidrawResult:101 toExcalidraw:103 FromExcalidrawResult:177 fromExcalidraw:189
 frontend/src/utils/export-game.ts | typescript | 47 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1797 | SvgThemeOptions:22 RichTextSegment:25 ShapeGeometry:26 paintDimensions:74 Bounds:79 ensureExportImages:84 elementAABB:102 elementsBounds:145 renderElWithEffects:166 buildAppearanceSvgGroup:205 buildUmlClassNode:264 umlArrowheadGlyph:355 connectorPathEl:383 geometryToDs:400 renderPagedDocToCanvas:458 PlatformExportResult:756
+frontend/src/utils/export.ts | typescript | 1820 | SvgThemeOptions:22 RichTextSegment:25 ShapeGeometry:26 paintDimensions:74 Bounds:79 ensureExportImages:84 elementAABB:102 elementsBounds:145 renderElWithEffects:166 buildAppearanceSvgGroup:205 buildUmlClassNode:264 umlArrowheadGlyph:355 connectorPathEl:383 geometryToDs:400 renderPagedDocToCanvas:458 PlatformExportResult:756 SvgExportOptions:894
 frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
 frontend/src/utils/font-loading.ts | typescript | 81 | primaryFamily:34 preloadAppFonts:44 fontsReady:70 fontsAreLoaded:75
 frontend/src/utils/font-variants.test.ts | typescript | 272 | menus:69
@@ -2516,7 +2518,7 @@ scripts/i18n-lint.mjs | javascript | 135 | isProse:39 walk:48 findStrings:59
 scripts/i18n-scaffold.mjs | javascript | 92 | in:6 quote:38 Dictionary:65
 scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 languageName:127 of:147 userContent:181 save:198 parseTranslations:206
 scripts/prerender.ts | typescript | 80 | lastmodFor:48 main:61
-scripts/publish-oss.sh | shell | 296 | info:43 warn:44 error:45 REQUIRED_PATHS=:178 MISSING_PATHS=:191
+scripts/publish-oss.sh | shell | 378 | info:43 warn:44 error:45 REQUIRED_PATHS=:180 MISSING_PATHS=:193
 scripts/record-gifs.mjs | javascript | 173 | clip:48 toGif:64 run:75
 scripts/record-inflate-demo.mjs | javascript | 435 | performer:33 run:137
 scripts/record-showcase.mjs | javascript | 336 | run:80
@@ -2524,6 +2526,7 @@ scripts/render-dsl.mjs | javascript | 279 | parseArgs:50 opts:51 parseWidths:83 
 scripts/repograph-refresh.sh | shell | 26 |
 scripts/test_relative_path.ts | typescript | 58 |
 scripts/verify-deploy.sh | shell | 291 | ok:39 bad:40 warn:41 info:42 need:44 hash_of:47 check_single_version:54 hashes=:56
+scripts/verify-sdk.mjs | javascript | 102 | types:55
 tests/_canvas-coords.ts | typescript | 102 | canvasOrigin:33 toViewport:58 addOrigin:69 worldMouse:82
 tests/_mesh.spec.ts | typescript | 49 | w2s:34 key:43
 tests/adjustment-export.spec.ts | typescript | 23 |
@@ -2730,6 +2733,7 @@ tests/stick-figure-drop-position.spec.ts | typescript | 74 | Window:16 dropAndMe
 tests/stick-rig-smoke.spec.ts | typescript | 86 | Window:6
 tests/storage-failure.spec.ts | typescript | 102 | stubIndexedDB:26
 tests/stroke-gradient-batch3.spec.ts | typescript | 76 |
+tests/svg-element-ids.spec.ts | typescript | 56 |
 tests/svg-export-theme.spec.ts | typescript | 109 |
 tests/svg-import-elements.spec.ts | typescript | 98 | Window:6
 tests/svg-vector-fallback.spec.ts | typescript | 27 |

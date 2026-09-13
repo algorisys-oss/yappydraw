@@ -2,6 +2,48 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A library build of the app finds the app's assumptions, one import at a time
+
+The CDN SDK (`frontend/src/sdk`, `vite.sdk.config.ts`) is `window.Yappy` built as an ES
+library instead of an app. `scripts/render-dsl.mjs` said there was no rendering without the
+live store, which read as "the API cannot run outside the editor". The coupling was real but
+harmless: the store is a plain `solid-js/store` and needs no mounted UI. A throwaway build
+answered in two minutes a question the comment had left open for months. **Spike the build
+before planning the refactor.**
+
+What the spike did find were assumptions the app makes about its surroundings, none visible
+from inside the app:
+
+- **`virtual:pwa-register` only exists when vite-plugin-pwa is loaded.** The API reaches it
+  through `utils/pwa.ts`, so the library build failed to resolve it. A no-op stand-in replaces
+  it.
+- **`exportToSvg` always saved the file.** Every `Yappy.exportSVG()` call started a download
+  (a file picker, where the browser has one). It is now `renderSvgString` (build) plus
+  `exportToSvg` (build and save). A page animating a sketch must never trigger a download, and
+  `verify-sdk.mjs` asserts that none started.
+- **Fonts come from `index.html`, not from code.** The editor's Google Fonts `<link>` is what
+  gives `document.fonts.load('Handlee')` a face to load. On an SDK page there is none, so
+  measurement fell back silently (180.39 px against 187.00 px for the reference string, the
+  same drift `font-loading.ts` documents). `document.fonts.check()` returned **true**
+  throughout: with no matching `@font-face` there is nothing left to load, so the check
+  passes. It cannot tell "loaded" from "never declared". The first probe believed it. Measure
+  a width against the fallback instead.
+- **`Yappy.clear()` is not a reset.** It removes elements and keeps the document, so after
+  `importMarkdownSlides` the pages still exported. The SDK's `clear()` loads an empty document
+  instead; `resetToNewDocument` would also have wiped the editor's autosave.
+
+**Element ids for animation go on a wrapper, never on the node.** An exported shape already
+carries `transform="rotate(…)"`. An animator writes CSS `transform`, which overrides the
+attribute, so tagging the node itself would have let the first tween discard the shape's
+rotation. The bare `<g data-yappy-id>` wrapper gives the animator a transform of its own,
+verified end to end with tinyfly: a 15°-rotated box translated by exactly 100 px kept its 15°.
+The attribute is `data-yappy-id`, not `id`, because every drawing has a `rect-1`, and two
+sketches on one page would collide.
+
+**An immutable tag makes the publish-time check mandatory.** jsDelivr serves a tag's files
+forever and the script never moves a tag. A broken bundle under `v0.8.x` cannot be fixed at
+that URL, so the SDK smoke test runs on every publish, not only under `--verify`.
+
 ## Shipping is not the same as delivered, and an offline-first app hides the difference
 
 `curl` showed the origin serving v0.8.244 on eight consecutive fetches. `verify:deploy`

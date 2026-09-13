@@ -37,7 +37,7 @@ import {
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
-import { exportToSvg, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
+import { exportToSvg, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
 import { socialTargetsForPage, SOCIAL_TARGETS } from "./utils/social-export";
 import { GRID_STYLES } from "./utils/grid-lattice";
 import { WIDTH_PROFILES } from "./utils/width-profiles";
@@ -47,7 +47,6 @@ import {
 } from "./utils/mandala";
 import { rasterizeSelection } from "./utils/rasterize";
 import { elementLabel, groupNameOf } from "./utils/object-label";
-import type { SvgThemeOptions } from "./utils/svg-theme";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
 import {
     setNodeSelection, allNodesOfSelection, selectedPathNodes, selectedNodeHandles,
@@ -1940,8 +1939,13 @@ export const YappyAPI = {
      * The literal hex stays as the fallback, so the file still renders standalone.
      * A themed export leaves the background transparent, since the embedding page
      * owns it. `varPrefix` overrides the default `yd` prefix.
+     *
+     * Pass `{ elementIds: true }` to wrap each element in a `<g data-yappy-id="…">`
+     * so an animation library can target it (tinyfly, GSAP, CSS). The wrapper has no
+     * transform of its own, so animating it composes with the shape's rotation.
+     * For SVG without the download, use the CDN SDK's `toSVG()`.
      */
-    exportSVG(onlySelected = false, options?: SvgThemeOptions): string | undefined {
+    exportSVG(onlySelected = false, options?: SvgExportOptions): string | undefined {
         return exportToSvg(onlySelected, options);
     },
 

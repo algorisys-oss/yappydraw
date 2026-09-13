@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.250', date: '2026-09-14', items: [
+        'Developers: YappyDraw\u2019s drawing API now loads straight from a CDN. Add one import to any web page, draw with the same commands as the editor, and put the result on the page as sketchy SVG \u2014 no editor, no iframe, no build step.',
+        'Every shape in that SVG is labelled with its id, so you can animate it with tinyfly, GSAP or plain CSS: spin the sun, slide in a caption, and each shape keeps its own rotation.',
+        'Find it under Help \u2192 Embedding, \u201cUse the API without the editor\u201d.',
+    ] },
     { version: '0.8.249', date: '2026-09-13', items: [
         'Posting a design? Open Export and pick your platform under \u201cReady for social\u201d \u2014 Instagram post or story, Facebook, X, LinkedIn or a YouTube thumbnail. One click saves it at exactly the size that platform wants.',
         'Design once, post in several places: a square design saves for both Instagram and LinkedIn, and a widescreen one for YouTube, X and a Facebook cover.',

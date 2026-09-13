@@ -4,7 +4,7 @@ name: Embedding
 icon: "🔗"
 category: Features
 description: Embed drawings in Confluence, Notion, wikis — and drive the full editor from a host page via the API / cross-origin postMessage bridge
-keywords: embed iframe embedding read-only viewer interactive control programmatic api window.Yappy cross-origin same-origin postMessage bridge createYappyEmbed yappy-embed-client allowlist VITE_EMBED_ALLOWED_ORIGINS importDSL exportSVG confluence notion wiki sharepoint wordpress integrate another project host page frame-ancestors X-Frame-Options CSP content-security-policy restrict framing clickjacking
+keywords: embed iframe embedding cdn jsdelivr sdk script module toSVG mount fontsReady data-yappy-id elementIds tinyfly gsap animate svg no editor read-only viewer interactive control programmatic api window.Yappy cross-origin same-origin postMessage bridge createYappyEmbed yappy-embed-client allowlist VITE_EMBED_ALLOWED_ORIGINS importDSL exportSVG confluence notion wiki sharepoint wordpress integrate another project host page frame-ancestors X-Frame-Options CSP content-security-policy restrict framing clickjacking
 seoTitle: "Embed a diagram in Confluence, Notion or a wiki — iframe embeds"
 seoDescription: "Embed a read-only YappyDraw canvas with pan and zoom in any page that accepts an iframe. Parameters, sizing and the embed client script."
 ---
@@ -162,6 +162,57 @@ X-Frame-Options: DENY
 :::tip
 Prefer `frame-ancestors` (CSP) — it supports multiple origins and is the modern replacement for `X-Frame-Options` (which only understands `DENY` / `SAMEORIGIN`). Keep the framing allowlist and the control allowlist (`VITE_EMBED_ALLOWED_ORIGINS`) in sync so the pages you let embed Yappy are also the ones you let drive it.
 :::
+
+## Use the API without the editor (CDN SDK)
+
+When you want the drawing and not the editor, for example sketchy SVG to animate with tinyfly, GSAP or CSS, load the SDK straight from jsDelivr. There's no iframe and no build step. Every release publishes it to the `cdn/` folder of the open-source repository, under that release's tag:
+
+```html
+<div id="stage"></div>
+<script type="module">
+  import { Yappy, mount, fontsReady } from 'https://cdn.jsdelivr.net/gh/algorisys-oss/yappydraw@v{version}/cdn/yappy.js';
+
+  await fontsReady();   // before creating text
+  const sun = Yappy.createCircle(40, 40, 120, 120, { backgroundColor: '#ffd166', fillStyle: 'hachure' });
+  const label = Yappy.createText(40, 180, 'Good morning', { fontSize: 28 });
+  mount('#stage');      // inline SVG; every shape is a <g data-yappy-id="…">
+</script>
+```
+
+Replace `{version}` with a released version, such as the one shown in the app's status bar.
+
+| Export | What it does |
+|---|---|
+| `Yappy` | The same API as `window.Yappy` in the editor: every `create*`, `importDSL`, `loadDocument` call works unchanged |
+| `toSVG(options?)` | Returns the drawing as SVG markup. Never downloads a file (`Yappy.exportSVG` does) |
+| `mount(target, options?)` | Renders the drawing into an element or selector as inline SVG and returns the `<svg>` |
+| `fontsReady()` | Loads the built-in fonts and resolves when text can be measured with them |
+| `clear()` | Starts a fresh drawing: a blank canvas with no pages, swatches or symbols |
+| `version` | The YappyDraw version the SDK was built from |
+
+### Animating a sketch
+
+Every element in `toSVG()` / `mount()` output is wrapped in `<g data-yappy-id="…">`, using the id that `create*` returned. The wrapper has no transform of its own. A shape's rotation and flip stay on the node inside, so animating the wrapper adds to them instead of replacing them:
+
+```js
+import * as tinyfly from 'https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{version}/cdn/tinyfly.esm.js';
+
+tinyfly.to(`[data-yappy-id="${sun}"]`, { rotate: 360, duration: 4, repeat: -1 });
+tinyfly.from(`[data-yappy-id="${label}"]`, { opacity: 0, y: 20, duration: 0.6 });
+```
+
+You can get the same markup from the editor with `Yappy.exportSVG(false, { elementIds: true })`. The option is off by default there, so ordinary exports are unchanged.
+
+:::warning
+**Await `fontsReady()` before creating text.** Text boxes are sized from the measured text when they are created. A page that loads the SDK has no fonts of its own, so without this call text is measured with a fallback font and keeps that size.
+:::
+
+**Limitations**
+- **ES module only** (`<script type="module">` or `import()`). `yappy.js` loads its core and features such as MathJax and the exporters from the `chunks/` folder next to it, so there is no single-file `<script>` build.
+- **One drawing per page.** The drawing state is shared by the whole page, as in the editor. Call `clear()` before building another.
+- **Size.** The core is about 600 KB gzipped. Heavy features download only when first used.
+- **Pin a version tag** (`@v{version}`, not `@main`). Tags never move, so a pinned URL keeps serving the same files. `@main` follows the latest release, and jsDelivr caches it for up to a day.
+- **License.** The SDK is AGPL-3.0, like the rest of YappyDraw.
 
 ## Embed Behavior
 

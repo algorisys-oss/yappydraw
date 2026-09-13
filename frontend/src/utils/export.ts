@@ -891,7 +891,28 @@ export const copyCanvasAsPng = async (scale: number) => {
     }, 'image/png');
 };
 
-export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) => {
+export interface SvgExportOptions extends SvgThemeOptions {
+    /**
+     * Wrap every element in a bare `<g data-yappy-id="…">` so an animation library can
+     * target it. The wrapper has no transform: the element's own rotate/flip stays on the
+     * node inside, so a `transform` written to the wrapper composes with it rather than
+     * replacing it. An attribute, not `id`, because two sketches on one page would
+     * otherwise both contain `rect-1`.
+     */
+    elementIds?: boolean;
+}
+
+/** Export as a file: builds the SVG, saves it, and returns the markup. */
+export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgExportOptions) => {
+    const str = renderSvgString(onlySelected, themeOpts);
+    if (str === undefined) return;
+    const blob = new Blob([str], { type: 'image/svg+xml' });
+    void saveBlob(blob, 'yappy_drawing.svg', { description: 'SVG image', accept: { 'image/svg+xml': ['.svg'] } });
+    return str;
+};
+
+/** Build the SVG markup without saving it — the SDK's path, which must never download. */
+export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOptions): string | undefined => {
     let elements = elementsInRenderOrder(store.elements).filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
@@ -1518,6 +1539,12 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                     if (el.strokeSwatchId && swatchById.has(el.strokeSwatchId)) usedSwatches.set(el.strokeSwatchId, swatchById.get(el.strokeSwatchId)!);
                 }
             }
+            if (themeOpts?.elementIds) {
+                const tag = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                tag.setAttribute('data-yappy-id', el.id);
+                tag.appendChild(node);
+                node = tag;
+            }
             g.appendChild(node);
         }
     });
@@ -1533,11 +1560,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
         defs.appendChild(themeStyle);
     }
 
-    const s = new XMLSerializer();
-    const str = s.serializeToString(svg);
-    const blob = new Blob([str], { type: 'image/svg+xml' });
-    void saveBlob(blob, 'yappy_drawing.svg', { description: 'SVG image', accept: { 'image/svg+xml': ['.svg'] } });
-    return str;
+    return new XMLSerializer().serializeToString(svg);
 };
 
 /**
