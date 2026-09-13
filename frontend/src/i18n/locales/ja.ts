@@ -1092,4 +1092,15 @@ export const ja: Dictionary = {
 
         remove: '削除',
     },
+    socialExport: {
+        heading: 'SNS 用に書き出す',
+        hint: '現在のページを、各プラットフォームが求める正確なサイズの JPG で書き出します。',
+        size: '{{ width }} × {{ height }} JPG',
+        limit: '最大 {{ limit }}',
+        noMatch: 'このページは {{ width }} × {{ height }} で、どの SNS でも使われない比率です。先にメニュー → Magic Resize… で SNS サイズの版を作成してください。',
+        saved: '{{ name }} 用に保存しました — {{ width }} × {{ height }}、{{ size }}',
+        overBudget: '{{ name }} は {{ limit }} までのファイルしか受け付けませんが、画質を下げてもこのファイルは {{ size }} あります。写真を減らすか小さくしてください。',
+        failed: '{{ name }} 用に書き出せませんでした。',
+        exporting: '書き出し中…',
+    },
 };

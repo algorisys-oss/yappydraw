@@ -144,3 +144,54 @@
 .export-confirm-btn:hover {
     background-color: var(--btn-primary-bg-hover);
 }
+/* Social-ready export: one button per platform the current page fits. */
+.social-export {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.social-targets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.social-target-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    text-align: left;
+    background: var(--btn-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.social-target-btn:hover:not(:disabled) {
+    border-color: var(--btn-primary-bg);
+}
+
+.social-target-btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.social-target-name {
+    font-weight: 600;
+}
+
+.social-target-size {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.social-export .hint {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}

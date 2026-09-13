@@ -1093,4 +1093,15 @@ export const de: Dictionary = {
 
         remove: 'Entfernen',
     },
+    socialExport: {
+        heading: 'Bereit für Social Media',
+        hint: 'Exportiert die aktuelle Seite in genau der Größe, die jede Plattform erwartet, als JPG.',
+        size: '{{ width }} × {{ height }} JPG',
+        limit: 'Max. {{ limit }}',
+        noMatch: 'Diese Seite ist {{ width }} × {{ height }} groß – ein Format, das keine Social-Media-Plattform verwendet. Erstelle zuerst über Menü → Magic Resize… eine Version in Social-Media-Größe.',
+        saved: 'Für {{ name }} gespeichert – {{ width }} × {{ height }}, {{ size }}',
+        overBudget: '{{ name }} akzeptiert Dateien bis {{ limit }}, diese hat selbst bei geringerer Qualität {{ size }}. Versuche weniger oder kleinere Fotos.',
+        failed: 'Export für {{ name }} fehlgeschlagen.',
+        exporting: 'Wird exportiert…',
+    },
 };

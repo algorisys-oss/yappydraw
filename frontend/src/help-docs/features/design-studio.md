@@ -4,7 +4,7 @@ name: Design Studio
 icon: "🎨"
 category: Design
 description: "Canva-style design documents: pages & size presets, templates, Magic Resize, brand kit, unified elements search (icons/shapes/photos), text effects, AI assists, version history, offline PWA"
-keywords: "canva design document page size preset instagram post story poster flyer business card template search fits badge my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
+keywords: "canva design document page size preset instagram post story poster flyer business card template search fits badge my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
 ---
 
 # Design Studio
@@ -28,8 +28,32 @@ Y.exportPageToPng(0, 2);                 // export page 1 at 2x
 ```
 
 :::tip
-Export dialog → **PNG and JPG** show a **Current Page Only** option in paged documents — exact page bounds, page background included (JPG always exports on white). Leave it unchecked to export the **whole design**: every page is rendered at its full page bounds with its own background, stacked vertically (multi-page designs). PDF and PPTX export emit one file page per document page. SVG export includes the full page area and each page's background.
+Export dialog → **PNG and JPG** show a **Current Page Only** option in paged documents — exact page bounds, page background included (JPG has no transparency, so any uncovered area takes the document's background colour). Leave it unchecked to export the **whole design**: every page is rendered at its full page bounds with its own background, stacked vertically (multi-page designs). PDF and PPTX export emit one file page per document page. SVG export includes the full page area and each page's background.
 :::
+
+### Ready for social — one-click export
+
+For a design headed to a social platform, the top of the Export dialog lists **Ready for social**: one button for every platform whose shape matches the current page. Click one and the page is saved straight away — no format or scale to choose:
+
+- **Exact size.** The page is rendered at the platform's own pixel size, whatever size you designed at. A 1080 × 1080 page gives both an **Instagram Post** (1080 × 1080) and a **LinkedIn Post** (1200 × 1200); a 16:9 page gives a **YouTube Thumbnail**, an **X / Twitter Post** and a **Facebook Cover**.
+- **JPG, sharp.** The page is drawn at the target size rather than resized from another export, so text stays crisp. Every one of these platforms re-encodes uploads as JPG anyway.
+- **Under the upload limit.** YouTube rejects thumbnails over 2 MB and X rejects images over 5 MB. If a file would be larger, Yappy lowers the JPG quality until it fits, and tells you if it still cannot.
+- **Named for you.** The file is named after the document and platform, e.g. `autumn-sale-instagram-story.jpg`.
+
+Only platforms with the page's shape are offered, because anything else would crop or stretch the design. If none match — an A4 flyer, say — the dialog points you to **Menu → Magic Resize…** to make a version in a social size first.
+
+:::note
+It exports the **current page**. For an Instagram carousel, export each page in turn.
+:::
+
+```
+const Y = window.Yappy;
+Y.getSocialTargets();                              // platforms the current page fits
+await Y.exportForPlatform('instagram-story');      // save it
+const r = await Y.exportForPlatform('youtube-thumbnail', { download: false, pageIndex: 0 });
+// r → { ok: true, width: 1280, height: 720, bytes, quality, overBudget, fileName, blob }
+//   or { ok: false, reason: 'shape-mismatch' | 'not-paged' | 'no-page' | 'unknown-platform' | 'encode-failed' }
+```
 
 ### The page edge is a real edge
 
@@ -178,7 +202,7 @@ await Y.exportPageToPng(0, 2);           // export page 1 at 2×
 
 | Area | Methods |
 | --- | --- |
-| Documents & pages | `newDesign(size?)`, `getPageSizePresets()`, `addSlide()`, `setPageSize(w,h)`, `magicResize(size)`, `exportPageToPng(i?, scale?)`, `detachBackgroundImage(i?)` |
+| Documents & pages | `newDesign(size?)`, `getPageSizePresets()`, `addSlide()`, `setPageSize(w,h)`, `magicResize(size)`, `exportPageToPng(i?, scale?)`, `getSocialTargets(i?)`, `listSocialTargets()`, `exportForPlatform(presetId, opts?)`, `detachBackgroundImage(i?)` |
 | Templates | `getTemplates(cat?)`, `searchTemplates(q)`, `applyTemplate(id)`, `saveAsTemplate(name, desc?)`, `deleteUserTemplate(id)` |
 | Brand kit & fonts | `createBrandKit(opts?)`, `applyBrandKit(id, opts?)`, `applyFontPairing(id)` |
 | Elements & photos | `toggleElementsPanel(show?)`, `importSvg(text, opts?)`, `searchStockPhotos(q)`, `insertStockPhoto(photo)` |

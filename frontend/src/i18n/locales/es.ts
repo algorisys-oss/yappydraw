@@ -1092,4 +1092,15 @@ export const es: Dictionary = {
 
         remove: 'Quitar',
     },
+    socialExport: {
+        heading: 'Listo para redes sociales',
+        hint: 'Exporta la página actual en JPG, al tamaño exacto que espera cada plataforma.',
+        size: '{{ width }} × {{ height }} JPG',
+        limit: 'Máx. {{ limit }}',
+        noMatch: 'Esta página mide {{ width }} × {{ height }}, una forma que ninguna red social usa. Usa Menú → Magic Resize… para crear antes una versión con tamaño para redes.',
+        saved: 'Guardado para {{ name }}: {{ width }} × {{ height }}, {{ size }}',
+        overBudget: '{{ name }} acepta archivos de hasta {{ limit }} y este ocupa {{ size }} incluso con menor calidad. Prueba con menos fotos o más pequeñas.',
+        failed: 'No se pudo exportar para {{ name }}.',
+        exporting: 'Exportando…',
+    },
 };

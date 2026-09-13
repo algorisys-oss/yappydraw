@@ -37,7 +37,8 @@ import {
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
-import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
+import { exportToSvg, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
+import { socialTargetsForPage, SOCIAL_TARGETS } from "./utils/social-export";
 import { GRID_STYLES } from "./utils/grid-lattice";
 import { WIDTH_PROFILES } from "./utils/width-profiles";
 import {
@@ -2966,6 +2967,31 @@ export const YappyAPI = {
     /** Export one page/slide to PNG (or JPG) at exact page bounds. Returns the data URL. */
     exportPageToPng(pageIndex?: number, scale: number = 1, download: boolean = true, format: 'png' | 'jpeg' = 'png') {
         return exportPageToPng(pageIndex ?? store.activeSlideIndex, scale, download, format);
+    },
+    /**
+     * Social platforms a page can be exported to as-is — its shape matches — best match first.
+     * Each entry: `{ presetId, name, width, height, mime, maxBytes? }`. Empty for a shape no
+     * platform uses (use magicResize first). Pass no index for the current page.
+     */
+    getSocialTargets(pageIndex?: number) {
+        const slide = store.slides[pageIndex ?? store.activeSlideIndex];
+        if (!slide) return [];
+        return socialTargetsForPage(slide.dimensions.width, slide.dimensions.height).map(t => ({ ...t }));
+    },
+    /** Every social export target, whether or not the current page fits it. */
+    listSocialTargets() { return SOCIAL_TARGETS.map(t => ({ ...t })); },
+    /**
+     * One-click social export: the page at the platform's exact size and format (JPEG), with
+     * quality lowered if needed to fit the platform's upload limit (YouTube thumbnail 2 MB,
+     * X 5 MB). Resolves to `{ ok: true, width, height, bytes, quality, overBudget, fileName,
+     * saved, blob }` or `{ ok: false, reason }` — reason is 'unknown-platform', 'not-paged',
+     * 'no-page', 'shape-mismatch' or 'encode-failed'. `name` is the base file name (default: the
+     * document's); the platform is appended, e.g. `autumn-sale-instagram-story.jpg`.
+     * @example await Yappy.exportForPlatform('instagram-story')
+     * @example const r = await Yappy.exportForPlatform('youtube-thumbnail', { download: false })
+     */
+    exportForPlatform(presetId: string, opts?: { pageIndex?: number; download?: boolean; name?: string }) {
+        return exportPageForPlatform(presetId, { pageIndex: opts?.pageIndex, download: opts?.download, docName: opts?.name });
     },
     /** Detach the page's background image into a regular image element covering the page.
      *  Returns the new element id, or null if the page has no image background. */

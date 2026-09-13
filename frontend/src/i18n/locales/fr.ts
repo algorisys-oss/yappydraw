@@ -1114,4 +1114,15 @@ export const fr: Dictionary = {
         /** Shared by all three sections. */
         remove: 'Supprimer',
     },
+    socialExport: {
+        heading: 'Prêt pour les réseaux sociaux',
+        hint: 'Exporte la page actuelle en JPG, à la taille exacte attendue par chaque plateforme.',
+        size: '{{ width }} × {{ height }} JPG',
+        limit: '{{ limit }} max.',
+        noMatch: 'Cette page mesure {{ width }} × {{ height }}, un format qu’aucun réseau social n’utilise. Utilisez d’abord Menu → Magic Resize… pour en créer une version aux dimensions d’un réseau social.',
+        saved: 'Enregistré pour {{ name }} — {{ width }} × {{ height }}, {{ size }}',
+        overBudget: '{{ name }} accepte les fichiers jusqu’à {{ limit }}, et celui-ci pèse {{ size }} même avec une qualité réduite. Essayez avec moins de photos, ou des photos plus petites.',
+        failed: 'Impossible d’exporter pour {{ name }}.',
+        exporting: 'Export en cours…',
+    },
 };

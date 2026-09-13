@@ -2,6 +2,7 @@ import { lineHeightPx } from './text-line-height';
 import { store, isLayerVisible, elementsInRenderOrder } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
 import { saveBlob, saveCanvas } from './save-file';
+import { getSocialTarget, shapeMatches, encodeWithinBudget, socialFileName } from './social-export';
 import { ownerSlideIndex } from './slide-utils';
 import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
@@ -699,23 +700,29 @@ export const exportArtboard = (artboardId: string, scale = 1, download = true): 
  * Export a single page/slide to PNG at exact page bounds (elements clipped,
  * page background rendered). Used by paged docs (slides + design documents).
  */
-export const exportPageToPng = (pageIndex: number, scale = 1, download = true, format: 'png' | 'jpeg' = 'png'): string | undefined => {
+/**
+ * Render one page into a canvas of exactly `width` × `height` pixels. The page is scaled on each
+ * axis separately, so a target a hair off the page's aspect ratio (see social-export's
+ * shapeMatches) still comes out at the exact size instead of a pixel short from rounding.
+ * `opaque` fills with the document background first — JPEG has no transparency.
+ */
+export const renderPageAtSize = (pageIndex: number, width: number, height: number, opaque: boolean): HTMLCanvasElement | undefined => {
     const slide = store.slides[pageIndex];
     if (!slide) return undefined;
     const { x: sX, y: sY } = slide.spatialPosition;
     const { width: sW, height: sH } = slide.dimensions;
+    if (!(sW > 0 && sH > 0)) return undefined;
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(sW * scale));
-    canvas.height = Math.max(1, Math.round(sH * scale));
+    canvas.width = Math.max(1, Math.round(width));
+    canvas.height = Math.max(1, Math.round(height));
     const ctx = canvas.getContext('2d');
     if (!ctx) return undefined;
-    if (format === 'jpeg') {
-        // JPEG has no transparency, so it always needs an opaque fill. The fill is the
-        // document's own background, not an assumed white.
+    if (opaque) {
+        // The fill is the document's own background, not an assumed white.
         ctx.fillStyle = documentBackground();
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    ctx.scale(scale, scale);
+    ctx.scale(canvas.width / sW, canvas.height / sH);
     ctx.translate(-sX, -sY);
     ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
     const rc = rough.canvas(canvas);
@@ -726,6 +733,15 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
         if (ownerSlideIndex(el, store.slides) !== pageIndex) continue;
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
     }
+    return canvas;
+};
+
+export const exportPageToPng = (pageIndex: number, scale = 1, download = true, format: 'png' | 'jpeg' = 'png'): string | undefined => {
+    const slide = store.slides[pageIndex];
+    if (!slide) return undefined;
+    const { width: sW, height: sH } = slide.dimensions;
+    const canvas = renderPageAtSize(pageIndex, sW * scale, sH * scale, format === 'jpeg');
+    if (!canvas) return undefined;
     const ext = format === 'jpeg' ? 'jpg' : 'png';
     const url = format === 'jpeg' ? canvas.toDataURL('image/jpeg', 0.92) : canvas.toDataURL('image/png');
     if (download) {
@@ -735,6 +751,53 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
         link.click();
     }
     return url;
+};
+
+export type PlatformExportResult =
+    | { ok: true; presetId: string; width: number; height: number; bytes: number; quality: number; overBudget: boolean; fileName: string; saved: boolean; blob: Blob }
+    | { ok: false; reason: 'unknown-platform' | 'not-paged' | 'no-page' | 'shape-mismatch' | 'encode-failed' };
+
+/**
+ * Export one page for a social platform: the platform's exact pixel size and format, re-encoded
+ * at lower quality if needed to stay under its upload limit. Only pages with the platform's
+ * shape qualify — anything else would crop or distort the design, and Magic Resize is the tool
+ * for changing shape. `download: false` returns the blob without saving.
+ */
+export const exportPageForPlatform = async (
+    presetId: string,
+    opts: { pageIndex?: number; download?: boolean; docName?: string } = {},
+): Promise<PlatformExportResult> => {
+    const target = getSocialTarget(presetId);
+    if (!target) return { ok: false, reason: 'unknown-platform' };
+    if (!isPagedDocType(store.docType) || store.slides.length === 0) return { ok: false, reason: 'not-paged' };
+    const pageIndex = opts.pageIndex ?? store.activeSlideIndex;
+    const slide = store.slides[pageIndex];
+    if (!slide) return { ok: false, reason: 'no-page' };
+    const { width: sW, height: sH } = slide.dimensions;
+    if (!shapeMatches(sW, sH, target.width, target.height)) return { ok: false, reason: 'shape-mismatch' };
+
+    await ensureExportImages();
+    const canvas = renderPageAtSize(pageIndex, target.width, target.height, target.mime === 'image/jpeg');
+    if (!canvas) return { ok: false, reason: 'encode-failed' };
+    const encoded = await encodeWithinBudget(
+        (mime, quality) => new Promise(res => canvas.toBlob(res, mime, quality)),
+        target.mime, target.maxBytes,
+    );
+    if (!encoded) return { ok: false, reason: 'encode-failed' };
+
+    const fileName = socialFileName(opts.docName, target);
+    let saved = false;
+    if (opts.download !== false) {
+        const ext = target.mime === 'image/png' ? '.png' : '.jpg';
+        saved = await saveBlob(encoded.blob, fileName, {
+            description: `${target.name} image`,
+            accept: { [target.mime]: [ext] },
+        });
+    }
+    return {
+        ok: true, presetId, width: canvas.width, height: canvas.height, bytes: encoded.blob.size,
+        quality: encoded.quality, overBudget: encoded.overBudget, fileName, saved, blob: encoded.blob,
+    };
 };
 
 export const exportToJpg = async (scale: number, onlySelected: boolean) => {

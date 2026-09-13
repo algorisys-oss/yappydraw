@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.249', date: '2026-09-13', items: [
+        'Posting a design? Open Export and pick your platform under \u201cReady for social\u201d \u2014 Instagram post or story, Facebook, X, LinkedIn or a YouTube thumbnail. One click saves it at exactly the size that platform wants.',
+        'Design once, post in several places: a square design saves for both Instagram and LinkedIn, and a widescreen one for YouTube, X and a Facebook cover.',
+        'Thumbnails stay under YouTube\u2019s 2 MB upload limit, and files are named for you, like \u201cautumn-sale-instagram-story.jpg\u201d.',
+        'Made an A4 flyer or a poster? It will suggest Magic Resize to make a social-size version, rather than cropping your design.',
+    ] },
     { version: '0.8.248', date: '2026-09-13', items: [
         'Make your QR codes match your design: choose rounded or dot-shaped squares, rounded or circular corners, and a colour of their own for the corners.',
         'Put your logo in the middle of a QR code. Upload it, pick a size, and the code makes room for it. If the logo gets too big to scan, Yappy tells you \u2014 switch Error Correction to High to fit a bigger one.',

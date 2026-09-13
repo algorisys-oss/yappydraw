@@ -1666,7 +1666,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 5176 | Theme:3 PaintChannel:19 MandalaRing:45 HarmonyType:79 PlayOptions:84 PlaySpec:84 PlayTargets:84 TexPart:85 AxesOptions:92 AxesSpec:92 PlotFn:92 VectorFieldOptions:92 VectorFn:92 DimensionMeasure:100 ElementOptions:174 normalizeElementType:414 plotRuns:445 ElementType:693 as:693 Window:5165
+frontend/src/api.ts | typescript | 5202 | Theme:3 PaintChannel:19 MandalaRing:46 HarmonyType:80 PlayOptions:85 PlaySpec:85 PlayTargets:85 TexPart:86 AxesOptions:93 AxesSpec:93 PlotFn:93 VectorFieldOptions:93 VectorFn:93 DimensionMeasure:101 ElementOptions:175 normalizeElementType:415 plotRuns:446 ElementType:694 as:694 Window:5191
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1644 | Component:1 App:102 moves:127 onPenMove:128 hidePen:132 handleKeyUp:171 handleKeyDown:181 as:852 the:903 handleFullscreenChange:1022 handleBeforeUnload:1028 handlePaste:1032 of:1146 isInternalPanelDrag:1149 handleGlobalDragEnter:1152 handleGlobalDragOver:1166 showDropFallbackPrompt:1184 cleanup:1214 outsideClick:1242 isImageFile:1254 first:1255 must:1268 extractDropData:1270 processExtractedDrop:1325 handleGlobalDrop:1446 handleDocumentDrop:1492
 frontend/src/assets/solid.svg | - | 1 |
@@ -1742,8 +1742,8 @@ frontend/src/components/elements-panel.css | - | 169 |
 frontend/src/components/elements-panel.tsx | typescript | 361 | Component:1 FontPairing:4 AssetKind:8 KindFilter:32 insertOrigin:35 previewFamily:47 ensurePreviewFont:59 ElementsPanel:68 insertHit:139 insertIcon:149 insertShape:157 insertFrame:166 chips:257 above:334
 frontend/src/components/embed-viewer.css | - | 81 |
 frontend/src/components/embed-viewer.tsx | typescript | 171 | EmbedOptions:13 parseEmbedOptions:21 EmbedViewer:37 fitToView:42 handleResize:124 openUrl:130
-frontend/src/components/export-dialog.css | - | 146 |
-frontend/src/components/export-dialog.tsx | typescript | 254 | Component:1 ExportDialogProps:9 ExportDialog:14 isPaged:23 isVideo:24 handleKeyDown:49 handleExport:60
+frontend/src/components/export-dialog.css | - | 197 |
+frontend/src/components/export-dialog.tsx | typescript | 321 | Component:1 SocialTarget:6 ExportDialogProps:14 ExportDialog:19 isPaged:28 isVideo:29 activePage:32 socialTargets:33 exportForSocial:38 handleKeyDown:83 handleExport:94
 frontend/src/components/file-open-dialog.css | - | 158 |
 frontend/src/components/file-open-dialog.tsx | typescript | 192 | Component:1 FileOpenDialogProps:8 FileOpenDialog:14 fetchFiles:22 handleDelete:45 handleKeyDown:61 handleMouseMove:97
 frontend/src/components/fill-stroke-control.css | - | 209 |
@@ -1938,7 +1938,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 815 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 821 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2013,7 +2013,7 @@ frontend/src/help-docs/features/animation.md | - | 704 |
 frontend/src/help-docs/features/arcade.md | - | 149 |
 frontend/src/help-docs/features/artboards.md | - | 104 |
 frontend/src/help-docs/features/bulk-editing.md | - | 103 |
-frontend/src/help-docs/features/design-studio.md | - | 187 |
+frontend/src/help-docs/features/design-studio.md | - | 211 |
 frontend/src/help-docs/features/effects.md | - | 227 |
 frontend/src/help-docs/features/elements-search.md | - | 73 |
 frontend/src/help-docs/features/embedding.md | - | 182 |
@@ -2049,19 +2049,19 @@ frontend/src/help-docs/vite-plugin-help-md.ts | typescript | 76 | helpMarkdownPl
 frontend/src/i18n/__fixtures__/pre-i18n-hotkeys.json | - | 391 |
 frontend/src/i18n/__fixtures__/pre-i18n-labels.json | - | 324 |
 frontend/src/i18n/extraction.test.ts | typescript | 96 | in:47 shapes:47
-frontend/src/i18n/format.test.ts | typescript | 73 |
-frontend/src/i18n/format.ts | typescript | 138 | MessagePart:15 PluralCategory:57 PluralForms:64
+frontend/src/i18n/format.test.ts | typescript | 86 |
+frontend/src/i18n/format.ts | typescript | 149 | MessagePart:15 PluralCategory:57 PluralForms:64
 frontend/src/i18n/fr-search.test.ts | typescript | 137 | fold:27 allStrings:34 out:46 placeholders:77 walk:79 findable:104
 frontend/src/i18n/hotkey-extraction.test.ts | typescript | 79 |
 frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 TranslationKey:35 ShapeKey:41 HotkeyKey:43 HotkeyCategoryKey:45 WelcomeFeatureKey:47 ToolbarToolKey:49 DockPositionKey:51 DockActionKey:53
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1096 |
-frontend/src/i18n/locales/en.ts | typescript | 1126 | Dictionary:1126
-frontend/src/i18n/locales/es.ts | typescript | 1095 |
-frontend/src/i18n/locales/fr.ts | typescript | 1117 | de:108
-frontend/src/i18n/locales/ja.ts | typescript | 1095 |
+frontend/src/i18n/locales/de.ts | typescript | 1107 |
+frontend/src/i18n/locales/en.ts | typescript | 1137 | Dictionary:1137
+frontend/src/i18n/locales/es.ts | typescript | 1106 |
+frontend/src/i18n/locales/fr.ts | typescript | 1128 | de:108
+frontend/src/i18n/locales/ja.ts | typescript | 1106 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -2293,7 +2293,7 @@ frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19
 frontend/src/utils/excalidraw-io.ts | typescript | 269 | ExcalidrawFile:23 pointPairs:52 anchorsToPairs:64 baseExc:70 ToExcalidrawResult:101 toExcalidraw:103 FromExcalidrawResult:177 fromExcalidraw:189
 frontend/src/utils/export-game.ts | typescript | 47 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1734 | SvgThemeOptions:21 RichTextSegment:24 ShapeGeometry:25 paintDimensions:73 Bounds:78 ensureExportImages:83 elementAABB:101 elementsBounds:144 renderElWithEffects:165 buildAppearanceSvgGroup:204 buildUmlClassNode:263 umlArrowheadGlyph:354 connectorPathEl:382 geometryToDs:399 renderPagedDocToCanvas:457
+frontend/src/utils/export.ts | typescript | 1797 | SvgThemeOptions:22 RichTextSegment:25 ShapeGeometry:26 paintDimensions:74 Bounds:79 ensureExportImages:84 elementAABB:102 elementsBounds:145 renderElWithEffects:166 buildAppearanceSvgGroup:205 buildUmlClassNode:264 umlArrowheadGlyph:355 connectorPathEl:383 geometryToDs:400 renderPagedDocToCanvas:458 PlatformExportResult:756
 frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
 frontend/src/utils/font-loading.ts | typescript | 81 | primaryFamily:34 preloadAppFonts:44 fontsReady:70 fontsAreLoaded:75
 frontend/src/utils/font-variants.test.ts | typescript | 272 | menus:69
@@ -2411,6 +2411,8 @@ frontend/src/utils/slide-ownership.test.ts | typescript | 85 | pages:19 box:24
 frontend/src/utils/slide-utils.ts | typescript | 95 |
 frontend/src/utils/snap-helpers.ts | typescript | 40 | GridStyle:1
 frontend/src/utils/snap-renderer.ts | typescript | 269 | MeasurementUnit:10 renderSnappingGuides:15 renderSpacingGuides:44 renderPointSnapMarker:128 renderMeasureGaps:162 renderSizeReadout:230
+frontend/src/utils/social-export.test.ts | typescript | 100 | fake:64
+frontend/src/utils/social-export.ts | typescript | 95 | SocialTarget:8 shapeMatches:52 socialTargetsForPage:60 Encoder:69 encodeWithinBudget:75 socialFileName:90
 frontend/src/utils/spacing.ts | typescript | 255 | SpacingGuide:3 SpacingResult:13
 frontend/src/utils/stale-build.ts | typescript | 104 | isStaleBuildError:42 recoverFromStaleBuild:64 forceReloadLatest:90 installStaleBuildHandler:100
 frontend/src/utils/stock-photos.ts | typescript | 156 | StockPhoto:13 searchStockPhotos:37 fetchPhotoData:99 insertStockPhoto:118
@@ -2718,6 +2720,7 @@ tests/slides.spec.ts | typescript | 244 | to:14
 tests/slingshot-repro.spec.ts | typescript | 85 | Window:5 shoot:44
 tests/smooth-path.spec.ts | typescript | 35 | dev:27
 tests/snapping.spec.ts | typescript | 143 |
+tests/social-export.spec.ts | typescript | 133 | Page:1 Window:6 exportAndSample:18
 tests/solid-block.spec.ts | typescript | 38 |
 tests/spacing-guides.spec.ts | typescript | 106 | w2v:16
 tests/stick-anim-demo-check.spec.ts | typescript | 46 | Window:6

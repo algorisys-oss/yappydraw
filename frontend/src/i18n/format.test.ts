@@ -11,7 +11,7 @@
  * silently disagreed with `t()` about what a token is.
  */
 import { describe, it, expect } from "bun:test";
-import { parts, plural } from "./format";
+import { parts, plural, formatFileSize } from "./format";
 
 describe("parts", () => {
     it("splits text around a token", () => {
@@ -69,5 +69,18 @@ describe("parts", () => {
         // plural() replaces {{count}} — parts() must recognise the same shape as a token.
         expect(plural('en', 2, { one: '{{count}} item', other: '{{count}} items' })).toBe('2 items');
         expect(parts('{{count}} items')).toEqual([{ token: 'count' }, { text: ' items' }]);
+    });
+});
+
+describe("formatFileSize", () => {
+    it("shows whole kilobytes under a megabyte, never 0 KB", () => {
+        expect(formatFileSize("en", 312 * 1024)).toBe("312 KB");
+        expect(formatFileSize("en", 10)).toBe("1 KB");
+    });
+
+    it("shows binary megabytes to one decimal above, with the locale's separator", () => {
+        expect(formatFileSize("en", 2 * 1024 * 1024)).toBe("2 MB");
+        expect(formatFileSize("en", 1.26 * 1024 * 1024)).toBe("1.3 MB");
+        expect(formatFileSize("de", 2.5 * 1024 * 1024)).toBe("2,5 MB");
     });
 });

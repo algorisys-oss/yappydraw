@@ -1,8 +1,13 @@
-import { type Component, createSignal, Show, createEffect, onCleanup, untrack } from "solid-js";
+import { type Component, createSignal, Show, For, createEffect, onCleanup, untrack } from "solid-js";
 import { X } from "lucide-solid";
 import { store, pageNoun } from "../store/app-store";
 import { isPagedDocType } from "../types/slide-types";
-import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg, ensureExportImages } from "../utils/export";
+import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg, ensureExportImages, exportPageForPlatform } from "../utils/export";
+import { socialTargetsForPage, type SocialTarget } from "../utils/social-export";
+import { t, currentLocale } from "../i18n";
+import { formatFileSize } from "../i18n/format";
+import { showToast } from "./toast";
+import { drawingId } from "./menu";
 import { setRequestRecording } from "./canvas";
 import "./export-dialog.css";
 
@@ -22,6 +27,35 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
     const [gifFps, setGifFps] = createSignal(12);
     const isPaged = () => isPagedDocType(store.docType) && store.slides.length > 0;
     const isVideo = () => format() === 'webm' || format() === 'mp4' || format() === 'gif';
+
+    // Social-ready export: platforms the current page can go to as-is (same shape).
+    const activePage = () => (isPaged() ? store.slides[store.activeSlideIndex] : undefined);
+    const socialTargets = () => {
+        const page = activePage();
+        return page ? socialTargetsForPage(page.dimensions.width, page.dimensions.height) : [];
+    };
+    const [socialBusy, setSocialBusy] = createSignal<string | null>(null);
+    const exportForSocial = async (target: SocialTarget) => {
+        if (socialBusy()) return;
+        setSocialBusy(target.presetId);
+        try {
+            const r = await exportPageForPlatform(target.presetId, { docName: drawingId() });
+            if (!r.ok) {
+                showToast(t('socialExport.failed', { name: target.name }), 'error');
+                return;
+            }
+            if (!r.saved) return; // the user cancelled the save dialog
+            const size = formatFileSize(currentLocale(), r.bytes);
+            if (r.overBudget && target.maxBytes) {
+                showToast(t('socialExport.overBudget', { name: target.name, limit: formatFileSize(currentLocale(), target.maxBytes), size }), 'error', 6000);
+            } else {
+                showToast(t('socialExport.saved', { name: target.name, width: r.width, height: r.height, size }), 'success');
+            }
+            props.onClose();
+        } finally {
+            setSocialBusy(null);
+        }
+    };
 
     // Reset "only selected" to match the CURRENT selection each time the dialog OPENS.
     // (untrack the selection read so this runs on the open-transition only, not on every
@@ -117,6 +151,39 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                     </div>
 
                     <div class="export-options">
+                        <Show when={activePage()}>
+                            {(page) => (
+                                <div class="option-group social-export">
+                                    <label>{t('socialExport.heading')}</label>
+                                    <Show when={socialTargets().length > 0} fallback={
+                                        <span class="hint">{t('socialExport.noMatch', { width: page().dimensions.width, height: page().dimensions.height })}</span>
+                                    }>
+                                        <span class="hint">{t('socialExport.hint')}</span>
+                                        <div class="social-targets">
+                                            <For each={socialTargets()}>
+                                                {(target) => (
+                                                    <button class="social-target-btn" type="button"
+                                                        data-preset={target.presetId}
+                                                        disabled={socialBusy() !== null}
+                                                        onClick={() => void exportForSocial(target)}>
+                                                        <span class="social-target-name">{target.name}</span>
+                                                        <span class="social-target-size">
+                                                            {socialBusy() === target.presetId
+                                                                ? t('socialExport.exporting')
+                                                                : t('socialExport.size', { width: target.width, height: target.height })}
+                                                            <Show when={target.maxBytes && socialBusy() !== target.presetId}>
+                                                                {' · '}{t('socialExport.limit', { limit: formatFileSize(currentLocale(), target.maxBytes!) })}
+                                                            </Show>
+                                                        </span>
+                                                    </button>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </Show>
+                                </div>
+                            )}
+                        </Show>
+
                         <div class="option-group">
                             <label>Format</label>
                             <div class="radio-group" style={{ "flex-wrap": "wrap", "gap": "12px" }}>

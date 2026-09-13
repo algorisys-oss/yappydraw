@@ -92,6 +92,17 @@ export const formatNumber = (locale: string, value: number, decimals?: number): 
 export const formatInteger = (locale: string, value: number): string =>
     numberFormat(locale, { maximumFractionDigits: 0 }).format(value);
 
+/**
+ * A file size for display: whole kilobytes under a megabyte, megabytes to one decimal above
+ * (`2 MB`, `2.5 MB` — no trailing `.0`).
+ * Binary units (1 KB = 1024 bytes), which is what upload limits such as YouTube's 2 MB use.
+ */
+export const formatFileSize = (locale: string, bytes: number): string => {
+    const kb = Math.max(0, bytes) / 1024;
+    if (kb < 1024) return `${formatInteger(locale, Math.max(1, Math.round(kb)))} KB`;
+    return `${numberFormat(locale, { maximumFractionDigits: 1 }).format(Math.round(kb / 102.4) / 10)} MB`;
+};
+
 /** `0.42` → `42%`. Takes a fraction, not an already-multiplied percentage. */
 export const formatPercent = (locale: string, fraction: number, decimals = 0): string =>
     numberFormat(locale, {

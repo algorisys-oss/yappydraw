@@ -9797,3 +9797,32 @@ Smaller things that had to be right:
 - **A literal NUL byte in source makes git call the file binary.** The first `qr-code.ts` joined
   its cache key with a raw NUL. It ran fine, but `git diff` showed only `Bin 5666 -> 13177 bytes`.
   Write the `\u0000` escape instead.
+
+## Social-ready export: offer only what fits, and measure before building a limit
+
+Export dialog → **Ready for social** saves the current page for a platform in one click
+(`utils/social-export.ts` for the rules, `exportPageForPlatform` / `renderPageAtSize` in
+`export.ts`). Decisions worth keeping:
+
+- **Match on shape, not on size.** A platform is offered when the page's aspect ratio is within
+  0.5% of the platform's, and the page is rendered straight at the platform's pixel size. So a
+  1080² design also gives a 1200² LinkedIn post, and a 1920×1080 slide gives a Facebook Cover
+  (1640×924, 0.16% off). Anything further off would crop or stretch the design; for those, the
+  dialog points to Magic Resize, which is the tool that changes shape honestly.
+- **Render at the target, don't resample.** `renderPageAtSize` scales each axis separately and
+  sets the canvas to the exact target pixels. `exportPageToPng`'s old `round(w * scale)` could
+  land a pixel short when the ratio is merely close. It now calls the same helper.
+- **The upload-limit guard is real but almost never reached — found by measuring, not assuming.**
+  The e2e test was written to force a quality step-down with a noise image and could not: even
+  cryptographically random pixels at 1280×720 encode to ~0.8 MB at JPEG 0.92 in Chromium (4:2:0
+  chroma subsampling caps it near 0.9 bytes/pixel), well under YouTube's 2 MB. The first noise
+  generator was also bad (an LCG's low byte repeats with a short period) and compressed to 673 KB,
+  which briefly looked like the image was not being exported at all. Checking that the export
+  was byte-identical to encoding the source canvas settled that. The step-down stays, as a cheap
+  guard for encoders without subsampling, and is unit tested with a fake encoder. The e2e test
+  asserts the property users care about, "under the limit", not a mechanism Chromium never
+  triggers.
+- **Components cannot gain hardcoded strings.** The i18n ratchet in the pre-commit hook fails a
+  file that adds JSX text, and every locale is typed as the full `Dictionary`. So new UI means
+  keys in all five locale files, not just `en.ts`. `formatFileSize` joined `i18n/format.ts` for
+  the same reason: `2,5 MB` in German.

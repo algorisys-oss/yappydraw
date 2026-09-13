@@ -1117,6 +1117,17 @@ export const en = {
         /** Shared by all three sections. */
         remove: 'Remove',
     },
+    socialExport: {
+        heading: 'Ready for social',
+        hint: 'Exports the current page at the exact size each platform expects, as a JPG.',
+        size: '{{ width }} × {{ height }} JPG',
+        limit: 'Max {{ limit }}',
+        noMatch: 'This page is {{ width }} × {{ height }}, a shape no social platform uses. Use Menu → Magic Resize… to make a social-size version first.',
+        saved: 'Saved for {{ name }} — {{ width }} × {{ height }}, {{ size }}',
+        overBudget: '{{ name }} accepts files up to {{ limit }}, and this one is {{ size }} even at lower quality. Try fewer or smaller photos.',
+        failed: 'Could not export for {{ name }}.',
+        exporting: 'Exporting…',
+    },
 };
 
 /**
