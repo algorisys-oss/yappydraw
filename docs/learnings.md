@@ -2,6 +2,20 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A feature reachable only from the console does not exist for most people
+
+The Scene Timeline worked, had a help section, and was used by a shipped example. It still had no
+menu item: the one UI entry point was a button inside the Stick Figure panel, which assumes you
+are animating stick figures. Every check we own tested the mechanism (`toggleSceneTimeline`,
+playback, scrubbing), and none tested the way in. This is v0.8.240's GIF-export finding again: an
+e2e suite that drives the API proves the feature works and says nothing about whether anyone can
+find it. **For each panel, ask where a user clicks to open it.** The spec added here clicks the
+menu rather than calling the toggle.
+
+The same pass found the help naming "Menu → View" for a group labelled **Panels**. The reported
+wording matched five places; the same mistake without the `Menu` prefix matched seven more.
+Search for the shape of an error, not the exact string reported.
+
 ## A library build of the app finds the app's assumptions, one import at a time
 
 The CDN SDK (`frontend/src/sdk`, `vite.sdk.config.ts`) is `window.Yappy` built as an ES

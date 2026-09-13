@@ -6150,6 +6150,8 @@ export const toggleComicPanel = (visible?: boolean) => {
 export const toggleSceneTimeline = (visible?: boolean) => {
     const next = visible ?? !store.showSceneTimeline;
     setStore('showSceneTimeline', next);
+    // Mirrors toggleKeyframePanel: the two share one playhead, so only one is open.
+    if (next) setStore('showKeyframePanel', false);
     if (!next) setStore('storyPlaying', false);
 };
 

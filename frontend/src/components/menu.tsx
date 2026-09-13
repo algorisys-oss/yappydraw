@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleSceneTimeline, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, togglePathfinderBar, setSelectedTool, toggleTeachingMode, isDevMode,
 } from "../store/app-store";
@@ -1204,6 +1204,18 @@ const Menu: Component = () => {
                                             <span class="shortcut">Alt+K</span>
                                         </div>
                                     </div>
+                                    {/* Plays a whole composition. Had no menu entry before — only a button in the
+                                        Stick Figure panel. Not offered in animation documents, where the frame
+                                        timeline replaces it and it does not mount (app.tsx). */}
+                                    <Show when={store.docType !== 'animation'}>
+                                    <div class="menu-item" onClick={() => { toggleSceneTimeline(); setIsMenuOpen(false); }}>
+                                        <Film size={16} />
+                                        <span class="label">{t('menu.sceneTimeline')}</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showSceneTimeline}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
+                                    </Show>
                                     <div class="menu-item" onClick={() => { (window as any).Yappy?.createAdjustmentLayer(); setIsMenuOpen(false); }}>
                                         <Layers size={16} />
                                         <span class="label">{t('menu.addAdjustmentLayer')}</span>

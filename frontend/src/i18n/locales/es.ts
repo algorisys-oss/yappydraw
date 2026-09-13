@@ -962,6 +962,7 @@ export const es: Dictionary = {
         shapeBuilder: 'Creador de formas',
         pathfinderStrip: 'Barra Buscatrazos',
         keyframes: 'Fotogramas clave',
+        sceneTimeline: 'Línea de tiempo de la escena',
         addAdjustmentLayer: 'Añadir capa de ajuste',
         toolbars: 'Barras de herramientas',
         drawingToolbar: 'Barra de dibujo',

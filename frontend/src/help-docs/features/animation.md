@@ -25,7 +25,7 @@ Recording | Export animations as MP4, WebM or animated GIF
 
 ## Keyframes Timeline (dope sheet)
 
-The **Keyframes** panel is an After Effects–style, absolute-time timeline for the selected element. Unlike the trigger-based presets above, keyframes live on a scrubbable playhead: every property is evaluated at time *t* and previewed live on the canvas (and in exported video). Open it from **Menu → View → Keyframes** or with <kbd>Alt</kbd>+<kbd>K</kbd>.
+The **Keyframes** panel is an After Effects–style, absolute-time timeline for the selected element. Unlike the trigger-based presets above, keyframes live on a scrubbable playhead: every property is evaluated at time *t* and previewed live on the canvas (and in exported video). Open it from **Menu → Panels → Keyframes** or with <kbd>Alt</kbd>+<kbd>K</kbd>.
 
 ### Authoring keyframes
 
@@ -40,7 +40,7 @@ Beyond transform and colour, the panel keyframes **live-effect parameters**: **F
 
 **3D & warp.** Nested effect params animate too, via dotted paths: **Extrude Depth / Angle / Tilt / Bevel** (when the shape has 3D Extrude) and **Warp Bend** (on a warp preset) appear as rows once the effect is on — e.g. `Yappy.addKeyframe(id, 'extrude.depth', 0, 0)` then ` (id, 'extrude.depth', 2, 70)` grows a solid out of the flat shape.
 
-**Adjustment layers.** Add one from *Menu → View → Add Adjustment Layer* (or `Yappy.createAdjustmentLayer()`): a rectangular region that applies a CSS filter (blur / brightness / contrast / saturate / hue) to everything drawn *beneath* it — and its filter params are keyframable, so you can sweep a blur or a colour grade across your artwork over time. (It's an authoring gizmo, so it isn't drawn in PNG/SVG export yet.)
+**Adjustment layers.** Add one from *Menu → Panels → Add Adjustment Layer* (or `Yappy.createAdjustmentLayer()`): a rectangular region that applies a CSS filter (blur / brightness / contrast / saturate / hue) to everything drawn *beneath* it — and its filter params are keyframable, so you can sweep a blur or a colour grade across your artwork over time. (It's an authoring gizmo, so it isn't drawn in PNG/SVG export yet.)
 
 ### Editing keyframes
 
@@ -145,7 +145,7 @@ Yappy.addKeyframe(ctrl, 'angle', 2, Math.PI/2); // box swings with it
 ```
 
 :::tip
-**Note:** the Keyframes timeline shares the playhead clock with the Scene Timeline, so only one is open at a time. Keyframe values override the stored element at render time without changing it — clearing the tracks restores the original. Transform parenting is separate from mind-map parent/child hierarchy.
+**Note:** the Keyframes timeline shares the playhead clock with the **Scene Timeline** (**Menu → Panels → Scene Timeline**), which plays every track of the composition together. Only one can be open at a time: opening either closes the other. Neither is offered in animation documents, where the frame timeline replaces them. Keyframe values override the stored element at render time without changing it — clearing the tracks restores the original. Transform parenting is separate from mind-map parent/child hierarchy.
 :::
 
 ## Animation Presets

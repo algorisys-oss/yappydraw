@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.251', date: '2026-09-14', items: [
+        'The Scene Timeline is now in the menu: Menu \u2192 Panels \u2192 Scene Timeline. Open it to play, loop and scrub a whole animated scene \u2014 before, it only opened from the Stick Figure panel.',
+        'Opening the Scene Timeline closes the Keyframes panel, and the other way round, so you always know which one is driving playback.',
+        'Fixed: Help sent you to a \u201cView\u201d menu that does not exist. Those steps now point to Menu \u2192 Panels.',
+    ] },
     { version: '0.8.250', date: '2026-09-14', items: [
         'Developers: YappyDraw\u2019s drawing API now loads straight from a CDN. Add one import to any web page, draw with the same commands as the editor, and put the result on the page as sketchy SVG \u2014 no editor, no iframe, no build step.',
         'Every shape in that SVG is labelled with its id, so you can animate it with tinyfly, GSAP or plain CSS: spin the sun, slide in a caption, and each shape keeps its own rotation.',

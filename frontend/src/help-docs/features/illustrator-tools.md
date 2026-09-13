@@ -12,7 +12,7 @@ keywords: unite union subtract minus front intersect exclude boolean combine mer
 A toolkit of vector-illustration tools mapped from Adobe Illustrator: select-similar (Magic Wand), the Distort & Transform / Liquify family, Knife & Scissors cutting, generative shapes (spiral, arc, grids), Vertical Type, and the Symbol Sprayer. Every tool has a right-click / panel entry *and* a scripting API on the global ` Yappy` object — paste the examples into the browser console to try them.
 
 :::tip
-**Where are these tools?** Open the **Vector Tools palette** — click the **shapes button** in the **top bar** (next to the <kbd>⌘</kbd> Commands button, left of Settings) for a one-tap floating palette grouped by Build / Path / Paint / Warp / Symbol; the active tool highlights. **Shape Builder** sits right beside it. On a phone the same three are under *Menu → View*. Everything is also in the **Command Palette** (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd> → type a name). The right-click menu works too, but only when you click directly on a filled shape — so for unfilled outlines (common with Live Paint) use the palette.
+**Where are these tools?** Open the **Vector Tools palette** — click the **shapes button** in the **top bar** (next to the <kbd>⌘</kbd> Commands button, left of Settings) for a one-tap floating palette grouped by Build / Path / Paint / Warp / Symbol; the active tool highlights. **Shape Builder** sits right beside it. On a phone the same three are under *Menu → Panels*. Everything is also in the **Command Palette** (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd> → type a name). The right-click menu works too, but only when you click directly on a filled shape — so for unfilled outlines (common with Live Paint) use the palette.
 :::
 
 ## ⬤ Combining shapes — Unite, Subtract, Intersect, Exclude
@@ -40,7 +40,7 @@ Right-click → *Pathfinder* still has the region operations — **Divide, Trim,
 
 The strip is **off by default**, because selecting two objects is something you do constantly — to move them, align them, group them, recolour them, or because a rubber-band grabbed one more than you meant. Popping a floating panel of destructive operations over your artwork every time you did that was more often in the way than useful.
 
-Switch it on with the **Pathfinder** button in the top bar (next to Shape Builder), *View → Pathfinder Strip*, right-click → *Show Pathfinder Strip*, or the Command Palette (<kbd>Ctrl</kbd>+<kbd>K</kbd> → “Pathfinder Strip”). It stays pinned across selections and across sessions, so if you’re doing a run of boolean work you turn it on once. Also in *Settings → Canvas → Pathfinder Strip*.
+Switch it on with the **Pathfinder** button in the top bar (next to Shape Builder), *Menu → Panels → Pathfinder Strip*, right-click → *Show Pathfinder Strip*, or the Command Palette (<kbd>Ctrl</kbd>+<kbd>K</kbd> → “Pathfinder Strip”). It stays pinned across selections and across sessions, so if you’re doing a run of boolean work you turn it on once. Also in *Settings → Canvas → Pathfinder Strip*.
 
 :::tip
 **The four shortcuts work whether or not the strip is showing.** <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>U</kbd>/<kbd>D</kbd>/<kbd>I</kbd>/<kbd>X</kbd> act on the current selection with no panel at all — which is the point of having them — and right-click → *Pathfinder* has every operation either way.

@@ -128,7 +128,7 @@ Chain it with a sequence for simple acting: Walk with a *neutral* face, then swi
 
 ## Direct the whole scene (Scene Timeline)
 
-Click **Scene timeline** in the panel to open a timeline across the bottom of the screen. Every animated figure becomes a **track**, with its action sequence shown as coloured blocks along a time ruler.
+Click **Scene timeline** in the panel, or choose **Menu → Panels → Scene Timeline**, to open a timeline across the bottom of the screen. Every animated figure becomes a **track**, with its action sequence shown as coloured blocks along a time ruler.
 
 - **Play / Pause / Restart** and a **Loop** toggle drive all figures together from one clock.
 - **Scrub** — drag the red playhead (or click the ruler) to jump to any moment; every figure poses at that instant. Great for lining up a scene or grabbing a frame to bake.

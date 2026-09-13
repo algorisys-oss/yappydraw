@@ -976,6 +976,7 @@ export const fr: Dictionary = {
         shapeBuilder: 'Concepteur de forme',
         pathfinderStrip: 'Barre Pathfinder',
         keyframes: 'Images clés',
+        sceneTimeline: 'Scénario de la scène',
         addAdjustmentLayer: 'Ajouter un calque de réglage',
         toolbars: 'Barres d’outils',
         drawingToolbar: 'Barre d’outils Dessin',

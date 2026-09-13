@@ -33,7 +33,7 @@ Y.placeInstance(symId, 420, 100);
 
 ## The Symbols panel
 
-Open it with **Alt+B** (or View → **Symbols Panel**). It lists every symbol with a live thumbnail and an **instance count** badge. From a card you can:
+Open it with **Alt+B** (or Menu → Panels → **Symbols Panel**). It lists every symbol with a live thumbnail and an **instance count** badge. From a card you can:
 
 - **Place** a new instance (the **+** button, or double-click the thumbnail).
 - **Select** all instances of a symbol on the canvas (single-click the thumbnail).

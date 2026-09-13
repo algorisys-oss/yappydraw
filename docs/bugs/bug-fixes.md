@@ -9512,3 +9512,28 @@ site found two more fields with the same gap: custom pattern tiles (`patternFill
 posters (`videoPosterDataURL` / `videoPosterURL`). All of them, plus `qrLogo`, are now preloaded.
 `tests/export-image-fill.spec.ts` places an image-filled shape far off-screen and rasterizes
 it; it failed (transparent centre pixel) before the fix and passes after.
+
+## The Scene Timeline had no way in, and the help pointed at a menu that does not exist
+
+The Scene Timeline, which plays and loops a whole composition, had no menu item and no
+shortcut. The only ways to open it were a button inside the Stick Figure panel or
+`Yappy.toggleSceneTimeline(true)` in the console, so a keyframed composition made with the API
+(the Ganesh Chaturthi example, say) could not be played from the editor at all. It is now
+**Menu → Panels → Scene Timeline**, with a check mark while open. It is not offered in animation
+documents, where it does not mount (app.tsx) and the frame timeline replaces it.
+
+Adding the item exposed two neighbours:
+
+- **Opening a timeline left the other one open.** The help says the Keyframes panel and the
+  Scene Timeline share one playhead, so only one is open at a time. `toggleKeyframePanel` closed
+  the Scene Timeline, but `toggleSceneTimeline` never closed the Keyframes panel, so opening them
+  in that order left both open and driving the same clock. Now each closes the other.
+- **The help said "Menu → View" in twelve places, and the menu has no View group.** Keyframes,
+  Show Dimensions, Teaching Mode, Swatches, Graphic Styles, History, Symbols, Measure Tool,
+  Pathfinder Strip and Add Adjustment Layer are all under **Panels**. The first report named
+  five of these; searching for `View →` without the `Menu` prefix found seven more. All twelve
+  are corrected.
+
+`tests/scene-timeline-menu.spec.ts` (3 tests) covers the item opening and closing with its check
+mark, opening it closing the Keyframes panel, and its absence in animation documents. The first
+two failed before the change.

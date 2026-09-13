@@ -147,11 +147,11 @@ A stacked fill can be a **pattern**, not just a solid colour. In the **APPEARANC
 
 ### Graphic Styles
 
-Save an object's whole look — fill, stroke, gradient/mesh, appearance stack, shadow, opacity — as a named **graphic style**, then apply it to other objects in one click. Open the panel with **Alt+G** (or View → **Graphic Styles**): the **+** saves the selection's style; click a card (or its 🎨) to apply it to the current selection; ↻ redefines it from the selection; 🗑 deletes it. Styles are stored in the document, so they travel with the file. (Right-click → **Save as Graphic Style**; API `createGraphicStyle`/`applyGraphicStyle`.)
+Save an object's whole look — fill, stroke, gradient/mesh, appearance stack, shadow, opacity — as a named **graphic style**, then apply it to other objects in one click. Open the panel with **Alt+G** (or Menu → Panels → **Graphic Styles**): the **+** saves the selection's style; click a card (or its 🎨) to apply it to the current selection; ↻ redefines it from the selection; 🗑 deletes it. Styles are stored in the document, so they travel with the file. (Right-click → **Save as Graphic Style**; API `createGraphicStyle`/`applyGraphicStyle`.)
 
 ### Global swatches
 
-A document **colour palette** with live links. Open it with **Alt+W** (or View → **Swatches**): **+** adds a swatch (from the selection's fill); click a chip to fill the selection and make it the active drawing colour — both the fill and the brush/stroke colour, so the next shape or pen stroke uses it (the little corner dot recolours the swatch itself); the **S** button applies it as a stroke. Objects you apply a swatch to are **linked** — recolour the swatch and every linked object updates at once. Editing an object's colour directly breaks its link. Swatches are saved in the document.
+A document **colour palette** with live links. Open it with **Alt+W** (or Menu → Panels → **Swatches**): **+** adds a swatch (from the selection's fill); click a chip to fill the selection and make it the active drawing colour — both the fill and the brush/stroke colour, so the next shape or pen stroke uses it (the little corner dot recolours the swatch itself); the **S** button applies it as a stroke. Objects you apply a swatch to are **linked** — recolour the swatch and every linked object updates at once. Editing an object's colour directly breaks its link. Swatches are saved in the document.
 
 ### Recolor Artwork
 

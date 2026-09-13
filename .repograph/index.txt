@@ -1788,7 +1788,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 83 |
 frontend/src/components/measure-overlay.tsx | typescript | 128 | MeasureOverlay:16 toWorld:21 onDown:23 onMove:30 onUp:40 onKey:45 seg:54 metrics:69 unit:77 distLabel:79
 frontend/src/components/menu.css | - | 444 |
-frontend/src/components/menu.tsx | typescript | 1681 | Component:1 SaveIntent:95 handleSaveRequest:97 isUnnamedDrawing:115 quickSaveToGallery:120 proceed:142 Menu:157 handleUnsavedCancel:195 handleUnsavedDiscard:200 handleUnsavedSave:207 onPaletteEscape:224 performSave:235 is:311 handleLoad:347 handleResetView:367 loadTemplateAction:372 handleTemplateSelect:412 handleOpenJson:421 handleLoadJsonText:472 handleExportHtml:488 handleExportExcalidraw:504 handleExportRocket:525 handleDeployToRocket:558 handleResize:607 hooks:1362
+frontend/src/components/menu.tsx | typescript | 1693 | Component:1 SaveIntent:95 handleSaveRequest:97 isUnnamedDrawing:115 quickSaveToGallery:120 proceed:142 Menu:157 handleUnsavedCancel:195 handleUnsavedDiscard:200 handleUnsavedSave:207 onPaletteEscape:224 performSave:235 is:311 handleLoad:347 handleResetView:367 loadTemplateAction:372 handleTemplateSelect:412 handleOpenJson:421 handleLoadJsonText:472 handleExportHtml:488 handleExportExcalidraw:504 handleExportRocket:525 handleDeployToRocket:558 handleResize:607 hooks:1374
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 127 | Component:1 MindmapToolGroup:17 handler:25 getActiveMindmapTool:36 handleToolClick:50 as:58 as:63 handleRightClick:70 toggleMenu:75 as:77 activeTool:82 isActive:83
@@ -1939,7 +1939,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 826 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 831 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2058,11 +2058,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1107 |
-frontend/src/i18n/locales/en.ts | typescript | 1137 | Dictionary:1137
-frontend/src/i18n/locales/es.ts | typescript | 1106 |
-frontend/src/i18n/locales/fr.ts | typescript | 1128 | de:108
-frontend/src/i18n/locales/ja.ts | typescript | 1106 |
+frontend/src/i18n/locales/de.ts | typescript | 1108 |
+frontend/src/i18n/locales/en.ts | typescript | 1138 | Dictionary:1138
+frontend/src/i18n/locales/es.ts | typescript | 1107 |
+frontend/src/i18n/locales/fr.ts | typescript | 1129 | de:108
+frontend/src/i18n/locales/ja.ts | typescript | 1107 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -2180,7 +2180,7 @@ frontend/src/store/anim-pegs.test.ts | typescript | 134 | stubNode:16 kfs:46 set
 frontend/src/store/anim-timing.test.ts | typescript | 172 | stubNode:17 row:46 setup:48 select:70
 frontend/src/store/anim-tween-split.test.ts | typescript | 200 | stubNode:21 setupTween:52 form:57
 frontend/src/store/app-store.test.ts | typescript | 104 | seed:71
-frontend/src/store/app-store.ts | typescript | 10561 | LayoutDirection:19 OutlineNode:19 BooleanOp:22 Poly:22 ShapeFace:22 DistortKind:23 AssetMeta:45 WarpPreset:53 SymmetryMode:61 SymmetryOp:61 Theme:68 ResolvedTheme:69 loadPerspectiveGrid:107 DefaultToolChoice:137 PointerStyle:245 PaintChannel:256 AppState:258 HistorySnapshot:899 BP:2333 AlignmentType:5838 DistributionType:5838 CharPatch:6661 CharPatchArg:6664 SelBBox:7951 LastTransform:8410 RegionPathfinderOp:8799 SelectSimilarMatch:8940 buildPathFromPoly:9800 polysOriginMin:9842 syncCompoundOperands:9849 buildCompoundPath:9860 WorldSub:10084 rdpAnchors:10087 normalizeWorldSubs:10115 makePathFromWorldSubs:10130 elementToWorldSubs:10151 startInkCleanupIfNeeded:10500
+frontend/src/store/app-store.ts | typescript | 10563 | LayoutDirection:19 OutlineNode:19 BooleanOp:22 Poly:22 ShapeFace:22 DistortKind:23 AssetMeta:45 WarpPreset:53 SymmetryMode:61 SymmetryOp:61 Theme:68 ResolvedTheme:69 loadPerspectiveGrid:107 DefaultToolChoice:137 PointerStyle:245 PaintChannel:256 AppState:258 HistorySnapshot:899 BP:2333 AlignmentType:5838 DistributionType:5838 CharPatch:6663 CharPatchArg:6666 SelBBox:7953 LastTransform:8412 RegionPathfinderOp:8801 SelectSimilarMatch:8942 buildPathFromPoly:9802 polysOriginMin:9844 syncCompoundOperands:9851 buildCompoundPath:9862 WorldSub:10086 rdpAnchors:10089 normalizeWorldSubs:10117 makePathFromWorldSubs:10132 elementToWorldSubs:10153 startInkCleanupIfNeeded:10502
 frontend/src/store/dev-mode.test.ts | typescript | 100 | docWith:85
 frontend/src/store/dock-layout.ts | typescript | 211 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
 frontend/src/store/fill-stroke-paint.test.ts | typescript | 187 | the:11 el:45 seed:51
@@ -2712,6 +2712,7 @@ tests/rounded-rect-flatten.spec.ts | typescript | 77 | rect:18 cornerGap:22
 tests/scene-and-plot-api.spec.ts | typescript | 222 | graphs:6 el:124
 tests/scene-duration.spec.ts | typescript | 40 |
 tests/scene-playback.spec.ts | typescript | 91 | shot:75
+tests/scene-timeline-menu.spec.ts | typescript | 49 | Page:1
 tests/select-and-constrain.spec.ts | typescript | 75 |
 tests/selection-teardown-crash.spec.ts | typescript | 107 | boot:24
 tests/sequence-diagram.spec.ts | typescript | 75 |

@@ -974,6 +974,7 @@ export const en = {
         shapeBuilder: 'Shape Builder',
         pathfinderStrip: 'Pathfinder Strip',
         keyframes: 'Keyframes',
+        sceneTimeline: 'Scene Timeline',
         addAdjustmentLayer: 'Add Adjustment Layer',
         toolbars: 'Toolbars',
         drawingToolbar: 'Drawing Toolbar',

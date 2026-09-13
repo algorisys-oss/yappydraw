@@ -963,6 +963,7 @@ export const de: Dictionary = {
         shapeBuilder: 'Formerstellung',
         pathfinderStrip: 'Pathfinder-Leiste',
         keyframes: 'Keyframes',
+        sceneTimeline: 'Szenen-Zeitleiste',
         addAdjustmentLayer: 'Einstellungsebene hinzufügen',
         toolbars: 'Werkzeugleisten',
         drawingToolbar: 'Zeichenleiste',

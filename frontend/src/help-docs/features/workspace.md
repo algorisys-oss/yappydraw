@@ -344,7 +344,7 @@ Drag any of the eight resize handles and a **W × H chip** appears just under th
 
 ### The dimension badge
 
-If you want those numbers *permanently* while something is selected — plus position and rotation, which the drag chip doesn't show — there is also a badge that follows the selection and reads its live **W × H**, position and rotation. It is handy while resizing but in the way the rest of the time, since it sits right under the object on top of your artwork, so it is **off by default** (and it replaces the drag chip when on, rather than stacking with it). Turn it on with the **Proportions** button in the top bar (next to Settings and Properties), or from *Menu → View → Show Dimensions* on a phone. The choice sticks between sessions. It reads in your chosen measurement unit, and hides itself in presentation mode and while the Measure tool is active.
+If you want those numbers *permanently* while something is selected — plus position and rotation, which the drag chip doesn't show — there is also a badge that follows the selection and reads its live **W × H**, position and rotation. It is handy while resizing but in the way the rest of the time, since it sits right under the object on top of your artwork, so it is **off by default** (and it replaces the drag chip when on, rather than stacking with it). Turn it on with the **Proportions** button in the top bar (next to Settings and Properties), or from *Menu → Panels → Show Dimensions* on a phone. The choice sticks between sessions. It reads in your chosen measurement unit, and hides itself in presentation mode and while the Measure tool is active.
 
 ```
 Yappy.setShowDimensions(true);    // show the badge
@@ -429,7 +429,7 @@ Y.toggleGuidesLocked(true);       // freeze them in place
 
 ## Measure tool
 
-Turn it on from ☰ → View → **Measure Tool** (or `Yappy.toggleMeasure()`), then **drag** anywhere on the canvas to lay down a measuring line. A readout shows the **length** (in canvas units) and the **angle** from horizontal. The line stays until your next drag; press **Esc** to exit.
+Turn it on from ☰ → Panels → **Measure Tool** (or `Yappy.toggleMeasure()`), then **drag** anywhere on the canvas to lay down a measuring line. A readout shows the **length** (in canvas units) and the **angle** from horizontal. The line stays until your next drag; press **Esc** to exit.
 
 ## Blend
 
@@ -454,7 +454,7 @@ The steps interpolate size / colour / rotation / opacity between the two ends (u
 ## Teaching mode
 
 For running a session in front of a room. The **graduation-cap button** in the top bar (or
-*Menu → View → Teaching Mode*) strips the app back to the tools people actually draw with —
+*Menu → Panels → Teaching Mode*) strips the app back to the tools people actually draw with —
 select, pen, line, arrow, rectangle, diamond, circle, text, image, eraser — and takes the
 professional vector surface off the screen:
 
@@ -515,7 +515,7 @@ The Lasso keeps its place, since it already selects.
 
 ## History panel
 
-Open it with **Alt+H** (or View → **History Panel**) to see the document's timeline — past states, the current state, and any redoable future states. **Click any row** to jump straight to that point (it undoes/redoes the difference for you). Each row shows its object count; the current state is highlighted and future states are dimmed.
+Open it with **Alt+H** (or Menu → Panels → **History Panel**) to see the document's timeline — past states, the current state, and any redoable future states. **Click any row** to jump straight to that point (it undoes/redoes the difference for you). Each row shows its object count; the current state is highlighted and future states are dimmed.
 
 :::tip
 A faster way to scrub than tapping Undo/Redo repeatedly — jump back several steps, inspect, and jump forward again in one click.

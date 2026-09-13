@@ -962,6 +962,7 @@ export const ja: Dictionary = {
         shapeBuilder: 'シェイプビルダー',
         pathfinderStrip: 'パスファインダーバー',
         keyframes: 'キーフレーム',
+        sceneTimeline: 'シーンタイムライン',
         addAdjustmentLayer: '調整レイヤーを追加',
         toolbars: 'ツールバー',
         drawingToolbar: '描画ツールバー',
