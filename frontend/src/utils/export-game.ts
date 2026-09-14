@@ -8,40 +8,18 @@
  * like a code game.
  */
 
-import { store, saveActiveSlide } from '../store/app-store';
-import { effectiveGameScript } from '../game/behaviors-to-script';
+import { saveActiveSlide } from '../store/app-store';
+import { buildSlideDocument } from './document-io';
 import { exportToHtml } from './export-to-html';
-import type { SlideDocument } from '../types/slide-types';
-
-const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 
 /** Build the current scene into a SlideDocument (game script + blueprints compiled
- *  in) and download it as an HTML file named `name`. */
+ *  in) and download it as an HTML file named `name`.
+ *
+ *  The document is the one Save writes (`buildSlideDocument`), not a field list of its own.
+ *  This file used to keep its own list, and it fell behind: keyframes (`compositionTracks`)
+ *  and tinyfly clips were saved with the document but never reached the exported HTML, so
+ *  the file played a still of the first frame. */
 export async function exportSceneAsHtml(name: string): Promise<void> {
     saveActiveSlide(); // flush any in-progress edits into the active slide
-    const doc: SlideDocument = {
-        version: 4,
-        metadata: { name, updatedAt: new Date().toISOString(), docType: store.docType },
-        elements: clone(store.elements),
-        layers: clone(store.layers),
-        slides: clone(store.slides),
-        globalSettings: clone(store.globalSettings),
-        gridSettings: clone(store.gridSettings),
-        states: clone(store.states),
-        symbols: clone(store.symbols),
-        graphicStyles: clone(store.graphicStyles),
-        swatches: clone(store.swatches),
-        artboards: clone(store.artboards),
-        gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
-        sceneBehaviors: store.sceneBehaviors?.length ? clone(store.sceneBehaviors) : undefined,
-        gameVars: store.gameVars?.length ? clone(store.gameVars) : undefined,
-        blueprints: store.blueprints && Object.keys(store.blueprints).length ? clone(store.blueprints) : undefined,
-        gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
-        // Animation mode: the frame timeline(s) ride into the player.
-        animTimeline: store.animTimeline ? clone(store.animTimeline) : undefined,
-        animScenes: store.animTimeline && Object.keys(store.animScenes).length
-            ? clone({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline })
-            : undefined,
-    } as SlideDocument;
-    await exportToHtml(doc, name);
+    await exportToHtml(buildSlideDocument(name), name);
 }

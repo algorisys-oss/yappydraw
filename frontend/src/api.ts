@@ -1812,6 +1812,41 @@ export const YappyAPI = {
     },
 
     /**
+     * Run many API calls as ONE undo step and one reactive update. Returns what `fn` returns.
+     *
+     * Every `create*` saves an undo snapshot first, so a script drawing a figure from a
+     * hundred shapes pushed a hundred entries — past the undo depth, which made the figure
+     * impossible to undo and threw away every state before it. Inside `batch` no call
+     * snapshots; one snapshot is taken before `fn` runs. Batches nest. If `fn` throws,
+     * history is switched back on and the error propagates (undo removes the partial work).
+     *
+     * Synchronous only: the grouping ends when `fn` returns, so calls after an `await`
+     * inside an async `fn` each get their own undo step again.
+     *
+     * @example Yappy.batch(y => { for (let i = 0; i < 100; i++) y.createCircle(i * 12, 0, 10, 10); })
+     */
+    // `api` is typed loosely: `typeof YappyAPI` here would make the object's type depend on itself.
+    batch<T>(fn: (api: any) => T): T {
+        pushToHistory(); // a no-op when nested inside another batch
+        const result = batch(() => withoutHistory(() => fn(YappyAPI)));
+        if (result && typeof (result as any).then === 'function') {
+            console.warn('Yappy.batch: fn returned a Promise. Only calls made before its first await are grouped into one undo step.');
+        }
+        return result;
+    },
+
+    /**
+     * Create many elements in one undo step. Each spec is the arguments of `createElement`.
+     * Returns the new ids in the same order.
+     *
+     * @example Yappy.createElements([{ type: 'rectangle', x: 0, y: 0, width: 80, height: 50, options: { backgroundColor: '#ffd166' } }])
+     */
+    createElements(specs: { type: ElementType; x: number; y: number; width: number; height: number; options?: ElementOptions }[]): string[] {
+        if (!Array.isArray(specs) || specs.length === 0) return [];
+        return YappyAPI.batch((): string[] => specs.map(s => YappyAPI.createElement(s.type, s.x, s.y, s.width, s.height, s.options)));
+    },
+
+    /**
      * Resolves once the built-in webfonts are usable for text measurement.
      *
      * Await this before creating text-bearing elements in an automated context. Auto-sized

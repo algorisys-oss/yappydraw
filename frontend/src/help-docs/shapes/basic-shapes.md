@@ -213,6 +213,38 @@ Yappy.updateElement(id, { backgroundColor: '#ffd43b', strokeWidth: 3 });
 | `createDiamond(x, y, w, h, opts?)` | `'diamond'` |
 | `createTriangle(x, y, w, h, opts?)` | `'triangle'` |
 
+### Many shapes at once: one undo step
+
+Every `create*` call is its own undo step, and undo remembers 50 steps. A script that draws a
+figure from a hundred shapes would need a hundred presses to undo, and would push everything
+before it out of history. Wrap the script in `Yappy.batch` and the whole thing is **one** step:
+
+```
+Yappy.batch(y => {
+  for (let i = 0; i < 100; i++) y.createCircle(i * 14, 0, 12, 12, { backgroundColor: '#ffd43b' });
+});
+Yappy.undo();   // removes all 100 circles
+```
+
+Or pass a list of shapes, which does the same thing:
+
+```
+const ids = Yappy.createElements([
+  { type: 'rectangle', x: 0, y: 0, width: 160, height: 90, options: { backgroundColor: '#a5d8ff' } },
+  { type: 'circle', x: 200, y: 0, width: 90, height: 90 },
+]);
+```
+
+| Method | What it does |
+| --- | --- |
+| `batch(fn)` | Runs `fn(Yappy)` as one undo step and returns what `fn` returns. Batches nest; if `fn` throws, undo removes whatever it had made. |
+| `createElements(specs)` | Creates each `{ type, x, y, width, height, options? }` in one undo step and returns the ids in order. |
+
+:::tip
+`batch` groups synchronous calls only. In an `async` function, calls made after the first
+`await` each become their own undo step again, and the console says so.
+:::
+
 :::tip
 Common `opts`: `backgroundColor`, `strokeColor`,
 `strokeWidth`, `fillStyle` (`'solid' | 'hachure' | 'cross-hatch'`),

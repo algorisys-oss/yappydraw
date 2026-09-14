@@ -51,8 +51,7 @@ const b = await Yappy.tex(200, 200, 'c = \\sqrt{a^2 + b^2}', { fontSize: 54 });
 Yappy.texTransform(a.groupId, b.groupId, { duration: 1.5 });
 // → { matched: 7, faded: 1, introduced: 2 }
 
-Yappy.toggleSceneTimeline(true);
-Yappy.playScene(true);
+Yappy.playScene(true);   // loops; Yappy.toggleSceneTimeline(true) shows the playhead
 ```
 
 Create the target equation first — it is held invisible until the morph runs, and is what you are left with afterwards, so morphs chain. Glyphs pair by rendered character in reading order, so repeated symbols match left-to-right (the first `x` with the first `x`). It schedules on the `Yappy.scene` playhead and advances it, so it sequences with `scene.play`/`wait` like any other step.

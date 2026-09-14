@@ -2,6 +2,12 @@
 import { render } from 'solid-js/web';
 import './index.css'; // Reuse main styles
 import PlayerApp from './components/player-app';
+// The exported HTML is a single file, so the lazy chunk the editor loads the tinyfly engine
+// from does not exist there. Bundle the engine (~37 KB) into the player and install it.
+import * as tinyflyEngine from './vendor/tinyfly/tinyfly-engine.js';
+import { setTinyflyEngine } from './utils/animation/tinyfly-clips';
+
+setTinyflyEngine(tinyflyEngine);
 
 const root = document.getElementById('root');
 

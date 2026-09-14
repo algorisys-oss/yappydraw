@@ -1,6 +1,5 @@
-import { type Component, For, Show, createMemo, createEffect, createSignal, untrack, onMount, onCleanup } from 'solid-js';
+import { type Component, For, Show, createMemo, createEffect, createSignal, onCleanup } from 'solid-js';
 import { store, setStore, toggleKeyframePanel, pushToHistory, updateElement } from '../store/app-store';
-import { effectiveTime } from '../utils/animation/animation-engine';
 import { evaluateCompositionAt } from '../utils/animation/composition-evaluator';
 import type { PropertyTrack, TimedKeyframe, BezierEase } from '../types/motion-types';
 import { Play, Pause, RotateCcw, Repeat, X, KeyRound, Diamond, Trash2, Crosshair } from 'lucide-solid';
@@ -399,25 +398,7 @@ const KeyframePanel: Component = () => {
     };
 
     // ---- Transport (shares the storyTime clock) -------------------------
-    let last = 0;
-    onMount(() => { last = effectiveTime() / 1000; });
-    createEffect(() => {
-        const et = effectiveTime();          // re-run each frame
-        if (!store.showKeyframePanel) return;
-        untrack(() => {
-            const now = et / 1000;
-            const dt = Math.min(0.1, Math.max(0, now - last));
-            last = now;
-            if (!store.storyPlaying) return;
-            let nt = store.storyTime + dt;
-            if (nt >= dur()) {
-                if (store.storyLoop) nt = nt % dur();
-                else { nt = dur(); setStore('storyPlaying', false); }
-            }
-            setStore('storyTime', nt);
-        });
-    });
-
+    // The playhead is advanced by utils/animation/scene-clock.ts, not here.
     const play = () => setStore('storyPlaying', !store.storyPlaying);
     const restart = () => setStore({ storyTime: 0, storyPlaying: true } as any);
 

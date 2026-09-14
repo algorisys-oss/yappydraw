@@ -2,6 +2,45 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Five bugs from one drawing, and the one shape they shared
+
+Drawing and animating a Ganesh ji figure turned up five faults: null objects in exports,
+exports on the wrong clock, HTML export without animation, looping only with a panel open, and
+no batch API. Four of them are the same bug. **A rule lived at some call sites instead of in the
+one place every caller goes through**, so each new caller or field had to remember it, and some
+did not.
+
+- **Null objects.** Three exporters wrote `!el.isNullObject && isExportable(el)`; the others wrote
+  `isExportable(el)`. The comment in `renderElement` said "export filters it out", which was true
+  of the three the author had in front of them. The fix is one clause in `isExportable`, and it
+  covers exporters that do not exist yet.
+- **HTML export.** `exportSceneAsHtml` kept its own copy of the document's field list. Save gained
+  `compositionTracks` and `tinyflyClips`; the copy did not. Build a document in one function
+  (`buildSlideDocument`) and call it everywhere, rather than keeping a list that has to be updated.
+- **Looping.** The play controller was component state in two panels. Anything that needs to keep
+  running while the UI that shows it is closed belongs in a module the always-mounted surface
+  starts (`scene-clock.ts`, started by the canvas), not in the panel.
+- **Export clock.** v0.8.252 moved keyframes and tinyfly to export time and left spin, figures and
+  flow on the app clock, each reading its time from a different source (`tMs`, `storyTime`,
+  `window.yappyGlobalTime`). `withExportTime` puts one override in front of all of them. The test
+  that proves it starts two renderers at clock 5000 and 123456 and requires identical frames, so
+  it catches any clock source added later without having to list them.
+
+**A committed build artifact can go stale silently.** `player-assets.ts` is the generated player
+inlined into every HTML export, and its build had been failing since the PWA plugin arrived. Nothing
+ran that build, so nothing failed: the file stayed a July snapshot while the editor moved on, and the
+HTML player simply lacked every feature since. There is now `npm run build:player`, and the HTML
+export tests open the exported file in a browser. That is the only check that sees what a user gets.
+
+**GIF delays are centiseconds.** gifenc takes milliseconds and writes `Math.round(ms / 10)`. At
+24 fps, frames sampled 41.7 ms apart play 40 ms apart, 4% fast. Choose the delay first
+(`gifFrameDelayMs`) and sample the scene at exactly that step.
+
+**A/B in a worktree, not with `git stash`.** Stashing under a running Vite dev server hot-reloads
+modules mid-test, and the "clean" run failed for a different reason (no canvas). A `git worktree` of
+`dev` on port 5174 gave a real baseline in one step. It showed the two path-walking failures in
+`stick-animation-speed.spec.ts` were already present.
+
 ## Publish to a second registry from the first registry's artifact, not a second build
 
 The SDK was already on jsDelivr, served from `cdn/` at the OSS tag. For npm, the obvious move was

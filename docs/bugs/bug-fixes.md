@@ -1,5 +1,101 @@
 # Bug Fixes Log
 
+## 2026-09-14
+
+Five faults found while drawing and animating a Ganesh ji figure, all confirmed in the code
+before fixing.
+
+### 363. Null objects appeared in most exports
+
+**Symptom:** the crosshair gizmo of a null object (an animation controller) showed up in paged
+PNG/JPG, social-platform exports, page thumbnails, slices, artboards, PDF, PPTX, page GIF and
+video, and copy as image. It also widened the copy-as-image crop.
+
+**Cause:** `isExportable` checked visibility only. SVG and the infinite-canvas PNG/JPG filtered
+`isNullObject` themselves, and every other exporter relied on the gate alone. `renderElement`
+draws the gizmo for any null object, and its comment said "export filters it out". Copy as image
+applied no filter at all, so hidden elements leaked there too. The page frame renderer (GIF,
+video) and slide thumbnails never checked `visible` either.
+
+**Fix:** `isExportable` excludes null objects. Copy as image, `makePageFrameRenderer` and
+`captureThumbnail` now use it. Test: `tests/export-null-object.spec.ts`.
+
+### 364. Export HTML left out keyframes and tinyfly clips
+
+**Symptom:** an exported HTML page showed the shapes but none of their keyframe or tinyfly
+motion.
+
+**Cause:** `exportSceneAsHtml` built the document from its own field list, which predated
+`compositionTracks` and `tinyflyClips`, while Save used `buildSlideDocument`. Separately, the
+player bundle (`player-assets.ts`) had not been rebuilt since July: `vite.player.config.ts` failed
+on `virtual:pwa-register`, and nothing noticed because the bundle is a committed file. The
+player also had no way to load tinyfly, since a single HTML file has no lazy chunk to fetch.
+
+**Fix:** the HTML export uses `buildSlideDocument`. The player config stubs the PWA module and
+defines MathJax's `PACKAGE_VERSION` (as the SDK config does), and `player.tsx` bundles and
+installs the tinyfly engine. `npm run build:player` rebuilds it. Test:
+`tests/html-export-animation.spec.ts`.
+
+### 365. Scenes only played and looped with a timeline panel open
+
+**Symptom:** `Yappy.playScene()` did nothing with both the Scene Timeline and Keyframes panels
+closed. Presentations and exported HTML played keyframes once and froze on the last frame.
+
+**Cause:** the play controller was an effect inside each panel component, and only the Scene
+Timeline computed `storyDuration`. With no panel, the canvas drew keyframes at the raw app clock,
+which never wraps.
+
+**Fix:** `utils/animation/scene-clock.ts` holds the duration tracker and one play controller,
+started by the canvas, which the editor, the HTML player and the embed viewer all mount. With no
+panel open and nothing playing, `sceneTime()` free-runs and wraps at the scene length when
+looping. Figures that loop a single clip keep the raw clock, because wrapping them would jump
+once per scene. The panels' duplicate controllers are gone. Test: `tests/scene-loop.spec.ts`.
+
+### 366. Page GIF and video exports still used the running clock for some motion
+
+**Symptom:** after v0.8.252's fix, which moved keyframes and tinyfly to export time, other motion
+still did not start at t = 0:
+- spin and orbit started part-way round;
+- flow dashes ran on `performance.now()`;
+- stick figures stayed frozen at the playhead for the whole export while the Scene Timeline was
+  open.
+
+GIF frames were also sampled at `1000 / fps` but played at whole centiseconds, so a 24 fps GIF ran
+about 4% fast.
+
+**Cause:**
+- `calculateAllAnimatedStates` was given the absolute clock, on purpose.
+- The stick-rig renderer read `storyTime` whenever the Scene Timeline was open.
+- The path and connector flow renderers read `window.yappyGlobalTime`, which only the live canvas
+  sets.
+
+**Fix:**
+- `makePageFrameRenderer` passes export-relative time to spin/orbit.
+- Each element draw runs inside `withExportTime(sceneT)`, which the stick-rig, path and connector
+  renderers read first.
+- `gifFrameDelayMs(fps)` rounds to the delay the GIF stores, and each frame is drawn at its own
+  slot rather than whenever requestAnimationFrame fired.
+
+Tests: the new cases in `tests/export-animation-start.spec.ts`.
+
+**Known limit:** click and build animations (`element-animator`) change the store on their own
+loop and are not driven by the export clock.
+
+### 367. No batch API: a script's shapes were one undo step each
+
+**Symptom:** a script drawing a figure from a hundred shapes needed a hundred undo presses, and
+went past the 50-step history, so the figure could not be undone and earlier states were lost.
+
+**Cause:** `addElement` snapshots history before every element. `withoutHistory` existed for
+exactly this, but it was internal and not part of `window.Yappy`.
+
+**Fix:**
+- `Yappy.batch(fn)` takes one snapshot, then runs `fn` inside `withoutHistory` and Solid's
+  `batch`. Batches nest, history is re-enabled if `fn` throws, and a Promise return is warned about.
+- `Yappy.createElements(specs)` is built on it.
+
+Test: `tests/api-batch.spec.ts`.
+
 ## 2026-09-12
 
 ### 362. A tab left open never discovered a new release

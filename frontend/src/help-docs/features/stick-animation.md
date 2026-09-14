@@ -153,7 +153,7 @@ Alternatively, **record the live canvas**: with an animated figure selected, cli
 Live recording captures whatever is on screen, so pan/zoom to frame your scene first. API: ` recordAnimation(seconds?)` / `stopRecording()`. On an infinite-canvas doc, Export → Video also uses live capture (there are no page bounds to frame to).
 :::
 
-Prefer a shareable webpage? **Export → HTML** writes a self-contained `.html` file that **plays the animation** when opened in any browser — the figures walk, wave and follow their paths just like on the canvas. (API: `exportHtml(name?)`.) The player is interactive: presentations advance with **→ / Space** (back with ←, Home/End jump to first/last slide) or the on-screen arrows, and an infinite-canvas export opens auto-framed to your content.
+Prefer a shareable webpage? **Export → HTML** writes a self-contained `.html` file that **plays the animation** when opened in any browser — the figures walk, wave and follow their paths just like on the canvas, and keyframes and tinyfly animations play and loop with them. (API: `exportHtml(name?)`.) The player is interactive: presentations advance with **→ / Space** (back with ←, Home/End jump to first/last slide) or the on-screen arrows, and an infinite-canvas export opens auto-framed to your content.
 
 ## Good to know
 

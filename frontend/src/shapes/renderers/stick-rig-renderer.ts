@@ -10,6 +10,7 @@ import type { RenderContext } from '../base/types';
 import type { IRenderer } from '../../rendering/IRenderer';
 import { store } from '../../store/app-store';
 import { effectiveTime } from '../../utils/animation/animation-engine';
+import { sceneTime, playheadDriven, exportClockSeconds } from '../../utils/animation/scene-clock';
 import { getClip, poseAt, WALK_STRIDE } from '../../library/stick-figures/anim/clips';
 import { elementPathSample, sampleAt } from '../../library/stick-figures/anim/path-follow';
 import { RIG_W, RIG_H, RIG_LEG_UNIT, headAttach, legPolylines, upperPolylines, lerpRigPose, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
@@ -46,8 +47,15 @@ export class StickRigRenderer extends ShapeRenderer {
     private computePose(el: any): BoxPose {
         const data = el.stickRig || { clip: 'idle' };
         const sx = el.width / RIG_W, sy = el.height / RIG_H;
-        // Scene Timeline drives a shared, scrubbable clock; otherwise free-run.
-        const t = store.showSceneTimeline ? store.storyTime : effectiveTime() / 1000;
+        // Same clock as keyframes: the playhead when a timeline is open or the scene is
+        // playing, else free-running and looped at the scene length (scene-clock.ts), so a
+        // sequenced figure repeats in step with the keyframes around it. A figure that only
+        // loops one clip keeps the raw clock: its cycle rarely divides the scene length, and
+        // wrapping it would visibly jump once per scene.
+        // During an offline export, the export frame's time wins outright.
+        const t = exportClockSeconds() ?? ((playheadDriven() || data.sequence?.length || data.path)
+            ? sceneTime(effectiveTime())
+            : effectiveTime() / 1000);
 
         let clipId: string = data.clip || 'idle';
         let facing: 1 | -1 = data.facing ?? 1;

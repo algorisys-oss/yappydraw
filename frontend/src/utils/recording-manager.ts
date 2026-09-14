@@ -6,6 +6,7 @@
 
 import { createSignal, createEffect, untrack } from "solid-js";
 import { store, setStore, isLayerVisible, updateSlideThumbnail } from "../store/app-store";
+import { isExportable } from "./export";
 import { VideoRecorder, type VideoFormat } from "./video-recorder";
 import { showToast } from "../components/toast";
 import rough from 'roughjs';
@@ -25,6 +26,7 @@ const animPassSeconds = (tl: AnimTimeline): number => {
     return (hi - lo + 1) / tl.fps;
 };
 import { effectiveTime } from "./animation/animation-engine";
+import { withExportTime } from "./animation/scene-clock";
 import { worldToScreen } from "./viewport-transforms";
 import { isPagedDocType } from "../types/slide-types";
 
@@ -132,7 +134,7 @@ export async function startCanvasGif(opts: { fps?: number; name?: string; maxSec
 
     const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
     const gif = GIFEncoder();
-    const delay = Math.round(1000 / fps);
+    const delay = gifFrameDelayMs(fps);
     const t0 = performance.now();
     let nextT = 0;
     let first = true;
@@ -260,13 +262,15 @@ export function makePageFrameRenderer(maxSide: number, forGif = false) {
         renderSlideBackground(ctx, rc, slide, spatialX, spatialY, sW, sH, store.theme);
 
         if (baseT === null) baseT = tMs;
-        const anim = calculateAllAnimatedStates(store.elements, tMs, true);
+        // Everything clock-driven is export time: the export starts at t = 0. `tMs` is the
+        // app's animation clock, which keeps whatever the session has accumulated, so using it
+        // directly started the export part-way through the scene (or on its last frame).
+        // Orbit/spin read `exportMs`; keyframes and tinyfly clips read `sceneT`; stick figures
+        // and flow dashes read it through `withExportTime` below.
+        const exportMs = tMs - baseT;
+        const sceneT = exportMs / 1000;
+        const anim = calculateAllAnimatedStates(store.elements, exportMs, true);
         if (store.compositionTracks.length > 0 || store.tinyflyClips.length > 0 || store.elements.some(e => e.transformParentId)) {
-            // Keyframes and tinyfly clips are scene time: the export starts at t = 0. `tMs`
-            // is the app's animation clock, which keeps whatever any earlier animation
-            // added to it, so using it directly started the export part-way through the
-            // scene (or on its last frame). Orbit/spin above stay on the running clock.
-            const sceneT = (tMs - baseT) / 1000;
             const clipOverrides = store.tinyflyClips.length > 0 ? evaluateTinyflyClips(sceneT, store.tinyflyClips, store.elements) : undefined;
             applyCompositionOverrides(anim, store.elements, sceneT, store.compositionTracks, clipOverrides);
         }
@@ -279,7 +283,7 @@ export function makePageFrameRenderer(maxSide: number, forGif = false) {
             const tl = store.animTimeline;
             // Export covers the marked in/out range (the whole ruler when none).
             const [lo, hi] = playbackRange(tl);
-            const f = lo + (Math.floor(((tMs - baseT) / 1000) * tl.fps) % (hi - lo + 1));
+            const f = lo + (Math.floor(sceneT * tl.fps) % (hi - lo + 1));
             if (store.animCurrentFrame !== f) setStore('animCurrentFrame', f);
             const ev = evaluateTimelineAt(f, tl, store.elements);
             animVisible = ev.visible;
@@ -302,7 +306,8 @@ export function makePageFrameRenderer(maxSide: number, forGif = false) {
         sortedLayers.forEach(layer => {
             if (!isLayerVisible(layer.id)) return;
             const layerOpacity = layer?.opacity ?? 1;
-            store.elements.filter(el => el.layerId === layer.id).forEach(el => {
+            // isExportable: hidden elements and null objects (authoring gizmos) never reach a frame.
+            store.elements.filter(el => el.layerId === layer.id && isExportable(el)).forEach(el => {
                 if (animVisible && !animVisible.has(el.id)) return;
                 let renderEl = el;
                 if (layer.isMaster) {
@@ -313,7 +318,7 @@ export function makePageFrameRenderer(maxSide: number, forGif = false) {
                 if (ov) renderEl = { ...renderEl, ...ov };
                 if (renderEl.x + renderEl.width < spatialX - margin || renderEl.x > spatialX + sW + margin ||
                     renderEl.y + renderEl.height < spatialY - margin || renderEl.y > spatialY + sH + margin) return;
-                renderElement(rc, ctx, renderEl, isDark, layerOpacity);
+                withExportTime(sceneT, () => renderElement(rc, ctx, renderEl, isDark, layerOpacity));
             });
         });
         ctx.restore();
@@ -395,6 +400,13 @@ export async function exportPageVideo(opts: { seconds?: number; format?: VideoFo
  * 256 colours, and downloads an infinitely-looping GIF. Long side capped at
  * 960 — GIFs get enormous beyond that.
  */
+/**
+ * The per-frame delay a GIF at `fps` actually plays at. GIF stores delays in whole
+ * centiseconds, so 24 fps (41.7 ms) is written as 40 ms: frames sampled at 1000 / fps would
+ * play back faster than they were captured, and the animation drifts ahead of real time.
+ */
+export const gifFrameDelayMs = (fps: number): number => Math.max(2, Math.round(100 / fps)) * 10;
+
 export async function exportPageGif(opts: { seconds?: number; fps?: number; name?: string } = {}): Promise<boolean> {
     // Animation docs default to one full timeline pass at the timeline's rate.
     const tl = store.docType === 'animation' ? store.animTimeline : null;
@@ -410,7 +422,7 @@ export async function exportPageGif(opts: { seconds?: number; fps?: number; name
     showToast(`Exporting ${seconds}s GIF of this ${store.docType === 'design' ? 'page' : 'slide'}…`, 'info');
 
     const gif = GIFEncoder();
-    const delay = Math.round(1000 / fps);
+    const delay = gifFrameDelayMs(fps);
     const t0 = performance.now();
     const tAnim0 = effectiveTime();
     let nextT = 0;
@@ -420,7 +432,10 @@ export async function exportPageGif(opts: { seconds?: number; fps?: number; name
         const frame = () => {
             const elapsed = performance.now() - t0;
             if (elapsed >= nextT) {
-                fr.draw(tAnim0 + elapsed);
+                // Drawn at the frame's own slot, not at whenever requestAnimationFrame fired:
+                // each frame shows exactly `delay` ms more of the scene, which is what the
+                // viewer plays it for.
+                fr.draw(tAnim0 + nextT);
                 const { data } = fr.ctx.getImageData(0, 0, fr.off.width, fr.off.height);
                 const palette = quantize(data, 256);
                 const index = applyPalette(data, palette);
@@ -516,7 +531,8 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
 
         sortedLayers.forEach(layer => {
             if (!isLayerVisible(layer.id)) return;
-            const layerElements = store.elements.filter(el => el.layerId === layer.id);
+            // Same gate as the exporters: the thumbnail previews the page as it will export.
+            const layerElements = store.elements.filter(el => el.layerId === layer.id && isExportable(el));
             layerElements.forEach(el => {
                 let renderEl = el;
                 // Project master layer elements to the active slide's spatial position

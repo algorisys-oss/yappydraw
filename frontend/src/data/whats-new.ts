@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.255', date: '2026-09-14', items: [
+        'Export HTML now plays your keyframe and tinyfly animations, and loops them, instead of showing a still of the first frame.',
+        'Scenes loop without the Scene Timeline open: in presentations, in exported HTML, and with Yappy.playScene().',
+        'Page GIF and video exports start every animation from the beginning, including animated figures, spinning shapes and flow dashes, and a GIF plays at the speed you see on the canvas.',
+        'Null objects (the crosshair controllers you parent animation to) no longer show up in PNG, JPG, PDF, PPTX, GIF, video, copy as image or page thumbnails.',
+        'Developers: Yappy.batch(fn) and Yappy.createElements([...]) make a script\u2019s hundred shapes one undo step instead of a hundred.',
+    ] },
     { version: '0.8.254', date: '2026-09-14', items: [
         'Developers: the drawing API\u2019s npm package is @algorisys/yappydraw, next to @algorisys/tinyfly. Install it with npm install @algorisys/yappydraw.',
         'Fixed: Help and the last release notes named the package \u201cyappydraw\u201d, which does not exist on npm.',

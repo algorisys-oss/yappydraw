@@ -88,9 +88,10 @@ Yappy.scene.wait(1);                                     // hold to 3s
 Yappy.scene.play(dot, { opacity: 0 }, { duration: 0.5 }); // 3s → 3.5s
 Yappy.scene.at();                                        // → 3.5
 
-Yappy.toggleSceneTimeline(true);
-Yappy.playScene(true);                                   // watch it
+Yappy.playScene(true);                                   // watch it (no panel needed)
 ```
+
+**Playback does not need a panel.** `Yappy.playScene()` plays, and loops, with the Scene Timeline and Keyframes panels both closed; open one with `Yappy.toggleSceneTimeline(true)` to see the playhead. Presentations and **Export HTML** files loop the scene at its length too, instead of stopping on the last frame.
 
 **Easing names are checked.** The default is `easeInOutCubic`. An unrecognised name (`'easeInOut'` is a common guess and is *not* a real name) falls back to linear — `scene.play` logs one console warning listing the valid names rather than quietly flattening your motion.
 
@@ -135,7 +136,7 @@ Yappy.setCompositionTracks([{ elementId: id, property: 'x', keys: [
 
 Make one element inherit another's animated motion. With an element selected, pick a **Parent** in the Keyframes panel header — it now follows the parent's animated *position, rotation and scale* (a child with no keyframes of its own still moves when its parent animates). Great for rigs: parent several parts to one controller and animate just the controller.
 
-A **null object** (the ⊕ button, or `Yappy.createNull()`) is an invisible controller — it shows as a small crosshair while editing, follows every parenting rule, and never appears in exports or presentations. Parent your layers to a null and keyframe the null to move the whole group as one.
+A **null object** (the ⊕ button, or `Yappy.createNull()`) is an invisible controller — it shows as a small crosshair while editing, follows every parenting rule, and never appears in exports (PNG, JPG, SVG, PDF, PPTX, GIF, video, copy as image, page thumbnails) or presentations. Parent your layers to a null and keyframe the null to move the whole group as one.
 
 ```
                     const ctrl = Yappy.createNull(200, 200);      // invisible controller
@@ -575,6 +576,10 @@ This is the part worth knowing before you record — the same buttons behave dif
 :::tip
 For a clean animation file, export from a **presentation or design page**. Use live capture when you want the recording to show what you're *doing* — a walkthrough, a demo, or the whole presentation played end to end.
 :::
+
+**A page export always starts at the beginning.** Keyframes, tinyfly animations, animated figures, spin/orbit and flow dashes all start from t = 0, however long the app has been open. They play through the export even while the Scene Timeline is open and paused. GIF frames are captured at the exact delay the file plays them at, so a GIF runs at the same speed as the canvas.
+
+**Known limit:** click and build animations (the **Animations** panel's entrance, emphasis and exit effects) are not driven by the export clock. A page export captures them only if they are already running while it records.
 
 ### Live screen capture
 

@@ -1,8 +1,7 @@
-import { type Component, For, Show, createMemo, createEffect, untrack, onMount, on } from 'solid-js';
+import { type Component, For, Show, createMemo, createEffect, on } from 'solid-js';
 import { store, setStore, toggleSceneTimeline } from '../store/app-store';
 import { isPagedDocType } from '../types/slide-types';
 import { tinyflyClipEnd } from '../utils/animation/tinyfly-clips';
-import { effectiveTime } from '../utils/animation/animation-engine';
 import { getClip, CLIP_LIST, getFigureSequence, setFigureSequence } from '../library/stick-figures';
 import { Play, Pause, RotateCcw, Repeat, X, Film, MonitorPlay } from 'lucide-solid';
 import './scene-timeline.css';
@@ -76,42 +75,8 @@ const SceneTimeline: Component = () => {
         window.addEventListener('pointerup', up);
     };
 
-    /**
-     * Auto scene duration = longest thing on the scene (min 4s).
-     *
-     * Both clocks feed this: animated-figure clips AND absolute-time composition
-     * keyframes. Counting only the figure clips meant an API-authored scene (which
-     * has no figures at all) was pinned to the 4s floor, so any composition longer
-     * than that was silently unplayable past 4s — the playhead just stopped.
-     */
-    createEffect(() => {
-        const clipEnd = Math.max(0, ...tracks().map(t => t.total));
-        const keyEnd = Math.max(0, ...store.compositionTracks.flatMap(t => t.keys.map(k => k.t)));
-        const tinyflyEnd = Math.max(0, ...store.tinyflyClips.map(tinyflyClipEnd));
-        const dur = Math.max(4, clipEnd, keyEnd, tinyflyEnd);
-        untrack(() => { if (Math.abs(dur - store.storyDuration) > 0.05) setStore('storyDuration', dur); });
-    });
-
-    // Play controller: advance the playhead from the clock while playing.
-    let last = 0;
-    createEffect(() => {
-        const et = effectiveTime();               // re-run each animation frame
-        if (!store.showSceneTimeline) return;
-        untrack(() => {
-            const now = et / 1000;
-            const dt = Math.min(0.1, Math.max(0, now - last));
-            last = now;
-            if (!store.storyPlaying) return;
-            let nt = store.storyTime + dt;
-            if (nt >= store.storyDuration) {
-                if (store.storyLoop) nt = nt % store.storyDuration;
-                else { nt = store.storyDuration; setStore('storyPlaying', false); }
-            }
-            setStore('storyTime', nt);
-        });
-    });
-
-    onMount(() => { last = effectiveTime() / 1000; });
+    // Scene duration and the play controller live in utils/animation/scene-clock.ts, so the
+    // playhead moves (and loops) with this panel closed too.
 
     // Restart the scene from 0 when the active slide/page changes (if enabled).
     createEffect(on(() => store.activeSlideIndex, () => {

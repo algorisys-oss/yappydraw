@@ -526,7 +526,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
         return;
     }
 
-    let elements = elementsInRenderOrder(store.elements).filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = elementsInRenderOrder(store.elements).filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -585,9 +585,13 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
  * the canvas: it buckets elements by `layerId` and never draws a bucket with no layer, so an
  * element pointing at a deleted layer is invisible there too. Exporting it would be exporting
  * something the document does not show.
+ *
+ * Null objects are authoring gizmos (a crosshair to parent animation to), so they are never
+ * exportable either. Three exporters used to filter them themselves and the rest drew the
+ * crosshair; checking here covers every exporter that goes through this gate.
  */
 export const isExportable = (el: DrawingElement): boolean =>
-    el.visible !== false && isLayerVisible(el.layerId);
+    !el.isNullObject && el.visible !== false && isLayerVisible(el.layerId);
 
 /** Largest canvas edge browsers reliably allocate; beyond this `toDataURL` returns a blank image. */
 const MAX_RASTER_EDGE = 16384;
@@ -608,7 +612,7 @@ export const rasterizeElements = async (
     const idSet = new Set(ids);
     // Layer order first, then document order — the order the CANVAS draws in, so the raster
     // stacks the same way the artwork does (see elementsInRenderOrder).
-    const elements = elementsInRenderOrder(store.elements).filter(el => idSet.has(el.id) && !el.isNullObject && !el.isClipMask && isExportable(el));
+    const elements = elementsInRenderOrder(store.elements).filter(el => idSet.has(el.id) && !el.isClipMask && isExportable(el));
     if (elements.length === 0) return null;
 
     const { minX, minY, maxX, maxY } = elementsBounds(elements);
@@ -810,7 +814,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
         return;
     }
 
-    let elements = elementsInRenderOrder(store.elements).filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = elementsInRenderOrder(store.elements).filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -850,7 +854,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
 
 export const copyCanvasAsPng = async (scale: number) => {
     await ensureExportImages();
-    const elements = elementsInRenderOrder(store.elements);
+    const elements = elementsInRenderOrder(store.elements).filter(isExportable);
     if (elements.length === 0) return;
 
     const __eb = elementsBounds(elements);
@@ -913,7 +917,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgExportOptions)
 
 /** Build the SVG markup without saving it — the SDK's path, which must never download. */
 export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOptions): string | undefined => {
-    let elements = elementsInRenderOrder(store.elements).filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = elementsInRenderOrder(store.elements).filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));

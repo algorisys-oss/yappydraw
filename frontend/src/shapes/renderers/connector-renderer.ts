@@ -7,6 +7,7 @@ import { connectorGeometry } from "../../utils/connector-geometry";
 import { resolveFontFamily } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
 import { drawTextAlongPath, getElementTextPath } from "../../utils/text-on-path";
+import { exportClockSeconds } from '../../utils/animation/scene-clock';
 
 export class ConnectorRenderer extends ShapeRenderer {
     /**
@@ -343,7 +344,9 @@ export class ConnectorRenderer extends ShapeRenderer {
         const { renderer, element: el, isDarkMode } = context;
         if (!el.flowAnimation) return;
 
-        const time = (window as any).yappyGlobalTime || performance.now();
+        // An offline export draws at its own frame time; the live canvas publishes its clock.
+        const exportS = exportClockSeconds();
+        const time = exportS !== null ? exportS * 1000 : ((window as any).yappyGlobalTime ?? performance.now());
         const speed = (el.flowSpeed ?? 2) * 50; // Normalize speed
         const direction = el.flowReverse ? -1 : 1;
         const offset = (time / 1000 * speed) * direction;

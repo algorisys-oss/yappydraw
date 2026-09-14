@@ -5,6 +5,7 @@ import { normalizePoints } from "../../utils/render-element";
 import { drawTextAlongPath } from "../../utils/text-on-path";
 import { fontShorthand } from "../../utils/font-variants";
 import type { IRenderer } from "../../rendering/IRenderer";
+import { exportClockSeconds } from '../../utils/animation/scene-clock';
 
 export class PathRenderer extends ShapeRenderer {
     /**
@@ -69,7 +70,9 @@ export class PathRenderer extends ShapeRenderer {
         const { renderer, element: el, isDarkMode } = context;
         if (!el.flowAnimation) return;
 
-        const time = (window as any).yappyGlobalTime || performance.now();
+        // An offline export draws at its own frame time; the live canvas publishes its clock.
+        const exportS = exportClockSeconds();
+        const time = exportS !== null ? exportS * 1000 : ((window as any).yappyGlobalTime ?? performance.now());
         const speed = (el.flowSpeed ?? 2) * 50;
         const direction = el.flowReverse ? -1 : 1;
         const offset = (time / 1000 * speed) * direction;

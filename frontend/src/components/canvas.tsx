@@ -3,6 +3,7 @@ import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
 import { evaluateTinyflyClips, ensureTinyflyEngine } from "../utils/animation/tinyfly-clips";
+import { sceneTime, startScenePlayback } from "../utils/animation/scene-clock";
 import { evaluateTimelineAt, evaluateCameraAt } from "../utils/animation/frame-timeline-evaluator";
 import { animVisibleIds, reconcileTimelineElements, setPeg } from "../store/anim-ops";
 import { pegAt } from "../utils/animation/frame-timeline-ops";
@@ -198,6 +199,8 @@ const Canvas: Component = () => {
 
     // Text Editing State
     const [editingId, setEditingIdRaw] = createSignal<string | null>(null);
+    // The scene playhead's driver: runs with every timeline panel closed (scene-clock.ts).
+    startScenePlayback();
     // tinyfly's engine is a lazy chunk: load it the first time the document has clips.
     const [tinyflyReady, setTinyflyReady] = createSignal(false);
     createEffect(() => {
@@ -449,8 +452,9 @@ const Canvas: Component = () => {
         // export all consume the same override map. (Transform parenting is composed
         // inside applyCompositionOverrides when any element has a transformParentId.)
         if (store.compositionTracks.length > 0 || store.tinyflyClips.length > 0 || store.elements.some(e => e.transformParentId)) {
-            const scrubbing = store.showSceneTimeline || store.showKeyframePanel;
-            const compTime = scrubbing ? store.storyTime : currentTime / 1000;
+            // Playhead when a timeline is open or the scene is playing; else the free-running
+            // clock, wrapped at the scene length when looping (scene-clock.ts).
+            const compTime = sceneTime(currentTime);
             // tinyfly clips share the playhead and join the keyframe overrides before
             // parenting resolves. Empty until the engine chunk has loaded (see below).
             const clipOverrides = store.tinyflyClips.length > 0 ? evaluateTinyflyClips(compTime, store.tinyflyClips, elementsToAnimate) : undefined;
