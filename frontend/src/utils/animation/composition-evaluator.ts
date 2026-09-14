@@ -243,6 +243,20 @@ const ownDelta = (rest: Pose, anim: Pose): Mat => {
 };
 
 /**
+ * Merge overrides from another animation source (tinyfly clips) into the keyframe
+ * overrides, key by key, so they take part in parenting like keyframes do. The extra
+ * source wins where both set a property. Mutates and returns `own`.
+ */
+export function withExtraOverrides(
+    own: Map<string, Partial<DrawingElementState>>,
+    extra?: Map<string, Partial<DrawingElementState>>
+): Map<string, Partial<DrawingElementState>> {
+    if (!extra) return own;
+    for (const [id, props] of extra) own.set(id, { ...(own.get(id) ?? {}), ...props });
+    return own;
+}
+
+/**
  * Resolve every element's final transform after composing its `transformParentId`
  * chain. Pure. Returns a map of elementId → overrides (composed x/y/width/height/
  * angle for movers & followers, plus any non-transform own props like opacity/color).
@@ -250,9 +264,10 @@ const ownDelta = (rest: Pose, anim: Pose): Mat => {
 export function resolveParentedPoses(
     elements: DrawingElement[],
     t: number,
-    tracks: PropertyTrack[]
+    tracks: PropertyTrack[],
+    extra?: Map<string, Partial<DrawingElementState>>
 ): Map<string, Partial<DrawingElementState>> {
-    const own = evaluateCompositionAt(t, tracks);
+    const own = withExtraOverrides(evaluateCompositionAt(t, tracks), extra);
     const elMap = new Map(elements.map(e => [e.id, e]));
 
     // Memoised world delta per element (rest → final), with cycle protection.
@@ -344,14 +359,19 @@ export function applyCompositionOverrides(
     states: Map<string, any>,
     elements: DrawingElement[],
     t: number,
-    tracks: PropertyTrack[] | undefined
+    tracks: PropertyTrack[] | undefined,
+    extra?: Map<string, Partial<DrawingElementState>>
 ): Map<string, any> {
-    if (!tracks || tracks.length === 0) return states;
+    const hasExtra = !!extra && extra.size > 0;
+    const parented = elements.some(e => e.transformParentId);
+    if ((!tracks || tracks.length === 0) && !hasExtra && !parented) return states;
 
     // Parenting present → resolve composed poses; else the flat per-element path.
-    const overrides = elements.some(e => e.transformParentId)
-        ? resolveParentedPoses(elements, t, tracks)
-        : evaluateCompositionAt(t, tracks);
+    // `extra` (tinyfly clips) joins the keyframe overrides BEFORE parenting resolves,
+    // so a child follows a clip-animated parent exactly as it follows a keyframed one.
+    const overrides = parented
+        ? resolveParentedPoses(elements, t, tracks ?? [], extra)
+        : withExtraOverrides(evaluateCompositionAt(t, tracks ?? []), extra);
     if (overrides.size === 0) return states;
 
     // Dotted-path (nested effect) overrides → complete nested objects.

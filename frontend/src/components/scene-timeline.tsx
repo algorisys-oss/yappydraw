@@ -1,6 +1,7 @@
 import { type Component, For, Show, createMemo, createEffect, untrack, onMount, on } from 'solid-js';
 import { store, setStore, toggleSceneTimeline } from '../store/app-store';
 import { isPagedDocType } from '../types/slide-types';
+import { tinyflyClipEnd } from '../utils/animation/tinyfly-clips';
 import { effectiveTime } from '../utils/animation/animation-engine';
 import { getClip, CLIP_LIST, getFigureSequence, setFigureSequence } from '../library/stick-figures';
 import { Play, Pause, RotateCcw, Repeat, X, Film, MonitorPlay } from 'lucide-solid';
@@ -86,7 +87,8 @@ const SceneTimeline: Component = () => {
     createEffect(() => {
         const clipEnd = Math.max(0, ...tracks().map(t => t.total));
         const keyEnd = Math.max(0, ...store.compositionTracks.flatMap(t => t.keys.map(k => k.t)));
-        const dur = Math.max(4, clipEnd, keyEnd);
+        const tinyflyEnd = Math.max(0, ...store.tinyflyClips.map(tinyflyClipEnd));
+        const dur = Math.max(4, clipEnd, keyEnd, tinyflyEnd);
         untrack(() => { if (Math.abs(dur - store.storyDuration) > 0.05) setStore('storyDuration', dur); });
     });
 
@@ -162,7 +164,7 @@ const SceneTimeline: Component = () => {
                 </div>
 
                 <div class="st-body">
-                    <Show when={tracks().length > 0} fallback={
+                    <Show when={tracks().length > 0 || store.tinyflyClips.length > 0 || store.compositionTracks.length > 0} fallback={
                         <div class="st-empty">Add animated figures (Stick Figures → Animated) — they'll appear here as tracks you can play and scrub together.</div>
                     }>
                         <div class="st-tracks">
@@ -187,6 +189,27 @@ const SceneTimeline: Component = () => {
                                         </div>
                                     </div>
                                 )}
+                            </For>
+                            {/* tinyfly clips: one read-only row each, spanning where the clip plays.
+                                An endless loop runs to the end of the scene. Click the name to
+                                select the shapes it drives. */}
+                            <For each={store.tinyflyClips}>
+                                {(clip) => {
+                                    const end = () => clip.definition?.config?.loop === -1 ? dur() : tinyflyClipEnd(clip);
+                                    const ids = () => Object.values(clip.bindings ?? {});
+                                    return (
+                                        <div class="st-track st-tinyfly" classList={{ muted: clip.enabled === false }}>
+                                            <button class={`st-label ${ids().length && ids().every(id => store.selection.includes(id)) ? 'sel' : ''}`}
+                                                title={clip.name} onClick={() => setStore('selection', ids())}>{clip.name}</button>
+                                            <div class="st-row">
+                                                <div class="st-block" title={`${clip.name} · ${clip.start.toFixed(1)}–${end().toFixed(1)}s`}
+                                                    style={{ left: pct(clip.start), width: pct(Math.max(0.1, end() - clip.start)) }}>
+                                                    <span>{clip.name}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }}
                             </For>
                         </div>
                         {/* Ruler + playhead overlaid on the track area */}

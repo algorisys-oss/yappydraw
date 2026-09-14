@@ -976,6 +976,7 @@ export const fr: Dictionary = {
         shapeBuilder: 'Concepteur de forme',
         pathfinderStrip: 'Barre Pathfinder',
         keyframes: 'Images clés',
+        importTinyfly: 'Importer une animation tinyfly…',
         sceneTimeline: 'Scénario de la scène',
         addAdjustmentLayer: 'Ajouter un calque de réglage',
         toolbars: 'Barres d’outils',
@@ -1114,6 +1115,13 @@ export const fr: Dictionary = {
 
         /** Shared by all three sections. */
         remove: 'Supprimer',
+    },
+    tinyfly: {
+        imported: 'Animation tinyfly ajoutée : {{ count }} cible(s) associée(s) à des formes.',
+        unbound: 'Non associées : {{ names }}. Nommez des formes d’après ces cibles, ou sélectionnez des formes dans l’ordre avant d’importer.',
+        unsupported: 'Propriétés ignorées : {{ names }}.',
+        nothingBound: 'Aucune cible de cette animation ({{ names }}) ne correspond à une forme. Sélectionnez dans l’ordre les formes à animer, ou nommez-les d’après les cibles, puis importez à nouveau.',
+        failed: 'Impossible d’importer l’animation tinyfly : {{ message }}',
     },
     socialExport: {
         heading: 'Prêt pour les réseaux sociaux',

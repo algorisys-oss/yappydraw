@@ -189,6 +189,7 @@ export function buildCurrentDocument(): SlideDocument {
         artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
         dimensionAnnotations: store.dimensionAnnotations?.length ? JSON.parse(JSON.stringify(store.dimensionAnnotations)) : undefined,
         compositionTracks: store.compositionTracks?.length ? JSON.parse(JSON.stringify(store.compositionTracks)) : undefined,
+        tinyflyClips: store.tinyflyClips?.length ? JSON.parse(JSON.stringify(store.tinyflyClips)) : undefined,
         animTimeline: store.animTimeline ? JSON.parse(JSON.stringify(store.animTimeline)) : undefined,
         animScenes: store.animTimeline && Object.keys(store.animScenes).length
             ? JSON.parse(JSON.stringify({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline }))

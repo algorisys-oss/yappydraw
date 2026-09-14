@@ -169,3 +169,22 @@ export interface Composition {
     fps: number;        // frames per second (for frame-exact export + snapping)
     tracks: PropertyTrack[];
 }
+
+/**
+ * A tinyfly animation attached to a document: tinyfly's own JSON timeline, stored
+ * verbatim, plus which Yappy elements its target names drive. Evaluated live by the
+ * vendored tinyfly engine (utils/animation/tinyfly-clips.ts), so springs, staggers and
+ * motion paths stay what they are rather than being flattened into keyframes.
+ */
+export interface TinyflyClip {
+    id: string;
+    name: string;
+    /** A tinyfly TimelineDefinition (`{ id, config, tracks }`), times in ms. */
+    definition: import('../vendor/tinyfly/tinyfly-engine').TimelineDefinition;
+    /** tinyfly target name → Yappy element id. */
+    bindings: Record<string, string>;
+    /** Where the clip starts on the Yappy playhead, in seconds. */
+    start: number;
+    /** false mutes the clip without removing it. */
+    enabled?: boolean;
+}

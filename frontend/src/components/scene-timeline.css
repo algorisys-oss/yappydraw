@@ -52,6 +52,8 @@
 }
 .st-block span { text-overflow: ellipsis; overflow: hidden; pointer-events: none; }
 .st-block.editable { cursor: grab; }
+.st-tinyfly .st-block { background: var(--accent-color, #6366f1); }
+.st-tinyfly.muted { opacity: 0.45; }
 .st-block.editable:active { cursor: grabbing; }
 .st-resize {
     position: absolute; top: 0; right: 0; width: 8px; height: 100%;

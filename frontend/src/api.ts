@@ -79,7 +79,7 @@ import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
 import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
-import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
+import type { PropertyTrack, TimedKeyframe, TinyflyClip } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
 import { SceneScript, type PlayTargets, type PlayOptions, type PlaySpec } from "./utils/animation/scene-script";
 import { renderTex, type TexPart } from "./utils/tex";
@@ -91,7 +91,9 @@ import {
     logTickValues, formatTick,
     type AxesSpec, type AxesOptions, type PlotFn, type VectorFn, type VectorFieldOptions,
 } from "./utils/plot";
-import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
+import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides, withExtraOverrides } from "./utils/animation/composition-evaluator";
+import { evaluateTinyflyClips, ensureTinyflyEngine, resolveClipBindings, unsupportedClipProperties, clipDurationMs, bakeTinyflyClip } from "./utils/animation/tinyfly-clips";
+import type { TimelineDefinition } from "./vendor/tinyfly/tinyfly-engine";
 import { evaluateTimelineAt } from "./utils/animation/frame-timeline-evaluator";
 import { playbackRange, pegAt } from "./utils/animation/frame-timeline-ops";
 import * as animOps from "./store/anim-ops";
@@ -3438,11 +3440,120 @@ export const YappyAPI = {
      *  (for inspection/testing). Reflects transform parenting when present — i.e. the same
      *  composed result the canvas renders. */
     evaluateComposition(t: number) {
+        // tinyfly clips join exactly as they do on the canvas (before parenting).
+        const clips = store.tinyflyClips.length ? evaluateTinyflyClips(t, store.tinyflyClips, store.elements) : undefined;
         const overrides = store.elements.some(e => e.transformParentId)
-            ? resolveParentedPoses(store.elements, t, store.compositionTracks)
-            : evaluateCompositionAt(t, store.compositionTracks);
+            ? resolveParentedPoses(store.elements, t, store.compositionTracks, clips)
+            : withExtraOverrides(evaluateCompositionAt(t, store.compositionTracks), clips);
         resolveNestedOverrides(overrides, new Map(store.elements.map(e => [e.id, e])));
         return overrides;
+    },
+
+    // --- tinyfly clips (tinyfly animations inside the document) ----------------
+    /**
+     * Attach tinyfly animations (https://github.com/algorisys-oss/tinyfly) to shapes. A
+     * clip is tinyfly's own timeline JSON plus which elements its targets drive; it plays
+     * on the same playhead as keyframes (Scene Timeline), follows transform parenting,
+     * saves with the document and exports to video/GIF. Values keep tinyfly's meaning:
+     * `x`/`y` offset the shape, `rotate` adds degrees, `scale` scales about the centre,
+     * `opacity` is 0–1. Supported: x, y, rotate, scale, scaleX, scaleY, opacity, fill,
+     * stroke, strokeWidth, width, height, blur, text, and motion paths; springs and
+     * staggers work. Other properties are reported and ignored.
+     */
+    tinyfly: {
+        /** Resolves once the tinyfly engine has loaded (it is fetched on first use). */
+        async ready(): Promise<void> { await ensureTinyflyEngine(); },
+
+        /**
+         * Add a clip. `definition` is a tinyfly TimelineDefinition (object or JSON string),
+         * e.g. from the tinyfly editor's Export JSON or `timeline.toDefinition()`.
+         * Targets bind by `bind` (target → element id), else to an element with that id,
+         * else to an element with that name, else to the selected elements in order.
+         * Returns the clip id plus what bound, what did not, and ignored properties.
+         * With `requireMatch`, a definition whose targets match no shape is not added (id '').
+         */
+        async add(definition: TimelineDefinition | string, opts: { bind?: Record<string, string>; start?: number; name?: string; requireMatch?: boolean } = {}) {
+            let def: any = definition;
+            if (typeof def === 'string') {
+                try { def = JSON.parse(def); } catch { throw new Error('tinyfly: that is not valid JSON'); }
+            }
+            // An Animation Document also has a tracks array, so test for its elements first:
+            // its tracks point at elements Yappy does not have.
+            if (def && typeof def === 'object' && Array.isArray(def.elements)) {
+                throw new Error('tinyfly: this is an Animation Document. Export the timeline JSON from the tinyfly editor instead.');
+            }
+            if (!def || typeof def !== 'object' || !Array.isArray(def.tracks)) {
+                throw new Error('tinyfly: expected a timeline definition with a "tracks" array');
+            }
+            await ensureTinyflyEngine();
+            const { bindings, unbound } = resolveClipBindings(def, store.elements, [...store.selection], opts.bind);
+            // requireMatch: when no target found a shape, add nothing (no clip, no undo step).
+            if (opts.requireMatch && Object.keys(bindings).length === 0) {
+                return { id: '', bound: 0, unbound, unsupported: unsupportedClipProperties(def), duration: clipDurationMs(def) / 1000 };
+            }
+            const taken = new Set(store.tinyflyClips.map(c => c.id));
+            let n = store.tinyflyClips.length + 1;
+            while (taken.has(`tfly-${n}`)) n++;
+            const clip: TinyflyClip = {
+                id: `tfly-${n}`,
+                name: opts.name || def.name || def.id || `tinyfly ${n}`,
+                definition: JSON.parse(JSON.stringify(def)),
+                bindings,
+                start: Math.max(0, opts.start ?? 0),
+            };
+            pushToHistory();
+            setStore('tinyflyClips', clips => [...clips, clip]);
+            return {
+                id: clip.id,
+                bound: Object.keys(bindings).length,
+                unbound,
+                unsupported: unsupportedClipProperties(def),
+                duration: clipDurationMs(def) / 1000,
+            };
+        },
+
+        /** Every clip in the document. */
+        list(): TinyflyClip[] { return JSON.parse(JSON.stringify(store.tinyflyClips)); },
+
+        /** Change a clip's name, start (seconds), enabled flag, bindings or definition. */
+        update(id: string, patch: Partial<Pick<TinyflyClip, 'name' | 'start' | 'enabled' | 'bindings' | 'definition'>>): boolean {
+            if (!store.tinyflyClips.some(c => c.id === id)) return false;
+            pushToHistory();
+            const clean = JSON.parse(JSON.stringify(patch));
+            setStore('tinyflyClips', clips => clips.map(c => c.id === id ? { ...c, ...clean } : c));
+            return true;
+        },
+
+        /** Remove a clip. */
+        remove(id: string): boolean {
+            if (!store.tinyflyClips.some(c => c.id === id)) return false;
+            pushToHistory();
+            setStore('tinyflyClips', clips => clips.filter(c => c.id !== id));
+            return true;
+        },
+
+        /** A clip's tinyfly JSON, to take back into tinyfly. */
+        toJSON(id: string): TimelineDefinition | null {
+            const c = store.tinyflyClips.find(x => x.id === id);
+            return c ? JSON.parse(JSON.stringify(c.definition)) : null;
+        },
+
+        /**
+         * Replace a clip with ordinary keyframe tracks (sampled at `fps`), so it can be
+         * edited in the Keyframes panel. Tracks for the same element and property are
+         * replaced. An endless loop bakes one cycle. One undo step.
+         */
+        async bake(id: string, fps = 30): Promise<{ tracks: number } | null> {
+            const c = store.tinyflyClips.find(x => x.id === id);
+            if (!c) return null;
+            await ensureTinyflyEngine();
+            const baked = bakeTinyflyClip(JSON.parse(JSON.stringify(c)), store.elements, fps);
+            const replaced = new Set(baked.map(t => `${t.elementId} ${t.property}`));
+            pushToHistory();
+            setStore('compositionTracks', tracks => [...tracks.filter(t => !replaced.has(`${t.elementId} ${t.property}`)), ...baked]);
+            setStore('tinyflyClips', clips => clips.filter(x => x.id !== id));
+            return { tracks: baked.length };
+        },
     },
 
     // --- Scene script (manim-style sequencing over the composition engine) ------

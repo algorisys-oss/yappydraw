@@ -7,7 +7,7 @@
  *     await fontsReady()                                // before creating any text
  *     const sun = Yappy.createCircle(40, 40, 120, 120, { backgroundColor: '#ffd166', fillStyle: 'hachure' })
  *     mount('#stage')                                   // inline SVG, each shape a <g data-yappy-id>
- *     tinyfly.live.to(`[data-yappy-id="${sun}"]`, { rotate: 360, duration: 4, repeat: -1 })
+ *     tinyfly.to(`[data-yappy-id="${sun}"]`, { rotate: 360, duration: 4, repeat: -1 })
  *
  * `Yappy` is the same object the editor exposes as `window.Yappy`, so every `create*`,
  * `importDSL`, `loadDocument` call documented in the in-app Help works unchanged. What

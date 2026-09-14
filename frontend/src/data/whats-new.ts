@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.252', date: '2026-09-14', items: [
+        'Bring tinyfly animations into your designs. Export a timeline from the tinyfly editor, choose Menu \u2192 File \u2192 Import tinyfly animation\u2026, and it plays on your shapes \u2014 bounces, springs and motion paths included.',
+        'Yappy matches the animation to your shapes by name, or to the shapes you selected, and tells you if anything did not match. Scrub it in the Scene Timeline and it comes along in MP4, WebM and GIF exports.',
+        'Fixed: a video or GIF export could start in the middle of your animation, or show only its last frame. Exports now always start from the beginning.',
+        'Fixed: the Scene Timeline now has a playhead for scenes animated with keyframes alone.',
+    ] },
     { version: '0.8.251', date: '2026-09-14', items: [
         'The Scene Timeline is now in the menu: Menu \u2192 Panels \u2192 Scene Timeline. Open it to play, loop and scrub a whole animated scene \u2014 before, it only opened from the Stick Figure panel.',
         'Opening the Scene Timeline closes the Keyframes panel, and the other way round, so you always know which one is driving playback.',

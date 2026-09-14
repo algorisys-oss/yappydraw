@@ -10,7 +10,7 @@ import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/s
 import { isPagedDocType } from '../types/slide-types';
 import { idbDelete } from '../storage/idb-kv';
 import { setActiveDrawingId } from '../storage/active-drawing';
-import type { ElementAnimation, DisplayState, PropertyTrack, BezierEase } from "../types/motion-types";
+import type { ElementAnimation, DisplayState, PropertyTrack, BezierEase, TinyflyClip } from "../types/motion-types";
 import type { AnimTimeline, OnionSettings } from "../types/anim-types";
 import { createDefaultAnimTimeline } from "../types/anim-types";
 import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator";
@@ -320,6 +320,11 @@ interface AppState {
      * override map. Transient/authoring state for now — see `docs/after-effects-plan.md`.
      */
     compositionTracks: PropertyTrack[];
+    /**
+     * tinyfly animations attached to this document (utils/animation/tinyfly-clips.ts).
+     * Evaluated at the same playhead as `compositionTracks` and merged before parenting.
+     */
+    tinyflyClips: TinyflyClip[];
     /**
      * Persistent dimension annotations (precision-measurement plan, Phase 5). Each
      * attaches to an element and draws an auto-updating CAD-style dimension line.
@@ -726,6 +731,7 @@ const initialState: AppState = {
     storyDuration: 6,
     storySyncSlides: false,
     compositionTracks: [],
+    tinyflyClips: [],
     dimensionAnnotations: [],
     showRecolorPanel: false, // dead flag — Recolor panel state now lives in the persisted dock layout (use isPanelOpen('recolor'))
     showVectorToolsPanel: false, // dead flag — Vector Tools panel state now lives in the persisted dock layout
@@ -910,6 +916,7 @@ interface HistorySnapshot {
     canvasBackgroundColor: string;
     docType: DocType;
     compositionTracks: PropertyTrack[];
+    tinyflyClips: TinyflyClip[];
     dimensionAnnotations: DimensionAnnotation[];
     animTimeline: AnimTimeline | null;
     animScenes: Record<string, AnimTimeline>;
@@ -961,6 +968,8 @@ const captureSnapshot = (): HistorySnapshot => ({
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
     compositionTracks: store.compositionTracks.map(t => ({ ...t, keys: t.keys.map(k => ({ ...k })) })),
+    // Definitions are replaced wholesale, never edited in place, so sharing them is safe.
+    tinyflyClips: store.tinyflyClips.map(c => ({ ...c, bindings: { ...c.bindings } })),
     dimensionAnnotations: store.dimensionAnnotations.map(d => ({ ...d })),
     animTimeline: store.animTimeline ? cloneAnimTimeline(store.animTimeline) : null,
     animScenes: Object.fromEntries(Object.entries(store.animScenes).map(([id, tl]) => [id, cloneAnimTimeline(tl)])),
@@ -980,6 +989,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
     setStore("docType", snapshot.docType);
     setStore("compositionTracks", snapshot.compositionTracks || []);
+    setStore("tinyflyClips", snapshot.tinyflyClips || []);
     setStore("dimensionAnnotations", snapshot.dimensionAnnotations || []);
     setAnimTimeline(snapshot.animTimeline ?? null);
     // reconcile: plain setStore MERGES records — deleted scene keys would survive.
@@ -2985,6 +2995,7 @@ export const loadDocument = (doc: any) => {
         setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
         setStore("dimensionAnnotations", JSON.parse(JSON.stringify(doc.dimensionAnnotations || [])));
         setStore("compositionTracks", JSON.parse(JSON.stringify(doc.compositionTracks || [])));
+        setStore("tinyflyClips", JSON.parse(JSON.stringify(doc.tinyflyClips || [])));
         setStore("graphicStyles", JSON.parse(JSON.stringify(doc.graphicStyles || [])));
         setStore("swatches", JSON.parse(JSON.stringify(doc.swatches || [])));
         setStore("patterns", JSON.parse(JSON.stringify(doc.patterns || [])));

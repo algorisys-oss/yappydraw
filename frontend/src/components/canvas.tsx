@@ -2,6 +2,7 @@ import { type Component, onMount, createEffect, onCleanup, createSignal, Show, u
 import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
+import { evaluateTinyflyClips, ensureTinyflyEngine } from "../utils/animation/tinyfly-clips";
 import { evaluateTimelineAt, evaluateCameraAt } from "../utils/animation/frame-timeline-evaluator";
 import { animVisibleIds, reconcileTimelineElements, setPeg } from "../store/anim-ops";
 import { pegAt } from "../utils/animation/frame-timeline-ops";
@@ -197,6 +198,13 @@ const Canvas: Component = () => {
 
     // Text Editing State
     const [editingId, setEditingIdRaw] = createSignal<string | null>(null);
+    // tinyfly's engine is a lazy chunk: load it the first time the document has clips.
+    const [tinyflyReady, setTinyflyReady] = createSignal(false);
+    createEffect(() => {
+        if (store.tinyflyClips.length > 0 && !tinyflyReady()) {
+            ensureTinyflyEngine().then(() => setTinyflyReady(true), err => console.warn('tinyfly engine failed to load', err));
+        }
+    });
     // Text-editing DOM overlays (rich-text, UML section bounds, table-cell grids)
     // assume an axis-aligned layout and aren't rotation-correct yet, so block
     // *entering* edit while the canvas is rotated — clears (null) always pass.
@@ -440,10 +448,13 @@ const Canvas: Component = () => {
         // renderer. Merged INTO animatedStates so the render spread, hit-testing, and
         // export all consume the same override map. (Transform parenting is composed
         // inside applyCompositionOverrides when any element has a transformParentId.)
-        if (store.compositionTracks.length > 0 || store.elements.some(e => e.transformParentId)) {
+        if (store.compositionTracks.length > 0 || store.tinyflyClips.length > 0 || store.elements.some(e => e.transformParentId)) {
             const scrubbing = store.showSceneTimeline || store.showKeyframePanel;
             const compTime = scrubbing ? store.storyTime : currentTime / 1000;
-            applyCompositionOverrides(animatedStates, elementsToAnimate, compTime, store.compositionTracks);
+            // tinyfly clips share the playhead and join the keyframe overrides before
+            // parenting resolves. Empty until the engine chunk has loaded (see below).
+            const clipOverrides = store.tinyflyClips.length > 0 ? evaluateTinyflyClips(compTime, store.tinyflyClips, elementsToAnimate) : undefined;
+            applyCompositionOverrides(animatedStates, elementsToAnimate, compTime, store.compositionTracks, clipOverrides);
         }
         // Animation mode (frame timeline): resolve the current frame's cel — which
         // elements exist right now, plus motion-tween pose overrides. Overrides
@@ -713,6 +724,8 @@ const Canvas: Component = () => {
         // of bug as the `setDocType` note below — a state change that redraws nothing.
         store.storyTime;
         store.compositionTracks;
+        store.tinyflyClips;
+        tinyflyReady(); // the engine chunk arriving is itself a reason to repaint
         store.appMode; // Track mode changes explicitly
         store.isPreviewing; // Track preview state
         store.theme; // Track theme changes

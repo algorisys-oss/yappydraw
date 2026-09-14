@@ -2,6 +2,38 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Put a second animation engine where the first one's values meet the renderer, not beside it
+
+tinyfly clips play in Yappy through one optional parameter. `applyCompositionOverrides` already
+merged keyframe values into the render-time override map, and parenting already resolved from
+a per-element `own` map. So tinyfly's values are converted to Yappy properties and merged into
+`own` **before** parenting resolves. Everything downstream came for free, with no new code in any
+of it: both render styles, hit-testing, a child following a clip-animated parent, and the video/GIF
+renderer. The alternative, tinyfly driving elements through its own loop, would have needed its
+own answer for each of those. Before adding a render path, find the map the existing ones
+already write into.
+
+Three things this relied on, each checked rather than assumed:
+
+- **tinyfly's engine is a pure function of time.** `getStateAtTime(ms)` has no DOM access and no
+  clock, but it also does not apply `loop`/`alternate` (that lives in `tick`). Local time is
+  computed on Yappy's side, in `clipLocalTime`. A Node probe of real output (springs, staggers,
+  motion paths expanding to `motionPathX/Y/Rotate`) came before any conversion code.
+- **Semantics, not just units.** tinyfly's `x` is an offset from where the element sits, because
+  on the DOM it is a CSS translate. Converting it to an absolute Yappy `x` would have been
+  unit-correct and would still have thrown every shape to the page corner.
+- **Vendored, not depended on.** tinyfly is not on npm and its repo gitignores `lib/`, so a
+  GitHub dependency installs source with no build. `scripts/vendor-tinyfly.sh <tag>` builds the
+  engine from the public tag into `frontend/src/vendor/tinyfly` with its licence and version,
+  and the app loads it as a lazy chunk only when a document has clips.
+
+The integration also exposed two older faults that its tests needed working. Video/GIF export
+evaluated keyframes on the session's animation clock instead of from the export's first frame.
+The Scene Timeline hid its ruler for any scene without stick figures. Both were invisible to
+earlier tests: those ran in a fresh tab, where the clock is 0, and in scenes that had figures.
+**A test that only runs in pristine state cannot see state-dependent bugs.** The export test
+now draws its first frame at a non-zero clock on purpose.
+
 ## A feature reachable only from the console does not exist for most people
 
 The Scene Timeline worked, had a help section, and was used by a shipped example. It still had no

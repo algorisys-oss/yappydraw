@@ -189,6 +189,8 @@ export interface SlideDocument {
     dimensionAnnotations?: import('../utils/dimension-geometry').DimensionAnnotation[];
     /** After-Effects keyframe animation tracks (absolute-time PropertyTracks). */
     compositionTracks?: import('./motion-types').PropertyTrack[];
+    /** tinyfly animations bound to elements (tinyfly JSON + target → element id). */
+    tinyflyClips?: import('./motion-types').TinyflyClip[];
     /** Animation mode: the ACTIVE scene's frame timeline (docType 'animation' only). */
     animTimeline?: import('./anim-types').AnimTimeline;
     /** Animation mode, multi-scene: EVERY scene's timeline keyed by its slide id

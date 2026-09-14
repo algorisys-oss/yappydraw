@@ -3,7 +3,8 @@ id: animation
 name: Animation
 icon: "🎬"
 category: Features
-description: Animate elements with presets, keyframes, and spring physics
+description: Animate elements with presets, keyframes, and spring physics — and play tinyfly animations on shapes
+keywords: tinyfly import json timeline spring stagger motion path bake keyframes scene timeline
 seoTitle: "Animate a diagram — 40+ presets, keyframes and path animation"
 seoDescription: "Animate shapes with entrance, exit and emphasis presets, keyframes, spring physics, shape morphing and motion along a path. Export to MP4, WebM or GIF."
 ---
@@ -146,6 +147,59 @@ Yappy.addKeyframe(ctrl, 'angle', 2, Math.PI/2); // box swings with it
 
 :::tip
 **Note:** the Keyframes timeline shares the playhead clock with the **Scene Timeline** (**Menu → Panels → Scene Timeline**), which plays every track of the composition together. Only one can be open at a time: opening either closes the other. Neither is offered in animation documents, where the frame timeline replaces them. Keyframe values override the stored element at render time without changing it — clearing the tracks restores the original. Transform parenting is separate from mind-map parent/child hierarchy.
+:::
+
+## tinyfly animations
+
+[tinyfly](https://github.com/algorisys-oss/tinyfly) is Algorisys' animation engine. You can make an animation in tinyfly and play it on shapes in a Yappy document. It runs on the same playhead as keyframes: scrub it in the **Scene Timeline**, and it saves with the document and appears in MP4, WebM and GIF exports. tinyfly features such as springs, staggers and motion paths keep working, because Yappy runs tinyfly's own engine on the animation. It is not converted.
+
+### Import one
+
+1. In the tinyfly editor, choose **More → Export JSON**.
+2. In Yappy, give your shapes the same names as the tinyfly elements (**Properties → Name**), or select the shapes to animate in the order of tinyfly's targets.
+3. Choose **Menu → File → Import tinyfly animation…** and pick the JSON file.
+
+Yappy matches each tinyfly target to a shape in this order: a shape whose id is the target name, then a shape whose name is the target name, then the selected shapes in order. A message says how many targets matched, which did not, and any properties that were ignored. The Scene Timeline opens with a row for the animation. Click the row's name to select the shapes it animates. **Ctrl+Z** removes the import.
+
+### How values are applied
+
+Values mean what they mean in tinyfly, measured from where the shape sits in the document:
+
+| tinyfly | On the Yappy shape |
+|---|---|
+| `x`, `y`, motion paths | Moves the shape by that many pixels |
+| `rotate` | Adds that many degrees to its rotation |
+| `scale`, `scaleX`, `scaleY` | Scales it about its centre |
+| `opacity` (0–1) | Opacity |
+| `fill`, `stroke`, `strokeWidth` | Fill colour, stroke colour, stroke width |
+| `width`, `height` | Size in pixels |
+| `blur` | Blur filter |
+| `text` | The shape's text |
+
+Other properties, such as `borderRadius` or 3D rotations, are ignored, and the import message lists them. If a tinyfly animation and keyframes change the same property of one shape, tinyfly wins. A shape parented to a tinyfly-animated shape follows it.
+
+### Edit it as keyframes
+
+`Yappy.tinyfly.bake(id)` replaces the animation with ordinary keyframes, sampled 30 times a second, which you can then edit in the Keyframes panel. An animation that loops forever bakes one cycle.
+
+### API
+
+```js
+const { id, bound, unbound, unsupported } = await Yappy.tinyfly.add(timelineJson, {
+  bind: { Ball: ballId },   // optional: tinyfly target → element id
+  start: 1.5,               // optional: seconds into the scene
+});
+Yappy.tinyfly.list();                     // every animation in the document
+Yappy.tinyfly.update(id, { start: 2, enabled: false });
+Yappy.tinyfly.toJSON(id);                 // back out as tinyfly JSON
+await Yappy.tinyfly.bake(id);             // → keyframes
+Yappy.tinyfly.remove(id);
+```
+
+`add` accepts the JSON text or the parsed object. With `{ requireMatch: true }` it adds nothing when no target matches a shape.
+
+:::tip
+**Limits:** Yappy needs tinyfly's *timeline* JSON (Export JSON). A tinyfly Animation Document, which also contains its own elements, is refused with a message. The HTML player export does not include tinyfly animations yet.
 :::
 
 ## Animation Presets

@@ -14,6 +14,7 @@ import { renderElement } from "./render-element";
 import { projectMasterPosition, ownerSlideIndex } from "./slide-utils";
 import { calculateAllAnimatedStates } from "./animation-utils";
 import { applyCompositionOverrides } from "./animation/composition-evaluator";
+import { evaluateTinyflyClips, ensureTinyflyEngine } from "./animation/tinyfly-clips";
 import { evaluateTimelineAt, evaluateCameraAt } from "./animation/frame-timeline-evaluator";
 import { playbackRange } from "./animation/frame-timeline-ops";
 import type { AnimTimeline } from "../types/anim-types";
@@ -233,7 +234,7 @@ export async function recordCanvasGif(opts: { seconds?: number; fps?: number; na
  *  `draw(tMs)` that renders the page exactly as the live canvas would at
  *  animation-time `tMs` (background, layers, master projection, animated +
  *  composition overrides). */
-function makePageFrameRenderer(maxSide: number, forGif = false) {
+export function makePageFrameRenderer(maxSide: number, forGif = false) {
     const slide = store.slides[store.activeSlideIndex];
     if (!slide) return null;
     const { width: sW, height: sH } = slide.dimensions;
@@ -258,16 +259,22 @@ function makePageFrameRenderer(maxSide: number, forGif = false) {
         ctx.translate(-spatialX, -spatialY);
         renderSlideBackground(ctx, rc, slide, spatialX, spatialY, sW, sH, store.theme);
 
+        if (baseT === null) baseT = tMs;
         const anim = calculateAllAnimatedStates(store.elements, tMs, true);
-        if (store.compositionTracks.length > 0 || store.elements.some(e => e.transformParentId)) {
-            applyCompositionOverrides(anim, store.elements, tMs / 1000, store.compositionTracks);
+        if (store.compositionTracks.length > 0 || store.tinyflyClips.length > 0 || store.elements.some(e => e.transformParentId)) {
+            // Keyframes and tinyfly clips are scene time: the export starts at t = 0. `tMs`
+            // is the app's animation clock, which keeps whatever any earlier animation
+            // added to it, so using it directly started the export part-way through the
+            // scene (or on its last frame). Orbit/spin above stay on the running clock.
+            const sceneT = (tMs - baseT) / 1000;
+            const clipOverrides = store.tinyflyClips.length > 0 ? evaluateTinyflyClips(sceneT, store.tinyflyClips, store.elements) : undefined;
+            applyCompositionOverrides(anim, store.elements, sceneT, store.compositionTracks, clipOverrides);
         }
 
         // Animation mode: quantize elapsed export time to the timeline's fps and
         // resolve that frame's cel + tween poses. Driving the store playhead too
         // keeps nested movie-clip rendering (which reads it) frame-exact.
         let animVisible: Set<string> | null = null;
-        if (baseT === null) baseT = tMs;
         if (store.docType === 'animation' && store.animTimeline) {
             const tl = store.animTimeline;
             // Export covers the marked in/out range (the whole ruler when none).
@@ -343,6 +350,7 @@ export async function exportPageVideo(opts: { seconds?: number; format?: VideoFo
     if (pageVideoExporting()) { showToast('A video export is already running', 'info'); return false; }
     const fr = makePageFrameRenderer(1920);
     if (!fr) { showToast('Video export needs a page/slide document', 'error'); return false; }
+    if (store.tinyflyClips.length > 0) await ensureTinyflyEngine(); // clips render nothing until it has loaded
 
     // Animation-mode audio row → muxed into the recording (scheduled at export start).
     let exportAudio: { stream: MediaStream; close(): void } | null = null;
@@ -395,6 +403,7 @@ export async function exportPageGif(opts: { seconds?: number; fps?: number; name
     if (pageVideoExporting()) { showToast('A video export is already running', 'info'); return false; }
     const fr = makePageFrameRenderer(960, true);
     if (!fr) { showToast('GIF export needs a page/slide document', 'error'); return false; }
+    if (store.tinyflyClips.length > 0) await ensureTinyflyEngine(); // clips render nothing until it has loaded
 
     const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
     setPageVideoExporting(true);

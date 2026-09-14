@@ -963,6 +963,7 @@ export const de: Dictionary = {
         shapeBuilder: 'Formerstellung',
         pathfinderStrip: 'Pathfinder-Leiste',
         keyframes: 'Keyframes',
+        importTinyfly: 'tinyfly-Animation importieren…',
         sceneTimeline: 'Szenen-Zeitleiste',
         addAdjustmentLayer: 'Einstellungsebene hinzufügen',
         toolbars: 'Werkzeugleisten',
@@ -1093,6 +1094,13 @@ export const de: Dictionary = {
         turntableRemoveTitle: 'Den Drehteller entfernen (flache Form wiederherstellen)',
 
         remove: 'Entfernen',
+    },
+    tinyfly: {
+        imported: 'tinyfly-Animation hinzugefügt: {{ count }} Ziel(e) Formen zugeordnet.',
+        unbound: 'Nicht zugeordnet: {{ names }}. Benennen Sie Formen nach diesen Zielen oder wählen Sie vor dem Import Formen der Reihe nach aus.',
+        unsupported: 'Ignorierte Eigenschaften: {{ names }}.',
+        nothingBound: 'Keines der Ziele dieser Animation ({{ names }}) passt zu einer Form. Wählen Sie die zu animierenden Formen der Reihe nach aus oder benennen Sie sie nach den Zielen, und importieren Sie erneut.',
+        failed: 'Die tinyfly-Animation konnte nicht importiert werden: {{ message }}',
     },
     socialExport: {
         heading: 'Bereit für Social Media',

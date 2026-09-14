@@ -962,6 +962,7 @@ export const es: Dictionary = {
         shapeBuilder: 'Creador de formas',
         pathfinderStrip: 'Barra Buscatrazos',
         keyframes: 'Fotogramas clave',
+        importTinyfly: 'Importar animación de tinyfly…',
         sceneTimeline: 'Línea de tiempo de la escena',
         addAdjustmentLayer: 'Añadir capa de ajuste',
         toolbars: 'Barras de herramientas',
@@ -1092,6 +1093,13 @@ export const es: Dictionary = {
         turntableRemoveTitle: 'Quitar el plato giratorio (restaurar la forma plana)',
 
         remove: 'Quitar',
+    },
+    tinyfly: {
+        imported: 'Animación de tinyfly añadida: {{ count }} objetivo(s) asignado(s) a formas.',
+        unbound: 'Sin asignar: {{ names }}. Pon a las formas el nombre de estos objetivos o selecciona las formas en orden antes de importar.',
+        unsupported: 'Propiedades ignoradas: {{ names }}.',
+        nothingBound: 'Ningún objetivo de esta animación ({{ names }}) coincide con una forma. Selecciona en orden las formas que quieres animar o ponles el nombre de los objetivos, e importa de nuevo.',
+        failed: 'No se pudo importar la animación de tinyfly: {{ message }}',
     },
     socialExport: {
         heading: 'Listo para redes sociales',

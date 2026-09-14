@@ -9537,3 +9537,28 @@ Adding the item exposed two neighbours:
 `tests/scene-timeline-menu.spec.ts` (3 tests) covers the item opening and closing with its check
 mark, opening it closing the Keyframes panel, and its absence in animation documents. The first
 two failed before the change.
+
+## Video and GIF exports started keyframed scenes part-way through, or on their last frame
+
+The page frame renderer behind MP4/WebM/GIF export drew each frame at
+`effectiveTime() + elapsed`, and keyframes were evaluated at that time directly. `effectiveTime`
+is the app's animation clock: it only advances while some animation runs, and it keeps
+everything it has accumulated for the whole session. In a fresh tab it is 0 and the export was
+right. After anything had animated (a preset, a stick figure, a click-to-play build) it was not.
+The export then began that many seconds into the scene. For most scenes, which run a few
+seconds, that meant the whole export showed the final pose.
+
+Keyframes (and tinyfly clips, which use the same path) now use scene time, measured from the
+export's first frame. Orbit, spin and stick figures stay on the running clock, as the live
+canvas has them. `tests/export-animation-start.spec.ts` draws the first frame at clock 5000 ms
+and checks both a keyframed and a clip-animated square are at their starting x. Before the fix
+the keyframed square rendered at its end position (x ≈ 360 instead of ≈ 30).
+
+## The Scene Timeline had nothing to scrub for a keyframe-only scene
+
+The timeline body showed only when the scene had animated stick figures. A scene animated with
+keyframes alone (the Keyframes panel, `Yappy.scene`, or the Ganesh Chaturthi example) got the
+"Add animated figures" empty message, with no ruler and no playhead. This meant the
+**Menu → Panels → Scene Timeline** item added in v0.8.251 opened a panel that could not play the
+scenes it was added for. The body now shows when there are figures, keyframe tracks or tinyfly
+clips. Covered by a test in `tests/scene-timeline-menu.spec.ts` that failed before the change.

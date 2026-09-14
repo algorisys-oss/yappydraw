@@ -962,6 +962,7 @@ export const ja: Dictionary = {
         shapeBuilder: 'シェイプビルダー',
         pathfinderStrip: 'パスファインダーバー',
         keyframes: 'キーフレーム',
+        importTinyfly: 'tinyfly アニメーションを読み込む…',
         sceneTimeline: 'シーンタイムライン',
         addAdjustmentLayer: '調整レイヤーを追加',
         toolbars: 'ツールバー',
@@ -1092,6 +1093,13 @@ export const ja: Dictionary = {
         turntableRemoveTitle: 'ターンテーブルを削除します（平面の図形に戻します）',
 
         remove: '削除',
+    },
+    tinyfly: {
+        imported: 'tinyfly アニメーションを追加しました：{{ count }} 個のターゲットをシェイプに割り当てました。',
+        unbound: '未割り当て：{{ names }}。シェイプにこれらのターゲット名を付けるか、読み込む前にシェイプを順番に選択してください。',
+        unsupported: '無視されたプロパティ：{{ names }}。',
+        nothingBound: 'このアニメーションのターゲット（{{ names }}）に一致するシェイプがありません。アニメーションさせるシェイプを順番に選択するか、ターゲット名を付けてから、もう一度読み込んでください。',
+        failed: 'tinyfly アニメーションを読み込めませんでした：{{ message }}',
     },
     socialExport: {
         heading: 'SNS 用に書き出す',

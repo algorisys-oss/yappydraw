@@ -10,6 +10,7 @@ import {
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
 import { t } from "../i18n";
+import { pickTinyflyFile } from "../utils/tinyfly-import";
 /**
  * Narrowest viewport that fits the top bar's full icon row (measured: 628px needed, plus
  * headroom). Below this the clusters collapse into the hamburger menu.
@@ -899,6 +900,10 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+E</span>
                                         </div>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { pickTinyflyFile(); setIsMenuOpen(false); }}>
+                                        <Clapperboard size={16} />
+                                        <span class="label">{t('menu.importTinyfly')}</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { void quickSaveToGallery(); setIsMenuOpen(false); }}>
                                         <FolderOpen size={16} />

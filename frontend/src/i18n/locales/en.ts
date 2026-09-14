@@ -974,6 +974,7 @@ export const en = {
         shapeBuilder: 'Shape Builder',
         pathfinderStrip: 'Pathfinder Strip',
         keyframes: 'Keyframes',
+        importTinyfly: 'Import tinyfly animation…',
         sceneTimeline: 'Scene Timeline',
         addAdjustmentLayer: 'Add Adjustment Layer',
         toolbars: 'Toolbars',
@@ -1117,6 +1118,13 @@ export const en = {
 
         /** Shared by all three sections. */
         remove: 'Remove',
+    },
+    tinyfly: {
+        imported: 'Added the tinyfly animation: {{ count }} target(s) matched to shapes.',
+        unbound: 'Not matched: {{ names }}. Name shapes after these targets, or select shapes in order before importing.',
+        unsupported: 'Ignored properties: {{ names }}.',
+        nothingBound: 'None of this animation\'s targets ({{ names }}) matched a shape. Select the shapes to animate, in order, or name them after the targets, then import again.',
+        failed: 'Could not import the tinyfly animation: {{ message }}',
     },
     socialExport: {
         heading: 'Ready for social',
