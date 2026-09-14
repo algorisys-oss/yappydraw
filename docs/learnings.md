@@ -9976,3 +9976,26 @@ Export dialog → **Ready for social** saves the current page for a platform in 
   file that adds JSX text, and every locale is typed as the full `Dictionary`. So new UI means
   keys in all five locale files, not just `en.ts`. `formatFileSize` joined `i18n/format.ts` for
   the same reason: `2,5 MB` in German.
+
+## tinyfly import: bring the shapes, not just the motion
+
+`Yappy.tinyfly.import` (`utils/animation/tinyfly-document.ts`) builds a tinyfly Animation Document
+or Project scene as Yappy shapes and attaches its timeline. Decisions worth keeping:
+
+- **Read what the file is before deciding what to do.** tinyfly has four JSON shapes, and three of
+  them contain a `tracks` array somewhere. Test in the order that separates them: `scenes[]` with
+  `html` on elements is an embed Sequence (refused: styles are baked into HTML); `scenes[]` is a
+  Project; `elements[]` + `tracks[]` is an Animation Document; `tracks[]` alone is a timeline.
+- **The fix for a dead end was in the other repo.** Yappy could not help a user holding a
+  timeline-only export, because the file has no geometry. Adding More → Export Animation Document
+  to tinyfly was smaller and more honest than guessing shapes or scraping embed HTML.
+- **The engine keys tracks by id; the document format does not require one.** Id-less tracks
+  collapsed to the last one with no error. Normalise ids at the file boundary.
+- **Semantics differ per element type.** On tinyfly text, `fill` is the letter colour and a CSS
+  `scale` shrinks the glyphs. Mapping `fill` to `backgroundColor` for everything passed every
+  rectangle test and was wrong for the first real text animation.
+- **Create inside `Yappy.batch`, attach synchronously.** `add` awaits the engine, and awaiting
+  inside a batch breaks the single undo step, so the engine is loaded first and the clip is
+  attached by a synchronous helper (`addTinyflyClip`) within the same batch as the shapes.
+- **Imports are drawn crisp.** Shapes get `renderStyle: 'architectural'` and roughness 0 to match
+  tinyfly's look; switching them to sketch still renders (checked both styles by eye).

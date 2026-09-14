@@ -1667,7 +1667,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 5352 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:46 HarmonyType:79 PlayOptions:84 PlaySpec:84 PlayTargets:84 TexPart:85 AxesOptions:92 AxesSpec:92 PlotFn:92 VectorFieldOptions:92 VectorFn:92 DimensionMeasure:102 ElementOptions:176 normalizeElementType:416 plotRuns:447 ElementType:695 as:695 Window:5341
+frontend/src/api.ts | typescript | 5418 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:46 HarmonyType:79 PlayOptions:84 PlaySpec:84 PlayTargets:84 TexPart:85 AxesOptions:92 AxesSpec:92 PlotFn:92 VectorFieldOptions:92 VectorFn:92 TinyflyShape:97 DimensionMeasure:105 ElementOptions:179 normalizeElementType:419 plotRuns:450 addTinyflyClip:466 createTinyflyShape:489 ElementType:749 as:749 Window:5407
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1644 | Component:1 App:102 moves:127 onPenMove:128 hidePen:132 handleKeyUp:171 handleKeyDown:181 as:852 the:903 handleFullscreenChange:1022 handleBeforeUnload:1028 handlePaste:1032 of:1146 isInternalPanelDrag:1149 handleGlobalDragEnter:1152 handleGlobalDragOver:1166 showDropFallbackPrompt:1184 cleanup:1214 outsideClick:1242 isImageFile:1254 first:1255 must:1268 extractDropData:1270 processExtractedDrop:1325 handleGlobalDrop:1446 handleDocumentDrop:1492
 frontend/src/assets/solid.svg | - | 1 |
@@ -1939,7 +1939,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 852 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 857 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2010,7 +2010,7 @@ frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22
 frontend/src/game/sound-engine.ts | typescript | 137 | ac:14 Route:33 tone:41 sweep:57 noise:74 Sfx:91 playSfx:93 sfxInto:97 startMusic:116 stopMusic:128 setMuted:132
 frontend/src/gifenc.d.ts | typescript | 25 | quantize:3 GIFEncoder:24
 frontend/src/help-docs/features/animate.md | - | 212 |
-frontend/src/help-docs/features/animation.md | - | 763 |
+frontend/src/help-docs/features/animation.md | - | 775 |
 frontend/src/help-docs/features/arcade.md | - | 149 |
 frontend/src/help-docs/features/artboards.md | - | 104 |
 frontend/src/help-docs/features/bulk-editing.md | - | 103 |
@@ -2058,11 +2058,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1116 |
-frontend/src/i18n/locales/en.ts | typescript | 1146 | Dictionary:1146
-frontend/src/i18n/locales/es.ts | typescript | 1115 |
-frontend/src/i18n/locales/fr.ts | typescript | 1137 | de:108
-frontend/src/i18n/locales/ja.ts | typescript | 1115 |
+frontend/src/i18n/locales/de.ts | typescript | 1119 |
+frontend/src/i18n/locales/en.ts | typescript | 1149 | Dictionary:1149
+frontend/src/i18n/locales/es.ts | typescript | 1118 |
+frontend/src/i18n/locales/fr.ts | typescript | 1140 | de:108
+frontend/src/i18n/locales/ja.ts | typescript | 1118 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -2259,8 +2259,10 @@ frontend/src/utils/animation/slide-build-manager.ts | typescript | 237 | BuildSt
 frontend/src/utils/animation/slide-transition-manager.ts | typescript | 377 | TransitionContext:12 TransitionOptions:20 calculateSlideViewState:27 SlideTransitionManager:45{transitioning:53 transitionTo:60 applyImmediateSwitch:114 cancelActiveTransition:129 executeTransition:141 executeFade:164 executeSlide:210 executeZoom:285 removeFadeOverlay:337 previewTransition:348}
 frontend/src/utils/animation/state-manager.ts | typescript | 28 | ElementState:4 SlideState:5 AnimationStateManager:7{captureCurrentState:12 transitionTo:23}
 frontend/src/utils/animation/timeline.ts | typescript | 283 | AnimationFactory:8 TimelineStep:10 Timeline:39{add:50 parallel:61 delay:69 call:77 play:85 pause:110 stop:120 reset:140 progress:148 playing:156 paused:163 runNextStep:170 runAnimation:203 if:223} createTimeline:281
-frontend/src/utils/animation/tinyfly-clips.test.ts | typescript | 181 | mkEl:18 kf:21 clip:24
-frontend/src/utils/animation/tinyfly-clips.ts | typescript | 307 | Engine:21 Overrides:22 ensureTinyflyEngine:28 setTinyflyEngine:37 clipTargets:48 unsupportedClipProperties:58 timelineFor:69 clipDurationMs:87 clipLocalTime:102 tinyflyValuesToOverrides:122 evaluateTinyflyClips:177 resolveClipBindings:207 bakeTinyflyClip:246
+frontend/src/utils/animation/tinyfly-clips.test.ts | typescript | 195 | mkEl:18 kf:21 clip:24 of:125
+frontend/src/utils/animation/tinyfly-clips.ts | typescript | 317 | Engine:21 Overrides:22 ensureTinyflyEngine:28 setTinyflyEngine:37 clipTargets:48 unsupportedClipProperties:58 timelineFor:69 clipDurationMs:87 clipLocalTime:102 tinyflyValuesToOverrides:122 evaluateTinyflyClips:187 resolveClipBindings:217 bakeTinyflyClip:256
+frontend/src/utils/animation/tinyfly-document.test.ts | typescript | 140 | of:116
+frontend/src/utils/animation/tinyfly-document.ts | typescript | 266 | TinyflyElement:16 TinyflyCanvas:18 TinyflyFile:20 withTrackIds:36 readCanvas:48 readTinyflyFile:59 tinyflyFontToYappy:115 TinyflyShape:126 paint:146 strokeOf:163 tinyflyElementToShape:173 tinyflyPlacementOffset:249
 frontend/src/utils/binding-logic.ts | typescript | 395 | checkBinding:17 Cand:65 refreshLinePoints:111 expandToPortGroups:176 computeAnchorFractions:200 resolveBindingPoint:219 refreshBoundLine:294
 frontend/src/utils/canvas-renderer.ts | typescript | 1431 | omScratch:34 adjScratch:45 renderAdjustmentLayer:59 ensureLumFilter:96 renderOpacityMasked:109 ViewportBounds:147 RenderElementsParams:156 SelectionOverlayParams:179 ConnectionAnchorParams:205 computeViewportBounds:217 cullElementsForAnimation:232 decayLaserTrail:284 renderWorkspaceBackground:301 renderSlideBackground:319 renderSlideBoundaries:434 isColorDark:519 renderCanvasTexture:534 renderGrid:632 renderSelectionOverlays:1138 renderTableColumnDropIndicator:1242 renderTableCellSelection:1286 renderConnectionAnchors:1331 renderLaserTrail:1390
 frontend/src/utils/click-outside.ts | typescript | 23 | clickOutside:3 JSX:18 Directives:19
@@ -2439,7 +2441,7 @@ frontend/src/utils/text-on-path.ts | typescript | 251 | PathPoint:18 TextPathOpt
 frontend/src/utils/text-to-outlines.ts | typescript | 353 | FamilyFiles:40 ResolvedFace:87 resolveFace:102 FontOutlineUnavailableError:120{constructor:121} dataUrlToArrayBuffer:125 isWoff2:140 parseFontBuffer:146 LoadedFace:159 shearCommands:221 OutlineResult:280
 frontend/src/utils/text-utils.ts | typescript | 379 | TextMetrics:7 VerticalTextLayout:215
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
-frontend/src/utils/tinyfly-import.ts | typescript | 44 | AddResult:11 importTinyflyText:13 pickTinyflyFile:35
+frontend/src/utils/tinyfly-import.ts | typescript | 54 | ImportResult:12 importTinyflyText:17 pickTinyflyFile:45
 frontend/src/utils/tool-flyout.ts | typescript | 87 | FlyoutStyle:36 FlyoutPlacement:43 createFlyoutPlacement:50
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 317 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 applyAssetAtClientPoint:96 any:154 as:154 WheelContext:192 handleUmlSectionScroll:199 handleWheel:270
 frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 769 | acceptsDragLabel:97 drawOnDown:103 drawOnMove:356 drawOnUp:523 normalizeOrganicBranch:744
@@ -2814,7 +2816,7 @@ tests/text-outlines.spec.ts | typescript | 77 |
 tests/tier1-effects.spec.ts | typescript | 109 | darkMarks:72
 tests/timelapse-check.spec.ts | typescript | 39 |
 tests/timelapse-top-cut.spec.ts | typescript | 58 |
-tests/tinyfly-clips.spec.ts | typescript | 181 | Page:1
+tests/tinyfly-clips.spec.ts | typescript | 298 | Page:1
 tests/tool-flyout-dock.spec.ts | typescript | 89 |
 tests/tool-options-bar-contrast.spec.ts | typescript | 97 | ratio:65
 tests/tool-options-bar.spec.ts | typescript | 271 | boot:11 section:25 titles:169 pick:171

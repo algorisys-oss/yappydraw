@@ -94,6 +94,9 @@ import {
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides, withExtraOverrides } from "./utils/animation/composition-evaluator";
 import { evaluateTinyflyClips, ensureTinyflyEngine, resolveClipBindings, unsupportedClipProperties, clipDurationMs, bakeTinyflyClip } from "./utils/animation/tinyfly-clips";
 import type { TimelineDefinition } from "./vendor/tinyfly/tinyfly-engine";
+import { readTinyflyFile, tinyflyElementToShape, tinyflyPlacementOffset, type TinyflyShape } from "./utils/animation/tinyfly-document";
+import { canvasCenterWorld } from "./utils/dock-layout";
+import { parseSvgPathData } from "./utils/svg-import";
 import { evaluateTimelineAt } from "./utils/animation/frame-timeline-evaluator";
 import { playbackRange, pegAt } from "./utils/animation/frame-timeline-ops";
 import * as animOps from "./store/anim-ops";
@@ -453,6 +456,57 @@ function plotRuns(runs: { x: number; y: number }[][], options?: ElementOptions):
     if (runs.length === 0) return null;
     if (runs.length === 1) return YappyAPI.createPath(anchors(runs[0]), style);
     return YappyAPI.createMultiPath(runs.map(pts => ({ anchors: anchors(pts), closed: false })), style);
+}
+
+/**
+ * Attach a tinyfly timeline as a clip. The engine must already be loaded. Targets bind
+ * by `bind`, then element id, then name, then the selection in order. With
+ * `requireMatch`, a timeline whose targets match no shape is not added (id '').
+ */
+function addTinyflyClip(def: TimelineDefinition, opts: { bind?: Record<string, string>; start?: number; name?: string; requireMatch?: boolean } = {}) {
+    const { bindings, unbound } = resolveClipBindings(def, store.elements, [...store.selection], opts.bind);
+    const summary = { unsupported: unsupportedClipProperties(def), duration: clipDurationMs(def) / 1000 };
+    // requireMatch: when no target found a shape, add nothing (no clip, no undo step).
+    if (opts.requireMatch && Object.keys(bindings).length === 0) {
+        return { id: '', bound: 0, unbound, ...summary };
+    }
+    const taken = new Set(store.tinyflyClips.map(c => c.id));
+    let n = store.tinyflyClips.length + 1;
+    while (taken.has(`tfly-${n}`)) n++;
+    const clip: TinyflyClip = {
+        id: `tfly-${n}`,
+        name: opts.name || def.name || def.id || `tinyfly ${n}`,
+        definition: JSON.parse(JSON.stringify(def)),
+        bindings,
+        start: Math.max(0, opts.start ?? 0),
+    };
+    pushToHistory();
+    setStore('tinyflyClips', clips => [...clips, clip]);
+    return { id: clip.id, bound: Object.keys(bindings).length, unbound, ...summary };
+}
+
+/** Create one shape read from a tinyfly file. Null when it has nothing to draw. */
+function createTinyflyShape(shape: TinyflyShape): string | null {
+    const { x, y, width, height, options } = shape;
+    switch (shape.kind) {
+        case 'text':
+            return YappyAPI.createText(x, y, shape.text ?? '', options as ElementOptions);
+        case 'image':
+            return YappyAPI.createImage(x, y, shape.src!, width, height, options as ElementOptions);
+        case 'path': {
+            // tinyfly draws `d` in the element's own frame, with its origin at (x, y).
+            const subpaths = parseSvgPathData(shape.d ?? '').map(sp => ({
+                closed: sp.closed || !!shape.closed,
+                anchors: sp.anchors.map(a => ({ ...a, x: a.x + x, y: a.y + y })),
+            }));
+            if (subpaths.length === 0) return null;
+            return subpaths.length === 1
+                ? YappyAPI.createPath(subpaths[0].anchors, { ...options, closed: subpaths[0].closed } as ElementOptions & { closed?: boolean })
+                : YappyAPI.createMultiPath(subpaths, options as ElementOptions);
+        }
+        default:
+            return YappyAPI.createElement(shape.type, x, y, width, height, options as ElementOptions);
+    }
 }
 
 export const YappyAPI = {
@@ -3508,43 +3562,55 @@ export const YappyAPI = {
          * With `requireMatch`, a definition whose targets match no shape is not added (id '').
          */
         async add(definition: TimelineDefinition | string, opts: { bind?: Record<string, string>; start?: number; name?: string; requireMatch?: boolean } = {}) {
-            let def: any = definition;
-            if (typeof def === 'string') {
-                try { def = JSON.parse(def); } catch { throw new Error('tinyfly: that is not valid JSON'); }
-            }
-            // An Animation Document also has a tracks array, so test for its elements first:
-            // its tracks point at elements Yappy does not have.
-            if (def && typeof def === 'object' && Array.isArray(def.elements)) {
-                throw new Error('tinyfly: this is an Animation Document. Export the timeline JSON from the tinyfly editor instead.');
-            }
-            if (!def || typeof def !== 'object' || !Array.isArray(def.tracks)) {
-                throw new Error('tinyfly: expected a timeline definition with a "tracks" array');
+            const file = readTinyflyFile(definition);
+            // An Animation Document or Project also has a tracks array, so it is tested
+            // first: its tracks point at shapes the file brings with it.
+            if (file.kind !== 'timeline') {
+                throw new Error('tinyfly: this is an Animation Document or Project, which brings its own shapes. Use Yappy.tinyfly.import to create them with the animation.');
             }
             await ensureTinyflyEngine();
-            const { bindings, unbound } = resolveClipBindings(def, store.elements, [...store.selection], opts.bind);
-            // requireMatch: when no target found a shape, add nothing (no clip, no undo step).
-            if (opts.requireMatch && Object.keys(bindings).length === 0) {
-                return { id: '', bound: 0, unbound, unsupported: unsupportedClipProperties(def), duration: clipDurationMs(def) / 1000 };
+            return addTinyflyClip(file.definition, opts);
+        },
+
+        /**
+         * Import any tinyfly file. An Animation Document (tinyfly's More → Export
+         * Animation Document) or a saved Project brings its shapes: they are created,
+         * with the artboard centred on (`x`, `y`) or on the view, and the animation
+         * drives them. A Project imports its active scene. A timeline-only file binds
+         * to existing shapes, as `add` with `requireMatch` does. One undo step.
+         * Returns `add`'s result plus the ids `created` and the element types `skipped`
+         * (groups, symbols, audio, video).
+         */
+        async import(file: unknown, opts: { x?: number; y?: number; start?: number } = {}) {
+            const read = readTinyflyFile(file);
+            await ensureTinyflyEngine();
+            if (read.kind === 'timeline') {
+                return { ...addTinyflyClip(read.definition, { requireMatch: true, start: opts.start }), created: [] as string[], skipped: [] as string[], scenes: 1 };
             }
-            const taken = new Set(store.tinyflyClips.map(c => c.id));
-            let n = store.tinyflyClips.length + 1;
-            while (taken.has(`tfly-${n}`)) n++;
-            const clip: TinyflyClip = {
-                id: `tfly-${n}`,
-                name: opts.name || def.name || def.id || `tinyfly ${n}`,
-                definition: JSON.parse(JSON.stringify(def)),
-                bindings,
-                start: Math.max(0, opts.start ?? 0),
-            };
-            pushToHistory();
-            setStore('tinyflyClips', clips => [...clips, clip]);
-            return {
-                id: clip.id,
-                bound: Object.keys(bindings).length,
-                unbound,
-                unsupported: unsupportedClipProperties(def),
-                duration: clipDurationMs(def) / 1000,
-            };
+            const view = canvasCenterWorld() ?? { x: 0, y: 0 };
+            const center = { x: opts.x ?? view.x, y: opts.y ?? view.y };
+            const { dx, dy } = tinyflyPlacementOffset(read.canvas, read.elements, center);
+            const created: string[] = [];
+            const skipped: string[] = [];
+            const bind: Record<string, string> = {};
+
+            // Targets the file could not build must not fall back to what was selected before.
+            setStore('selection', []);
+            const result = YappyAPI.batch(() => {
+                for (const el of read.elements) {
+                    if (el.visible === false) continue; // tinyfly does not draw it either
+                    const shape = tinyflyElementToShape(el, dx, dy);
+                    const id = shape ? createTinyflyShape(shape) : null;
+                    if (!id) { skipped.push(String(el.type ?? 'unknown')); continue; }
+                    created.push(id);
+                    // The editor binds tracks by name; a hand-wired timeline may use ids.
+                    if (typeof el.name === 'string' && el.name && !(el.name in bind)) bind[el.name] = id;
+                    if (typeof el.id === 'string' && el.id && !(el.id in bind)) bind[el.id] = id;
+                }
+                return addTinyflyClip(read.definition, { bind, start: opts.start, name: read.name });
+            });
+            if (created.length) YappyAPI.select(created);
+            return { ...result, created, skipped, scenes: read.sceneCount };
         },
 
         /** Every clip in the document. */

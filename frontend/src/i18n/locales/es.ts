@@ -1098,7 +1098,10 @@ export const es: Dictionary = {
         imported: 'Animación de tinyfly añadida: {{ count }} objetivo(s) asignado(s) a formas.',
         unbound: 'Sin asignar: {{ names }}. Pon a las formas el nombre de estos objetivos o selecciona las formas en orden antes de importar.',
         unsupported: 'Propiedades ignoradas: {{ names }}.',
-        nothingBound: 'Ningún objetivo de esta animación ({{ names }}) coincide con una forma. Selecciona en orden las formas que quieres animar o ponles el nombre de los objetivos, e importa de nuevo.',
+        nothingBound: 'Ningún objetivo de esta animación ({{ names }}) coincide con una forma. El archivo es solo una línea de tiempo, sin formas: en tinyfly, elige More → Export Animation Document para traer también las formas. O selecciona en orden las formas que quieres animar o ponles el nombre de los objetivos, e importa de nuevo.',
+        created: 'Importado «{{ name }}»: {{ count }} forma(s), animadas. Pulsa reproducir en la línea de tiempo de la escena.',
+        skipped: 'Omitido: {{ types }} (no se crean desde un archivo de tinyfly).',
+        oneScene: 'El archivo tiene {{ count }} escenas; solo se importó la activa.',
         failed: 'No se pudo importar la animación de tinyfly: {{ message }}',
     },
     socialExport: {

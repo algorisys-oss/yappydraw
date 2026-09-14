@@ -1123,7 +1123,10 @@ export const en = {
         imported: 'Added the tinyfly animation: {{ count }} target(s) matched to shapes.',
         unbound: 'Not matched: {{ names }}. Name shapes after these targets, or select shapes in order before importing.',
         unsupported: 'Ignored properties: {{ names }}.',
-        nothingBound: 'None of this animation\'s targets ({{ names }}) matched a shape. Select the shapes to animate, in order, or name them after the targets, then import again.',
+        nothingBound: 'None of this animation\'s targets ({{ names }}) matched a shape. The file is a timeline only, with no shapes: in tinyfly, choose More → Export Animation Document to bring the shapes too. Or select the shapes to animate, in order, or name them after the targets, then import again.',
+        created: 'Imported “{{ name }}”: {{ count }} shape(s), animated. Press play in the Scene Timeline.',
+        skipped: 'Left out: {{ types }} (not built from a tinyfly file).',
+        oneScene: 'The file has {{ count }} scenes; only the active one was imported.',
         failed: 'Could not import the tinyfly animation: {{ message }}',
     },
     socialExport: {

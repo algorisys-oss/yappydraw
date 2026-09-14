@@ -1120,7 +1120,10 @@ export const fr: Dictionary = {
         imported: 'Animation tinyfly ajoutée : {{ count }} cible(s) associée(s) à des formes.',
         unbound: 'Non associées : {{ names }}. Nommez des formes d’après ces cibles, ou sélectionnez des formes dans l’ordre avant d’importer.',
         unsupported: 'Propriétés ignorées : {{ names }}.',
-        nothingBound: 'Aucune cible de cette animation ({{ names }}) ne correspond à une forme. Sélectionnez dans l’ordre les formes à animer, ou nommez-les d’après les cibles, puis importez à nouveau.',
+        nothingBound: 'Aucune cible de cette animation ({{ names }}) ne correspond à une forme. Le fichier ne contient qu’une timeline, sans formes : dans tinyfly, choisissez More → Export Animation Document pour inclure les formes. Ou sélectionnez dans l’ordre les formes à animer, ou nommez-les d’après les cibles, puis importez à nouveau.',
+        created: '« {{ name }} » importé : {{ count }} forme(s), animée(s). Lancez la lecture dans la timeline de scène.',
+        skipped: 'Laissé de côté : {{ types }} (non créés depuis un fichier tinyfly).',
+        oneScene: 'Le fichier contient {{ count }} scènes ; seule la scène active a été importée.',
         failed: 'Impossible d’importer l’animation tinyfly : {{ message }}',
     },
     socialExport: {

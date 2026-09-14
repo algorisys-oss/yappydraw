@@ -4,7 +4,7 @@ name: Animation
 icon: "🎬"
 category: Features
 description: Animate elements with presets, keyframes, and spring physics — and play tinyfly animations on shapes
-keywords: tinyfly import json timeline spring stagger motion path bake keyframes scene timeline
+keywords: tinyfly import json timeline animation document spring stagger motion path bake keyframes scene timeline
 seoTitle: "Animate a diagram — 40+ presets, keyframes and path animation"
 seoDescription: "Animate shapes with entrance, exit and emphasis presets, keyframes, spring physics, shape morphing and motion along a path. Export to MP4, WebM or GIF."
 ---
@@ -154,11 +154,19 @@ Yappy.addKeyframe(ctrl, 'angle', 2, Math.PI/2); // box swings with it
 
 [tinyfly](https://github.com/algorisys-oss/tinyfly) is Algorisys' animation engine. You can make an animation in tinyfly and play it on shapes in a Yappy document. It runs on the same playhead as keyframes: scrub it in the **Scene Timeline**, and it saves with the document and appears in MP4, WebM and GIF exports. tinyfly features such as springs, staggers and motion paths keep working, because Yappy runs tinyfly's own engine on the animation. It is not converted.
 
-### Import one
+### Import one with its shapes
 
-1. In the tinyfly editor, choose **More → Export JSON**.
-2. In Yappy, give your shapes the same names as the tinyfly elements (**Properties → Name**), or select the shapes to animate in the order of tinyfly's targets.
-3. Choose **Menu → File → Import tinyfly animation…** and pick the JSON file.
+1. In the tinyfly editor, choose **More → Export Animation Document**. The file ends in `.animation.json` and holds the shapes as well as the animation.
+2. In Yappy, choose **Menu → File → Import tinyfly animation…** and pick the file.
+
+Yappy creates the shapes with the artboard centred in your view, selects them, and opens the Scene Timeline with the animation ready to play. Rectangles, circles, text, images, lines, arrows and paths are created. Groups, symbols, audio and video are left out, and the message lists them. A saved tinyfly project imports its active scene. **Ctrl+Z** removes the shapes and the animation together.
+
+### Put an animation on your own shapes
+
+**More → Export JSON** in tinyfly writes the animation alone, with no shapes. To use it:
+
+1. Give your shapes the same names as the tinyfly elements (**Properties → Name**), or select the shapes to animate in the order of tinyfly's targets.
+2. Choose **Menu → File → Import tinyfly animation…** and pick the JSON file.
 
 Yappy matches each tinyfly target to a shape in this order: a shape whose id is the target name, then a shape whose name is the target name, then the selected shapes in order. A message says how many targets matched, which did not, and any properties that were ignored. The Scene Timeline opens with a row for the animation. Click the row's name to select the shapes it animates. **Ctrl+Z** removes the import.
 
@@ -170,9 +178,9 @@ Values mean what they mean in tinyfly, measured from where the shape sits in the
 |---|---|
 | `x`, `y`, motion paths | Moves the shape by that many pixels |
 | `rotate` | Adds that many degrees to its rotation |
-| `scale`, `scaleX`, `scaleY` | Scales it about its centre |
+| `scale`, `scaleX`, `scaleY` | Scales it about its centre (text scales its letters too) |
 | `opacity` (0–1) | Opacity |
-| `fill`, `stroke`, `strokeWidth` | Fill colour, stroke colour, stroke width |
+| `fill`, `stroke`, `strokeWidth` | Fill colour (on text, the letter colour), stroke colour, stroke width |
 | `width`, `height` | Size in pixels |
 | `blur` | Blur filter |
 | `text` | The shape's text |
@@ -186,6 +194,10 @@ Other properties, such as `borderRadius` or 3D rotations, are ignored, and the i
 ### API
 
 ```js
+// An Animation Document or project: creates its shapes, centred on (x, y) or the view.
+const { id, created, skipped } = await Yappy.tinyfly.import(documentJson, { x: 600, y: 400 });
+
+// A timeline: binds to shapes that already exist.
 const { id, bound, unbound, unsupported } = await Yappy.tinyfly.add(timelineJson, {
   bind: { Ball: ballId },   // optional: tinyfly target → element id
   start: 1.5,               // optional: seconds into the scene
@@ -197,10 +209,10 @@ await Yappy.tinyfly.bake(id);             // → keyframes
 Yappy.tinyfly.remove(id);
 ```
 
-`add` accepts the JSON text or the parsed object. With `{ requireMatch: true }` it adds nothing when no target matches a shape.
+`import` and `add` accept the JSON text or the parsed object. `import` also takes a timeline, which it binds like `add` with `{ requireMatch: true }`: nothing is added when no target matches a shape. `add` refuses a file with its own shapes and points you to `import`.
 
 :::tip
-**Limits:** Yappy needs tinyfly's *timeline* JSON (Export JSON). A tinyfly Animation Document, which also contains its own elements, is refused with a message. The HTML player export does not include tinyfly animations yet.
+**Limits:** an embed `sequence.json` (tinyfly's **Embed… → All Scenes**) cannot be imported, because its shapes are stored as HTML. Export an Animation Document instead. Only the active scene of a multi-scene project is imported. Gradient fills keep their colours and angle; a radial gradient's centre is not kept.
 :::
 
 ## Animation Presets

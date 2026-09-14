@@ -96,6 +96,46 @@ exactly this, but it was internal and not part of `window.Yappy`.
 
 Test: `tests/api-batch.spec.ts`.
 
+### 368. Importing a tinyfly animation into an empty document was a dead end
+
+**Symptom:** Menu → File → Import tinyfly animation on a new document said none of the targets
+(`BG, w0c0, w0c1…`) matched a shape, and there was no way to bring the shapes in.
+
+**Cause:** tinyfly's Export JSON writes the timeline only: targets by name, no geometry. Yappy
+could only bind it to shapes that already existed. The one tinyfly format with shapes, the
+Animation Document, was refused, and the tinyfly editor had no way to write one anyway.
+
+**Fix:** tinyfly gets More → Export Animation Document. `Yappy.tinyfly.import` reads an
+Animation Document or a Project's active scene (`utils/animation/tinyfly-document.ts`), creates
+the shapes centred in the view and attaches the timeline, all in one undo step. A timeline-only
+file still binds to existing shapes, and its "nothing matched" message now says how to export
+the shapes. An embed `sequence.json` is refused with the same pointer, because its elements are
+pre-rendered HTML.
+
+Tests: `utils/animation/tinyfly-document.test.ts`, `tests/tinyfly-clips.spec.ts`.
+
+### 369. tinyfly `fill` painted a box behind text, and `scale` left the letters full size
+
+**Symptom:** a tinyfly animation on text drew a coloured rectangle behind the letters instead of
+recolouring them, and letters that should pop in from small stayed at full size.
+
+**Cause:** `tinyflyValuesToOverrides` mapped `fill` to `backgroundColor` for every element, but
+on a tinyfly text element `fill` is the text colour. A scale override resized the text box, not
+the font.
+
+**Fix:** on text and richtext, `fill` sets `textColor` and a scale also scales `fontSize` (by the
+geometric mean for a non-uniform scale). Test: `utils/animation/tinyfly-clips.test.ts`.
+
+### 370. tinyfly tracks without ids silently cancelled each other
+
+**Symptom:** in a hand-written or generated Animation Document, only one track animated.
+
+**Cause:** the tinyfly engine keys tracks by id. The Animation Document format makes `id`
+optional, so every id-less track shared the key `undefined` and only the last one produced values.
+
+**Fix:** `readTinyflyFile` gives each track a unique id, replacing missing and duplicate ones.
+Test: `utils/animation/tinyfly-document.test.ts`.
+
 ## 2026-09-12
 
 ### 362. A tab left open never discovered a new release

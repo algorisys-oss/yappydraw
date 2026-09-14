@@ -114,6 +114,20 @@ describe("tinyflyValuesToOverrides", () => {
         expect(o).toMatchObject({ opacity: 25, backgroundColor: "#ff0000", strokeColor: "#00ff00", strokeWidth: 3, width: 200, filterBlur: 4, containerText: "hi" });
         expect(tinyflyValuesToOverrides(mkEl("t", 0, 0, 10, 10, { type: "text", text: "a" }), new Map([["text", "b"]])).text).toBe("b");
     });
+    it("scales a text element's letters with it, as a CSS scale transform does", () => {
+        const t = mkEl("t", 0, 0, 40, 70, { type: "text", fontSize: 60 });
+        expect(tinyflyValuesToOverrides(t, new Map([["scale", 0.5]])).fontSize).toBe(30);
+        expect(tinyflyValuesToOverrides(t, new Map([["scaleX", 4], ["scaleY", 1]])).fontSize).toBe(120);
+        expect(tinyflyValuesToOverrides(t, new Map([["x", 10]])).fontSize).toBeUndefined();
+        expect(tinyflyValuesToOverrides(el, new Map([["scale", 2]])).fontSize).toBeUndefined();
+    });
+    it("colours a text element's letters with fill, as tinyfly does, not its background", () => {
+        for (const type of ["text", "richtext"]) {
+            const o = tinyflyValuesToOverrides(mkEl("t", 0, 0, 10, 10, { type }), new Map([["fill", "#2f6bff"]]));
+            expect(o.textColor).toBe("#2f6bff");
+            expect(o.backgroundColor).toBeUndefined();
+        }
+    });
 });
 
 describe("resolveClipBindings", () => {

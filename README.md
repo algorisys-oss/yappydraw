@@ -151,7 +151,7 @@ This project stands as proof that **beautiful, complex software still requires e
 - **Text animations** — typewriter, word-by-word, char-by-char, line-by-line, text scramble, count up, delete, replace
 - **GSAP-like stagger** — animate multiple elements with stagger delays (start, end, center, edges, random distribution)
 - **Multi-element stagger UI** — select multiple elements and apply coordinated stagger animations from the property panel
-- **tinyfly animations** — import a [tinyfly](https://github.com/algorisys-oss/tinyfly) timeline (Menu → File → Import tinyfly animation…) and it plays on your shapes: on the Scene Timeline, in saved documents and in MP4/WebM/GIF exports, springs and motion paths included. API: `Yappy.tinyfly.add(json)`, `bake(id)` turns it into editable keyframes
+- **tinyfly animations** — import a [tinyfly](https://github.com/algorisys-oss/tinyfly) Animation Document (Menu → File → Import tinyfly animation…) and its shapes are built and animated, or import a timeline onto shapes you already have. It plays on the Scene Timeline, in saved documents and in MP4/WebM/GIF exports, springs and motion paths included. API: `Yappy.tinyfly.import(json)`, `add(json)`, `bake(id)` turns it into editable keyframes
 
 ### Styling & Rendering
 

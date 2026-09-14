@@ -153,8 +153,18 @@ export function tinyflyValuesToOverrides(el: DrawingElement, values: Map<string,
 
     const opacity = num('opacity');
     if (opacity !== undefined) o.opacity = opacity * 100;
+    const isText = el.type === 'text' || el.type === 'richtext';
+    // A CSS scale shrinks the letters too, not just the box. A non-uniform scale can
+    // only be approximated with one font size: the geometric mean keeps the area.
+    if (isText && hasScale && typeof el.fontSize === 'number' && el.fontSize > 0) {
+        o.fontSize = el.fontSize * Math.sqrt(Math.abs(sx * sy));
+    }
+    // On a tinyfly text element, fill is the colour of the letters.
     const fill = values.get('fill');
-    if (typeof fill === 'string') o.backgroundColor = fill;
+    if (typeof fill === 'string') {
+        if (isText) o.textColor = fill;
+        else o.backgroundColor = fill;
+    }
     const stroke = values.get('stroke');
     if (typeof stroke === 'string') o.strokeColor = stroke;
     const strokeWidth = num('strokeWidth');
@@ -163,7 +173,7 @@ export function tinyflyValuesToOverrides(el: DrawingElement, values: Map<string,
     if (blur !== undefined) o.filterBlur = blur;
     const text = values.get('text');
     if (typeof text === 'string') {
-        if (el.type === 'text' || el.type === 'richtext') o.text = text;
+        if (isText) o.text = text;
         else o.containerText = text;
     }
     return o;

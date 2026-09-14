@@ -1099,7 +1099,10 @@ export const de: Dictionary = {
         imported: 'tinyfly-Animation hinzugefügt: {{ count }} Ziel(e) Formen zugeordnet.',
         unbound: 'Nicht zugeordnet: {{ names }}. Benennen Sie Formen nach diesen Zielen oder wählen Sie vor dem Import Formen der Reihe nach aus.',
         unsupported: 'Ignorierte Eigenschaften: {{ names }}.',
-        nothingBound: 'Keines der Ziele dieser Animation ({{ names }}) passt zu einer Form. Wählen Sie die zu animierenden Formen der Reihe nach aus oder benennen Sie sie nach den Zielen, und importieren Sie erneut.',
+        nothingBound: 'Keines der Ziele dieser Animation ({{ names }}) passt zu einer Form. Die Datei enthält nur eine Zeitleiste, keine Formen: Wählen Sie in tinyfly More → Export Animation Document, um die Formen mitzunehmen. Oder wählen Sie die zu animierenden Formen der Reihe nach aus bzw. benennen Sie sie nach den Zielen, und importieren Sie erneut.',
+        created: '„{{ name }}“ importiert: {{ count }} Form(en), animiert. Starten Sie die Wiedergabe in der Szenen-Zeitleiste.',
+        skipped: 'Ausgelassen: {{ types }} (werden aus einer tinyfly-Datei nicht erstellt).',
+        oneScene: 'Die Datei hat {{ count }} Szenen; nur die aktive wurde importiert.',
         failed: 'Die tinyfly-Animation konnte nicht importiert werden: {{ message }}',
     },
     socialExport: {
