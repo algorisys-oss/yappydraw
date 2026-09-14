@@ -245,6 +245,9 @@ when you want the drawing without the editor, for example sketchy SVG to animate
 </script>
 ```
 
+The same files are on npm as [`yappydraw`](https://www.npmjs.com/package/yappydraw), with
+type declarations: `npm install yappydraw`, then `import { Yappy, mount } from 'yappydraw'`.
+
 | Export | What |
 |---|---|
 | `Yappy` | The full `window.Yappy` API: `create*`, `importDSL`, `loadDocument`, … |

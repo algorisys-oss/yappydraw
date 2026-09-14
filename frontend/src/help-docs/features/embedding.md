@@ -4,7 +4,7 @@ name: Embedding
 icon: "🔗"
 category: Features
 description: Embed drawings in Confluence, Notion, wikis — and drive the full editor from a host page via the API / cross-origin postMessage bridge
-keywords: embed iframe embedding cdn jsdelivr sdk script module toSVG mount fontsReady data-yappy-id elementIds tinyfly gsap animate svg no editor read-only viewer interactive control programmatic api window.Yappy cross-origin same-origin postMessage bridge createYappyEmbed yappy-embed-client allowlist VITE_EMBED_ALLOWED_ORIGINS importDSL exportSVG confluence notion wiki sharepoint wordpress integrate another project host page frame-ancestors X-Frame-Options CSP content-security-policy restrict framing clickjacking
+keywords: embed iframe embedding cdn jsdelivr npm yappydraw install sdk script module toSVG mount fontsReady data-yappy-id elementIds tinyfly gsap animate svg no editor read-only viewer interactive control programmatic api window.Yappy cross-origin same-origin postMessage bridge createYappyEmbed yappy-embed-client allowlist VITE_EMBED_ALLOWED_ORIGINS importDSL exportSVG confluence notion wiki sharepoint wordpress integrate another project host page frame-ancestors X-Frame-Options CSP content-security-policy restrict framing clickjacking
 seoTitle: "Embed a diagram in Confluence, Notion or a wiki — iframe embeds"
 seoDescription: "Embed a read-only YappyDraw canvas with pan and zoom in any page that accepts an iframe. Parameters, sizing and the embed client script."
 ---
@@ -180,6 +180,18 @@ When you want the drawing and not the editor, for example sketchy SVG to animate
 ```
 
 Replace `{version}` with a released version, such as the one shown in the app's status bar.
+
+The same files are on npm as [`yappydraw`](https://www.npmjs.com/package/yappydraw), with type declarations:
+
+```sh
+npm install yappydraw
+```
+
+```js
+import { Yappy, mount, fontsReady } from 'yappydraw';
+```
+
+Or from jsDelivr's npm mirror, with no `v` in the version: `https://cdn.jsdelivr.net/npm/yappydraw@{version}/yappy.js`. Each npm version holds the same files as the matching tag on GitHub.
 
 | Export | What it does |
 |---|---|

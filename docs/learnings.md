@@ -2,6 +2,28 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Publish to a second registry from the first registry's artifact, not a second build
+
+The SDK was already on jsDelivr, served from `cdn/` at the OSS tag. For npm, the obvious move was
+`npm run build:sdk` and packaging `dist-sdk/`, but that is a second build from a different tree.
+publish-oss builds inside the `.ossignore`-filtered archive; this repo has uncommitted edits and
+unfiltered sources. Two builds of "the same version" can then differ, and an AGPL package must
+correspond to its published source. `scripts/publish-npm.sh` instead shallow-clones the tag and
+packages the files already there. Byte-identity then holds by construction, not by hoping
+two builds agree, and the order is forced: the npm step fails until the OSS tag exists.
+
+Two practical points:
+
+- **npm versions are immutable, like jsDelivr tags.** The smoke test (`verify-sdk.mjs`) runs again on
+  the staged package, not only on the build, and the script checks `npm view name@version`
+  first. A republish attempt fails early with a clear reason, not at upload.
+- **2FA puts a person in the loop, so ask for their input last.** A TOTP code lives about 30 s, and the
+  clone plus the Chromium smoke test take about 20 s. Asking for the code up front would race it. npm
+  itself prompts for the OTP at `publish` time in a TTY, so do all staging first and let npm ask.
+  `NPM_OTP` exists for non-TTY runs. An agent session has no TTY, so it cannot finish this step. The
+  first attempt failed with `E403 … Two-factor authentication … is required`, which reads like a
+  permissions problem and is not one.
+
 ## Put a second animation engine where the first one's values meet the renderer, not beside it
 
 tinyfly clips play in Yappy through one optional parameter. `applyCompositionOverrides` already

@@ -1939,7 +1939,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 837 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 841 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2017,7 +2017,7 @@ frontend/src/help-docs/features/bulk-editing.md | - | 103 |
 frontend/src/help-docs/features/design-studio.md | - | 211 |
 frontend/src/help-docs/features/effects.md | - | 227 |
 frontend/src/help-docs/features/elements-search.md | - | 73 |
-frontend/src/help-docs/features/embedding.md | - | 233 |
+frontend/src/help-docs/features/embedding.md | - | 245 |
 frontend/src/help-docs/features/illustrator-tools.md | - | 538 |
 frontend/src/help-docs/features/logo-toolkit.md | - | 357 |
 frontend/src/help-docs/features/masks-appearance-trace.md | - | 309 |
@@ -2561,7 +2561,9 @@ scripts/i18n-baseline.json | - | 131 |
 scripts/i18n-lint.mjs | javascript | 135 | isProse:39 walk:48 findStrings:59
 scripts/i18n-scaffold.mjs | javascript | 92 | in:6 quote:38 Dictionary:65
 scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 languageName:127 of:147 userContent:181 save:198 parseTranslations:206
+scripts/npm/yappy.d.ts | typescript | 34 | ToSvgOptions:6 toSVG:25
 scripts/prerender.ts | typescript | 80 | lastmodFor:48 main:61
+scripts/publish-npm.sh | shell | 144 | info:25 error:26 OTP_ARGS=:136
 scripts/publish-oss.sh | shell | 378 | info:43 warn:44 error:45 REQUIRED_PATHS=:180 MISSING_PATHS=:193
 scripts/record-gifs.mjs | javascript | 173 | clip:48 toGif:64 run:75
 scripts/record-inflate-demo.mjs | javascript | 435 | performer:33 run:137

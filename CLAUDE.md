@@ -111,6 +111,12 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    `rsync -av --delete` — that is what the split-build incident #279 and the missing-dotfile
    `.htaccess` failures came from. If the automatic deploy is ever switched off, that is the
    procedure to restore, and `git log -S"rsync -av --delete" -- CLAUDE.md` finds it.)*
+   **Then publish the SDK to npm** as `yappydraw`: `npm run publish:npm -- --publish`. It packages
+   the `cdn/` folder that the OSS tag just got, so npm and jsDelivr serve identical files. It
+   must run after the OSS push, because the tag has to exist. The npm account has 2FA, so this
+   needs a one-time code: npm prompts for it in a terminal, or pass `NPM_OTP=<code>`. A session
+   without a terminal must hand this step to Rajesh. npm versions are immutable, so a version
+   already on npm is refused, never overwritten.
 9. **Verify once it has propagated** — `npm run verify:deploy`. Not a gate on shipping, and
    not immediate: give the deploy time to land first. Worth running because it is the only
    thing that checks what a *browser* gets rather than what git holds. It samples `sw.js` and

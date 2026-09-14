@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.253', date: '2026-09-14', items: [
+        'Developers: the YappyDraw drawing API is now on npm. Run npm install yappydraw, import it into your project, and draw sketchy SVG with the same commands as the editor. It comes with TypeScript types.',
+        'The npm package holds the same files as the CDN version, so you can switch between the two without any change in behaviour. See Help → Embedding.',
+    ] },
     { version: '0.8.252', date: '2026-09-14', items: [
         'Bring tinyfly animations into your designs. Export a timeline from the tinyfly editor, choose Menu \u2192 File \u2192 Import tinyfly animation\u2026, and it plays on your shapes \u2014 bounces, springs and motion paths included.',
         'Yappy matches the animation to your shapes by name, or to the shapes you selected, and tells you if anything did not match. Scrub it in the Scene Timeline and it comes along in MP4, WebM and GIF exports.',
