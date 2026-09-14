@@ -13,8 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.254', date: '2026-09-14', items: [
+        'Developers: the drawing API\u2019s npm package is @algorisys/yappydraw, next to @algorisys/tinyfly. Install it with npm install @algorisys/yappydraw.',
+        'Fixed: Help and the last release notes named the package \u201cyappydraw\u201d, which does not exist on npm.',
+    ] },
     { version: '0.8.253', date: '2026-09-14', items: [
-        'Developers: the YappyDraw drawing API is now on npm. Run npm install yappydraw, import it into your project, and draw sketchy SVG with the same commands as the editor. It comes with TypeScript types.',
+        'Developers: the YappyDraw drawing API is now on npm. Run npm install @algorisys/yappydraw, import it into your project, and draw sketchy SVG with the same commands as the editor. It comes with TypeScript types.',
         'The npm package holds the same files as the CDN version, so you can switch between the two without any change in behaviour. See Help → Embedding.',
     ] },
     { version: '0.8.252', date: '2026-09-14', items: [

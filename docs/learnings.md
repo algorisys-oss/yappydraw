@@ -44,7 +44,8 @@ Three things this relied on, each checked rather than assumed:
 - **Semantics, not just units.** tinyfly's `x` is an offset from where the element sits, because
   on the DOM it is a CSS translate. Converting it to an absolute Yappy `x` would have been
   unit-correct and would still have thrown every shape to the page corner.
-- **Vendored, not depended on.** tinyfly is not on npm and its repo gitignores `lib/`, so a
+- **Vendored, not depended on.** tinyfly was not on npm at the time (it has been
+  `@algorisys/tinyfly` since 0.64.0, published 2026-09-14), and its repo gitignores `lib/`, so a
   GitHub dependency installs source with no build. `scripts/vendor-tinyfly.sh <tag>` builds the
   engine from the public tag into `frontend/src/vendor/tinyfly` with its licence and version,
   and the app loads it as a lazy chunk only when a document has clips.

@@ -1939,7 +1939,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 841 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 845 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2017,7 +2017,7 @@ frontend/src/help-docs/features/bulk-editing.md | - | 103 |
 frontend/src/help-docs/features/design-studio.md | - | 211 |
 frontend/src/help-docs/features/effects.md | - | 227 |
 frontend/src/help-docs/features/elements-search.md | - | 73 |
-frontend/src/help-docs/features/embedding.md | - | 245 |
+frontend/src/help-docs/features/embedding.md | - | 247 |
 frontend/src/help-docs/features/illustrator-tools.md | - | 538 |
 frontend/src/help-docs/features/logo-toolkit.md | - | 357 |
 frontend/src/help-docs/features/masks-appearance-trace.md | - | 309 |

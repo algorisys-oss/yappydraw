@@ -181,17 +181,17 @@ When you want the drawing and not the editor, for example sketchy SVG to animate
 
 Replace `{version}` with a released version, such as the one shown in the app's status bar.
 
-The same files are on npm as [`yappydraw`](https://www.npmjs.com/package/yappydraw), with type declarations:
+The same files are on npm as [`@algorisys/yappydraw`](https://www.npmjs.com/package/@algorisys/yappydraw), with type declarations:
 
 ```sh
-npm install yappydraw
+npm install @algorisys/yappydraw
 ```
 
 ```js
-import { Yappy, mount, fontsReady } from 'yappydraw';
+import { Yappy, mount, fontsReady } from '@algorisys/yappydraw';
 ```
 
-Or from jsDelivr's npm mirror, with no `v` in the version: `https://cdn.jsdelivr.net/npm/yappydraw@{version}/yappy.js`. Each npm version holds the same files as the matching tag on GitHub.
+Or from jsDelivr's npm mirror, with no `v` in the version: `https://cdn.jsdelivr.net/npm/@algorisys/yappydraw@{version}/yappy.js`. Each npm version holds the same files as the matching tag on GitHub.
 
 | Export | What it does |
 |---|---|
@@ -212,6 +212,8 @@ import * as tinyfly from 'https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{ve
 tinyfly.to(`[data-yappy-id="${sun}"]`, { rotate: 360, duration: 4, repeat: -1 });
 tinyfly.from(`[data-yappy-id="${label}"]`, { opacity: 0, y: 20, duration: 0.6 });
 ```
+
+tinyfly is also on npm as [`@algorisys/tinyfly`](https://www.npmjs.com/package/@algorisys/tinyfly).
 
 You can get the same markup from the editor with `Yappy.exportSVG(false, { elementIds: true })`. The option is off by default there, so ordinary exports are unchanged.
 
