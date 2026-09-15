@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.257', date: '2026-09-15', items: [
+        'Fixed: selecting a mind map node no longer turns its child green. The child keeps its own colour whether or not its parent is selected.',
+    ] },
     { version: '0.8.256', date: '2026-09-14', items: [
         'Import a tinyfly animation with its shapes. In tinyfly choose More \u2192 Export Animation Document, then Menu \u2192 File \u2192 Import tinyfly animation\u2026 in Yappy: the shapes appear in the middle of your view, already animated, ready to play in the Scene Timeline.',
         'Importing a tinyfly timeline into an empty document no longer leaves you stuck: the message tells you how to bring the shapes along.',

@@ -1,5 +1,24 @@
 # Bug Fixes Log
 
+## 2026-09-15
+
+### 371. Selecting a mindmap parent turned its child's fill green
+
+**Symptom:** Tab-create a styled child node, then select the parent. The child's fill turned
+solid green, and went back to its own colour on deselect (reported with a screencast).
+
+**Cause:** `renderElementOverlays` runs inline in the per-element render loop, between one
+element and the next, and several of its blocks set paint state outside any `save()`. The
+quick-connect buttons, drawn only for a single selection, left `fillStyle = '#10b981'` (plus
+`strokeStyle`, `lineWidth` and `shadowColor`) on the shared context. A child is drawn right after
+its parent, so any fill of the child that fell back on the inherited `fillStyle` came out green.
+The fallback is reproducible with a fill colour the canvas cannot parse, since assigning one is
+silently ignored. The exact style that took that path in the reported document was not
+identified.
+
+**Fix:** `renderElementOverlays` wraps the whole pass in `save()/restore()` (with `finally`, since
+it has early returns). Test: `frontend/src/utils/selection-overlay-state.test.ts`.
+
 ## 2026-09-14
 
 Five faults found while drawing and animating a Ganesh ji figure, all confirmed in the code

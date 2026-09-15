@@ -2,6 +2,23 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Canvas paint state is shared between elements, so UI chrome must restore it
+
+The selection overlays are drawn inside the element loop, so whatever `fillStyle` they leave is
+the starting state of the next element. The quick-connect buttons set the colour without a
+`save()`, and a mindmap child, drawn right after its selected parent, turned green (#371).
+Two lessons:
+
+- **Contain state at the function boundary, not block by block.** `renderElementOverlays` had
+  several correctly wrapped blocks and a few that were not, plus early returns. One
+  `save()`/`try`/`finally`/`restore()` around the whole pass fixes all of them, including any block
+  added later. The unit test drives it with a context that really restores state and compares
+  the state before and after, which catches leaks without listing where they come from.
+- **A colour the canvas rejects keeps the previous one.** Assigning an unparseable string to
+  `fillStyle` is silently ignored, so that shape paints with whatever the last draw left behind.
+  If a shape's colour depends on what is selected, suspect leaked state before suspecting the data.
+  Sample the pixel (the video's green was #10b981 after video compression) and look for who sets that exact value.
+
 ## Five bugs from one drawing, and the one shape they shared
 
 Drawing and animating a Ganesh ji figure turned up five faults: null objects in exports,

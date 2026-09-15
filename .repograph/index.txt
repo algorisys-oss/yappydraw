@@ -1939,7 +1939,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 857 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 860 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2405,7 +2405,8 @@ frontend/src/utils/routing.ts | typescript | 350 | Seg:12 Node:228
 frontend/src/utils/safe-storage.ts | typescript | 48 | readJson:16 readJsonArray:35 writeJson:41
 frontend/src/utils/save-file.ts | typescript | 81 | SaveOpts:17
 frontend/src/utils/select-tool-path-nodes.test.ts | typescript | 104 | recordingCtx:22
-frontend/src/utils/selection-renderer.ts | typescript | 1073 | isLabelDraggable:25 drawDeleteHandle:38 ElementOverlayOptions:61 renderPathAnchors:88 renderElementOverlays:138
+frontend/src/utils/selection-overlay-state.test.ts | typescript | 91 | statefulCtx:18
+frontend/src/utils/selection-renderer.ts | typescript | 1093 | isLabelDraggable:25 drawDeleteHandle:38 ElementOverlayOptions:61 renderPathAnchors:88 renderElementOverlays:144 drawElementOverlays:158
 frontend/src/utils/shape-box-fit.test.ts | typescript | 351 | Add:30 arcPoint:34 sampleArc:45 samplePath:101 drawnExtent:149 elementTypes:253
 frontend/src/utils/shape-geometry-fixes.test.ts | typescript | 209 | shape:14 arcs:34 numbersIn:49 drawnExtent:99 add:104
 frontend/src/utils/shape-geometry.ts | typescript | 2259 | ShapeGeometry:9 LidConfig:1193 LidWithPosition:1358

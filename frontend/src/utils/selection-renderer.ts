@@ -134,8 +134,28 @@ function renderPathAnchors(ctx: CanvasRenderingContext2D, el: DrawingElement, sc
 /**
  * Render all per-element selection overlays: bounding box, handles, mindmap toggle,
  * collapsed node glow, custom control handles, bezier control points, connector handles.
+ *
+ * Runs inline in the element loop, so any paint state it leaves is inherited by the NEXT
+ * element. Several blocks below set fillStyle/strokeStyle/shadow outside a save(), and the
+ * quick-connect buttons left `fillStyle = '#10b981'` behind — a mindmap child drawn after
+ * its selected parent turned solid green. Contain the whole pass here rather than trusting
+ * every block (and its early returns) to clean up after itself.
  */
 export function renderElementOverlays(
+    ctx: CanvasRenderingContext2D,
+    el: DrawingElement,
+    renderedEl: DrawingElement,
+    opts: ElementOverlayOptions
+): void {
+    ctx.save();
+    try {
+        drawElementOverlays(ctx, el, renderedEl, opts);
+    } finally {
+        ctx.restore();
+    }
+}
+
+function drawElementOverlays(
     ctx: CanvasRenderingContext2D,
     el: DrawingElement,
     renderedEl: DrawingElement,
