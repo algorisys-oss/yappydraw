@@ -59,11 +59,19 @@ interface Props {
 
 const RECENTS_KEY = 'colorPickerRecents';
 const MODE_KEY = 'colorPickerMode';
+/**
+ * The hue the wheel last showed, kept across mounts. Black, white and greys have no hue, so
+ * reading one back from RGB gives 0 (red). The popover remounts the picker every time it opens,
+ * and mount used to take that 0 at face value: pick pure black, reopen, and the wheel had spun
+ * to red (Anshika, Sep 2026 — the drag itself was fixed in #351; this was the other half).
+ */
+let lastHue = 0;
 
 export const ColorPickerPro: Component<Props> = (props) => {
     const [mode, setMode] = createSignal<'square' | 'triangle'>(
         (localStorage.getItem(MODE_KEY) as 'square' | 'triangle') || 'square');
-    const [h, setH] = createSignal(0);
+    const [h, setH] = createSignal(lastHue);
+    createEffect(() => { lastHue = h(); });
     const [s, setS] = createSignal(1);
     const [v, setV] = createSignal(1);
     const [recents, setRecents] = createSignal<string[]>(
@@ -243,7 +251,7 @@ export const ColorPickerPro: Component<Props> = (props) => {
         if (hexToRgb(hex)) { props.onStart?.(); props.onChange(hex); }
     };
 
-    onMount(() => { const rgb = cssColorToRgb255(props.value || ''); if (rgb) { const c = rgbToHsv(...rgb); setH(c.h); setS(c.s); setV(c.v); } });
+    onMount(() => { const rgb = cssColorToRgb255(props.value || ''); if (rgb) { const c = rgbToHsv(...rgb); setH(c.s > 0.001 && c.v > 0.001 ? c.h : h()); setS(c.s); setV(c.v); } });
 
     return (
         <div class="cpp" onPointerDown={(e) => e.stopPropagation()}>

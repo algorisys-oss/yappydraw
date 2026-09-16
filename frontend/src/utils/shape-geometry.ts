@@ -387,6 +387,40 @@ export const cylinderCapRatioForDistance = (
     return (lo + hi) / 2;
 };
 
+/**
+ * Types whose OWN `points` are relative to the element's top-left corner: freehand strokes,
+ * lines, arrows. Every other geometry — including morph points an animation leaves on a star
+ * — is centre-local. `getShapeGeometry` returns `points` as-is and cannot tell the two apart,
+ * so any caller that places geometry in world space must ask this first.
+ */
+export const TOPLEFT_POINT_TYPES: ReadonlySet<string> = new Set([
+    'line', 'arrow', 'fineliner', 'inkbrush', 'marker', 'ink', 'eraser', 'laser',
+    'bezier', 'organicBranch', 'polyline', 'draw',
+]);
+
+export const pointsAreTopLeft = (el: DrawingElement): boolean =>
+    TOPLEFT_POINT_TYPES.has(el.type) && !!el.points && el.points.length > 0;
+
+/** `el.points` (packed `[x,y,x,y…]` or `{x,y}[]`) as `{x,y}[]`. */
+export const normalizeElementPoints = (points: unknown): { x: number; y: number }[] => {
+    if (!Array.isArray(points) || points.length === 0) return [];
+    if (typeof points[0] === 'object') return points.map((p: any) => ({ x: p.x, y: p.y }));
+    const out: { x: number; y: number }[] = [];
+    for (let i = 0; i + 1 < points.length; i += 2) out.push({ x: points[i], y: points[i + 1] });
+    return out;
+};
+
+/**
+ * `getShapeGeometry`, but always centre-local: top-left-relative points (freehand, lines) are
+ * shifted by (−w/2, −h/2). Use this wherever geometry is placed at the element centre in world
+ * space — booleans, offset path, clip masks — or those shapes land half their size off.
+ */
+export const getCentredShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
+    if (!pointsAreTopLeft(el)) return getShapeGeometry(el);
+    const hw = el.width / 2, hh = el.height / 2;
+    return { type: 'points', points: normalizeElementPoints(el.points).map(p => ({ x: p.x - hw, y: p.y - hh })) } as ShapeGeometry;
+};
+
 export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     const geo = getBaseShapeGeometry(el);
     // Envelope / mesh warp deforms the sampled outline (non-affine) → a warped path

@@ -5,6 +5,7 @@ import { createStore, reconcile } from "solid-js/store";
 // so this one-way edge introduces no cycle.
 import { setPanelOpen, isPanelOpen, panelState, toggleCollapse as toggleDockCollapse } from "./dock-layout";
 import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType, Guide } from "../types";
+import { normalizedLayers, subtreeCopyOrders, keepContentsSurvivor } from "./layer-order";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
 import { isPagedDocType } from '../types/slide-types';
@@ -19,6 +20,7 @@ import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { segmentIntersection } from "../utils/path-intersection";
 import { WIDTH_PROFILES, profileToWidthPoints, detectWidthProfile } from "../utils/width-profiles";
+import { scribbleStrokes } from "../utils/scribble";
 import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
@@ -4875,12 +4877,18 @@ export const addLayer = (name?: string, parentId?: string) => {
     // Affinity's behaviour. It used to go to the very top of the stack and always at the root,
     // so adding a layer while working inside a group jumped it out of that group and over
     // everything else, and it had to be dragged back every time (reported by Anshika, Sep 2026).
-    // An explicit `parentId` from the caller still wins. `+ 0.5` slots between neighbours the
-    // way duplicateLayer does; reorderLayers renumbers on the next drag.
+    // An explicit `parentId` from the caller still wins. `+ 0.5` slots between neighbours and
+    // normalizedLayers then renumbers and re-sorts the ARRAY, because the panel lists the array:
+    // appending left the new layer at the top of the panel until the next drag moved it to the
+    // top of the canvas too (reported again after the first fix).
+    // Adding while a GROUP is active nests the new layer inside that group, at its top.
     const active = store.layers.find(l => l.id === store.activeLayerId);
-    const nestUnder = parentId !== undefined ? parentId : active?.parentId;
+    const intoGroup = parentId === undefined && !!active?.isGroup;
+    const nestUnder = parentId !== undefined ? parentId : intoGroup ? active!.id : active?.parentId;
     const maxOrder = Math.max(...store.layers.map(l => l.order), -1);
-    const order = parentId === undefined && active ? active.order + 0.5 : maxOrder + 1;
+    const order = parentId === undefined && active
+        ? (intoGroup ? active.order - 0.5 : active.order + 0.5)
+        : maxOrder + 1;
 
     const newLayer: Layer = {
         id: newId,
@@ -4895,7 +4903,7 @@ export const addLayer = (name?: string, parentId?: string) => {
         isGroup: false,
         expanded: true
     };
-    setStore('layers', [...store.layers, newLayer]);
+    setStore('layers', normalizedLayers([...store.layers, newLayer]));
     setStore('activeLayerId', newId);
     // Animation mode: every layer has a paired timeline row (starts as one blank cel).
     if (store.animTimeline) {
@@ -4916,15 +4924,20 @@ export const layerSubtreeIds = (id: string): string[] => {
     return out;
 };
 
-export const deleteLayer = (id: string) => {
+/**
+ * Delete a layer. When it holds anything (elements, or child layers for a group) and `contents`
+ * isn't given, the user is asked: delete everything inside, keep the contents, or cancel.
+ * Resolves true when a layer was deleted.
+ */
+export const deleteLayer = async (id: string, contents?: 'delete' | 'keep'): Promise<boolean> => {
     // Cannot delete the last layer
     if (store.layers.length <= 1) {
         showToast('Cannot delete the last layer.', 'error');
-        return;
+        return false;
     }
 
     const layer = store.layers.find(l => l.id === id);
-    if (!layer) return;
+    if (!layer) return false;
 
     // A GROUP layer holds no elements itself — its artwork lives on its child layers. Counting
     // only `el.layerId === id` therefore reported "0 elements" for a group full of work, skipped
@@ -4941,65 +4954,77 @@ export const deleteLayer = (id: string) => {
     // Check if layer (or anything nested under it) has elements
     const elementsOnLayer = store.elements.filter(el => subtreeSet.has(el.layerId));
 
-    // Animation mode: a layer IS its frames — deleting it always deletes its cels'
-    // content (Animate semantics; the "move elements" option would orphan them
-    // outside every keyframe). The paired timeline row goes with it.
-    if (store.animTimeline) {
+    // Animation mode: a plain layer IS its frames — deleting it always deletes its cels'
+    // content (Animate semantics; the "move elements" option would orphan them outside every
+    // keyframe). The paired timeline row goes with it. A GROUP still takes the normal path
+    // below: this branch used to handle groups too, deleting the group row with no prompt and
+    // orphaning every child layer.
+    if (store.animTimeline && childLayers.length === 0) {
         pushToHistory();
         setStore('elements', store.elements.filter(el => el.layerId !== id));
         setAnimTimeline(tl => tl && ({ ...tl, layers: tl.layers.filter(l => l.layerId !== id) }));
-        setStore('layers', store.layers.filter(l => l.id !== id));
+        setStore('layers', normalizedLayers(store.layers.filter(l => l.id !== id)));
         if (store.activeLayerId === id) {
             setStore('activeLayerId', store.layers[0]?.id || 'default-layer');
         }
-        return;
+        return true;
     }
 
     // Deleting a group that contains every other layer would empty the document.
     if (subtree.length >= store.layers.length) {
         showToast('Cannot delete every layer.', 'error');
-        return;
+        return false;
     }
 
-    let dropContents = true;
-
-    if (elementsOnLayer.length > 0 || childLayers.length > 0) {
-        const what = childLayers.length > 0
-            ? `${childLayers.length} layer(s) and ${elementsOnLayer.length} element(s)`
-            : `${elementsOnLayer.length} element(s)`;
-        dropContents = confirm(
-            `Layer "${layer.name}" contains ${what}.\n\n` +
-            `Click "OK" to delete the layer AND everything inside it.\n` +
-            `Click "Cancel" to delete only "${layer.name}" and keep its contents.`
+    if (contents === undefined && (elementsOnLayer.length > 0 || childLayers.length > 0)) {
+        // Three answers, so not `confirm()`: it used OK = delete all and Cancel = keep contents,
+        // which meant there was no way to back out — dismissing the dialog still deleted.
+        const { askChoice } = await import("../components/choice-dialog-state");
+        const { t } = await import("../i18n");
+        const answer = await askChoice(
+            t('layerDelete.title', { name: layer.name }),
+            childLayers.length > 0
+                ? t('layerDelete.bodyGroup', { layers: childLayers.length, objects: elementsOnLayer.length })
+                : t('layerDelete.bodyLayer', { objects: elementsOnLayer.length }),
+            [
+                { id: 'cancel', label: t('layerDelete.cancel'), variant: 'plain' },
+                { id: 'keep', label: t('layerDelete.keep'), variant: 'primary' },
+                { id: 'delete', label: t('layerDelete.deleteAll'), variant: 'danger' },
+            ],
         );
+        if (answer !== 'keep' && answer !== 'delete') return false;
+        // The document may have changed while the dialog was open.
+        return deleteLayer(id, answer);
     }
 
     pushToHistory();
 
-    if (dropContents) {
+    if (contents !== 'keep') {
         // The whole subtree goes: its elements, its nested layers, and the layer itself.
         setStore('elements', store.elements.filter(el => !subtreeSet.has(el.layerId)));
         setAnimTimeline(tl => tl && ({ ...tl, layers: tl.layers.filter(l => !subtreeSet.has(l.layerId)) }));
-        setStore('layers', store.layers.filter(l => !subtreeSet.has(l.id)));
+        setStore('layers', normalizedLayers(store.layers.filter(l => !subtreeSet.has(l.id))));
     } else {
         // Keep the contents: promote the direct children into the deleted layer's own parent
-        // (Affinity's behaviour) and move loose elements onto a layer that still exists, so
-        // nothing is left pointing at a layer that is gone.
+        // (Affinity's behaviour) and move loose elements onto a plain layer that still exists, so
+        // nothing is left pointing at a layer that is gone. (A group can't hold artwork, so the
+        // survivor is never a group.)
+        const survivor = keepContentsSurvivor(store.layers, id);
         setStore('layers', store.layers.map(l => (l.parentId === id ? { ...l, parentId: layer.parentId } : l)));
-        const survivor = childLayers[0] ?? store.layers.find(l => l.id !== id);
         if (survivor) {
             store.elements.forEach((el, idx) => {
                 if (el.layerId === id) setStore('elements', idx, 'layerId', survivor.id);
             });
         }
         setAnimTimeline(tl => tl && ({ ...tl, layers: tl.layers.filter(l => l.layerId !== id) }));
-        setStore('layers', store.layers.filter(l => l.id !== id));
+        setStore('layers', normalizedLayers(store.layers.filter(l => l.id !== id)));
     }
 
     // Update active layer if needed
     if (!store.layers.some(l => l.id === store.activeLayerId)) {
         setStore('activeLayerId', store.layers[0]?.id || 'default-layer');
     }
+    return true;
 };
 
 export const updateLayer = (id: string, updates: Partial<Layer>) => {
@@ -5029,9 +5054,14 @@ export const duplicateLayer = (id: string) => {
     pushToHistory();
 
     const layerIdMap = new Map<string, string>();
-    for (const lid of subtree) layerIdMap.set(lid, generateId('layer'));
+    // One batch across the loop: generateId only sees ids already in the store, so without it
+    // every copied layer got the SAME id — a child's parentId then named itself, and walking the
+    // copy (delete, visibility) looped forever and froze the page.
+    const newLayerIds = new Set<string>();
+    for (const lid of subtree) layerIdMap.set(lid, generateId('layer', newLayerIds));
     const newLayerId = layerIdMap.get(id)!;
 
+    const copyOrders = subtreeCopyOrders(store.layers, subtree);
     const newLayers: Layer[] = subtree.map(lid => {
         const src = store.layers.find(l => l.id === lid)!;
         const isRoot = lid === id;
@@ -5040,8 +5070,9 @@ export const duplicateLayer = (id: string) => {
             id: layerIdMap.get(lid)!,
             name: isRoot ? `${src.name} Copy` : src.name,
             opacity: src.opacity ?? 1,
-            // The root copy sits right above the original; descendants keep their relative order.
-            order: isRoot ? src.order + 0.5 : src.order,
+            // The whole copy stacks above the whole original. Children used to keep their
+            // original `order`, tying with the originals, so the copy's art interleaved with them.
+            order: copyOrders.get(lid) ?? src.order + 0.5,
             backgroundColor: src.backgroundColor || 'transparent',
             parentId: isRoot ? src.parentId : layerIdMap.get(src.parentId!) ?? src.parentId,
             isGroup: src.isGroup,
@@ -5060,9 +5091,10 @@ export const duplicateLayer = (id: string) => {
     // selected both groups' members at once → "move one, the other moves". Map each distinct
     // original group id to a fresh one, consistently across all members of that group.
     const groupIdMap = new Map<string, string>();
+    const newGroupIds = new Set<string>();
     const remapGroupId = (gid: string): string => {
         let next = groupIdMap.get(gid);
-        if (!next) { next = generateId('group'); groupIdMap.set(gid, next); }
+        if (!next) { next = generateId('group', newGroupIds); groupIdMap.set(gid, next); } // batched, same reason as newLayerIds
         return next;
     };
 
@@ -5076,8 +5108,10 @@ export const duplicateLayer = (id: string) => {
         if (newEl.groupIds && newEl.groupIds.length) {
             newEl.groupIds = newEl.groupIds.map(remapGroupId);
         }
-        if ((newEl as any).clipMaskId) {
-            (newEl as any).clipMaskId = remapGroupId((newEl as any).clipMaskId);
+        // clipMaskId names the mask ELEMENT, not a group: it was remapped through groupIdMap,
+        // so a duplicated masked shape pointed at a mask that did not exist and rendered unclipped.
+        if (newEl.clipMaskId) {
+            newEl.clipMaskId = idMap.get(newEl.clipMaskId) ?? newEl.clipMaskId;
         }
 
         // Remap internal bindings (same pattern as duplicateSlide)
@@ -5108,19 +5142,13 @@ export const duplicateLayer = (id: string) => {
         return newEl;
     });
 
-    // Add new layers and elements
-    setStore('layers', [...store.layers, ...newLayers]);
+    // Add new layers and elements; normalizing keeps the panel's array order and `order` in step.
+    setStore('layers', normalizedLayers([...store.layers, ...newLayers]));
     setStore('elements', [...store.elements, ...duplicatedElements]);
-
-    // Recalculate layer orders
-    const sortedLayers = [...store.layers].sort((a, b) => a.order - b.order);
-    sortedLayers.forEach((l, idx) => {
-        const layerIdx = store.layers.findIndex(layer => layer.id === l.id);
-        setStore('layers', layerIdx, 'order', idx);
-    });
 
     // Set the duplicated layer as active
     setStore('activeLayerId', newLayerId);
+    return newLayerId;
 };
 
 /**
@@ -5548,7 +5576,7 @@ export const createLayerGroup = (name?: string) => {
         isGroup: true,
         expanded: true
     };
-    setStore('layers', [...store.layers, newGroup]);
+    setStore('layers', normalizedLayers([...store.layers, newGroup]));
     setStore('activeLayerId', newId);
     return newId;
 };
@@ -9563,36 +9591,35 @@ export const applyScribble = (ids: string[], opts: { spacing?: number; angle?: n
     const a = (opts.angle ?? 0) * Math.PI / 180;
     const batch = new Set<string>();
     const created: DrawingElement[] = [];
+    const scribbled: string[] = [];
     for (const id of ids) {
         const el = store.elements.find(e => e.id === id);
         if (!el) continue;
         const color = (el.backgroundColor && el.backgroundColor !== 'transparent') ? el.backgroundColor : (el.strokeColor || '#000000');
-        const rows = Math.max(2, Math.floor(Math.abs(el.height) / spacing));
-        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
-        const world: { x: number; y: number }[] = [];
-        for (let r = 0; r <= rows; r++) {
-            const y = el.y + (r / rows) * el.height;
-            const ltr = r % 2 === 0;
-            const p0 = { x: ltr ? el.x : el.x + el.width, y }, p1 = { x: ltr ? el.x + el.width : el.x, y };
-            for (const p of [p0, p1]) {
-                const dx = p.x - cx, dy = p.y - cy;
-                world.push({ x: cx + dx * Math.cos(a) - dy * Math.sin(a), y: cy + dx * Math.sin(a) + dy * Math.cos(a) });
-            }
-        }
+        // Fill the OUTLINE, not the box. Rows used to run from el.x to el.x + width for every
+        // shape, so a star or heart got scribbled across the whole rectangle around it
+        // (Anshika, Sep 2026); they also ignored the shape's rotation. elementToMultiPolygon is
+        // world space with rotation applied, the same outline Pathfinder uses.
+        const strokes = scribbleStrokes(elementToMultiPolygon(el), spacing, a);
+        if (!strokes.length) continue;
+        scribbled.push(el.id);
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for (const p of world) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
-        const anchors: PathAnchor[] = world.map(p => ({ x: p.x - minX, y: p.y - minY, kind: 'corner' as const }));
+        for (const s of strokes) for (const p of s) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
+        const subs = strokes.map(s => ({ closed: false, anchors: s.map(p => ({ x: p.x - minX, y: p.y - minY, kind: 'corner' as const })) }));
         created.push({
             ...store.defaultElementStyles, id: generateId('path', batch), type: 'path',
             x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
-            pathAnchors: anchors, pathClosed: false, strokeColor: color, strokeWidth, backgroundColor: 'transparent',
-            angle: 0, seed: Math.floor(Math.random() * 2 ** 31), layerId: store.activeLayerId,
+            ...(subs.length === 1
+                ? { pathAnchors: subs[0].anchors, pathClosed: false }
+                : { pathSubpaths: subs }),
+            strokeColor: color, strokeWidth, backgroundColor: 'transparent',
+            angle: 0, seed: Math.floor(Math.random() * 2 ** 31), layerId: el.layerId || store.activeLayerId,
         } as DrawingElement);
     }
     if (!created.length) return [];
     pushToHistory();
     setStore('elements', list => [...list, ...created]);
-    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ backgroundColor: 'transparent' }));
+    setStore('elements', (e: DrawingElement) => scribbled.includes(e.id), () => ({ backgroundColor: 'transparent' }));
     setStore('selection', created.map(c => c.id));
     bumpDirtyRevision();
     showToast('Scribble applied', 'success');
@@ -10205,6 +10232,9 @@ export const simplifyPath = (ids: string[]): string[] => {
             pathSubpaths: single ? undefined : subs,
         } as DrawingElement;
     }));
+    // RDP can drop the anchors that set the box edges, leaving the selection frame wider than
+    // the outline it surrounds. Re-fit (multi-subpath paths aren't handled by the normalizer).
+    for (const t of targets) normalizePathElement(t.id);
     showToast(changed ? 'Simplified path' : 'Path already simple', changed ? 'success' : 'info');
     return targets.map(t => t.id);
 };

@@ -275,7 +275,20 @@
     opacity: 0.75;
     transition: opacity 0.2s;
     user-select: none;
-    padding: 0 2px;
+    /* A pen needs a real target: the ⋮⋮ glyph alone is ~8px wide, and a stroke that misses it
+       lands on the row, which swipes or scrolls instead of dragging. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 28px;
+    margin: -6px -4px -6px -8px;
+    padding: 0 4px;
+}
+
+/* While reordering, the drop indicator must track the pen, not ease 200ms behind it. */
+.layer-list.is-dragging .layer-item {
+    transition: none;
 }
 
 .drag-handle:active {

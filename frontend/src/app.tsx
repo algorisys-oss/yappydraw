@@ -72,6 +72,7 @@ const AnimationModeBar = lazy(() => import('./components/animation-mode-bar'));
 const AnimationTimeline = lazy(() => import('./components/animation-timeline'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const Toast = lazy(() => import('./components/toast'));
+const ChoiceDialog = lazy(() => import('./components/choice-dialog'));
 const QuickToolbar = lazy(() => import('./components/quick-toolbar').then(m => ({ default: m.QuickToolbar })));
 const SlideNavigator = lazy(() => import('./components/slide-navigator').then(m => ({ default: m.SlideNavigator })));
 const SlideControlToolbar = lazy(() => import('./components/slide-control-toolbar').then(m => ({ default: m.SlideControlToolbar })));
@@ -1629,6 +1630,7 @@ const App: Component = () => {
           <QuickToolbar />
         </Show>
         <Toast />
+        <ChoiceDialog />
         <OnboardingTour />
         <ColorDropHud />
         <Show when={penPos()}>

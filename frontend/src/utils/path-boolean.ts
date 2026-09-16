@@ -10,7 +10,7 @@
 
 import polygonClipping from 'polygon-clipping';
 import type { DrawingElement, PathAnchor, PathSubpath } from '../types';
-import { getShapeGeometry } from './shape-geometry';
+import { getCentredShapeGeometry } from './shape-geometry';
 import { PathUtils, type PathCommand } from './math/path-utils';
 import { catmullRomAnchors } from './curve-fit';
 import { refitClosedRing } from './curve-refit';
@@ -230,9 +230,10 @@ function pointInRing(p: [number, number], ring: Ring): boolean {
  * donut filled in the middle; knifing outlined text filled every 'o' and 'e'.
  */
 export function elementToMultiPolygon(el: DrawingElement): MultiPoly {
-    const geo = getShapeGeometry(el);
     const cx = el.x + el.width / 2;
     const cy = el.y + el.height / 2;
+    // Centred: freehand/line points are top-left-relative and would shift by (w/2, h/2).
+    const geo = getCentredShapeGeometry(el);
     const rings = geometryToRings(geo, cx, cy, el.angle || 0).filter(r => r.length >= 4);
     if (rings.length <= 1) return rings.map(r => [r]);
 

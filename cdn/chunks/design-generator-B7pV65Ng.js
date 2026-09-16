@@ -1,5 +1,5 @@
 import { b as x, c as S } from "./ai-providers-CycU8sO1.js";
-import { b as u, _ as A, s as C, f as y, z as M, g as D } from "./index-CnqZ5pDK.js";
+import { b as u, _ as A, s as C, f as y, z as M, g as D } from "./index-CcNfX7W9.js";
 const P = 'You are a senior graphic designer. Reply with ONLY a JSON object, no markdown fences, matching exactly: {"headline": string (max 6 words), "subhead": string (max 12 words), "bullets": string[] (0-4 short items), "cta": string (max 5 words, optional), "palette": {"background": hex, "primary": hex, "accent": hex, "text": hex}}. The palette must be harmonious with strong text/background contrast.';
 function $(r) {
   try {

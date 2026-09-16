@@ -6,7 +6,14 @@ import { getSocialTarget, shapeMatches, encodeWithinBudget, socialFileName } fro
 import { ownerSlideIndex } from './slide-utils';
 import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
-import { renderSlideBackground } from "./canvas-renderer";
+import { renderSlideBackground, renderOpacityMasked } from "./canvas-renderer";
+import { buildClipPath2D, maskFillRule } from "./clip-mask";
+import { calculateAllAnimatedStates } from "./animation-utils";
+import { applyCompositionOverrides } from "./animation/composition-evaluator";
+import { evaluateTinyflyClips } from "./animation/tinyfly-clips";
+import { evaluateTimelineAt } from "./animation/frame-timeline-evaluator";
+import { effectiveTime } from "./animation/animation-engine";
+import { sceneTime } from "./animation/scene-clock";
 import rough from 'roughjs/bin/rough';
 // jspdf + pptxgenjs are ~744 kB and are reached ONLY by exportToPdf / exportToPptx,
 // but this module is statically imported by api.ts, the export dialog, doc-thumbnails
@@ -101,7 +108,7 @@ export async function ensureExportImages(): Promise<void> {
  */
 function elementAABB(el: DrawingElement): Bounds {
     const cx = el.x + (el.width || 0) / 2, cy = el.y + (el.height || 0) / 2;
-    const a = (el.angle || 0) * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
+    const a = el.angle || 0, cos = Math.cos(a), sin = Math.sin(a); // radians, like the renderer
     const hw = Math.abs(el.width || 0) / 2, hh = Math.abs(el.height || 0) / 2;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const [dx, dy] of [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]]) {
@@ -164,6 +171,19 @@ function elementsBounds(elements: DrawingElement[]): Bounds {
  * the canvas render hook), so exports must replay that hook or effects vanish from the output.
  */
 function renderElWithEffects(rc: ReturnType<typeof rough.canvas>, ctx: CanvasRenderingContext2D, el: DrawingElement): void {
+    // A mask shape is never artwork: the canvas skips it and uses it to clip its targets.
+    if (el.isClipMask) return;
+    const mask = el.clipMaskId ? (scenePose?.get(el.clipMaskId) ?? store.elements.find(e => e.id === el.clipMaskId)) : undefined;
+    if (mask && el.maskType === 'opacity') {
+        renderOpacityMasked(ctx, el, mask, false, 1);
+        return;
+    }
+    const clipPath = mask ? buildClipPath2D(mask) : null;
+    if (clipPath) { ctx.save(); ctx.clip(clipPath, maskFillRule(mask!)); }
+    try { renderElUnmasked(rc, ctx, el); } finally { if (clipPath) ctx.restore(); }
+}
+
+function renderElUnmasked(rc: ReturnType<typeof rough.canvas>, ctx: CanvasRenderingContext2D, el: DrawingElement): void {
     if (el.isAdjustmentLayer) {
         // Filter everything already drawn beneath this region (no authoring gizmo in export).
         const filterStr = buildFilterString(el);
@@ -199,6 +219,45 @@ function renderElWithEffects(rc: ReturnType<typeof rough.canvas>, ctx: CanvasRen
         return;
     }
     renderElement(rc, ctx, el);
+}
+
+/** The posed scene from the latest `exportScene()` call, so masks clip with their posed shape. */
+let scenePose: Map<string, DrawingElement> | null = null;
+
+/**
+ * Every element, in render order, as the canvas is showing it right now.
+ *
+ * Exports used to draw the STORED element, while the canvas draws the element with its
+ * keyframe, tinyfly-clip and transform-parenting pose applied (and, in an animation document,
+ * only the current frame's cels). A head parented to a neck, or anything with a track, came
+ * out of PNG/JPG in its rest pose, displaced from the body it was attached to on screen. Same
+ * override pipeline as `canvas.tsx` `draw`; every exporter starts here instead of from
+ * `exportScene()`.
+ */
+function exportScene(): DrawingElement[] {
+    const all = store.elements;
+    const clock = effectiveTime();
+    const anim = calculateAllAnimatedStates(all, clock, false);
+    if (store.compositionTracks.length > 0 || store.tinyflyClips.length > 0 || all.some(e => e.transformParentId)) {
+        const t = sceneTime(clock);
+        const clipOverrides = store.tinyflyClips.length > 0 ? evaluateTinyflyClips(t, store.tinyflyClips, all) : undefined;
+        applyCompositionOverrides(anim, all, t, store.compositionTracks, clipOverrides);
+    }
+    let visible: Set<string> | null = null;
+    if (store.docType === 'animation' && store.animTimeline) {
+        const ev = evaluateTimelineAt(store.animCurrentFrame, store.animTimeline, all);
+        visible = ev.visible;
+        for (const id in ev.overrides) {
+            const existing = anim.get(id);
+            if (existing) Object.assign(existing, ev.overrides[id]);
+            else anim.set(id, { ...ev.overrides[id] } as any);
+        }
+    }
+    const posed = elementsInRenderOrder(all)
+        .filter(el => !visible || visible.has(el.id))
+        .map(el => { const ov = anim.get(el.id); return ov ? { ...el, ...ov } as DrawingElement : el; });
+    scenePose = new Map(posed.map(el => [el.id, el]));
+    return posed;
 }
 
 /** Build an SVG <g> of the element's appearance-stack extras (centred frame), or null. */
@@ -487,7 +546,7 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
         ctx.translate(destX - sX, destY - sY);
         ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
         renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
-        for (const el of elementsInRenderOrder(store.elements)) {
+        for (const el of exportScene()) {
             if (el.isClipMask || !isExportable(el)) continue;
             // One page owns each element, and only that page draws it — an overlap test
             // put a shape hanging over an edge on the neighbouring page as well.
@@ -526,7 +585,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
         return;
     }
 
-    let elements = elementsInRenderOrder(store.elements).filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
+    let elements = exportScene().filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -591,7 +650,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
  * crosshair; checking here covers every exporter that goes through this gate.
  */
 export const isExportable = (el: DrawingElement): boolean =>
-    !el.isNullObject && el.visible !== false && isLayerVisible(el.layerId);
+    !el.isNullObject && !el.isClipMask && el.visible !== false && isLayerVisible(el.layerId);
 
 /** Largest canvas edge browsers reliably allocate; beyond this `toDataURL` returns a blank image. */
 const MAX_RASTER_EDGE = 16384;
@@ -612,7 +671,7 @@ export const rasterizeElements = async (
     const idSet = new Set(ids);
     // Layer order first, then document order — the order the CANVAS draws in, so the raster
     // stacks the same way the artwork does (see elementsInRenderOrder).
-    const elements = elementsInRenderOrder(store.elements).filter(el => idSet.has(el.id) && !el.isClipMask && isExportable(el));
+    const elements = exportScene().filter(el => idSet.has(el.id) && !el.isClipMask && isExportable(el));
     if (elements.length === 0) return null;
 
     const { minX, minY, maxX, maxY } = elementsBounds(elements);
@@ -664,7 +723,7 @@ export const exportRegion = (x: number, y: number, w: number, h: number, name = 
     ctx.translate(-x, -y);
     ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
     const rc = rough.canvas(canvas);
-    for (const el of elementsInRenderOrder(store.elements)) {
+    for (const el of exportScene()) {
         if (el.isClipMask || !isExportable(el)) continue;
         if (el.x + el.width < x || el.x > x + w || el.y + el.height < y || el.y > y + h) continue;
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
@@ -690,7 +749,7 @@ export const exportArtboard = (artboardId: string, scale = 1, download = true): 
     ctx.translate(-ab.x, -ab.y);
     ctx.beginPath(); ctx.rect(ab.x, ab.y, ab.width, ab.height); ctx.clip();
     const rc = rough.canvas(canvas);
-    for (const el of elementsInRenderOrder(store.elements)) {
+    for (const el of exportScene()) {
         if (el.isClipMask || !isExportable(el)) continue;
         if (el.x + el.width < ab.x || el.x > ab.x + ab.width || el.y + el.height < ab.y || el.y > ab.y + ab.height) continue; // outside the artboard
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
@@ -731,7 +790,7 @@ export const renderPageAtSize = (pageIndex: number, width: number, height: numbe
     ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
     const rc = rough.canvas(canvas);
     renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
-    for (const el of elementsInRenderOrder(store.elements)) {
+    for (const el of exportScene()) {
         if (el.isClipMask || !isExportable(el)) continue;
         // Ownership (not overlap) — see renderPagedDocToCanvas.
         if (ownerSlideIndex(el, store.slides) !== pageIndex) continue;
@@ -814,7 +873,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
         return;
     }
 
-    let elements = elementsInRenderOrder(store.elements).filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
+    let elements = exportScene().filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -854,7 +913,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
 
 export const copyCanvasAsPng = async (scale: number) => {
     await ensureExportImages();
-    const elements = elementsInRenderOrder(store.elements).filter(isExportable);
+    const elements = exportScene().filter(isExportable);
     if (elements.length === 0) return;
 
     const __eb = elementsBounds(elements);
@@ -917,7 +976,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgExportOptions)
 
 /** Build the SVG markup without saving it — the SDK's path, which must never download. */
 export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOptions): string | undefined => {
-    let elements = elementsInRenderOrder(store.elements).filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
+    let elements = exportScene().filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -1590,7 +1649,7 @@ const pdfImage = (canvas: HTMLCanvasElement, background: boolean) =>
 export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
     // Hidden objects never reach a PDF/PPTX page (see isExportable).
-    const allElements = elementsInRenderOrder(store.elements).filter(isExportable);
+    const allElements = exportScene().filter(isExportable);
     if (allElements.length === 0) return;
     const { jsPDF } = await import("jspdf");
 
@@ -1709,7 +1768,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 export const exportToPptx = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
     // Hidden objects never reach a PDF/PPTX page (see isExportable).
-    const allElements = elementsInRenderOrder(store.elements).filter(isExportable);
+    const allElements = exportScene().filter(isExportable);
     if (allElements.length === 0) return;
 
     const { default: PptxGenJS } = await import("pptxgenjs");

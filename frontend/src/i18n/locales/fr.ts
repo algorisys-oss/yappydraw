@@ -1137,4 +1137,13 @@ export const fr: Dictionary = {
         failed: 'Impossible d’exporter pour {{ name }}.',
         exporting: 'Export en cours…',
     },
+    layerDelete: {
+        title: 'Supprimer « {{ name }} » ?',
+        bodyGroup: 'Contient {{ layers }} calque(s) et {{ objects }} objet(s). « Garder le contenu » supprime seulement le groupe et remonte son contenu d\'un niveau.',
+        bodyLayer: 'Contient {{ objects }} objet(s). « Garder le contenu » supprime seulement le calque et déplace ses objets sur un autre calque.',
+        cancel: 'Annuler',
+        keep: 'Garder le contenu',
+        deleteAll: 'Tout supprimer',
+        close: 'Fermer',
+    },
 };

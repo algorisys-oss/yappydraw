@@ -180,6 +180,8 @@ A canvas has a single shadow slot, so an object shows *either* a drop shadow *or
 
 Turn a fill into a hand-drawn **scribble** of back-and-forth strokes in the fill colour — instant sketch energy. Control the line *spacing*, *angle* and stroke width.
 
+The strokes fill the **shape's own outline**, not the box around it: a star gets scribbled inside its points, a heart inside its lobes, and a rotated shape at its rotation. Where a shape splits into separate parts (a star's legs), each part gets its own stroke rather than a line jumping across the gap. Scribble replaces the fill: the original keeps its outline and loses its fill, and the scribble is a separate path above it.
+
 ```
 Y.scribble({ spacing: 8, angle: 0, strokeWidth: 2 });
 ```

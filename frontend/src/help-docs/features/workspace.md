@@ -239,17 +239,25 @@ visibility, lock, opacity, background and colour tag; the artwork on it stacks a
   toggles one in and out. With more than one selected, the header grows *Group* and *Delete*
   buttons that act on all of them.
 - **Selecting artwork on the canvas makes its layer active**, and the panel scrolls that row into
-  view — so on a long list you can always see which layer you are working on.
+  view — so on a long list you can always see which layer you are working on. If the layer is
+  inside a collapsed group, the group opens so the row is visible.
 - **The + button adds a layer directly above the active one, inside the same group**, rather than
   at the very top of the stack. Adding a layer while you are working inside a group keeps it in
-  that group.
-- **Duplicating a group** copies everything inside it — nested layers, their artwork, and the
-  groups within that artwork — as an independent copy.
+  that group, and adding one while the *group itself* is active puts it inside that group, at the
+  top. The panel and the canvas always agree on the order.
+- **Duplicating a group** copies everything inside it — nested layers, their artwork, clipping
+  masks and the groups within that artwork — as an independent copy stacked directly above the
+  original. It counts toward the layer limit (20), so a group of 12 layers can't be duplicated
+  once there are more than 8 others.
 - **Deleting a layer that has contents asks first**, and that includes a group whose artwork is
-  on its child layers. *OK* deletes the layer and everything in it; *Cancel* deletes only that
-  layer and keeps the contents, lifting its children up into whatever contained it.
-- **Drag the grip** at the left of a row to restack. This works with a mouse, a trackpad **and a
-  stylus** — the handle claims the gesture so a pen drag isn't mistaken for a scroll.
+  on its child layers. You get three choices: **Delete everything** removes the layer and all it
+  contains; **Keep contents** deletes only the layer or group and lifts what was inside up into
+  whatever contained it; **Cancel** (or <kbd>Esc</kbd>) leaves everything as it was. Selecting a
+  group and its children together asks once.
+- **Drag the grip** (⋮⋮) at the left of a row to restack. This works with a mouse, a trackpad **and a
+  stylus** — the handle claims the gesture so a pen drag isn't mistaken for a scroll, and it has a
+  pen-sized target. Hold the pen near the top or bottom edge of the list and it scrolls for you.
+  In Groups mode, drop on **Move to Top Level** to take a layer out of its group.
 - **A locked layer only blocks editing.** Panning (the Hand tool, or holding <kbd>Space</kbd>) and
   zooming always work, whatever is locked.
 
@@ -257,6 +265,14 @@ visibility, lock, opacity, background and colour tag; the artwork on it stacks a
 Layer lock and object lock are separate. The padlock on a layer row locks everything on that
 layer at once; <kbd>Ctrl+Shift+L</kbd> locks the selected *objects*.
 :::
+
+```
+Y.getLayers();                       // bottom of the stack first; groups have isGroup, children parentId
+const g = Y.createLayerGroup('Face');
+const eyes = Y.addLayer('Eyes', g);  // inside the group
+const copy = Y.duplicateLayer(g);    // the group and everything in it
+await Y.deleteLayer(copy, 'keep');   // 'keep' | 'delete'; omit to ask the user
+```
 
 ## Arrange — stacking order
 
@@ -592,6 +608,15 @@ API, the file goes to the browser's download folder under a default name as befo
 An export stacks exactly the way the canvas does — layer by layer, bottom layer first, and in
 drawing order within each layer. If the canvas looks right, the PNG, JPG, SVG, PDF and PPTX will
 match it.
+
+### Masks and animated poses
+
+- **Clipping and opacity masks** apply in PNG, JPG, PDF, PPTX, copy-as-PNG, slices, artboards and
+  Rasterize. The mask shape itself never appears in the file. **SVG** export doesn't clip yet:
+  masked artwork comes out whole (the mask shape is still left out).
+- **Anything posed by animation** exports the way the canvas shows it at the current playhead:
+  keyframes, tinyfly clips and parented layers (a head parented to a neck stays on the neck). In an
+  animation document, only the current frame is exported.
 
 ### What ends up in the file
 

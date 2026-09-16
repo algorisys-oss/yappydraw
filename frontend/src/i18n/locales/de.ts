@@ -1116,4 +1116,13 @@ export const de: Dictionary = {
         failed: 'Export für {{ name }} fehlgeschlagen.',
         exporting: 'Wird exportiert…',
     },
+    layerDelete: {
+        title: '„{{ name }}“ löschen?',
+        bodyGroup: 'Enthält {{ layers }} Ebene(n) und {{ objects }} Objekt(e). Mit „Inhalt behalten“ wird nur die Gruppe gelöscht und ihr Inhalt eine Ebene nach oben verschoben.',
+        bodyLayer: 'Enthält {{ objects }} Objekt(e). Mit „Inhalt behalten“ wird nur die Ebene gelöscht und ihre Objekte auf eine andere Ebene verschoben.',
+        cancel: 'Abbrechen',
+        keep: 'Inhalt behalten',
+        deleteAll: 'Alles löschen',
+        close: 'Schließen',
+    },
 };

@@ -2581,18 +2581,23 @@ export const YappyAPI = {
 
 
     // Layers
-    addLayer(name?: string) { return addLayer(name); },
-    deleteLayer(id: string) { deleteLayer(id); },
+    /** Every layer, bottom of the stack first (`order` 0 is the bottom). Groups have `isGroup`; children point at them via `parentId`. */
+    getLayers(): Layer[] { return store.layers.map(l => ({ ...l })); },
+    /** Adds a layer directly above the active one, in the same group (inside it, if the active layer is a group). */
+    addLayer(name?: string, parentId?: string) { return addLayer(name, parentId); },
+    /** Asks the user when the layer isn't empty, unless `contents` says what to do with what's inside. */
+    deleteLayer(id: string, contents?: 'delete' | 'keep') { return deleteLayer(id, contents); },
     setActiveLayer(id: string) { setActiveLayer(id); },
     mergeLayerDown(id: string) { mergeLayerDown(id); },
     flattenLayers() { flattenLayers(); },
     isolateLayer(id: string) { isolateLayer(id); },
     showAllLayers() { showAllLayers(); },
     updateLayer(id: string, updates: Partial<Layer>) { updateLayer(id, updates); },
-    duplicateLayer(id: string) { duplicateLayer(id); },
+    /** Copies a layer, or a group with everything inside it. Returns the copy's id. */
+    duplicateLayer(id: string) { return duplicateLayer(id); },
     reorderLayers(fromIndex: number, toIndex: number) { reorderLayers(fromIndex, toIndex); },
     moveElementsToLayer(elementIds: string[], targetLayerId: string) { moveElementsToLayer(elementIds, targetLayerId); },
-    createLayerGroup(name?: string) { createLayerGroup(name); },
+    createLayerGroup(name?: string) { return createLayerGroup(name); },
     toggleLayerGroupExpansion(groupId: string) { toggleLayerGroupExpansion(groupId); },
     isLayerVisible(layerId: string) { return isLayerVisible(layerId); },
     isLayerLocked(layerId: string) { return isLayerLocked(layerId); },

@@ -1115,4 +1115,13 @@ export const es: Dictionary = {
         failed: 'No se pudo exportar para {{ name }}.',
         exporting: 'Exportando…',
     },
+    layerDelete: {
+        title: '¿Eliminar «{{ name }}»?',
+        bodyGroup: 'Contiene {{ layers }} capa(s) y {{ objects }} objeto(s). Con «Conservar contenido» solo se elimina el grupo y lo que contiene sube un nivel.',
+        bodyLayer: 'Contiene {{ objects }} objeto(s). Con «Conservar contenido» solo se elimina la capa y sus objetos pasan a otra capa.',
+        cancel: 'Cancelar',
+        keep: 'Conservar contenido',
+        deleteAll: 'Eliminar todo',
+        close: 'Cerrar',
+    },
 };

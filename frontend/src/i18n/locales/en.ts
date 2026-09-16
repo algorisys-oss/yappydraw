@@ -1140,6 +1140,16 @@ export const en = {
         failed: 'Could not export for {{ name }}.',
         exporting: 'Exporting…',
     },
+    /** Deleting a layer or group that isn't empty (a three-way question, so not confirm()). */
+    layerDelete: {
+        title: 'Delete “{{ name }}”?',
+        bodyGroup: 'It contains {{ layers }} layer(s) and {{ objects }} object(s). Keep the contents to delete only the group and move what\'s inside up a level.',
+        bodyLayer: 'It contains {{ objects }} object(s). Keep the contents to delete only the layer and move its objects to another layer.',
+        cancel: 'Cancel',
+        keep: 'Keep contents',
+        deleteAll: 'Delete everything',
+        close: 'Close',
+    },
 };
 
 /**

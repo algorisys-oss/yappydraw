@@ -114,3 +114,40 @@ describe("the result element's origin equals the result geometry's origin", () =
         }
     });
 });
+
+describe("point-native shapes (freehand, line) are placed by their top-left origin", () => {
+    // Freehand strokes, lines and arrows store `points` relative to the element's TOP-LEFT
+    // corner, while every other geometry is centre-local. The boolean pipeline read them as
+    // centred, so each such shape shifted by half its own size — a big stroke further than a
+    // small one, which is why Anshika saw the smaller piece land "to the left of the bigger
+    // shape" (Sep 2026, video of a t-shirt merge). The test above only covered rect, ellipse
+    // and path, so it could not see it.
+    const blob = (type: string, x: number, y: number, points: any) =>
+        ({ id: `${type}${x}`, type, x, y, width: 120, height: 100, angle: 0, points }) as any;
+    const square = [{ x: 0, y: 0 }, { x: 120, y: 0 }, { x: 120, y: 100 }, { x: 0, y: 100 }];
+
+    for (const type of ['fineliner', 'inkbrush', 'marker', 'ink', 'line']) {
+        it(`a ${type} maps to its own x/y/w/h`, () => {
+            const b = bboxOf(elementToMultiPolygon(blob(type, 350, 150, square)));
+            expect(b).toEqual({ minX: 350, minY: 150, maxX: 470, maxY: 250 });
+        });
+    }
+
+    it("packed [x,y,x,y…] points are read, not turned into NaN", () => {
+        const b = bboxOf(elementToMultiPolygon(blob('fineliner', 10, 20, [0, 0, 120, 0, 120, 100, 0, 100])));
+        expect(b).toEqual({ minX: 10, minY: 20, maxX: 130, maxY: 120 });
+    });
+
+    it("a union of a big and a small stroke is not skewed between them", () => {
+        const big = { ...blob('fineliner', 0, 0, [{ x: 0, y: 0 }, { x: 400, y: 0 }, { x: 400, y: 300 }, { x: 0, y: 300 }]), width: 400, height: 300 };
+        const small = blob('fineliner', 350, 250, square);
+        const b = bboxOf(runBooleanOp([big, small], 'union') as any);
+        expect(b).toEqual({ minX: 0, minY: 0, maxX: 470, maxY: 350 });
+    });
+
+    it("centred morph points left on a geometric shape keep their centred reading", () => {
+        const star = { id: 's', type: 'star', x: 100, y: 100, width: 100, height: 100, angle: 0,
+            points: [{ x: -50, y: -50 }, { x: 50, y: -50 }, { x: 50, y: 50 }, { x: -50, y: 50 }] } as any;
+        expect(bboxOf(elementToMultiPolygon(star))).toEqual({ minX: 100, minY: 100, maxX: 200, maxY: 200 });
+    });
+});

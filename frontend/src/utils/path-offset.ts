@@ -14,7 +14,7 @@
 
 import polygonClipping from 'polygon-clipping';
 import type { DrawingElement } from '../types';
-import { getShapeGeometry } from './shape-geometry';
+import { getCentredShapeGeometry } from './shape-geometry';
 import { PathUtils } from './math/path-utils';
 
 type Pt = { x: number; y: number };
@@ -23,7 +23,7 @@ type Poly = Ring[];
 
 /** Sample an element's outline to a world-space polyline (+ closed flag). */
 export function samplePathPolyline(el: DrawingElement): { pts: Pt[]; closed: boolean } | null {
-    const geo = getShapeGeometry(el);
+    const geo = getCentredShapeGeometry(el);
     if (!geo) return null;
     const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
     const W = (x: number, y: number): Pt => ({ x: cx + x, y: cy + y });

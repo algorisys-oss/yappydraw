@@ -1,0 +1,34 @@
+/* Above the product tour (4000): the question blocks the action that raised it, so it must
+   never sit under an overlay that swallows its clicks. */
+.save-overlay.choice-overlay {
+    z-index: 4100;
+}
+
+.choice-modal {
+    width: min(380px, 90vw);
+}
+
+.choice-message {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    white-space: pre-line;
+}
+
+.choice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.confirm-btn.choice-danger {
+    background: var(--danger-color);
+    color: #fff;
+}
+
+.confirm-btn.choice-danger:hover {
+    filter: brightness(0.92);
+    background: var(--danger-color);
+}

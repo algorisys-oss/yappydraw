@@ -21,7 +21,9 @@ Pick the **Pen / Vector Path** tool (the pen-nib icon) from the toolbar, then bu
 | --- | --- |
 | **Click** | Add a *corner* anchor (straight segment) |
 | **Click + drag** | Add a *smooth* anchor; the drag sets the Bézier handles (curved segment) |
-| **Click the first anchor** | Close the path into a filled shape |
+| **Click the first anchor** | Close the path into a shape filled with your current fill colour. The Pen stays selected for the next shape (unless *Settings → Input → Keep tool active* is off) and the shape you closed is selected |
+| <kbd>Alt</kbd> + click the anchor you just placed | Retract its **outgoing** handle only, so the next segment leaves straight while the curve you drew into it keeps its shape. Keep holding and drag to pull a new outgoing handle on its own |
+| <kbd>Alt</kbd> + click an earlier anchor | Convert it *corner ↔ smooth* without leaving the Pen |
 | <kbd>Shift</kbd> + click (between points) | Constrain the **segment** to 15° increments — perfectly horizontal, vertical or 45° lines |
 | <kbd>Shift</kbd> + drag (while curving) | **Clock Method** — constrain the Bézier handles to 90°/45° for clean, easily-edited curves |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> / **double-click** | Finish the path open (not closed) — you can pick it up again later |

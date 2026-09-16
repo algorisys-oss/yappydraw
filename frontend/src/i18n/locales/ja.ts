@@ -1115,4 +1115,13 @@ export const ja: Dictionary = {
         failed: '{{ name }} 用に書き出せませんでした。',
         exporting: '書き出し中…',
     },
+    layerDelete: {
+        title: '「{{ name }}」を削除しますか？',
+        bodyGroup: '{{ layers }} 個のレイヤーと {{ objects }} 個のオブジェクトが含まれています。「内容を残す」を選ぶとグループだけを削除し、中身を 1 つ上の階層に移します。',
+        bodyLayer: '{{ objects }} 個のオブジェクトが含まれています。「内容を残す」を選ぶとレイヤーだけを削除し、オブジェクトを別のレイヤーに移します。',
+        cancel: 'キャンセル',
+        keep: '内容を残す',
+        deleteAll: 'すべて削除',
+        close: '閉じる',
+    },
 };

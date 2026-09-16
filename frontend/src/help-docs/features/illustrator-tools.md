@@ -26,6 +26,8 @@ Building a logo or icon is mostly *combining* shapes, so these can live where yo
 | **Intersect** | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd> | Keep only the overlap |
 | **Exclude** | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>X</kbd> | Keep everything *except* the overlap |
 
+**Any closed-looking artwork works**, not just geometric shapes: pencil, brush and marker strokes, lines and pen paths all combine in place. The result sits exactly where the inputs were, and the same goes for Shape Builder, Offset Path, the Distort effects, the Knife and a freehand stroke used as a clipping mask.
+
 Inkscape users: the familiar <kbd>Ctrl</kbd>+<kbd>+</kbd>/<kbd>−</kbd>/<kbd>*</kbd>/<kbd>^</kbd> can’t be used here — the browser reserves those for page zoom — so the same four operations are on <kbd>Ctrl</kbd>+<kbd>Alt</kbd> instead.
 
 ### ❖ Keep editable — non-destructive combining (the default)

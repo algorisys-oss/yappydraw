@@ -1,5 +1,5 @@
 import { type Component } from "solid-js";
-import { store, duplicateLayer, deleteLayer, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers, updateLayer } from "../store/app-store";
+import { store, duplicateLayer, deleteLayer, layerSubtreeIds, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers, updateLayer } from "../store/app-store";
 import ContextMenu, { type MenuItem } from "./context-menu";
 
 interface Props {
@@ -24,7 +24,8 @@ const LayerContextMenu: Component<Props> = (props) => {
         {
             label: "Duplicate",
             onClick: () => duplicateLayer(props.layerId),
-            disabled: store.layers.length >= store.maxLayers
+            // A group copies its whole subtree, so the limit is about that many new layers.
+            disabled: store.layers.length + layerSubtreeIds(props.layerId).length > store.maxLayers
         },
         { separator: true },
         {

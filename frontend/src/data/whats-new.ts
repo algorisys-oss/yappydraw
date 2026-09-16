@@ -13,6 +13,16 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.258', date: '2026-09-16', items: [
+        'Unite, Subtract, Shape Builder and Offset Path keep brush and pencil shapes exactly where you drew them. Before, a small piece could jump up and to the left.',
+        'PNG and JPG exports match the canvas: rotated shapes aren\u2019t cropped, clipping masks clip, and animated or parented layers export in the pose you see.',
+        'Deleting a layer group asks Cancel, Keep contents or Delete everything, and Cancel really cancels.',
+        'New layers appear right above the one you\u2019re on, in the panel as well as on the canvas. Duplicating a group copies everything inside it correctly.',
+        'Layers panel: a bigger drag grip for pens, the list scrolls while you drag near its edge, and Move to Top Level works.',
+        'Pen: closing a shape keeps the Pen ready for the next one and fills the shape. Alt-click the point you just placed to make the next line straight.',
+        'Scribble fill now scribbles inside the shape (a star, a heart), not across the box around it.',
+        'The colour wheel no longer spins to red when you reopen it on black or white.',
+    ] },
     { version: '0.8.257', date: '2026-09-15', items: [
         'Fixed: selecting a mind map node no longer turns its child green. The child keeps its own colour whether or not its parent is selected.',
     ] },

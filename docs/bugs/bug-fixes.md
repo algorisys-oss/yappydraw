@@ -1,5 +1,147 @@
 # Bug Fixes Log
 
+## 2026-09-16 — Anshika's review, second pass
+
+The Sep 7 pass (#348–#357) closed most of her report. Re-checking each item against the current
+code, with her screencasts, found the pieces that were closed too early.
+
+### 372. Pathfinder, Shape Builder and Offset Path moved pencil and brush strokes
+
+**Symptom:** uniting a big brushed t-shirt with a small neck piece put the neck up and to the left
+and reopened the notch it was meant to fill (reported with a screencast). Closed in #357 as "not a
+bug" because the position test passed.
+
+**Cause:** freehand strokes, lines and arrows store `points` relative to the element's top-left
+corner; every other geometry is centre-local. `getShapeGeometry` returns `points` unchanged, and
+`elementToMultiPolygon` placed them at the element centre, so every such shape moved right and down
+by half its own size. A big shape moves further than a small one, which reads as the small one
+jumping up-left. `shapeToPath` had this fix since Jul 8 (`f0309aba`); the boolean pipeline never
+did, and it only became reachable when `9714dcf5` (Jul 29) started offering booleans on any shape
+with area. The position test covered rectangles, ellipses and paths, so it could not see it.
+The same read was in Offset Path (`samplePathPolyline`) and clip masks (`buildClipPath2D`).
+
+**Fix:** `getCentredShapeGeometry()` in `shape-geometry.ts` re-centres top-left points for the
+types in `TOPLEFT_POINT_TYPES` and is used by all three. Morph points an animation leaves on a
+star are centre-local and are left alone. Simplify now re-fits the path's box afterwards. Tests:
+`path-boolean-position.test.ts` (freehand, line, packed points, big + small union),
+`path-offset-position.test.ts`.
+
+### 373. PNG and JPG exports still differed from the canvas after #348
+
+**Symptom:** Anshika's illustration exported with the head shifted against the body and the
+composition cropped. #348 fixed layer order; re-reading the exporters against the canvas found
+three more differences. Which of them her file hit is unconfirmed until we have the file.
+
+**Causes:**
+- `elementAABB` converted `el.angle` from degrees to radians, but it is already radians. Every
+  rotated shape's crop box was its unrotated box, so rotated corners fell off the image.
+- The canvas skips a mask shape (`isClipMask`) and clips its targets with it. Every raster
+  exporter drew the mask shape as artwork, widened the crop to include it, and never clipped the
+  targets. Opacity masks were ignored the same way.
+- The canvas draws each element with its keyframe, tinyfly-clip and transform-parenting pose, and
+  in an animation document only the current frame's cels. Exports drew the stored rest pose of
+  every element and every cel. GIF/video already applied the poses, so they matched the canvas
+  while PNG/JPG did not.
+
+**Fix:** `exportScene()` in `export.ts` builds the posed, frame-filtered element list with the
+canvas's override pipeline, and all twelve exporters start from it. `renderElWithEffects` skips
+mask shapes and applies clip and opacity masks (`renderOpacityMasked` is now exported from
+`canvas-renderer.ts`). `isExportable` drops mask shapes, which also keeps them out of video/GIF
+frames. Verified in the app with a before/after run: a 200×40 bar at 45° now crops to 175×175
+(was 205×48), the corner outside a circular mask is transparent (was the target's red), and a
+box keyframed to x=300 exports there (was x=100). SVG still doesn't clip (documented in the
+workspace help).
+
+### 374. New layers still listed at the top of the panel, and jumped there on the next drag
+
+**Symptom:** reported again after #355. With Groups mode off (the default), a new layer appeared at
+the top of the Layers panel, and the first drag moved it to the top of the canvas too.
+
+**Cause:** #355 gave the new layer `order = active.order + 0.5` but appended it to the array. The
+canvas stacks by `order`; the panel (Groups mode off) lists the array reversed; `reorderLayers`
+renumbers `order` from array positions. So the panel and canvas disagreed until the next drag,
+which then made the panel's wrong answer true on the canvas. The `+ 0.5` also collided on repeated
+adds (1.5, then 2.0 against an existing 2). Adding while a group was active made a sibling of the
+group instead of a child.
+
+**Fix:** `store/layer-order.ts` `normalizedLayers()` keeps the array in `order` sequence with
+`order` renumbered 0..n-1, applied by `addLayer`, `createLayerGroup`, `duplicateLayer` and
+`deleteLayer`. Adding while a group is active nests inside it. Test: `layer-order.test.ts`.
+
+### 375. Duplicating a group gave every copied layer the same id
+
+**Symptom:** found while verifying #374 in the browser: after duplicating a group, deleting the
+copy froze the page and eventually threw "Invalid array length". Shipped with #356.
+
+**Cause:** `duplicateLayer` called `generateId('layer')` once per layer in a loop. `generateId`
+only scans ids already in the store, and the copies weren't in the store yet, so every copy got the
+same id. Each copied child's `parentId` then named itself, and `layerSubtreeIds` walked that cycle
+forever. The group-id remap in the same function had the same flaw, merging separate groups in the
+copy into one. Copied children also kept the originals' `order` (ties, so the copy's artwork
+interleaved with the original), and `clipMaskId` was remapped through the *group* id map although
+it names an element, leaving every duplicated masked shape pointing at a mask that didn't exist.
+
+**Fix:** a shared batch set for both id loops; `subtreeCopyOrders()` stacks the whole copy above
+the whole original; `clipMaskId` maps through the element id map. The context menu's Duplicate is
+disabled when the subtree would exceed the layer limit. Verified in the app: unique ids, copy
+orders 7–9 above originals ≤6, every copied mask reference valid.
+
+### 376. Deleting a group: Cancel still deleted it
+
+**Symptom:** #350 added a confirm for deleting a group with contents, but the native `confirm()`
+has two buttons for three answers: OK meant "delete everything" and Cancel meant "keep contents".
+There was no way to back out, and a PWA or iPad that suppresses `confirm()` got no question at all.
+In an animation document the prompt was skipped and the group's child layers were orphaned.
+Deleting a multi-selection that included a group and its children asked once per layer.
+
+**Fix:** `components/choice-dialog-state.ts` (`askChoice`, awaited like `confirm`, rendered by `choice-dialog.tsx`, strings translated) with Cancel / Keep
+contents / Delete everything; Esc, ✕ and the backdrop cancel. `deleteLayer` is async and takes an
+optional `'keep' | 'delete'` (also on `Yappy.deleteLayer`). Groups in animation documents take the
+same path. Kept contents never land on a group layer (`keepContentsSurvivor`). Multi-delete skips
+layers whose ancestor is selected (`topmostSelectedLayers`). The dialog sits above the product
+tour (z-index 4100 vs 4000): during the tour it was unclickable, found in the browser run.
+
+### 377. Layer drag with a pen: the "Move to Top Level" zone never took a drop
+
+**Cause:** the reorder captures the pointer on the grip, so the zone's own `pointerenter` and
+`pointerup` never fired. Also: an 8px grip, no auto-scroll (and a scroll that would have targeted
+the list, which doesn't overflow when docked; the dock body does), and a 200ms transition on rows
+that made the drop indicator trail the pen.
+
+**Fix:** the zone is resolved by geometry like the rows; the grip is a 24×28px target; an rAF loop
+scrolls the nearest overflowing ancestor while the pen rests near an edge; transitions are off
+during a drag. Collapsed groups expand when artwork inside them is selected, so the active row is
+visible. Verified with a real pointer drag: drop on the zone clears `parentId`, auto-scroll moves
+the dock body.
+
+### 378. Pen: closing a path dropped the tool and didn't select the shape
+
+**Cause:** the close branch called `setSelectedTool('selection')` unconditionally (ignoring *Keep
+tool active*), after setting the selection, and `setSelectedTool` clears the selection. The shape
+was also left unfilled, which read as "closing converts it to a stroke". Alt-clicking the anchor
+just placed removed both its handles, flattening the curve drawn into it.
+
+**Fix:** close follows `shouldRevertToSelect()`, selects afterwards, and applies the current fill.
+Alt on the last anchor retracts only its outgoing handle and keeps the drag live, so a drag pulls a
+new outgoing handle on its own. Verified with real pointer events.
+
+### 379. The colour wheel spun to red when reopened on black or white
+
+**Cause:** the other half of #351. The popover remounts the picker each time it opens, and
+`onMount` took the hue read back from RGB, which is 0 (red) for any grey. The value-sync effect had
+the guard; mount didn't.
+
+**Fix:** mount keeps the current hue for greys, and the last hue survives remounts.
+
+### 380. Scribble fill covered the bounding box instead of the shape
+
+**Cause:** `applyScribble` ran every row from `el.x` to `el.x + width`, ignoring the outline and the
+rotation.
+
+**Fix:** `utils/scribble.ts` scanlines against `elementToMultiPolygon` (world space, rotated),
+even-odd, one stroke per connected part. It also cleared the fill of shapes that produced no
+scribble; now only the scribbled ones. Test: `scribble.test.ts`; checked visually on a star.
+
 ## 2026-09-15
 
 ### 371. Selecting a mindmap parent turned its child's fill green

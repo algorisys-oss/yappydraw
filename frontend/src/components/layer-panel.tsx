@@ -1,4 +1,5 @@
-import { type Component, For, createSignal, createEffect, Show } from 'solid-js';
+import { type Component, For, createSignal, createEffect, Show, untrack } from 'solid-js';
+import { topmostSelectedLayers } from "../store/layer-order";
 import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
 import { X, Eye, EyeOff, Plus, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2, Box } from 'lucide-solid';
 import ObjectTree from './object-tree';
@@ -122,12 +123,15 @@ const LayerPanel: Component = () => {
         clearSelection();
     };
 
-    const deleteSelectedLayers = () => {
-        for (const id of [...selectedIds()]) {
-            if (store.layers.length <= 1) break; // always keep one layer
-            deleteLayer(id);
-        }
+    const deleteSelectedLayers = async () => {
+        // A selected group already covers its selected children, and each delete may ask a
+        // question, so ask once per top-level layer and one at a time.
+        const ids = topmostSelectedLayers(store.layers, [...selectedIds()]);
         clearSelection();
+        for (const id of ids) {
+            if (store.layers.length <= 1) break; // always keep one layer
+            await deleteLayer(id);
+        }
     };
 
 
@@ -260,7 +264,15 @@ const LayerPanel: Component = () => {
      * A group row in grouping mode keeps a third option: the outer thirds insert beside it,
      * the middle drops INTO it. Mirrors happypaint's resolveDrop.
      */
-    const resolveDrop = (clientY: number): { id: string; place: 'above' | 'below' | 'into' } | null => {
+    const resolveDrop = (clientY: number, clientX?: number): { id: string; place: 'above' | 'below' | 'into' } | null => {
+        // "Move to Top Level" is resolved by geometry like the rows. It used pointerenter /
+        // pointerup of its own, but the drag captures the pointer on the handle, so those events
+        // never reached the zone and dropping on it did nothing.
+        const zone = rootZoneEl?.getBoundingClientRect();
+        if (zone && zone.height > 0 && clientY >= zone.top && clientY <= zone.bottom
+            && (clientX === undefined || (clientX >= zone.left && clientX <= zone.right))) {
+            return { id: 'root', place: 'into' };
+        }
         for (const [id, el] of rowEls) {
             const r = el.getBoundingClientRect();
             if (r.height <= 0 || clientY < r.top || clientY > r.bottom) continue;
@@ -281,17 +293,51 @@ const LayerPanel: Component = () => {
     // scrolled away from — you lose track of what you are carrying.
     const [ghost, setGhost] = createSignal<{ x: number; y: number } | null>(null);
 
+    let rootZoneEl: HTMLDivElement | undefined;
+    let listEl: HTMLDivElement | undefined;
+
+    // Auto-scroll while the pointer rests near the list's top or bottom edge. Driven by rAF, not
+    // pointermove: a pen held still at the edge sends no moves, so a move-driven scroll stalls
+    // exactly when you are waiting for the list to bring the target row into view.
+    let lastDragY = 0, lastDragX = 0, scrollRaf = 0;
+    const EDGE = 36;
+    // The list only scrolls itself when the panel has a fixed height; docked, it grows and an
+    // ancestor scrolls instead. Use whichever element actually overflows.
+    const scroller = (): HTMLElement | null => {
+        for (let el: HTMLElement | null = listEl ?? null; el; el = el.parentElement) {
+            if (/(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1) return el;
+        }
+        return null;
+    };
+    const autoScroll = () => {
+        scrollRaf = 0;
+        const sc = draggedId() ? scroller() : null;
+        if (!draggedId()) return;
+        if (!sc) { scrollRaf = requestAnimationFrame(autoScroll); return; }
+        const r = sc.getBoundingClientRect();
+        const dy = lastDragY < r.top + EDGE ? -(r.top + EDGE - lastDragY)
+            : lastDragY > r.bottom - EDGE ? lastDragY - (r.bottom - EDGE) : 0;
+        if (dy !== 0) {
+            sc.scrollTop += Math.max(-18, Math.min(18, dy / 2));
+            const hit = resolveDrop(lastDragY, lastDragX);
+            setDropTarget(hit && hit.id !== draggedId() ? hit : null);
+        }
+        scrollRaf = requestAnimationFrame(autoScroll);
+    };
+
     const onDragMove = (e: PointerEvent) => {
-        const hit = resolveDrop(e.clientY);
+        lastDragY = e.clientY; lastDragX = e.clientX;
+        const hit = resolveDrop(e.clientY, e.clientX);
         setDropTarget(hit && hit.id !== draggedId() ? hit : null);
         setGhost({ x: e.clientX, y: e.clientY });
+        if (!scrollRaf) scrollRaf = requestAnimationFrame(autoScroll);
     };
 
     const onDragUp = () => {
         const sourceId = draggedId();
         const drop = dropTarget();
         endDrag();
-        if (sourceId && drop) applyDrop(sourceId, drop.id, drop.place);
+        if (sourceId && drop) applyDrop(sourceId, drop.id === 'root' ? null : drop.id, drop.place);
     };
 
     const endDrag = () => {
@@ -300,6 +346,7 @@ const LayerPanel: Component = () => {
         setDraggedId(null);
         setDropTarget(null);
         setGhost(null);
+        if (scrollRaf) { cancelAnimationFrame(scrollRaf); scrollRaf = 0; }
         window.removeEventListener('pointermove', onDragMove);
         window.removeEventListener('pointerup', onDragUp);
         window.removeEventListener('pointercancel', endDrag);
@@ -311,8 +358,18 @@ const LayerPanel: Component = () => {
     // to the user rather than making them hunt for it (Anshika, Sep 2026).
     createEffect(() => {
         const id = store.activeLayerId;
-        const el = rowEls.get(id);
-        if (el) el.scrollIntoView({ block: 'nearest' });
+        // Inside a collapsed group the row isn't rendered at all, so there was nothing to scroll
+        // to and no highlight. Expand its ancestors first, as Illustrator's "Locate Object" does.
+        if (store.layerGroupingModeEnabled) {
+            untrack(() => {
+                const seen = new Set<string>();
+                for (let p = store.layers.find(l => l.id === id)?.parentId; p && !seen.has(p); p = store.layers.find(l => l.id === p)?.parentId) {
+                    seen.add(p);
+                    if (store.layers.find(l => l.id === p)?.expanded === false) updateLayer(p, { expanded: true });
+                }
+            });
+        }
+        queueMicrotask(() => rowEls.get(id)?.scrollIntoView({ block: 'nearest' }));
     });
 
     const startDrag = (id: string, e: PointerEvent) => {
@@ -529,7 +586,7 @@ const LayerPanel: Component = () => {
                         which carries no DataTransfer for app.tsx's global drop handlers to
                         interfere with. The exemption was the fix for #323; this removes the
                         thing that needed exempting. `.slide-navigator` still needs its own. */}
-                    <div class="layer-list">
+                    <div class={`layer-list ${draggedId() ? 'is-dragging' : ''}`} ref={listEl}>
                         <For each={displayLayers().items}>
                             {(layer) => {
                                 const depth = () => displayLayers().depths.get(layer.id) || 0;
@@ -644,10 +701,8 @@ const LayerPanel: Component = () => {
                         </For>
                         <Show when={store.layerGroupingModeEnabled && draggedId()}>
                             <div
+                                ref={rootZoneEl}
                                 class={`root-drop-zone ${dropTarget()?.id === 'root' ? 'drag-over' : ''}`}
-                                onPointerEnter={() => { if (draggedId()) setDropTarget({ id: 'root', place: 'into' }); }}
-                                onPointerLeave={() => { if (dropTarget()?.id === 'root') setDropTarget(null); }}
-                                onPointerUp={() => { const id = draggedId(); endDrag(); if (id) applyDrop(id, null); }}
                             >
                                 Move to Top Level
                             </div>

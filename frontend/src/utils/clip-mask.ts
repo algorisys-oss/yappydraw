@@ -8,7 +8,7 @@
  */
 
 import type { DrawingElement } from '../types';
-import { getShapeGeometry, type ShapeGeometry } from './shape-geometry';
+import { getCentredShapeGeometry, getShapeGeometry, type ShapeGeometry } from './shape-geometry';
 
 /** Centred geometry → a Path2D in the element's centred frame. */
 function geometryToPath2D(geo: ShapeGeometry): Path2D {
@@ -38,7 +38,7 @@ function geometryToPath2D(geo: ShapeGeometry): Path2D {
 
 /** A world-space clip Path2D for a mask element (centre + rotate/flip applied), or null. */
 export function buildClipPath2D(mask: DrawingElement): Path2D | null {
-    const geo = getShapeGeometry(mask);
+    const geo = getCentredShapeGeometry(mask);
     if (!geo) return null;
     const centered = geometryToPath2D(geo);
     const cx = mask.x + mask.width / 2, cy = mask.y + mask.height / 2;

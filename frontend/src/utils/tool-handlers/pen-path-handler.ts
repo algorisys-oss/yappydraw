@@ -32,7 +32,7 @@
 import type { DrawingElement, PathAnchor } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry, perspectiveSnapActive, setPerspectiveSnapGuide, isLayerLocked, isLayerVisible, setPenResumeHint } from '../../store/app-store';
+import { store, addElement, updateElement, setStore, setSelectedTool, shouldRevertToSelect, pushToHistory, applyLiveSymmetry, perspectiveSnapActive, setPerspectiveSnapGuide, isLayerLocked, isLayerVisible, setPenResumeHint } from '../../store/app-store';
 import { showToast } from '../../components/toast';
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
@@ -278,6 +278,20 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
         if (hit >= 0) {
             const a = pState.penAnchors[hit];
             const hasHandles = a.inX !== undefined || a.outX !== undefined;
+            const isLast = hit === pState.penAnchors.length - 1 && hit > 0;
+            if (isLast && a.outX !== undefined) {
+                // The anchor you just placed: Illustrator retracts only its OUTGOING handle, so
+                // the curve you drew into it keeps its shape and the next segment leaves
+                // straight. Retracting both (the branch below) flattened the curve behind you.
+                // Keep the pointer on it: dragging now pulls a fresh out handle on its own.
+                const { outX: _ox, outY: _oy, ...rest } = a;
+                pState.penAnchors[hit] = { ...rest, kind: 'corner' };
+                pState.penActiveIdx = hit;
+                pState.penDragging = true;
+                pState.penHandleBroken = true;
+                writePenElement(pState);
+                return;
+            }
             if (a.kind === 'smooth' || hasHandles) {
                 pState.penAnchors[hit] = { x: a.x, y: a.y, kind: 'corner' };   // retract → cusp
             } else {
@@ -359,10 +373,20 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
     const closeThreshold = 12 / store.viewState.scale;
     if (pState.penAnchors.length >= 2 &&
         Math.hypot(px - pState.startX, py - pState.startY) < closeThreshold) {
+        const id = pState.currentId;
         writePenElement(pState, null, true);
-        setStore('selection', [pState.currentId]);
+        // A closed shape takes the current fill. While open the path is built unfilled (a fill
+        // across an open curve is a surprise), but closing is the moment it becomes a shape, and
+        // leaving it outline-only read as "closing converts it to a stroke" (Anshika, Sep 2026).
+        const fill = store.defaultElementStyles.backgroundColor;
+        if (fill && fill !== 'transparent') updateElement(id, { backgroundColor: fill }, false);
         resetPen(pState);
-        setSelectedTool('selection');
+        // Closing is finishing a shape, so it follows the same rule as every other draw tool:
+        // keep the Pen unless the user turned "keep tool active" off. It used to switch to
+        // Select unconditionally — and after setting the selection, which setSelectedTool
+        // clears, so the shape you had just closed wasn't even selected.
+        if (shouldRevertToSelect()) setSelectedTool('selection');
+        setStore('selection', [id]);
         return;
     }
 

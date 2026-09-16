@@ -1,10 +1,10 @@
-import { r as Lt, g as Et } from "./PrioritizedList-TjDg4i-s.js";
+import { r as bt, g as Et } from "./PrioritizedList-TjDg4i-s.js";
 import { r as Dt } from "./mathjax-CnUrFnFS.js";
 import { r as it } from "./Options-BStFr0zv.js";
-import { r as Pt } from "./InputJax-BYq2tqUz.js";
-import { a as Ht, c as kt, d as It, f as qt, h as Nt, e as Rt, b as Ct, k as Ft, l as Jt, m as Bt, g as $t, i as Xt, j as zt, n as Wt, w as Yt, v as Kt, o as Ut, p as Gt, q as Qt, s as Vt, t as Zt, u as te, y as ee, x as re, z as ne, r as ie } from "./TeXAtom-Bp5xoo7F.js";
+import { r as Pt } from "./InputJax-DQpRzuU2.js";
+import { a as Ht, c as kt, d as It, f as qt, h as Nt, e as Rt, b as Ct, k as Ft, l as Jt, m as Bt, g as $t, i as Xt, j as zt, n as Wt, w as Yt, v as Kt, o as Ut, p as Gt, q as Qt, s as Vt, t as Zt, u as te, y as ee, x as re, z as ne, r as ie } from "./TeXAtom-COgv6VHH.js";
 import { r as ot } from "./MathItem-DD5NNBjZ.js";
-import { b as oe, a as rt, f as jt, c as ae } from "./Factory--zguTNZ7.js";
+import { d as oe, a as rt, f as jt, c as ae } from "./Factory-B4kWsy6c.js";
 function se(f, O) {
   for (var w = 0; w < O.length; w++) {
     const h = O[w];
@@ -180,8 +180,8 @@ function ue() {
             var x = _.value;
             c.set(x, !0);
           }
-        } catch (L) {
-          e = { error: L };
+        } catch (b) {
+          e = { error: b };
         } finally {
           try {
             _ && !_.done && (i = p.return) && i.call(p);
@@ -568,8 +568,8 @@ function de() {
   ht = 1;
   var f;
   Object.defineProperty(et, "__esModule", { value: !0 }), et.MML = void 0;
-  var O = rt(), w = Ht(), h = kt(), o = It(), n = ae(), t = qt(), r = Nt(), e = Rt(), i = Ct(), y = Ft(), u = Jt(), c = Bt(), p = ce(), _ = $t(), x = Xt(), d = zt(), T = Wt(), L = Yt(), v = Kt(), a = Ut(), l = Gt(), s = Qt(), m = Vt(), M = Zt(), g = te(), j = fe(), S = pe(), A = ee(), b = re(), D = ne(), E = he();
-  return et.MML = (f = {}, f[w.MmlMath.prototype.kind] = w.MmlMath, f[h.MmlMi.prototype.kind] = h.MmlMi, f[o.MmlMn.prototype.kind] = o.MmlMn, f[n.MmlMo.prototype.kind] = n.MmlMo, f[t.MmlMtext.prototype.kind] = t.MmlMtext, f[r.MmlMspace.prototype.kind] = r.MmlMspace, f[e.MmlMs.prototype.kind] = e.MmlMs, f[i.MmlMrow.prototype.kind] = i.MmlMrow, f[i.MmlInferredMrow.prototype.kind] = i.MmlInferredMrow, f[y.MmlMfrac.prototype.kind] = y.MmlMfrac, f[u.MmlMsqrt.prototype.kind] = u.MmlMsqrt, f[c.MmlMroot.prototype.kind] = c.MmlMroot, f[p.MmlMstyle.prototype.kind] = p.MmlMstyle, f[_.MmlMerror.prototype.kind] = _.MmlMerror, f[x.MmlMpadded.prototype.kind] = x.MmlMpadded, f[d.MmlMphantom.prototype.kind] = d.MmlMphantom, f[T.MmlMfenced.prototype.kind] = T.MmlMfenced, f[L.MmlMenclose.prototype.kind] = L.MmlMenclose, f[v.MmlMaction.prototype.kind] = v.MmlMaction, f[a.MmlMsub.prototype.kind] = a.MmlMsub, f[a.MmlMsup.prototype.kind] = a.MmlMsup, f[a.MmlMsubsup.prototype.kind] = a.MmlMsubsup, f[l.MmlMunder.prototype.kind] = l.MmlMunder, f[l.MmlMover.prototype.kind] = l.MmlMover, f[l.MmlMunderover.prototype.kind] = l.MmlMunderover, f[s.MmlMmultiscripts.prototype.kind] = s.MmlMmultiscripts, f[s.MmlMprescripts.prototype.kind] = s.MmlMprescripts, f[s.MmlNone.prototype.kind] = s.MmlNone, f[m.MmlMtable.prototype.kind] = m.MmlMtable, f[M.MmlMlabeledtr.prototype.kind] = M.MmlMlabeledtr, f[M.MmlMtr.prototype.kind] = M.MmlMtr, f[g.MmlMtd.prototype.kind] = g.MmlMtd, f[j.MmlMaligngroup.prototype.kind] = j.MmlMaligngroup, f[S.MmlMalignmark.prototype.kind] = S.MmlMalignmark, f[A.MmlMglyph.prototype.kind] = A.MmlMglyph, f[b.MmlSemantics.prototype.kind] = b.MmlSemantics, f[b.MmlAnnotation.prototype.kind] = b.MmlAnnotation, f[b.MmlAnnotationXML.prototype.kind] = b.MmlAnnotationXML, f[D.TeXAtom.prototype.kind] = D.TeXAtom, f[E.MathChoice.prototype.kind] = E.MathChoice, f[O.TextNode.prototype.kind] = O.TextNode, f[O.XMLNode.prototype.kind] = O.XMLNode, f), et;
+  var O = rt(), w = Ht(), h = kt(), o = It(), n = ae(), t = qt(), r = Nt(), e = Rt(), i = Ct(), y = Ft(), u = Jt(), c = Bt(), p = ce(), _ = $t(), x = Xt(), d = zt(), T = Wt(), b = Yt(), v = Kt(), a = Ut(), l = Gt(), s = Qt(), m = Vt(), M = Zt(), g = te(), j = fe(), S = pe(), A = ee(), L = re(), D = ne(), E = he();
+  return et.MML = (f = {}, f[w.MmlMath.prototype.kind] = w.MmlMath, f[h.MmlMi.prototype.kind] = h.MmlMi, f[o.MmlMn.prototype.kind] = o.MmlMn, f[n.MmlMo.prototype.kind] = n.MmlMo, f[t.MmlMtext.prototype.kind] = t.MmlMtext, f[r.MmlMspace.prototype.kind] = r.MmlMspace, f[e.MmlMs.prototype.kind] = e.MmlMs, f[i.MmlMrow.prototype.kind] = i.MmlMrow, f[i.MmlInferredMrow.prototype.kind] = i.MmlInferredMrow, f[y.MmlMfrac.prototype.kind] = y.MmlMfrac, f[u.MmlMsqrt.prototype.kind] = u.MmlMsqrt, f[c.MmlMroot.prototype.kind] = c.MmlMroot, f[p.MmlMstyle.prototype.kind] = p.MmlMstyle, f[_.MmlMerror.prototype.kind] = _.MmlMerror, f[x.MmlMpadded.prototype.kind] = x.MmlMpadded, f[d.MmlMphantom.prototype.kind] = d.MmlMphantom, f[T.MmlMfenced.prototype.kind] = T.MmlMfenced, f[b.MmlMenclose.prototype.kind] = b.MmlMenclose, f[v.MmlMaction.prototype.kind] = v.MmlMaction, f[a.MmlMsub.prototype.kind] = a.MmlMsub, f[a.MmlMsup.prototype.kind] = a.MmlMsup, f[a.MmlMsubsup.prototype.kind] = a.MmlMsubsup, f[l.MmlMunder.prototype.kind] = l.MmlMunder, f[l.MmlMover.prototype.kind] = l.MmlMover, f[l.MmlMunderover.prototype.kind] = l.MmlMunderover, f[s.MmlMmultiscripts.prototype.kind] = s.MmlMmultiscripts, f[s.MmlMprescripts.prototype.kind] = s.MmlMprescripts, f[s.MmlNone.prototype.kind] = s.MmlNone, f[m.MmlMtable.prototype.kind] = m.MmlMtable, f[M.MmlMlabeledtr.prototype.kind] = M.MmlMlabeledtr, f[M.MmlMtr.prototype.kind] = M.MmlMtr, f[g.MmlMtd.prototype.kind] = g.MmlMtd, f[j.MmlMaligngroup.prototype.kind] = j.MmlMaligngroup, f[S.MmlMalignmark.prototype.kind] = S.MmlMalignmark, f[A.MmlMglyph.prototype.kind] = A.MmlMglyph, f[L.MmlSemantics.prototype.kind] = L.MmlSemantics, f[L.MmlAnnotation.prototype.kind] = L.MmlAnnotation, f[L.MmlAnnotationXML.prototype.kind] = L.MmlAnnotationXML, f[D.TeXAtom.prototype.kind] = D.TeXAtom, f[E.MathChoice.prototype.kind] = E.MathChoice, f[O.TextNode.prototype.kind] = O.TextNode, f[O.XMLNode.prototype.kind] = O.XMLNode, f), et;
 }
 var dt;
 function ye() {
@@ -769,7 +769,7 @@ function Tt() {
       return v.concat(M || Array.prototype.slice.call(a));
     };
     Object.defineProperty(f, "__esModule", { value: !0 }), f.AbstractMathDocument = f.resetAllOptions = f.resetOptions = f.RenderList = void 0;
-    var n = it(), t = Pt(), r = ie(), e = St(), i = ot(), y = ye(), u = ve(), c = Lt(), p = (function(v) {
+    var n = it(), t = Pt(), r = ie(), e = St(), i = ot(), y = ye(), u = ve(), c = bt(), p = (function(v) {
       O(a, v);
       function a() {
         return v !== null && v.apply(this, arguments) || this;
@@ -778,8 +778,8 @@ function Tt() {
         var s, m, M = new this();
         try {
           for (var g = w(Object.keys(l)), j = g.next(); !j.done; j = g.next()) {
-            var S = j.value, A = h(this.action(S, l[S]), 2), b = A[0], D = A[1];
-            D && M.add(b, D);
+            var S = j.value, A = h(this.action(S, l[S]), 2), L = A[0], D = A[1];
+            D && M.add(L, D);
           }
         } catch (E) {
           s = { error: E };
@@ -792,19 +792,19 @@ function Tt() {
         }
         return M;
       }, a.action = function(l, s) {
-        var m, M, g, j, S, A, b = !0, D = s[0];
+        var m, M, g, j, S, A, L = !0, D = s[0];
         if (s.length === 1 || typeof s[1] == "boolean")
-          s.length === 2 && (b = s[1]), m = h(this.methodActions(l), 2), S = m[0], A = m[1];
+          s.length === 2 && (L = s[1]), m = h(this.methodActions(l), 2), S = m[0], A = m[1];
         else if (typeof s[1] == "string")
           if (typeof s[2] == "string") {
-            s.length === 4 && (b = s[3]);
+            s.length === 4 && (L = s[3]);
             var E = h(s.slice(1), 2), k = E[0], P = E[1];
             M = h(this.methodActions(k, P), 2), S = M[0], A = M[1];
           } else
-            s.length === 3 && (b = s[2]), g = h(this.methodActions(s[1]), 2), S = g[0], A = g[1];
+            s.length === 3 && (L = s[2]), g = h(this.methodActions(s[1]), 2), S = g[0], A = g[1];
         else
-          s.length === 4 && (b = s[3]), j = h(s.slice(1), 2), S = j[0], A = j[1];
-        return [{ id: l, renderDoc: S, renderMath: A, convert: b }, D];
+          s.length === 4 && (L = s[3]), j = h(s.slice(1), 2), S = j[0], A = j[1];
+        return [{ id: l, renderDoc: S, renderMath: A, convert: L }, D];
       }, a.methodActions = function(l, s) {
         return s === void 0 && (s = l), [
           function(m) {
@@ -841,8 +841,8 @@ function Tt() {
             if (A.priority >= m && A.item.renderMath(l, s))
               return;
           }
-        } catch (b) {
-          M = { error: b };
+        } catch (L) {
+          M = { error: L };
         } finally {
           try {
             S && !S.done && (g = j.return) && g.call(j);
@@ -859,8 +859,8 @@ function Tt() {
             if (A.priority > m || A.item.convert && A.item.renderMath(l, s))
               return;
           }
-        } catch (b) {
-          M = { error: b };
+        } catch (L) {
+          M = { error: L };
         } finally {
           try {
             S && !S.done && (g = j.return) && g.call(j);
@@ -929,7 +929,7 @@ function Tt() {
         return v !== null && v.apply(this, arguments) || this;
       }
       return a;
-    })(i.AbstractMathItem), L = (function() {
+    })(i.AbstractMathItem), b = (function() {
       function v(a, l, s) {
         var m = this, M = this.constructor;
         this.document = a, this.options = (0, n.userOptions)((0, n.defaultOptions)({}, M.OPTIONS), s), this.math = new (this.options.MathList || d)(), this.renderActions = p.create(this.options.renderActions), this.processed = new v.ProcessBits(), this.outputJax = this.options.OutputJax || new x();
@@ -972,12 +972,12 @@ function Tt() {
           lineWidth: 1e6,
           scale: 1,
           family: ""
-        }, l), m = s.format, M = s.display, g = s.end, j = s.ex, S = s.em, A = s.containerWidth, b = s.lineWidth, D = s.scale, E = s.family;
+        }, l), m = s.format, M = s.display, g = s.end, j = s.ex, S = s.em, A = s.containerWidth, L = s.lineWidth, D = s.scale, E = s.family;
         A === null && (A = 80 * j);
         var k = this.inputJax.reduce(function(q, C) {
           return C.name === m ? C : q;
         }, null), P = new this.options.MathItem(a, k, M);
-        return P.start.node = this.adaptor.body(this.document), P.setMetrics(S, j, A, b, D), this.outputJax.options.mtextInheritFont && (P.outputData.mtextFamily = E), this.outputJax.options.merrorInheritFont && (P.outputData.merrorFamily = E), P.convert(this, g), P.typesetRoot || P.root;
+        return P.start.node = this.adaptor.body(this.document), P.setMetrics(S, j, A, L, D), this.outputJax.options.mtextInheritFont && (P.outputData.mtextFamily = E), this.outputJax.options.merrorInheritFont && (P.outputData.merrorFamily = E), P.convert(this, g), P.typesetRoot || P.root;
       }, v.prototype.findMath = function(a) {
         return this.processed.set("findMath"), this;
       }, v.prototype.compile = function() {
@@ -999,15 +999,15 @@ function Tt() {
             }
           }
           try {
-            for (var A = w(M), b = A.next(); !b.done; b = A.next()) {
-              var S = b.value, D = S.inputData.recompile;
+            for (var A = w(M), L = A.next(); !L.done; L = A.next()) {
+              var S = L.value, D = S.inputData.recompile;
               S.state(D.state), S.inputData.recompile = D, this.compileMath(S);
             }
           } catch (E) {
             s = { error: E };
           } finally {
             try {
-              b && !b.done && (m = A.return) && m.call(A);
+              L && !L.done && (m = A.return) && m.call(A);
             } finally {
               if (s) throw s.error;
             }
@@ -1139,8 +1139,8 @@ function Tt() {
         Array.isArray(a) || (a = [a]);
         var g = this.adaptor, j = [], S = g.getElements(a, this.document);
         try {
-          t: for (var A = w(this.math), b = A.next(); !b.done; b = A.next()) {
-            var D = b.value;
+          t: for (var A = w(this.math), L = A.next(); !L.done; L = A.next()) {
+            var D = L.value;
             try {
               for (var E = (m = void 0, w(S)), k = E.next(); !k.done; k = E.next()) {
                 var P = k.value;
@@ -1163,7 +1163,7 @@ function Tt() {
           l = { error: q };
         } finally {
           try {
-            b && !b.done && (s = A.return) && s.call(A);
+            L && !L.done && (s = A.return) && s.call(A);
           } finally {
             if (l) throw l.error;
           }
@@ -1190,7 +1190,7 @@ function Tt() {
         })
       }, v.ProcessBits = (0, u.BitFieldClass)("findMath", "compile", "getMetrics", "typeset", "updateDocument"), v;
     })();
-    f.AbstractMathDocument = L;
+    f.AbstractMathDocument = b;
   })(N)), N;
 }
 var mt;
@@ -1449,8 +1449,8 @@ function xe() {
     var _ = p.call(u), x, d = [], T;
     try {
       for (; (c === void 0 || c-- > 0) && !(x = _.next()).done; ) d.push(x.value);
-    } catch (L) {
-      T = { error: L };
+    } catch (b) {
+      T = { error: b };
     } finally {
       try {
         x && !x.done && (p = _.return) && p.call(_);
@@ -1473,11 +1473,11 @@ function xe() {
   var o = Tt(), n = it(), t = Me(), r = _e(), e = ge(), i = ot(), y = (function(u) {
     f(c, u);
     function c(p, _, x) {
-      var d = this, T = w((0, n.separateOptions)(x, e.HTMLDomStrings.OPTIONS), 2), L = T[0], v = T[1];
-      return d = u.call(this, p, _, L) || this, d.domStrings = d.options.DomStrings || new e.HTMLDomStrings(v), d.domStrings.adaptor = _, d.styles = [], d;
+      var d = this, T = w((0, n.separateOptions)(x, e.HTMLDomStrings.OPTIONS), 2), b = T[0], v = T[1];
+      return d = u.call(this, p, _, b) || this, d.domStrings = d.options.DomStrings || new e.HTMLDomStrings(v), d.domStrings.adaptor = _, d.styles = [], d;
     }
     return c.prototype.findPosition = function(p, _, x, d) {
-      var T, L, v = this.adaptor;
+      var T, b, v = this.adaptor;
       try {
         for (var a = h(d[p]), l = a.next(); !l.done; l = a.next()) {
           var s = l.value, m = w(s, 2), M = m[0], g = m[1];
@@ -1489,27 +1489,27 @@ function xe() {
         T = { error: j };
       } finally {
         try {
-          l && !l.done && (L = a.return) && L.call(a);
+          l && !l.done && (b = a.return) && b.call(a);
         } finally {
           if (T) throw T.error;
         }
       }
       return { node: null, n: 0, delim: x };
     }, c.prototype.mathItem = function(p, _, x) {
-      var d = p.math, T = this.findPosition(p.n, p.start.n, p.open, x), L = this.findPosition(p.n, p.end.n, p.close, x);
-      return new this.options.MathItem(d, _, p.display, T, L);
+      var d = p.math, T = this.findPosition(p.n, p.start.n, p.open, x), b = this.findPosition(p.n, p.end.n, p.close, x);
+      return new this.options.MathItem(d, _, p.display, T, b);
     }, c.prototype.findMath = function(p) {
-      var _, x, d, T, L, v, a, l, s;
+      var _, x, d, T, b, v, a, l, s;
       if (!this.processed.isSet("findMath")) {
         this.adaptor.document = this.document, p = (0, n.userOptions)({ elements: this.options.elements || [this.adaptor.body(this.document)] }, p);
         try {
           for (var m = h(this.adaptor.getElements(p.elements, this.document)), M = m.next(); !M.done; M = m.next()) {
             var g = M.value, j = w([null, null], 2), S = j[0], A = j[1];
             try {
-              for (var b = (d = void 0, h(this.inputJax)), D = b.next(); !D.done; D = b.next()) {
+              for (var L = (d = void 0, h(this.inputJax)), D = L.next(); !D.done; D = L.next()) {
                 var E = D.value, k = new this.options.MathList();
                 if (E.processStrings) {
-                  S === null && (L = w(this.domStrings.find(g), 2), S = L[0], A = L[1]);
+                  S === null && (b = w(this.domStrings.find(g), 2), S = b[0], A = b[1]);
                   try {
                     for (var P = (v = void 0, h(E.findMath(S))), q = P.next(); !q.done; q = P.next()) {
                       var C = q.value;
@@ -1527,8 +1527,8 @@ function xe() {
                 } else
                   try {
                     for (var nt = (l = void 0, h(E.findMath(g))), Z = nt.next(); !Z.done; Z = nt.next()) {
-                      var C = Z.value, bt = new this.options.MathItem(C.math, E, C.display, C.start, C.end);
-                      k.push(bt);
+                      var C = Z.value, Lt = new this.options.MathItem(C.math, E, C.display, C.start, C.end);
+                      k.push(Lt);
                     }
                   } catch (X) {
                     l = { error: X };
@@ -1545,7 +1545,7 @@ function xe() {
               d = { error: X };
             } finally {
               try {
-                D && !D.done && (T = b.return) && T.call(b);
+                D && !D.done && (T = L.return) && T.call(L);
               } finally {
                 if (d) throw d.error;
               }
@@ -1578,8 +1578,8 @@ function xe() {
       var x, d;
       if (_)
         try {
-          for (var T = h(this.adaptor.tags(p, "style")), L = T.next(); !L.done; L = T.next()) {
-            var v = L.value;
+          for (var T = h(this.adaptor.tags(p, "style")), b = T.next(); !b.done; b = T.next()) {
+            var v = b.value;
             if (this.adaptor.getAttribute(v, "id") === _)
               return v;
           }
@@ -1587,7 +1587,7 @@ function xe() {
           x = { error: a };
         } finally {
           try {
-            L && !L.done && (d = T.return) && d.call(T);
+            b && !b.done && (d = T.return) && d.call(T);
           } finally {
             if (x) throw x.error;
           }
@@ -1598,8 +1598,8 @@ function xe() {
       if (p === void 0 && (p = !1), this.processed.isSet("updateDocument"))
         try {
           for (var d = h(this.math), T = d.next(); !T.done; T = d.next()) {
-            var L = T.value;
-            L.state() >= i.STATE.INSERTED && L.state(i.STATE.TYPESET, p);
+            var b = T.value;
+            b.state() >= i.STATE.INSERTED && b.state(i.STATE.TYPESET, p);
           }
         } catch (v) {
           _ = { error: v };

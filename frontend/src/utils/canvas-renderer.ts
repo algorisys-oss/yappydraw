@@ -106,7 +106,7 @@ function ensureLumFilter() {
     _lumFilterReady = true;
 }
 
-function renderOpacityMasked(ctx: CanvasRenderingContext2D, el: DrawingElement, mask: DrawingElement, isDarkMode: boolean, layerOpacity: number) {
+export function renderOpacityMasked(ctx: CanvasRenderingContext2D, el: DrawingElement, mask: DrawingElement, isDarkMode: boolean, layerOpacity: number) {
     ensureLumFilter();
     const W = ctx.canvas.width, H = ctx.canvas.height;
     const s = omScratch(W, H);

@@ -2,6 +2,39 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A passing test only covers the cases in it: re-checking a tester's report two weeks later
+
+Anshika's Sep 2026 report was worked through on Sep 7 (v0.8.236). Re-checking every item against
+the code on Sep 16, with her screencasts, found five of those fixes incomplete and one closed wrongly.
+
+- **"Not reproduced" meant "not reproduced with the shapes we tested".** Pathfinder moving shapes was
+  closed as not-a-bug because `path-boolean-position.test.ts` passed. It covered rectangles, ellipses
+  and paths; she had drawn with a brush. Freehand strokes store `points` from the top-left corner and
+  everything else is centred, and the boolean pipeline read them as centred. Her video showed the
+  shape moving, and that should have outweighed a green test. Before calling a report not-a-bug,
+  reproduce it with *their* kind of input, and when the test disagrees with the video, the
+  test is the one missing something. `shapeToPath` had carried the same fix since July, which is the
+  usual shape: a rule applied at one call site and not at the one shared place.
+- **Two orderings that must agree will disagree.** The Layers panel lists the array; the canvas sorts
+  by `order`. #355 set `order` right and left the array wrong, so the new layer painted in the right
+  place and was listed in the wrong one until the next drag renumbered `order` from the array and
+  made the wrong answer true everywhere. One invariant (array sorted by `order`, `order` = index),
+  enforced after every structural change, replaces reasoning about which one each caller reads.
+- **`generateId` in a loop needs a batch.** It scans the store, and ids created in the same loop
+  aren't in the store yet, so every copy got the same id. The duplicated group's children then had
+  themselves as parent, and walking the tree never ended. It only surfaced because verifying a
+  *different* fix deleted a duplicated group. The loop that remaps group ids had the same flaw.
+- **`confirm()` can't ask a three-way question.** Mapping "keep contents" onto Cancel removed the only
+  way to back out. If the answers aren't OK/Cancel, don't use `confirm()`.
+- **Drive the real gesture.** The "Move to Top Level" zone listened for `pointerup` while the drag had
+  captured the pointer elsewhere, so it could never fire, and the auto-scroll's first version
+  scrolled the list, which doesn't overflow when docked. Store-level checks passed for both;
+  only a real pointer drag in a real layout showed them.
+- **A verification script that hangs is not always the app hanging.** Two "hangs" in this session
+  were a script truncated by an earlier edit (it never closed the browser) and a burst of
+  `ERR_NETWORK_CHANGED`. One was real (the id cycle). Put a timeout on each step and log which step
+  stalls, rather than one timeout around the whole run.
+
 ## Canvas paint state is shared between elements, so UI chrome must restore it
 
 The selection overlays are drawn inside the element loop, so whatever `fillStyle` they leave is

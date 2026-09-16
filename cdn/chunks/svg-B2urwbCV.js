@@ -1,10 +1,10 @@
 import { g as j6 } from "./PrioritizedList-TjDg4i-s.js";
-import { r as k6, a as F6, b as P6, c as W6, d as G6, e as q6, f as R6, g as N6, h as I6, i as $6, j as z6, k as X6, l as K6, m as U6, n as J6, o as Y6, p as Q5, q as T5, s as t5, t as e5, u as r5, v as i5, w as n5, x as a5, y as L5, z as o5 } from "./TeXAtom-Bp5xoo7F.js";
+import { r as k6, a as F6, b as P6, c as W6, d as G6, e as q6, f as R6, g as N6, h as I6, i as $6, j as z6, k as X6, l as K6, m as U6, n as J6, o as Y6, p as Q5, q as T5, s as t5, t as e5, u as r5, v as i5, w as n5, x as a5, y as L5, z as o5 } from "./TeXAtom-COgv6VHH.js";
 import { r as H5 } from "./MathItem-DD5NNBjZ.js";
 import { r as Z6 } from "./Options-BStFr0zv.js";
 import { r as n3 } from "./lengths-DNFHULBn.js";
 import { r as w6 } from "./Styles-DdTYCumM.js";
-import { b as s5, a as a2, r as n2, c as x5 } from "./Factory--zguTNZ7.js";
+import { d as s5, a as a2, r as n2, c as x5 } from "./Factory-B4kWsy6c.js";
 function l5(l, h) {
   for (var y = 0; y < h.length; y++) {
     const d = h[y];
