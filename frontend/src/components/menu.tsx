@@ -702,6 +702,9 @@ const Menu: Component = () => {
                     isOpen={isTemplateBrowserOpen()}
                     onClose={() => setIsTemplateBrowserOpen(false)}
                     onSelectTemplate={handleTemplateSelect}
+                    // Fresh from New Design this just re-makes the empty page; opened later on a
+                    // document with work in it, handleNew asks about unsaved changes first.
+                    onBlank={(size) => handleNew('design', size)}
                 />
 
                 <DesignSizeDialog

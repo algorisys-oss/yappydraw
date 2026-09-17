@@ -1137,6 +1137,10 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
             }
         } else if ((el.type === 'text' || el.type === 'richtext') && (el.text || (el.richText && el.richText.length > 0))) {
             const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            // Horizontal scale: lay out in the unscaled width, then stretch the lines about the
+            // box's left edge (inner <g>, so the outer node's rotate/flip transform still applies).
+            const sx = el.textScaleX && el.textScaleX > 0 ? el.textScaleX : 1;
+            const lw = el.width / sx;
             const fontSize = el.fontSize || 20;
             const fontFamily = resolveFontFamily(el.fontFamily);
             const textColor = el.textColor || el.strokeColor;
@@ -1146,7 +1150,7 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
             // Rich text path
             if (el.richText && el.richText.length > 0) {
                 const measureRenderer = getMeasurementRenderer();
-                const availableWidth = Math.max(el.width - padding * 2, 20);
+                const availableWidth = Math.max(lw - padding * 2, 20);
                 const defaults = { fontSize, fontFamily: el.fontFamily || 'sans-serif', lineHeight: el.lineHeight };
                 const layout = layoutRichText(measureRenderer, el.richText, availableWidth, defaults);
                 const verticalPadding = Math.max(0, (el.height - layout.totalHeight) / 2);
@@ -1162,8 +1166,8 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
                     }
 
                     let xOffset: number;
-                    if (textAlign === 'center') xOffset = el.x + (el.width - lineWidth) / 2;
-                    else if (textAlign === 'right') xOffset = el.x + el.width - padding - lineWidth;
+                    if (textAlign === 'center') xOffset = el.x + (lw - lineWidth) / 2;
+                    else if (textAlign === 'right') xOffset = el.x + lw - padding - lineWidth;
                     else xOffset = el.x + padding;
 
                     const baselineY = lineY + lineHeight * 0.75;
@@ -1202,7 +1206,7 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
                 const lineHeight = lineHeightPx(fontSize, el);
                 const measureRenderer = getMeasurementRenderer();
                 measureRenderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
-                const availableWidth = Math.max(el.width - padding * 2, 20);
+                const availableWidth = Math.max(lw - padding * 2, 20);
                 const paragraphs = el.text!.split('\n');
                 const lines: string[] = [];
                 paragraphs.forEach(para => {
@@ -1212,8 +1216,8 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
 
                 let textAnchor = 'start';
                 let xPos = el.x + padding;
-                if (textAlign === 'center') { textAnchor = 'middle'; xPos = el.x + el.width / 2; }
-                else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - padding; }
+                if (textAlign === 'center') { textAnchor = 'middle'; xPos = el.x + lw / 2; }
+                else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + lw - padding; }
 
                 const totalTextHeight = lines.length * lineHeight;
                 const verticalPadding = Math.max(0, (el.height - totalTextHeight) / 2);
@@ -1231,6 +1235,12 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
                     textEl.setAttribute('text-anchor', textAnchor);
                     textGroup.appendChild(textEl);
                 });
+            }
+            if (Math.abs(sx - 1) > 1e-3) {
+                const stretch = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                stretch.setAttribute('transform', `translate(${el.x}, 0) scale(${sx}, 1) translate(${-el.x}, 0)`);
+                while (textGroup.firstChild) stretch.appendChild(textGroup.firstChild);
+                textGroup.appendChild(stretch);
             }
             node = textGroup;
         } else if ((el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker' || el.type === 'ink') && el.points) {

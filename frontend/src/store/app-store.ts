@@ -4,7 +4,8 @@ import { createStore, reconcile } from "solid-js/store";
 // existing toolbar/menu/hotkey/API entry points keep working. dock-layout has no app-store import,
 // so this one-way edge introduces no cycle.
 import { setPanelOpen, isPanelOpen, panelState, toggleCollapse as toggleDockCollapse } from "./dock-layout";
-import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType, Guide } from "../types";
+import type { DrawingElement, ViewState, ToolType, Layer, BlendMode, GridSettings, AppMode, ElementType, Guide } from "../types";
+import { registerLayerBlendResolver } from "../utils/layer-blend";
 import { normalizedLayers, subtreeCopyOrders, keepContentsSurvivor } from "./layer-order";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
@@ -1551,6 +1552,8 @@ export const deleteElements = (ids: string[]) => {
         const animate = roots.size === 1;
         for (const r of roots) relayoutMindmap(r, { animate });
     }
+
+    disarmOrphanedMandalaSymmetry();
 };
 
 export const bringToFront = (ids: string[]) => {
@@ -1706,7 +1709,7 @@ export const updateGlobalTickerState = () => {
  * caller hasn't already supplied an explicit width/height in the same patch (e.g.
  * setElementTransform, which sizes the box itself).
  */
-const FONT_METRIC_KEYS = ['fontSize', 'fontFamily', 'letterSpacing', 'fontWeight', 'fontStyle'] as const;
+const FONT_METRIC_KEYS = ['fontSize', 'fontFamily', 'letterSpacing', 'fontWeight', 'fontStyle', 'textScaleX'] as const;
 /**
  * Does this patch require re-fitting a text box? True when it changes font metrics or flips the
  * auto-size mode (switching to auto-width must shrink the box onto the text, since the renderer
@@ -1730,15 +1733,18 @@ const autoSizeTextUpdates = (el: DrawingElement, updates: Partial<DrawingElement
         const v = measureVerticalText(merged);
         return { ...updates, width: Math.round(v.width), height: Math.round(v.height) };
     }
+    // Horizontal scale stretches the laid-out text to fill the box, so the box is the natural
+    // width times the scale, and wrapping happens in the unscaled width.
+    const sx = merged.textScaleX && merged.textScaleX > 0 ? merged.textScaleX : 1;
     if (merged.autoResize) {
-        const width = Math.max(measureMaxLineWidth(merged) + 8, fontSize);
+        const width = Math.max(measureMaxLineWidth(merged) + 8, fontSize) * sx;
         const lineCount = Math.max(1, text.split('\n').length);
         const height = Math.max(lineCount * lineHeightPx(fontSize, merged), lineHeightPx(fontSize, merged));
         return { ...updates, width, height };
     }
     // Fixed-width (drag-placed): keep width, re-flow height for the new metrics.
     const width = el.width || 200;
-    const height = Math.max(measureWrappedTextHeight(text, width, fontSize, merged.fontFamily, merged.letterSpacing, merged.lineHeight), lineHeightPx(fontSize, merged));
+    const height = Math.max(measureWrappedTextHeight(text, width / sx, fontSize, merged.fontFamily, merged.letterSpacing, merged.lineHeight), lineHeightPx(fontSize, merged));
     return { ...updates, height };
 };
 
@@ -5027,6 +5033,17 @@ export const deleteLayer = async (id: string, contents?: 'delete' | 'keep'): Pro
     return true;
 };
 
+// The render pipeline resolves a layer's blend mode through this (it can't import the store).
+registerLayerBlendResolver(layerId => store.layers.find(l => l.id === layerId)?.blendMode);
+
+/** Set a layer's blend mode (applies to its objects that don't set their own). One undo step. */
+export const setLayerBlendMode = (id: string, blendMode: BlendMode) => {
+    if (!store.layers.some(l => l.id === id)) return;
+    pushToHistory();
+    updateLayer(id, { blendMode: blendMode === 'normal' ? undefined : blendMode });
+    bumpDirtyRevision();
+};
+
 export const updateLayer = (id: string, updates: Partial<Layer>) => {
     const idx = store.layers.findIndex(l => l.id === id);
     if (idx === -1) return;
@@ -6335,6 +6352,34 @@ export const setSwatchGroup = (swatchIds: string[], group: string | null) => {
     setStore('swatches', (s: Swatch) => swatchIds.includes(s.id), () => ({ group: group ?? undefined }));
     bumpDirtyRevision();
     showToast(group ? `Grouped into “${group}”` : 'Ungrouped swatches', 'success');
+};
+
+/** Rename a swatch group; merging into an existing group of that name is allowed. */
+export const renameSwatchGroup = (from: string, to: string) => {
+    const name = to.trim();
+    if (!name || name === from || !store.swatches.some(s => s.group === from)) return;
+    pushToHistory();
+    setStore('swatches', (s: Swatch) => s.group === from, () => ({ group: name }));
+    bumpDirtyRevision();
+};
+
+/**
+ * Delete a swatch group. By default its swatches go with it (a colour combination is removed
+ * as a unit), and objects linked to them keep their colours but lose the link, as for
+ * `deleteSwatch`. Pass `keepSwatches` to ungroup them instead.
+ */
+export const deleteSwatchGroup = (group: string, keepSwatches = false) => {
+    const ids = store.swatches.filter(s => s.group === group).map(s => s.id);
+    if (ids.length === 0) return;
+    pushToHistory();
+    if (keepSwatches) {
+        setStore('swatches', (s: Swatch) => ids.includes(s.id), () => ({ group: undefined }));
+    } else {
+        setStore('swatches', list => list.filter(s => !ids.includes(s.id)));
+        setStore('elements', (e: DrawingElement) => !!e.fillSwatchId && ids.includes(e.fillSwatchId), () => ({ fillSwatchId: undefined }));
+        setStore('elements', (e: DrawingElement) => !!e.strokeSwatchId && ids.includes(e.strokeSwatchId), () => ({ strokeSwatchId: undefined }));
+    }
+    bumpDirtyRevision();
 };
 
 /** Swatches keyed by group name (ungrouped under ''). */
@@ -8210,6 +8255,35 @@ export const setSymmetryRings = (n: number) =>
 
 export const setSymmetryRingSpacing = (px: number) =>
     setStore('symmetry', 'ringSpacing', Math.max(1, Math.round(px)));
+
+/**
+ * Symmetry armed by a generated mandala ("Arm symmetry after"), remembered so it can be
+ * disarmed when that mandala is deleted. Otherwise its spokes and rings stay on screen
+ * with nothing under them: not elements, so neither the Layers panel nor the Select tool
+ * can reach them, and Kaleidoscope has no button in the status bar to turn it off.
+ * Anshika read them as "purple marks I can't delete" (Sep 2026).
+ */
+let mandalaSymmetryArm: { groupId: string; cx: number; cy: number } | null = null;
+
+export const noteMandalaArmedSymmetry = (groupId: string) => {
+    mandalaSymmetryArm = { groupId, cx: store.symmetry.cx, cy: store.symmetry.cy };
+};
+
+/**
+ * Turn symmetry off when the mandala that armed it no longer exists. Only if nothing has
+ * changed since: a different mode or centre means the user has taken symmetry over, and
+ * it is theirs to keep.
+ */
+const disarmOrphanedMandalaSymmetry = () => {
+    const arm = mandalaSymmetryArm;
+    if (!arm) return;
+    const { mode, cx, cy } = store.symmetry;
+    if (mode !== 'kaleidoscope' || cx !== arm.cx || cy !== arm.cy) { mandalaSymmetryArm = null; return; }
+    if (store.elements.some(e => e.groupIds?.includes(arm.groupId))) return;
+    mandalaSymmetryArm = null;
+    setSymmetryMode('off');
+    showToast('Symmetry turned off: its mandala was deleted', 'info');
+};
 
 export const setSymmetryEditing = (v: boolean) => setStore('symmetry', 'editing', v);
 export const toggleSymmetryEditing = () => setStore('symmetry', 'editing', v => !v);

@@ -29,7 +29,8 @@ import { lineHeightPx } from './text-line-height';
 
 import opentype from 'opentype.js';
 import { customFonts } from './custom-fonts';
-import { normalizeFontWeight, normalizeFontStyle, parseFontVariant } from './font-variants';
+import { normalizeFontWeight, normalizeFontStyle, parseFontVariant, styleLabel } from './font-variants';
+import { readFontDefaultWeight } from './font-axes';
 import type { PathSubpath, PathAnchor, DrawingElement } from '../types';
 
 /**
@@ -171,6 +172,18 @@ const loadFont = async (familyKey: string, weight: number, italic: boolean): Pro
                 `“${custom.label}” is a Google font, which is loaded as a web font and has no file to read. ` +
                 `Download it and add it with “＋ Add font…” (.ttf or .otf) to outline it.`,
             );
+        }
+        // A variable file only outlines at its DEFAULT instance: opentype.js ignores the
+        // variation tables, so Thin or Black would come out as Regular letterforms, looking
+        // like it worked. Refuse with the fix instead, as for Google fonts above.
+        if (custom.weightRange) {
+            const def = (await readFontDefaultWeight(dataUrlToArrayBuffer(custom.dataUrl))) ?? 400;
+            if (Math.round(weight / 100) * 100 !== Math.round(def / 100) * 100) {
+                throw new FontOutlineUnavailableError(
+                    `“${custom.label}” is a variable font, and only its default weight (${styleLabel(def, false)}) can be converted to outlines. ` +
+                    `Add the static ${styleLabel(weight, false)} file with “＋ Add font…” to outline this weight.`,
+                );
+            }
         }
         const id = `custom:${custom.key}`;
         let p = fontCache.get(id);
@@ -315,14 +328,19 @@ export const textElementToOutline = async (el: DrawingElement): Promise<OutlineR
 
     const textAlign = el.textAlign || 'center';
 
+    // Horizontal scale (textScaleX): the canvas lays text out in the unscaled width and stretches
+    // it about the box's left edge, so outline the same way or the vector comes out narrower.
+    const sx = el.textScaleX && el.textScaleX > 0 ? el.textScaleX : 1;
+    const layoutWidth = el.width / sx;
+
     // Build glyph commands in element-local coords (origin = el top-left).
     const cmds: opentype.PathCommand[] = [];
     lines.forEach((line, i) => {
         if (!line) return;
         const adv = font.getAdvanceWidth(line, fontSize);
         let leftX: number;
-        if (textAlign === 'center') leftX = el.width / 2 - adv / 2;
-        else if (textAlign === 'right') leftX = el.width - padding - adv;
+        if (textAlign === 'center') leftX = layoutWidth / 2 - adv / 2;
+        else if (textAlign === 'right') leftX = layoutWidth - padding - adv;
         else leftX = padding;
         const baselineY = verticalPadding + i * lineHeight + ascentPx; // canvas 'hanging' ≈ top
         const lineCmds = font.getPath(line, leftX, baselineY, fontSize).commands;
@@ -332,6 +350,13 @@ export const textElementToOutline = async (el: DrawingElement): Promise<OutlineR
         cmds.push(...lineCmds);
     });
     if (cmds.length === 0) return null;
+    if (Math.abs(sx - 1) > 1e-3) {
+        for (const c of cmds as Array<{ x?: number; x1?: number; x2?: number }>) {
+            if (c.x !== undefined) c.x *= sx;
+            if (c.x1 !== undefined) c.x1 *= sx;
+            if (c.x2 !== undefined) c.x2 *= sx;
+        }
+    }
 
     const subs = commandsToSubpaths(cmds);
     if (subs.length === 0) return null;

@@ -14,6 +14,8 @@
 
 import { createSignal } from "solid-js";
 import { registerFontFamily } from "./text-utils";
+import { parseFontVariant } from "./font-variants";
+import { dataUrlToBuffer, detectWeightRange, stripVariableMarkers } from "./font-axes";
 
 export interface CustomFont {
     key: string;       // stable id stored on elements, e.g. "custom-1" / "google-Roboto"
@@ -21,6 +23,11 @@ export interface CustomFont {
     family: string;    // CSS family name ("YappyFont_1", or the Google family e.g. "Roboto")
     kind?: 'file' | 'google';
     dataUrl?: string;  // base64 data URL of the font file (kind === 'file')
+    /**
+     * A variable font's weight range, e.g. [100, 900]; `null` for a static file. `undefined`
+     * means "not checked yet": fonts added before variable support are checked on load.
+     */
+    weightRange?: [number, number] | null;
 }
 
 const STORAGE_KEY = "yappy.customFonts.v1";
@@ -56,7 +63,12 @@ async function activate(font: CustomFont): Promise<void> {
     }
     if (!(document as any).fonts || !font.dataUrl) return;
     try {
-        const face = new FontFace(font.family, `url(${font.dataUrl})`);
+        // A variable file must declare its weight RANGE. With no descriptor the face is
+        // registered as weight 400 only, and every weight asked of it clamps to Regular.
+        const descriptors: FontFaceDescriptors = {};
+        if (font.weightRange) descriptors.weight = `${font.weightRange[0]} ${font.weightRange[1]}`;
+        if (parseFontVariant(font.label).italic) descriptors.style = 'italic';
+        const face = new FontFace(font.family, `url(${font.dataUrl})`, descriptors);
         await face.load();
         (document as any).fonts.add(face);
     } catch (e) {
@@ -89,7 +101,19 @@ export function initCustomFonts(): void {
         if (Number.isFinite(n)) counter = Math.max(counter, n);
     }
     setCustomFonts(stored);
-    stored.forEach(activate);
+    stored.forEach(async (f) => {
+        // Fonts added before variable-font support: check once, then remember the answer.
+        if (f.kind !== 'google' && f.dataUrl && f.weightRange === undefined) {
+            const weightRange = await detectWeightRange(dataUrlToBuffer(f.dataUrl), f.label);
+            const label = weightRange ? stripVariableMarkers(f.label) : f.label;
+            const upgraded: CustomFont = { ...f, weightRange, label };
+            const next = customFonts().map(x => x.key === f.key ? upgraded : x);
+            setCustomFonts(next);
+            persist(next);
+            f = upgraded;
+        }
+        await activate(f);
+    });
 }
 
 const readFileAsDataURL = (file: File): Promise<string> =>
@@ -103,11 +127,14 @@ const readFileAsDataURL = (file: File): Promise<string> =>
 /** Add a custom font from a user-selected file. Returns its stable key. */
 export async function addCustomFontFromFile(file: File): Promise<CustomFont> {
     const dataUrl = await readFileAsDataURL(file);
-    const label = file.name.replace(/\.(ttf|otf|woff2?|eot)$/i, "").trim() || `Font ${counter + 1}`;
+    const fileLabel = file.name.replace(/\.(ttf|otf|woff2?|eot)$/i, "").trim() || `Font ${counter + 1}`;
+    const weightRange = await detectWeightRange(await file.arrayBuffer().catch(() => null), fileLabel);
+    // `Roboto-VariableFont_wght` → `Roboto`, so the picker groups it as the family it is.
+    const label = weightRange ? stripVariableMarkers(fileLabel) : fileLabel;
     counter += 1;
     const key = `custom-${counter}`;
     const family = `YappyFont_${counter}`;
-    const font: CustomFont = { key, label, family, kind: 'file', dataUrl };
+    const font: CustomFont = { key, label, family, kind: 'file', dataUrl, weightRange };
     await activate(font);
     const next = [...customFonts(), font];
     setCustomFonts(next);
@@ -136,8 +163,8 @@ export function removeCustomFont(key: string): void {
 }
 
 /** Built-in + custom font options for pickers (`{ value, label }`). */
-export function customFontOptions(): { value: string; label: string }[] {
-    return customFonts().map(f => ({ value: f.key, label: f.label }));
+export function customFontOptions(): { value: string; label: string; weightRange?: [number, number] }[] {
+    return customFonts().map(f => ({ value: f.key, label: f.label, ...(f.weightRange ? { weightRange: f.weightRange } : {}) }));
 }
 
 /**

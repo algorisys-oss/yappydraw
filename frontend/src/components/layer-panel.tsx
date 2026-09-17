@@ -1,9 +1,12 @@
 import { type Component, For, createSignal, createEffect, Show, untrack } from 'solid-js';
 import { topmostSelectedLayers } from "../store/layer-order";
-import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
+import { store, addLayer, setActiveLayer, updateLayer, setLayerBlendMode, deleteLayer, duplicateLayer, reorderLayers, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
 import { X, Eye, EyeOff, Plus, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2, Box } from 'lucide-solid';
 import ObjectTree from './object-tree';
 import LayerContextMenu from './layer-context-menu';
+import { properties } from '../config/properties';
+import type { BlendMode } from '../types';
+import { t } from '../i18n';
 import './layer-panel.css';
 
 const LayerPanel: Component = () => {
@@ -517,6 +520,20 @@ const LayerPanel: Component = () => {
                                 }}
                                 title={`Opacity: ${Math.round((store.layers.find(l => l.id === store.activeLayerId)?.opacity ?? 1) * 100)}%`}
                             />
+                        </div>
+                        {/* Blend mode for the whole layer, e.g. a paper texture set to Multiply
+                            over the artwork beneath. Same list as an object's Blend Mode. */}
+                        <div class="blend-control">
+                            <span class="label">{t('layers.blend')}</span>
+                            <select
+                                value={store.layers.find(l => l.id === store.activeLayerId)?.blendMode ?? 'normal'}
+                                onChange={(e) => setLayerBlendMode(store.activeLayerId, e.currentTarget.value as BlendMode)}
+                                title={t('layers.blendTip')}
+                            >
+                                <For each={properties.find(p => p.key === 'blendMode')?.options ?? []}>
+                                    {(o) => <option value={String(o.value)}>{o.label}</option>}
+                                </For>
+                            </select>
                         </div>
                         <div class="background-control">
                             <span class="label">Background</span>

@@ -135,6 +135,20 @@ export function renderOpacityMasked(ctx: CanvasRenderingContext2D, el: DrawingEl
 import { getSelectionBoundingBox, getDeleteHandlePosition } from './handle-detection';
 import { getAnchorPoints } from './anchor-points';
 import { projectMasterPosition, ownerSlideIndex } from './slide-utils';
+
+/** Opacity of the part of a page's artwork that hangs past the page edge (authoring only). */
+const PAGE_OVERHANG_GHOST_ALPHA = 0.35;
+
+/** World-space AABB of an element, accounting for rotation about its centre. */
+function elementWorldAABB(el: { x: number; y: number; width?: number; height?: number; angle?: number }) {
+    const w = el.width ?? 0, h = el.height ?? 0;
+    const a = el.angle ?? 0;
+    if (!a) return { minX: Math.min(el.x, el.x + w), minY: Math.min(el.y, el.y + h), maxX: Math.max(el.x, el.x + w), maxY: Math.max(el.y, el.y + h) };
+    const cx = el.x + w / 2, cy = el.y + h / 2;
+    const c = Math.abs(Math.cos(a)), sn = Math.abs(Math.sin(a));
+    const hw = (Math.abs(w) * c + Math.abs(h) * sn) / 2, hh = (Math.abs(w) * sn + Math.abs(h) * c) / 2;
+    return { minX: cx - hw, minY: cy - hh, maxX: cx + hw, maxY: cy + hh };
+}
 import { getImage } from './image-cache';
 import { computeCellRects, defaultColWidths, defaultRowHeights, normalizeCellSelection } from './table-utils';
 import { getPoolLaneRect } from './pool-containment';
@@ -1001,15 +1015,25 @@ export function renderLayersAndElements(
                 const exempt = el.id === currentDrawingId || selection.includes(el.id);
                 if (!exempt && slides.length > 0) {
                     const owner = ownerSlideIndex(renderedEl, slides);
-                    // `owner < 0` is artwork off to the side of every page. It is not
-                    // drawn — and the check has to be separate, because activeSlideIndex
-                    // is briefly -1 too and `-1 === -1` would then index slides[-1].
-                    if (owner < 0 || owner !== activeSlideIndex) return;
-                    const slide = slides[owner];
-                    pageClip = {
-                        x: slide.spatialPosition.x, y: slide.spatialPosition.y,
-                        w: slide.dimensions.width, h: slide.dimensions.height,
-                    };
+                    // `owner < 0` is artwork parked beside the pages: the PASTEBOARD. It
+                    // belongs to no page, so it can't show on two of them, which is what
+                    // the ownership rule prevents. It draws in full while authoring,
+                    // like Illustrator's pasteboard, where a designer keeps spare
+                    // artwork (Anshika's review, Sep 2026; it used to vanish unless
+                    // selected). Exports and thumbnails skip it (no owner page), and so
+                    // do presentation and embed.
+                    // Checked separately from the owner test: activeSlideIndex is
+                    // briefly -1 too, and `-1 === -1` would then index slides[-1].
+                    if (owner < 0) {
+                        if (appMode === 'presentation' || appMode === 'embed') return;
+                    } else {
+                        if (owner !== activeSlideIndex) return;
+                        const slide = slides[owner];
+                        pageClip = {
+                            x: slide.spatialPosition.x, y: slide.spatialPosition.y,
+                            w: slide.dimensions.width, h: slide.dimensions.height,
+                        };
+                    }
                 }
             }
 
@@ -1035,59 +1059,88 @@ export function renderLayersAndElements(
                 ctx.clip();
             }
 
-            if (renderedEl.isAdjustmentLayer) {
-                // Adjustment layer: filter everything drawn beneath it (not a normal shape).
-                renderAdjustmentLayer(ctx, renderedEl, scale, appMode);
-            } else if ((renderedEl.type !== 'text' && renderedEl.type !== 'richtext') || editingId !== renderedEl.id) {
-                // For non-text elements being edited, set isEditing so the
-                // render pipeline skips text drawing (the textarea overlay shows it instead)
-                if (editingId === renderedEl.id) {
-                    renderedEl.isEditing = true;
-                }
-                const isFocusDimmed = focusBranchIds && focusBranchIds.size > 0 && !focusBranchIds.has(el.id);
-                const layerOpacity = (layer?.opacity ?? 1) * (isFocusDimmed ? 0.12 : 1);
-                // Clipping / opacity mask: constrain or fade this element by the mask shape.
-                const mask = renderedEl.clipMaskId ? elementMap.get(renderedEl.clipMaskId) : undefined;
-                const opacityMask = mask && renderedEl.maskType === 'opacity';
-                let clipped = false;
-                if (mask && !opacityMask) {
-                    const clipPath = buildClipPath2D(mask);
-                    if (clipPath) { ctx.save(); ctx.clip(clipPath, maskFillRule(mask)); clipped = true; }
-                }
-                // Outline (wireframe) view: strip fills/effects to clean thin strokes.
-                if (store.outlineView) renderedEl = toOutlineElement(renderedEl, isDarkMode, scale);
-                // Masked elements skip the element cache so the mask tracks live edits.
-                // Outline view also bypasses the cache (its hash doesn't track the mode).
-                const shouldCache = !animState && !isFocusDimmed && !mask && !store.outlineView && !renderedEl.extrude;
-                // Live 3D Extrude: draw the shaded depth body BEHIND, then the shape's front face
-                // renders on top via the normal path below. When TILTED, the body render also draws
-                // the (foreshortened) flat front, so skip the normal render. Skipped in outline view.
-                const extrudeOwns = extrudeOwnsFront(renderedEl) && !store.outlineView;
-                const revolveOwns = hasRevolve(renderedEl) && !store.outlineView;
-                if (hasExtrude(renderedEl) && !store.outlineView) renderExtrudeBody(ctx, renderedEl);
-                if (revolveOwns) renderRevolve(ctx, renderedEl);
-                if (extrudeOwns || revolveOwns) {
-                    // full 3D solid already drawn (extrude front / lathe) — nothing more to render
-                } else if (opacityMask) {
-                    renderOpacityMasked(ctx, renderedEl, mask!, isDarkMode, layerOpacity);
-                } else if (hasTransformEffect(renderedEl)) {
-                    // Live Transform effect — draw N accumulating copies. Each copy is a plain
-                    // element clone, so it re-enters renderElement and gets its own transform,
-                    // fill/stroke, appearance and shadow for free in both render styles. Bypass
-                    // the per-id element cache (one id → N copies would collide).
-                    for (const copyEl of transformEffectRenderCopies(renderedEl)) {
-                        renderElement(cachedRc, ctx, copyEl, isDarkMode, layerOpacity, sharedRenderer);
+            // The element's artwork. Runs once normally, and a second time as a faded "ghost"
+            // for the part hanging off its page (see below).
+            const drawBody = (ghost: boolean) => {
+                const alphaScale = ghost ? PAGE_OVERHANG_GHOST_ALPHA : 1;
+                if (renderedEl.isAdjustmentLayer) {
+                    // Adjustment layer: filter everything drawn beneath it (not a normal shape).
+                    renderAdjustmentLayer(ctx, renderedEl, scale, appMode);
+                } else if ((renderedEl.type !== 'text' && renderedEl.type !== 'richtext') || editingId !== renderedEl.id) {
+                    // For non-text elements being edited, set isEditing so the
+                    // render pipeline skips text drawing (the textarea overlay shows it instead)
+                    if (editingId === renderedEl.id) {
+                        renderedEl.isEditing = true;
                     }
-                } else {
-                    if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
-                    renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);
-                    if (shouldCache) endElement();
+                    const isFocusDimmed = focusBranchIds && focusBranchIds.size > 0 && !focusBranchIds.has(el.id);
+                    const layerOpacity = (layer?.opacity ?? 1) * (isFocusDimmed ? 0.12 : 1) * alphaScale;
+                    // Clipping / opacity mask: constrain or fade this element by the mask shape.
+                    const mask = renderedEl.clipMaskId ? elementMap.get(renderedEl.clipMaskId) : undefined;
+                    const opacityMask = mask && renderedEl.maskType === 'opacity';
+                    let clipped = false;
+                    if (mask && !opacityMask) {
+                        const clipPath = buildClipPath2D(mask);
+                        if (clipPath) { ctx.save(); ctx.clip(clipPath, maskFillRule(mask)); clipped = true; }
+                    }
+                    // Outline (wireframe) view: strip fills/effects to clean thin strokes.
+                    if (store.outlineView) renderedEl = toOutlineElement(renderedEl, isDarkMode, scale);
+                    // Masked elements skip the element cache so the mask tracks live edits.
+                    // Outline view also bypasses the cache (its hash doesn't track the mode).
+                    const shouldCache = !ghost && !animState && !isFocusDimmed && !mask && !store.outlineView && !renderedEl.extrude;
+                    // Live 3D Extrude: draw the shaded depth body BEHIND, then the shape's front face
+                    // renders on top via the normal path below. When TILTED, the body render also draws
+                    // the (foreshortened) flat front, so skip the normal render. Skipped in outline view.
+                    const extrudeOwns = extrudeOwnsFront(renderedEl) && !store.outlineView;
+                    const revolveOwns = hasRevolve(renderedEl) && !store.outlineView;
+                    if (hasExtrude(renderedEl) && !store.outlineView) renderExtrudeBody(ctx, renderedEl);
+                    if (revolveOwns) renderRevolve(ctx, renderedEl);
+                    if (extrudeOwns || revolveOwns) {
+                        // full 3D solid already drawn (extrude front / lathe) — nothing more to render
+                    } else if (opacityMask) {
+                        renderOpacityMasked(ctx, renderedEl, mask!, isDarkMode, layerOpacity);
+                    } else if (hasTransformEffect(renderedEl)) {
+                        // Live Transform effect — draw N accumulating copies. Each copy is a plain
+                        // element clone, so it re-enters renderElement and gets its own transform,
+                        // fill/stroke, appearance and shadow for free in both render styles. Bypass
+                        // the per-id element cache (one id → N copies would collide).
+                        for (const copyEl of transformEffectRenderCopies(renderedEl)) {
+                            renderElement(cachedRc, ctx, copyEl, isDarkMode, layerOpacity, sharedRenderer);
+                        }
+                    } else {
+                        if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
+                        renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);
+                        if (shouldCache) endElement();
+                    }
+                    if (clipped) ctx.restore();
                 }
-                if (clipped) ctx.restore();
-            }
+            };
+            drawBody(false);
 
             // Overlays (badges, link chips, handles) are UI, not artwork — never clipped.
             if (pageClip) ctx.restore();
+
+            // The overhang: the part of a page's artwork hanging past its edge. Trimmed above,
+            // so the page shows what export produces, but hiding it outright meant a shape
+            // dragged half off the page seemed to lose its other half ("I can't see the part
+            // that goes out of the canvas", Anshika, Sep 2026). Draw that part faded, and ONLY
+            // outside every page, so it can never show on a neighbouring page, which is what
+            // the trim exists to prevent. Authoring only: presentation and embed show the page.
+            if (pageClip && appMode !== 'presentation' && appMode !== 'embed' && !renderedEl.isAdjustmentLayer) {
+                const b = elementWorldAABB(renderedEl);
+                const pad = 64; // strokes, shadows and glows reach past the geometric box
+                const overhangs = b.minX - pad < pageClip.x || b.minY - pad < pageClip.y
+                    || b.maxX + pad > pageClip.x + pageClip.w || b.maxY + pad > pageClip.y + pageClip.h;
+                if (overhangs) {
+                    ctx.save();
+                    ctx.beginPath();
+                    const m = 4096;
+                    ctx.rect(b.minX - m, b.minY - m, b.maxX - b.minX + 2 * m, b.maxY - b.minY + 2 * m);
+                    for (const sl of slides) ctx.rect(sl.spatialPosition.x, sl.spatialPosition.y, sl.dimensions.width, sl.dimensions.height);
+                    ctx.clip('evenodd');
+                    drawBody(true);
+                    ctx.restore();
+                }
+            }
 
             renderElementOverlays(ctx, el, renderedEl, {
                 scale,

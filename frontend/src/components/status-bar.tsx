@@ -1,9 +1,9 @@
 import { type Component, Show, For, createSignal } from "solid-js";
 import { isMultiPageDocType } from '../types/slide-types';
 import { t, plural } from '../i18n';
-import { store, setViewState, undo, redo, togglePresentationMode, resetRotation, pageNoun, toggleSymmetryAxis, toggleSymmetryEditing, updateGlobalSettings } from "../store/app-store";
+import { store, setViewState, undo, redo, togglePresentationMode, resetRotation, pageNoun, toggleSymmetryAxis, toggleSymmetryEditing, setSymmetryMode, updateGlobalSettings } from "../store/app-store";
 import { drawingId } from "./menu";
-import { Plus, Minus, Undo2, Redo2, Play, FlipHorizontal, FlipVertical, Crosshair, PaintBucket } from "lucide-solid";
+import { Plus, Minus, Undo2, Redo2, Play, FlipHorizontal, FlipVertical, Crosshair, PaintBucket, X } from "lucide-solid";
 import { screenToWorld } from "../utils/viewport-transforms";
 import { canvasCenterClient } from "../utils/dock-layout";
 import pkg from '../../../package.json';
@@ -196,6 +196,19 @@ const StatusBar: Component = () => {
                 >
                     <FlipVertical size={14} />
                 </button>
+                {/* Radial / Kaleidoscope have no axis button above, so without this the only
+                    way off was a hotkey or the command palette, and their spokes read as
+                    stray marks on the canvas. */}
+                <Show when={store.symmetry.mode === 'radial' || store.symmetry.mode === 'kaleidoscope'}>
+                    <button
+                        class="status-toggle is-active status-symmetry-off"
+                        onClick={() => setSymmetryMode('off')}
+                        title={t('statusBar.symmetryOffTip', { mode: store.symmetry.mode === 'radial' ? t('statusBar.symmetryRadial') : t('statusBar.symmetryKaleidoscope') })}
+                    >
+                        <span>{store.symmetry.mode === 'radial' ? t('statusBar.symmetryRadial') : t('statusBar.symmetryKaleidoscope')}</span>
+                        <X size={12} />
+                    </button>
+                </Show>
                 <Show when={store.symmetry.mode !== 'off'}>
                     <button
                         class="status-toggle"

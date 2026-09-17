@@ -713,7 +713,8 @@ export function drawOnUp(
         // Live symmetry — final sync of the mirrored copies against the normalized
         // element, then stop tracking. Placed after every discard branch above so
         // stray clicks and ghosts are never replicated.
-        finishLiveSymmetry(pState.currentId!);
+        // A connector pulled out of a shape's port is never replicated (see canvas.tsx).
+        if (!pState.draggingFromConnector) finishLiveSymmetry(pState.currentId!);
 
         // The shape just drawn stays selected either way, so the properties panel is about the
         // thing you just made — that is true in Illustrator whether or not the tool persists.

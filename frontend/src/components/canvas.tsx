@@ -928,7 +928,10 @@ const Canvas: Component = () => {
         // else is there to hit, and it is how you grab an element to pull it back on.
         if (isPagedDocType(store.docType) && store.slides.length > 0) {
             const layer = store.layers.find(l => l.id === el.layerId);
-            if (!layer?.isMaster && ownerSlideIndex(el, store.slides) !== store.activeSlideIndex) return false;
+            // Pasteboard artwork (owned by no page) is drawn beside the pages, so it is
+            // clickable there too.
+            const owner = ownerSlideIndex(el, store.slides);
+            if (!layer?.isMaster && owner >= 0 && owner !== store.activeSlideIndex) return false;
         }
         return !isLayerLocked(el.layerId);
     };
@@ -2109,7 +2112,9 @@ const Canvas: Component = () => {
         // the whole mark is visible while drawing instead of appearing on release.
         // Hooked here rather than in the handlers because freehand and the geometric
         // tools take different move paths above.
-        syncLiveSymmetry(pState.currentId);
+        // Not for a connector dragged out of a shape's port: that is wiring, not a mark,
+        // and a mandala's worth of mirrored arrows is never what anyone meant.
+        if (!pState.draggingFromConnector) syncLiveSymmetry(pState.currentId);
 
         // Auto-Scroll Check
         handleAutoScroll(e, pState);

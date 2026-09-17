@@ -753,6 +753,9 @@ export const de: Dictionary = {
         symmetryVertical: 'Vertikale Symmetrie — links/rechts spiegeln (Alt+Y schaltet die Symmetrie um)',
         symmetryHorizontal: 'Horizontale Symmetrie — oben/unten spiegeln (Alt+Y schaltet die Symmetrie um)',
         symmetryAxis: 'Symmetrieachse verschieben — den Griff ziehen, um sie neu zu setzen (Alt+Shift+Y)',
+        symmetryRadial: 'Radial',
+        symmetryKaleidoscope: 'Kaleidoskop',
+        symmetryOffTip: '{{ mode }}-Symmetrie ist an — klicken zum Ausschalten (Alt+Y)',
         fillMode: 'Füllmodus — Freihandstriche füllen ihre Silhouette',
         // Display only. The STORED document name stays the literal 'Untitled' in
         // every locale: it is written into saved files and compared by
@@ -884,6 +887,32 @@ export const de: Dictionary = {
         resizeHandle: 'Ziehen zum Ändern der Größe (Symbole pro Zeile) · Doppelklick zum Zurücksetzen',
         stabilizationOn: 'Strichstabilisierung (ein, {{ percent }} %) — Shift+S',
         stabilizationOff: 'Strichstabilisierung (aus) — Shift+S',
+    },
+
+    swatchesPanel: {
+        newGroup: 'Gruppe',
+        newGroupTip: 'Neue Farbgruppe aus den Farben der Auswahl',
+        groupNamePrompt: 'Name der Farbgruppe',
+        defaultGroupName: 'Palette {{ n }}',
+        moveToGroup: 'In Gruppe verschieben',
+        noGroup: 'Keine Gruppe',
+        newGroupOption: 'Neue Gruppe…',
+        deleteGroupConfirm: '„{{ name }}“ und ihre {{ count }} Farbfelder löschen?',
+        emptyGroupsHint: 'Grafik auswählen und auf Gruppe klicken, um ihre Farben als Kombination zu speichern.',
+        renameGroupTip: 'Doppelklicken zum Umbenennen',
+        addToGroupTip: 'Farben der Auswahl zu dieser Gruppe hinzufügen',
+        deleteGroupTip: 'Diese Gruppe und ihre Farbfelder löschen',
+        ungrouped: 'Ohne Gruppe',
+    },
+
+    layers: {
+        blend: 'Mischen',
+        blendTip: 'Mischmodus für jedes Objekt dieser Ebene ohne eigenen Modus (z. B. eine Textur auf Multiplizieren)',
+    },
+
+    templateBrowser: {
+        blankPage: 'Leere Seite',
+        blankPageDesc: 'Mit einer leeren Seite in der gewählten Größe beginnen',
     },
 
     fillStroke: {

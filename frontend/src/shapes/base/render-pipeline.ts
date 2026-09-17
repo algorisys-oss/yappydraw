@@ -15,6 +15,7 @@ import { rasterizePatternBuffer } from "../../utils/pattern-fill";
 import { hasInflate, rasterizeInflate } from "../../utils/inflate";
 import { fillBufferRect } from "../../utils/geometry-extent";
 import type { IRenderer } from "../../rendering/IRenderer";
+import { effectiveBlendMode } from "../../utils/layer-blend";
 
 // ── colour helpers (for dark-mode adjustColor) ─────────────────────────────
 /** Parse #rgb / #rrggbb / #rrggbbaa / rgb()/rgba() → {r,g,b,a}; null if unrecognised. */
@@ -141,11 +142,12 @@ export class RenderPipeline {
         renderer.save();
         renderer.globalAlpha = ((el.opacity ?? 100) / 100) * layerOpacity;
 
-        // Apply Blend Mode
-        if (el.blendMode) {
-            renderer.globalCompositeOperation = el.blendMode === 'normal'
+        // Apply Blend Mode: the element's own, or its layer's (utils/layer-blend.ts)
+        const blend = effectiveBlendMode(el);
+        if (blend) {
+            renderer.globalCompositeOperation = blend === 'normal'
                 ? 'source-over'
-                : el.blendMode;
+                : blend;
         }
 
         // Apply Drop Shadow, or — if no shadow — Outer Glow (a coloured halo, i.e.

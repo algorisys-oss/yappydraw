@@ -479,6 +479,24 @@
     background: #fff;
     overflow: hidden;
 }
+/* "Blank page" card: an empty sheet at the document's own size. */
+.template-blank-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box; /* the border must fit inside the ratio box, or its top and bottom clip */
+    border: 1.5px dashed #94a3b8;
+    box-shadow: none;
+}
+.template-blank-plus {
+    font-size: 28px;
+    line-height: 1;
+    color: #64748b;
+}
+.template-card-blank:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
 .template-design-page > svg {
     display: block;
     width: 100%;

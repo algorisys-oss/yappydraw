@@ -511,6 +511,13 @@ export interface DrawingElement {
     verticalAlign?: VerticalAlign;
     /** Extra spacing between characters, in px (tracking). Can be negative to tighten. */
     letterSpacing?: number;
+    /**
+     * Horizontal scale of standalone text glyphs (Illustrator's Horizontal Scale), 1 = normal.
+     * Set by dragging a text box's corner freely: font size follows the height and this
+     * carries the rest of the stretch. The box (`width`) is the SCALED width; text lays out in
+     * `width / textScaleX` and is drawn stretched to fill it.
+     */
+    textScaleX?: number;
     /** Line spacing (leading) as a MULTIPLE of the font size, CSS `line-height`-style —
      *  1.2 when unset, which is what every text element used before this was settable.
      *  A multiple rather than px so it survives resizing and still means something when
@@ -1011,6 +1018,8 @@ export interface Layer {
     isGroup?: boolean;     // Whether this layer is a container/group
     expanded?: boolean;    // For groups: whether child layers are visible in panel
     isMaster?: boolean;    // Master layer content repeats on every slide
+    /** Blend mode applied to every object on the layer that doesn't set its own (see utils/layer-blend.ts). */
+    blendMode?: BlendMode;
 }
 
 export interface GridSettings {

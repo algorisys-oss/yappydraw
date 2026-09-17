@@ -760,6 +760,9 @@ export const en = {
         symmetryVertical: 'Vertical symmetry — mirror left/right (Alt+Y toggles symmetry)',
         symmetryHorizontal: 'Horizontal symmetry — mirror up/down (Alt+Y toggles symmetry)',
         symmetryAxis: 'Move symmetry axis — drag the handle to reposition (Alt+Shift+Y)',
+        symmetryRadial: 'Radial',
+        symmetryKaleidoscope: 'Kaleidoscope',
+        symmetryOffTip: '{{ mode }} symmetry is on — click to turn it off (Alt+Y)',
         fillMode: 'Fill mode — freehand strokes fill their silhouette',
         // Display only. The STORED document name stays the literal 'Untitled' in
         // every locale: it is written into saved files and compared by
@@ -891,6 +894,33 @@ export const en = {
         resizeHandle: 'Drag to resize (icons per row) · double-click to reset',
         stabilizationOn: 'Stroke Stabilization (on, {{ percent }}%) — Shift+S',
         stabilizationOff: 'Stroke Stabilization (off) — Shift+S',
+    },
+
+    /** Template browser — the "Blank page" card shown for design documents. */
+    swatchesPanel: {
+        newGroup: 'Group',
+        newGroupTip: "New colour group from the selection's colours",
+        groupNamePrompt: 'Name this colour group',
+        defaultGroupName: 'Palette {{ n }}',
+        moveToGroup: 'Move to group',
+        noGroup: 'No group',
+        newGroupOption: 'New group…',
+        deleteGroupConfirm: 'Delete “{{ name }}” and its {{ count }} swatches?',
+        emptyGroupsHint: 'Select artwork and click Group to save its colours as a combination.',
+        renameGroupTip: 'Double-click to rename',
+        addToGroupTip: "Add the selection's colours to this group",
+        deleteGroupTip: 'Delete this group and its swatches',
+        ungrouped: 'Ungrouped',
+    },
+
+    layers: {
+        blend: 'Blend',
+        blendTip: 'Blend mode for every object on this layer that does not set its own (e.g. a texture on Multiply)',
+    },
+
+    templateBrowser: {
+        blankPage: 'Blank page',
+        blankPageDesc: 'Start from an empty page at your chosen size',
     },
 
     /** Fill & Stroke — the swatch pair at the foot of the tool column. */

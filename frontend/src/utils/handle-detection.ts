@@ -188,30 +188,14 @@ export function getHandleAtPosition(
         }
     }
 
-    // 1a. Connection handles on grouped / multi-selected members. The renderer draws
-    //     the green "+" circles on every selected shape, so they must be hit-testable
-    //     here too — otherwise a shape in a group shows the handles but you can't drag
-    //     them out to start a connector. (Single-selection handles are covered below.)
-    if (selection.length > 1) {
-        const connectorSize = 14 / scale;
-        const connectorOffset = 32 / scale;
-        for (const id of selection) {
-            const el = elements.find(e => e.id === id);
-            if (!el || el.type === 'line' || el.type === 'arrow') continue;
-            const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
-            const handles = [
-                { pos: 'top', hx: cx, hy: el.y - connectorOffset },
-                { pos: 'right', hx: el.x + el.width + connectorOffset, hy: cy },
-                { pos: 'bottom', hx: cx, hy: el.y + el.height + connectorOffset },
-                { pos: 'left', hx: el.x - connectorOffset, hy: cy },
-            ];
-            for (const h of handles) {
-                if (Math.hypot(x - h.hx, y - h.hy) <= connectorSize / 2 + 2 / scale) {
-                    return { id: el.id, handle: `connector-${h.pos}` };
-                }
-            }
-        }
-    }
+    // No connector ports on grouped / multi-selected members. This block used to hit-test
+    // four ports around EVERY selected member, on the claim that the renderer drew them.
+    // The renderer stopped drawing them in v0.8.88 (#159, "a swarm of green arrows"), and
+    // the hit-test stayed, leaving invisible targets 32px around each piece. On a dense
+    // group like a 54-piece mandala they covered the whole design, so pressing on it to
+    // move it started a connector instead; with symmetry armed that one arrow became 32
+    // ("the mandala broke into pieces", Anshika, Sep 2026). Ports are for one shape: the
+    // single-selection block below is the one the renderer matches.
 
     // 1b. Mindmap add-child handle on the single selected node (mouse parity with Tab).
     //     Checked before element selection so the click isn't swallowed.

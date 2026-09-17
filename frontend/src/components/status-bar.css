@@ -281,3 +281,12 @@
     background: #b14cff;
     color: #fff;
 }
+
+/* "Kaleidoscope ×" — the only visible off switch for radial symmetry modes. */
+.status-toggle.status-symmetry-off {
+    width: auto;
+    gap: 3px;
+    padding: 0 6px;
+    font-size: 11px;
+    white-space: nowrap;
+}

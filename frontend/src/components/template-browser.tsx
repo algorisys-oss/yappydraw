@@ -5,6 +5,7 @@ import { templatePreviewSvg } from '../templates/template-preview';
 import { showToast } from './toast';
 import { store } from '../store/app-store';
 import type { Template, TemplateCategory, PresentationTemplate, DesignTemplate } from '../types/template-types';
+import { t } from '../i18n';
 import './template-browser.css';
 
 /** Check if a template is a multi-slide presentation */
@@ -29,6 +30,8 @@ interface TemplateBrowserProps {
     isOpen: boolean;
     onClose: () => void;
     onSelectTemplate: (template: Template) => void;
+    /** Start from an empty page of this size instead of a template (design documents). */
+    onBlank?: (size: { width: number; height: number }) => void;
 }
 
 const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
@@ -83,6 +86,18 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
 
     const handleSelect = (template: Template) => {
         props.onSelectTemplate(template);
+        props.onClose();
+    };
+
+    // A design document already has its page size by the time the browser opens (New Design
+    // picks the size first), so "Blank page" keeps that size. Without it the only way to an
+    // empty page was to pick a template and delete everything on it (Anshika's review).
+    const showBlankCard = () => !!props.onBlank && !!currentPageSize() && !search().trim() && selectedCategory() === 'designs';
+
+    const handleBlank = () => {
+        const ps = currentPageSize();
+        if (!ps || !props.onBlank) return;
+        props.onBlank(ps);
         props.onClose();
     };
 
@@ -166,6 +181,24 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
 
                     {/* Template Grid */}
                     <div class="template-grid">
+                        <Show when={showBlankCard()}>
+                            <div class="template-card template-card-design template-card-blank" onClick={handleBlank}
+                                role="button" tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBlank(); } }}>
+                                <div class="template-design-preview">
+                                    <div class="template-design-page template-blank-page" style={designPreviewStyle({ pageSize: currentPageSize()! } as DesignTemplate)}>
+                                        <span class="template-blank-plus">+</span>
+                                    </div>
+                                </div>
+                                <div class="template-info">
+                                    <div class="template-name-row">
+                                        <h3 class="template-name">{t('templateBrowser.blankPage')}</h3>
+                                        <span class="template-slide-badge">{currentPageSize()!.width}×{currentPageSize()!.height}</span>
+                                    </div>
+                                    <p class="template-description">{t('templateBrowser.blankPageDesc')}</p>
+                                </div>
+                            </div>
+                        </Show>
                         <For each={templates()}>
                             {(template) => {
                                 if (isUserTemplate(template)) {
@@ -317,7 +350,7 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                         </For>
                     </div>
 
-                    <Show when={templates().length === 0}>
+                    <Show when={templates().length === 0 && !showBlankCard()}>
                         <div class="template-empty">
                             <p>{search().trim() ? `No templates match “${search().trim()}”` : 'No templates available in this category'}</p>
                         </div>

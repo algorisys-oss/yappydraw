@@ -201,7 +201,12 @@ export interface FontFamilyGroup {
     variants: FontVariantOption[];
 }
 
-export interface RawFontOption { value: string; label: string }
+export interface RawFontOption {
+    value: string;
+    label: string;
+    /** A variable font file's weight range: ONE file that offers every named weight inside it. */
+    weightRange?: [number, number];
+}
 
 /** What a built-in family can be asked to synthesise. */
 export interface FontCaps { bold: boolean; italic: boolean }
@@ -252,6 +257,17 @@ export function groupFontFamilies(
             continue;
         }
         const { family, weight, italic } = parseFontVariant(opt.label);
+        if (opt.weightRange) {
+            // A variable file: one key, every named weight its axis covers. Like a built-in,
+            // the style rides on `fontWeight`, and the FontFace's weight range turns that into
+            // the real `wght` instance rather than a synthesised bold.
+            const [min, max] = opt.weightRange;
+            const inRange = WEIGHTS.filter(w => w >= min && w <= max);
+            for (const w of inRange.length ? inRange : [clampWeight(min)]) {
+                add(family, { value: opt.value, weight: w, italic, styleLabel: styleLabel(w, italic) });
+            }
+            continue;
+        }
         add(family, { value: opt.value, weight, italic, styleLabel: styleLabel(weight, italic) });
     }
 

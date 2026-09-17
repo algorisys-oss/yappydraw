@@ -71,6 +71,8 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
             if (el && (el.type === 'text' || el.type === 'richtext')) {
                 const text = props.editText();
                 const fontSize = el.fontSize || (el.type === 'text' ? 20 : 28);
+                // Horizontally scaled text: the box is the stretched width, layout is unscaled.
+                const sx = el.textScaleX && el.textScaleX > 0 ? el.textScaleX : 1;
 
                 if (el.autoResize) {
                     // Autosize (click-placed): grow BOTH width (longest line) and height
@@ -83,7 +85,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     for (const line of text.split('\n')) maxW = Math.max(maxW, mctx.measureText(line).width);
                     mctx.letterSpacing = '0px'; // shared context — reset so it doesn't leak
                     const padding = 4;
-                    const newWidth = Math.max(maxW + padding * 2, fontSize);
+                    const newWidth = Math.max(maxW + padding * 2, fontSize) * sx;
                     const lineCount = Math.max(1, text.split('\n').length);
                     const newHeight = Math.max(lineCount * lineHeightOf(fontSize, el), lineHeightOf(fontSize, el));
 
@@ -102,7 +104,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
 
                 // Fixed-width box (drag-placed): auto-grow height only.
                 const existingWidth = el.width || 200;
-                const measuredHeight = measureWrappedTextHeight(text, existingWidth, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
+                const measuredHeight = measureWrappedTextHeight(text, existingWidth / sx, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
                 // Only grow, never shrink — preserve existing height to prevent text jumping
                 const newHeight = Math.max(measuredHeight, el.height, lineHeightOf(fontSize, el));
 
@@ -352,7 +354,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 // measureWrappedTextHeight returns N * lineHeight which matches CSS line-height spacing
                 if (isStandaloneText) {
                     const text = props.editText() || '';
-                    const wrappedHeight = measureWrappedTextHeight(text, el.width || 200, fontSizeVal, el.fontFamily, el.letterSpacing, el.lineHeight);
+                    const wrappedHeight = measureWrappedTextHeight(text, (el.width || 200) / (el.textScaleX || 1), fontSizeVal, el.fontFamily, el.letterSpacing, el.lineHeight);
                     const totalTextH = wrappedHeight * scale;
                     const vAlign = el.verticalAlign || 'middle';
                     if (vAlign === 'top') {
@@ -547,7 +549,11 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                             onBlur={handleTextBlur}
                             wrap={el.autoResize ? 'off' : 'soft'}
                             style={{
-                                width: '100%',
+                                // Standalone text with a horizontal scale: type into the unscaled
+                                // width, stretched to fill the box, as the canvas draws it.
+                                width: isStandaloneText && el.textScaleX && el.textScaleX !== 1 ? `${100 / el.textScaleX}%` : '100%',
+                                transform: isStandaloneText && el.textScaleX && el.textScaleX !== 1 ? `scaleX(${el.textScaleX})` : undefined,
+                                'transform-origin': 'left top',
                                 height: useTopLeftAnchor ? '100%' : undefined,
                                 'box-sizing': 'border-box',
                                 font: fontSpec(fontSizeVal * scale),

@@ -767,6 +767,9 @@ export const fr: Dictionary = {
         symmetryVertical: 'Symétrie verticale — miroir gauche/droite (Alt+Y active la symétrie)',
         symmetryHorizontal: 'Symétrie horizontale — miroir haut/bas (Alt+Y active la symétrie)',
         symmetryAxis: 'Déplacer l’axe de symétrie — faites glisser la poignée pour le repositionner (Alt+Maj+Y)',
+        symmetryRadial: 'Radiale',
+        symmetryKaleidoscope: 'Kaléidoscope',
+        symmetryOffTip: 'Symétrie {{ mode }} activée — cliquez pour la désactiver (Alt+Y)',
         fillMode: 'Mode Fond — les tracés à main levée remplissent leur silhouette',
         // Display only. The STORED document name stays the literal 'Untitled' in
         // every locale: it is written into saved files and compared by
@@ -897,6 +900,32 @@ export const fr: Dictionary = {
     },
 
     /** Fond et contour — la paire de nuanciers au pied de la colonne d’outils. */
+    swatchesPanel: {
+        newGroup: 'Groupe',
+        newGroupTip: 'Nouveau groupe de couleurs à partir de la sélection',
+        groupNamePrompt: 'Nom du groupe de couleurs',
+        defaultGroupName: 'Palette {{ n }}',
+        moveToGroup: 'Déplacer vers un groupe',
+        noGroup: 'Aucun groupe',
+        newGroupOption: 'Nouveau groupe…',
+        deleteGroupConfirm: 'Supprimer « {{ name }} » et ses {{ count }} nuances ?',
+        emptyGroupsHint: 'Sélectionnez une illustration et cliquez sur Groupe pour enregistrer ses couleurs comme combinaison.',
+        renameGroupTip: 'Double-cliquez pour renommer',
+        addToGroupTip: 'Ajouter les couleurs de la sélection à ce groupe',
+        deleteGroupTip: 'Supprimer ce groupe et ses nuances',
+        ungrouped: 'Sans groupe',
+    },
+
+    layers: {
+        blend: 'Fusion',
+        blendTip: 'Mode de fusion de chaque objet de ce calque sans mode propre (p. ex. une texture en Produit)',
+    },
+
+    templateBrowser: {
+        blankPage: 'Page vierge',
+        blankPageDesc: 'Commencer avec une page vide à la taille choisie',
+    },
+
     fillStroke: {
         fill: 'Fond',
         stroke: 'Contour',

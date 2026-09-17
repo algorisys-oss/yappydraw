@@ -10049,3 +10049,79 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   attached by a synchronous helper (`addTinyflyClip`) within the same batch as the shapes.
 - **Imports are drawn crisp.** Shapes get `renderStyle: 'architectural'` and roughness 0 to match
   tinyfly's look; switching them to sketch still renders (checked both styles by eye).
+
+## Anshika's review, third batch: text colour, blank page, font hover preview
+
+- **Verify the complaint before changing the model.** "Fill should colour outlined text" read like
+  a colour-model change, but in the running app outlining already put the glyph colour in Fill.
+  What was actually wrong was a stale, inert **Text Color** row on the outlined path. Dumping the
+  property panel's `innerText` for text vs. outlined path showed that in one run.
+- **`applicableTo` describes a type, not the state an element is in.** `path` legitimately lists
+  the text group because paths take labels, so a type list can't hide those rows. The filter now
+  checks state (a path with no `containerText`) next to `visibleWhen`.
+- **Live previews write for real, outside history, and restore exactly.** The font hover preview
+  calls `updateElement(…, false)` so the canvas, box refit and open text editors all update. It
+  snapshots the keys it touches (`fontFamily/Weight/Style`, `x/y/width/height`) on the FIRST
+  hover. The style to carry over is resolved from the original font at that point too: resolving
+  it on every hover reads the previewed family back as "current". The picker ends the preview on
+  every exit (mouse leaves the list, Esc, click outside, unmount), and before `onPick`, so a pick
+  records history against the original font.
+- **Test undo alongside the feature.** Checking that a preview added no history showed that a
+  normal font pick already cost three undo steps (#382). A stash A/B confirmed it was older than
+  the preview.
+- **A border on a box sized to fill its container clips.** The Blank page sheet is sized exactly
+  like the template previews. A 1.5px border in `content-box` pushed it past the clipping
+  container and lost its top and bottom edges. Use `box-sizing: border-box`.
+- **Playwright's shared MCP browser can be locked by another session.** A throwaway
+  `node temp/*.mjs` script with `@playwright/test`'s `chromium` works. Set
+  `localStorage['yappy:tour:seen']='1'` in an init script, or the product tour intercepts every
+  click.
+
+### Pasteboard and variable fonts (same batch)
+
+- **When a fix hides something, check that hiding it was the goal.** The page-ownership fix
+  targeted objects drawn on TWO pages. Its early return also caught objects on NO page, and the
+  help doc was then written to match ("there is no pasteboard"). Docs written after the code
+  describe what shipped, not what was intended; the commit message is the better record of intent.
+- **A FontFace without descriptors is a single static face.** For a variable file,
+  `new FontFace(name, url)` means weight 400, and CSS clamps any requested weight into the
+  declared range, so the `wght` axis is never used. Pass `{ weight: "100 900" }` from the font's
+  `fvar` table.
+- **Reading `fvar` doesn't need a font library.** Walk the sfnt table directory to `fvar`, then
+  the axis records (tag + three 16.16 fixed values). WOFF 1 is the same directory with per-table
+  zlib, which `DecompressionStream('deflate')` inflates. WOFF2 is Brotli, which browsers don't
+  expose, so use the file-name convention there. The repo's `sans-serif-italic-400.ttf` (Inter)
+  is variable and makes a real fixture; a WOFF can be generated from it in the test with
+  `zlib.deflateSync`.
+- **Prove a canvas render test can fail.** A pixel check behind an optional `import('pngjs')`
+  skipped silently, because pngjs isn't installed. Reading the pixel with `getImageData` in the
+  page, then stashing the fix and watching the spec fail, is what shows the test tests something.
+
+## Anshika's review, fourth batch: mandala, text scaling, swatch groups, layer blend
+
+- **When a renderer stops drawing something, remove its hit-test in the same change.** #159 hid
+  group-member connector ports and left their hit-test, creating invisible targets that survived
+  two months and surfaced as "the mandala breaks into pieces". Grep for the handle name in
+  `handle-detection.ts` whenever a draw block is gated.
+- **Count the new elements.** The video showed +32 elements on a drag; 32 = 16 spokes × 2 mirrors
+  pointed straight at kaleidoscope symmetry replicating something, and a scripted drag that
+  logged element types (`arrow`) found the rest in one run.
+- **Anything that arms a mode should disarm it when its reason is gone,** and a mode with on-screen
+  side effects needs a visible off switch. Guides that aren't objects are unreachable from every
+  object UI (layers, select, delete).
+- **One new attribute can cover a 2-D stretch.** Font size carries the vertical scale and
+  `textScaleX` the ratio, so only horizontal scaling needs rendering support. Every place that lays
+  out text from `el.width` must use `width / textScaleX`: renderer, refit, editor overlay, SVG
+  export, outlines. The SVG stretch goes on an inner `<g>` because the outer node's transform is
+  overwritten with rotate/flip.
+- **Layer effects follow the layer model you already have.** Export ignored layer opacity, so
+  layers are not compositing groups here; a per-object blend inherited from the layer keeps canvas
+  and PNG export identical for free. Offscreen layer compositing would have needed its own export
+  path. Document the overlap difference instead of hiding it.
+- **The i18n ratchet reads TypeScript generics as JSX text** (`createSignal<string | null>(…)`,
+  and the gap between a JSX-returning helper and `return (`). Move logic into a `.ts` helper where
+  it's cheap; `--update` is for what's left.
+- **After a big HMR invalidation (stash/pop, api.ts edits) the Vite dev server can stop booting the
+  app for Playwright,** and `ERR_NETWORK_CHANGED` breaks module loads the same way. Restart Vite,
+  load the page once, and wait for `canvas`, not just `window.Yappy`, before trusting a failure.
+

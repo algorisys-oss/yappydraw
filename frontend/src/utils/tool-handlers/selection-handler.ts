@@ -373,6 +373,9 @@ export function selectionOnDown(
                     width: el.width,
                     height: el.height,
                     fontSize: el.fontSize,
+                    textScaleX: el.textScaleX,
+                    letterSpacing: el.letterSpacing,
+                    richText: el.richText ? el.richText.map(sp => ({ ...sp })) : undefined,
                     points: el.points ? [...el.points] : undefined,
                     pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
                 pathSubpaths: cloneSubpaths(el.pathSubpaths),
@@ -1578,8 +1581,11 @@ function handleResize(
     // stylus → proportional resize, just like holding Shift.
     let isConstrained = e.shiftKey || pState.secondaryContact || (store.selection.length === 1 && firstEl?.constrained);
 
-    // Text/richtext elements don't use aspect ratio lock - they freely resize width and recalculate height
-    if (store.selection.length === 1 && (firstEl?.type === 'text' || firstEl?.type === 'richtext')) {
+    // Text/richtext: side handles resize the box (width re-wraps, no aspect lock). CORNERS scale
+    // the text itself (see applyResize), and there Shift means what it means everywhere else:
+    // proportional.
+    if (store.selection.length === 1 && (firstEl?.type === 'text' || firstEl?.type === 'richtext')
+        && !isTextCornerHandle(pState.draggingHandle)) {
         isConstrained = false;
     }
 
@@ -1619,6 +1625,38 @@ function handleResize(
         // APPLY RESIZE (Single or Group)
         applyResize(id, el, isMulti, newX, newY, newWidth, newHeight, pState, helpers);
     }
+}
+
+// ─── Text corner scaling ─────────────────────────────────────────────
+
+function isTextCornerHandle(handle: string | null | undefined): boolean {
+    return handle === 'tl' || handle === 'tr' || handle === 'bl' || handle === 'br';
+}
+
+/**
+ * The text-attribute updates for a corner drag that scaled the box by (kx, ky) from its
+ * starting state. Font size (and tracking, and any per-span sizes) scale with the HEIGHT;
+ * the horizontal scale absorbs the remaining kx / ky, so the glyphs fill the new box exactly.
+ * A proportional (Shift) drag has kx === ky and leaves the horizontal scale untouched.
+ */
+export function textCornerScaleUpdates(
+    init: { fontSize?: number; textScaleX?: number; letterSpacing?: number; richText?: { fontSize?: number }[] },
+    kx: number, ky: number,
+): Partial<DrawingElement> {
+    const k = Math.max(0.01, ky);
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const fontSize = Math.max(1, round((init.fontSize || 28) * k));
+    const scaleX = Math.min(20, Math.max(0.05, (init.textScaleX || 1) * (Math.max(0.01, kx) / k)));
+    const out: Partial<DrawingElement> = {
+        fontSize,
+        // 1 is the default; store nothing rather than a float that is 1 to within rounding.
+        textScaleX: Math.abs(scaleX - 1) < 0.005 ? undefined : Math.round(scaleX * 1000) / 1000,
+    };
+    if (init.letterSpacing) out.letterSpacing = round(init.letterSpacing * k);
+    if (init.richText?.some(sp => sp.fontSize)) {
+        out.richText = init.richText.map(sp => sp.fontSize ? { ...sp, fontSize: Math.max(1, round(sp.fontSize * k)) } : { ...sp }) as DrawingElement['richText'];
+    }
+    return out;
 }
 
 // ─── Control Point Dragging ─────────────────────────────────────────
@@ -2152,11 +2190,19 @@ function applyResize(
             const scaleX = pState.initialElementWidth === 0 ? 1 : newWidth / pState.initialElementWidth;
             const scaleY = pState.initialElementHeight === 0 ? 1 : newHeight / pState.initialElementHeight;
 
-            // Text/richtext elements: keep font size constant
+            // Text/richtext elements:
+            // - Corner resize (tl, tr, bl, br): SCALE the text. Font size follows the height; any
+            //   extra width becomes horizontal scale (textScaleX), so a free drag stretches the
+            //   letters and a Shift-drag scales them proportionally. It used to resize only the
+            //   box around unchanged text, so there was no way to size text by hand
+            //   (Anshika's review, Sep 2026).
             // - Horizontal resize (lm, rm): recalculate height based on wrapped text
             // - Vertical resize (tm, bm): allow free height adjustment
-            // - Corner resize (tl, tr, bl, br): allow completely free resize (like Excalidraw)
-            if ((singleEl.type === 'text' || singleEl.type === 'richtext') && singleEl.text) {
+            const init = pState.initialPositions.get(id);
+            if ((singleEl.type === 'text' || singleEl.type === 'richtext') && isTextCornerHandle(pState.draggingHandle) && init
+                && pState.initialElementWidth > 0 && pState.initialElementHeight > 0) {
+                Object.assign(updates, textCornerScaleUpdates(init, newWidth / pState.initialElementWidth, newHeight / pState.initialElementHeight));
+            } else if ((singleEl.type === 'text' || singleEl.type === 'richtext') && singleEl.text) {
                 const fontSize = singleEl.fontSize || 28;
                 const isHorizontalOnly = pState.draggingHandle === 'lm' || pState.draggingHandle === 'rm';
 
@@ -2168,7 +2214,9 @@ function applyResize(
                     // (non-wrapping) renderer.
                     if (singleEl.autoResize) updates.autoResize = false;
                     // Horizontal resize: recalculate height based on wrapped text
-                    const calculatedHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily, singleEl.letterSpacing, singleEl.lineHeight);
+                    // Text lays out in the UNSCALED width when it is horizontally scaled.
+                    const layoutWidth = newWidth / (singleEl.textScaleX || 1);
+                    const calculatedHeight = measureWrappedTextHeight(singleEl.text, layoutWidth, fontSize, singleEl.fontFamily, singleEl.letterSpacing, singleEl.lineHeight);
                     updates.height = Math.max(calculatedHeight, lineHeightPx(fontSize, singleEl));
                 }
                 // For all other handles (corners and vertical), allow free resize

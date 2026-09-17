@@ -153,6 +153,8 @@ Save an object's whole look — fill, stroke, gradient/mesh, appearance stack, s
 
 A document **colour palette** with live links. Open it with **Alt+W** (or Menu → Panels → **Swatches**): **+** adds a swatch (from the selection's fill); click a chip to fill the selection and make it the active drawing colour — both the fill and the brush/stroke colour, so the next shape or pen stroke uses it (the little corner dot recolours the swatch itself); the **S** button applies it as a stroke. Objects you apply a swatch to are **linked** — recolour the swatch and every linked object updates at once. Editing an object's colour directly breaks its link. Swatches are saved in the document.
 
+**Colour groups** keep a design's combination together. Select artwork and click **Group** in the Swatches panel to save every colour in the selection (fills and strokes) as a named group. Each group gets its own section with a strip preview of its colours: double-click the name to rename it, **+** adds the current selection's colours to it, and the bin deletes the group and its swatches. Each swatch's small menu moves it into a group, into a new group, or out of any group. API: `createSwatchGroupFromSelection(name)`, `setSwatchGroup(ids, name)`, `renameSwatchGroup(from, to)`, `deleteSwatchGroup(name, keepSwatches?)`.
+
 ### Recolor Artwork
 
 Select several objects, then right-click → **Recolor Artwork…**. The panel shows the **palette** actually used by the selection (each colour with its usage count). Click a swatch to **remap** that colour everywhere in the selection at once — great for trying palette variants. The **Adjust all** controls shift the whole palette's **hue / lightness / saturation** together. Every step is undoable.

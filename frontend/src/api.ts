@@ -1,12 +1,12 @@
 import {
     store, addElement, updateElement, deleteElements, setViewState, rotateView, resetRotation, pushToHistory, setStore, zoomToFit,
     undo, redo, withoutHistory, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
-    addLayer, deleteLayer, setActiveLayer, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
+    addLayer, deleteLayer, setActiveLayer, setLayerBlendMode, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion, setGridStyle,
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, toggleKeyframePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, setSelectedGuides, selectGuide, selectAllGuides, clearGuideSelection, removeSelectedGuides, moveSelectedGuides, toggleGuidesLocked, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, toggleKeyframePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, renameSwatchGroup, deleteSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, setSelectedGuides, selectGuide, selectAllGuides, clearGuideSelection, removeSelectedGuides, moveSelectedGuides, toggleGuidesLocked, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -20,7 +20,7 @@ import {
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     setSymmetryMode, toggleSymmetry, toggleSymmetryAxis, setRadialCount,
     setSymmetryRings, setSymmetryRingSpacing,
-    setSymmetryAngleDeg, setSymmetryCenter, setSymmetryEditing, toggleSymmetryEditing,
+    setSymmetryAngleDeg, setSymmetryCenter, noteMandalaArmedSymmetry, setSymmetryEditing, toggleSymmetryEditing,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
     setBlueprint, toggleBlueprint, blueprintFor,
@@ -77,7 +77,7 @@ import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-p
 import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
 import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
 import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
-import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
+import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, BlendMode, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { PropertyTrack, TimedKeyframe, TinyflyClip } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
@@ -995,6 +995,9 @@ export const YappyAPI = {
             setSymmetryMode('kaleidoscope');
             // setSymmetryMode re-centres on the view when coming from 'off'; put it back.
             setSymmetryCenter(cx, cy);
+            // So deleting this mandala takes its guides with it.
+            const groupId = store.elements.find(e => e.id === ids[0])?.groupIds?.at(-1);
+            if (groupId) noteMandalaArmedSymmetry(groupId);
         }
 
         return store.selection[0] ?? ids[0];
@@ -2341,6 +2344,10 @@ export const YappyAPI = {
     createSwatch(color?: string, name?: string, group?: string) { return createSwatch(color, name, group); },
     /** Assign swatches to a named group (null to ungroup). */
     setSwatchGroup(swatchIds: string[], group: string | null) { setSwatchGroup(swatchIds, group); },
+    /** Rename a swatch group (a saved colour combination). */
+    renameSwatchGroup(from: string, to: string) { renameSwatchGroup(from, to); },
+    /** Delete a swatch group and its swatches, or ungroup them with `keepSwatches`. */
+    deleteSwatchGroup(group: string, keepSwatches?: boolean) { deleteSwatchGroup(group, keepSwatches); },
     /** Swatches keyed by group name (ungrouped under ''). */
     listSwatchGroups() { return listSwatchGroups(); },
     /** Add the selection's distinct colours as swatches in a named group. */
@@ -2585,6 +2592,11 @@ export const YappyAPI = {
     getLayers(): Layer[] { return store.layers.map(l => ({ ...l })); },
     /** Adds a layer directly above the active one, in the same group (inside it, if the active layer is a group). */
     addLayer(name?: string, parentId?: string) { return addLayer(name, parentId); },
+    /**
+     * Blend mode for a whole layer (e.g. a texture layer on 'multiply'). Applies to every object
+     * on the layer that doesn't set its own blend mode; 'normal' clears it. One undo step.
+     */
+    setLayerBlendMode(layerId: string, mode: BlendMode) { setLayerBlendMode(layerId, mode); },
     /** Asks the user when the layer isn't empty, unless `contents` says what to do with what's inside. */
     deleteLayer(id: string, contents?: 'delete' | 'keep') { return deleteLayer(id, contents); },
     setActiveLayer(id: string) { setActiveLayer(id); },

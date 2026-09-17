@@ -180,8 +180,20 @@ A text box has two sizing modes, shown as the **Auto Resize** toggle in the Prop
 - **Auto Resize off — fixed width.** The width you set is held, the text wraps inside it, and the height re-flows to fit. This is what you get when you **drag out a box** with the Text tool.
 
 :::tip
-**Dragging the left or right handle switches an auto-width box to fixed width** — the width you drag to is the width you keep, and the text wraps into it (as in Figma). Use the Auto Resize toggle to go back: the box snaps in to hug the text again. Corner and top/bottom handles resize the box freely and never change the font size.
+**Dragging the left or right handle switches an auto-width box to fixed width** — the width you drag to is the width you keep, and the text wraps into it (as in Figma). Use the Auto Resize toggle to go back: the box snaps in to hug the text again. Top/bottom handles resize the box freely and never change the font size.
 :::
+
+## Scaling text by dragging a corner
+
+Once you've finished typing, **drag a corner handle to scale the text itself**, not just its box:
+
+- **Drag a corner** to stretch freely. The font size follows the height, and any extra width (or lost width) becomes **Horizontal Scale**, so letters can be widened or condensed, as in Illustrator.
+- **<kbd>Shift</kbd>-drag a corner** to scale proportionally. Only the font size changes, and the letters keep their shape. Add <kbd>Alt</kbd> to scale about the centre.
+- **Left/right handles** still set the wrap width (see the tip above), and top/bottom handles still resize the box.
+
+**Horizontal Scale** appears in the Properties panel (Text group); type **1** to remove a stretch. Letter spacing and rich-text span sizes scale along with the font size. Stretched text exports to PNG, JPG and SVG as it looks, and **Create Outlines** produces the stretched shapes. `Yappy.updateElement(id, { textScaleX: 1.5 })` sets it from a script.
+
+**Known limitations:** vertical text ignores Horizontal Scale, and a multi-selection resize still scales font size only (no stretch).
 
 ## Text on Path (Curved Text)
 

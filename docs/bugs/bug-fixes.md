@@ -1,5 +1,151 @@
 # Bug Fixes Log
 
+## 2026-09-17 — Anshika's review, fourth batch (mandala, text scaling, swatch groups, layer blend)
+
+### 387. Dragging a selected mandala "broke it into pieces"
+
+**Symptom:** pressing on a generated mandala to move it left part of it behind and added a spray
+of radial arrows (Group (32) in the Layers panel). Reported with a screen recording.
+
+**Cause:** two bugs stacked. `handle-detection.ts` hit-tested four connector ports around EVERY
+member of a multi-selection. Bug #159 (v0.8.88) stopped *drawing* those ports ("a swarm of green
+arrows") but left the hit-test, so they were invisible targets 32px around each piece. A 54-piece
+mandala is covered by them, so a press started a connector instead of a move. Then live symmetry,
+armed by the mandala, replicated that connector (16 spokes × 2 mirrors = 32 arrows), because
+`syncLiveSymmetry` ran for anything being created, connectors included.
+
+**Fix:** removed the member-port hit-test (the renderer is the source of truth); `canvas.tsx` and
+`draw-handler.ts` skip live symmetry when `pState.draggingFromConnector`. Test:
+`review-sep17-canvas.spec.ts` (reproduced +32 arrows before the fix).
+
+### 388. Purple marks left after deleting a mandala
+
+**Symptom:** after deleting a mandala, purple dashed spokes and rings stayed on the canvas and
+could not be selected or deleted.
+
+**Cause:** they are Kaleidoscope symmetry guides, armed by *Arm symmetry after* (on by default).
+Deleting the mandala left symmetry on, and radial/kaleidoscope modes had no status-bar control,
+so the only way off was a hotkey or the command palette.
+
+**Fix:** `createMandala` records the group it armed symmetry for; `deleteElements` turns
+symmetry off once that group is gone, if the mode and centre are unchanged. The status bar shows a
+**Kaleidoscope ×** / **Radial ×** chip whenever those modes are on.
+
+### 389. The part of a shape hanging past the page edge was invisible
+
+**Symptom:** a mandala dragged half off a design page lost its outer half until selected.
+
+**Fix:** the page trim stays (it matches export), and the trimmed-off part now draws at 35%
+opacity, clipped to outside every page so it never shows on a neighbouring page. Authoring only.
+
+### 390. Text corner drag only resized the box
+
+**Symptom:** dragging a text corner changed the box, never the letters; the only way to size text
+was the Size slider.
+
+**Fix (feature):** corners scale the text. Font size follows the height; the remaining width goes to
+a new `textScaleX` (Horizontal Scale). Shift-corner is proportional. Side handles are unchanged.
+Applied in `text-renderer.ts`, the auto-size refit, the editing overlay, SVG export and Create
+Outlines; exposed as a Properties control.
+
+### 391. Swatch groups existed but the panel could not show or make them
+
+**Symptom:** request for saved colour combinations. The store and help page already had swatch
+groups; the Swatches panel showed one flat grid.
+
+**Fix:** group sections with strip preview, rename, add-from-selection, delete, and per-swatch
+move-to-group; `renameSwatchGroup` / `deleteSwatchGroup` in store and API. Also fixed the stale
+`.swatches-panel` selector that had kept `swatches.spec.ts` failing since the dock migration.
+
+### 392. No blend mode for a layer
+
+**Fix (feature):** Layers panel **Blend** select; `Layer.blendMode`, applied per object through
+`utils/layer-blend.ts` (resolver registered by the store, so the SDK pipeline stays store-free).
+Objects with their own non-Normal blend mode keep it. PNG/JPG export matches the canvas because
+both go through the render pipeline.
+
+## 2026-09-17 — Anshika's review, third batch (text colour, blank page, font preview, pasteboard, variable fonts)
+
+### 384. Objects parked beside a design page disappeared
+
+**Symptom:** in a design document, a shape moved off the page vanished as soon as it was
+deselected, and came back only when selected from the Layers panel. Designers park spare artwork
+on the pasteboard, Illustrator-style (Anshika, with a screen recording).
+
+**Cause:** `a1a6fb43` made one page own each element and trim it at the page edge, to stop
+overhanging shapes drawing on two pages. Its renderer branch returned early for `owner < 0` too,
+and `canInteractWithElement` rejected those objects. That hid pasteboard artwork, which can't show
+on two pages. The help doc then described the side effect as design ("there is no pasteboard").
+
+**Fix:** `canvas-renderer.ts` draws owner-less elements unclipped (skipped in presentation and
+embed), and `canvas.tsx` lets them be clicked. Exports and thumbnails already filter by owner page,
+so pasteboard objects still never export. Overhang trimming is unchanged. Test:
+`design-templates.spec.ts` "pasteboard" (fails without the fix).
+
+### 385. Variable fonts only ever drew Regular
+
+**Symptom:** a Google Fonts variable file (`Roboto-VariableFont_wght.ttf`) added with *Add font…*
+listed as a family called "Roboto Variable Font wdth,wght" with a single style. There was no way to
+use Thin, Bold or Black without adding every static file.
+
+**Cause:** two gaps. `new FontFace(family, url)` without a `weight` descriptor declares the face
+as weight 400 only, so the browser clamps every weight to Regular. And the picker treated each file
+as exactly one style, parsing the variable markers as part of the family name.
+
+**Fix:** `utils/font-axes.ts` reads the `wght` axis from the file's `fvar` table (TTF/OTF, and WOFF
+with that table inflated). WOFF2 falls back to the file name. `custom-fonts.ts` stores
+`weightRange`, strips the variable markers from the label, and registers the face with
+`weight: "min max"`. Fonts added earlier are checked once on load. `groupFontFamilies` expands a
+variable file into every named weight in range. Tests: `font-axes.test.ts` (real Inter variable
+TTF, a generated WOFF, static fonts, junk input); in the browser the same string measured
+281/316/366px at Thin/Regular/Black.
+
+### 386. Create Outlines would outline a variable font at the wrong weight
+
+**Symptom:** found while fixing #385. opentype.js ignores variation tables, so outlining Black text
+set in a variable font would produce Regular letterforms that look right at a glance.
+
+**Fix:** `text-to-outlines.ts` refuses weights other than the axis default, naming the static
+file to add, as it already does for Google fonts. The Font Style dropdown's apply also got the
+single-undo-step fix from #382.
+
+### 381. Outlined text still showed a Text Color that did nothing
+
+**Symptom:** after *Create Outlines*, the property panel still listed **Text Color** (holding the
+old glyph colour) plus the Font rows. Changing Text Color did nothing visible, so it looked like the
+colour could no longer be changed. Anshika's model: Text Color colours text, and once it is a vector
+object, Fill colours it.
+
+**Cause:** outlining turns the element into a `path` with the glyph colour in `backgroundColor`,
+which was already correct. But `textColor` and the other text-group properties are
+`applicableTo: 'all'`, or list `path`, because a path can carry a **label**. On a path without a
+label they styled nothing.
+
+**Fix:** the property panel hides the text group, except the **Label** box, for a `path` with no
+`containerText` (for a multi-selection, only when every element is such a path). Adding a label
+brings the rows back. Live text is unchanged: Text Color colours the glyphs, Background/Fill paints
+the box behind them.
+
+### 382. Picking a font took three presses of Undo
+
+**Symptom:** after choosing a font in the property panel, Ctrl+Z went through an unchanged-looking
+state twice before the old font came back. Found while verifying the font hover preview.
+
+**Cause:** `applyVariant` writes `fontFamily`, `fontWeight` and `fontStyle` through three
+`handleChange` calls, and each one pushed its own history entry.
+
+**Fix:** one `pushToHistory()`, then the three writes with `history = false`.
+
+### 383. No way to start a New Design from a blank page
+
+**Symptom:** New Design → pick a (custom) size → the template browser opens, and the only way to an
+empty page was to close it, which is not obvious. Designers picked a template and deleted
+everything on it.
+
+**Fix:** not a defect but a missing affordance: the Designs tab now starts with a **Blank page**
+card at the document's page size (hidden while searching). It calls `handleNew('design', size)`,
+so a document with unsaved work still gets the unsaved-changes prompt.
+
 ## 2026-09-16 — Anshika's review, second pass
 
 The Sep 7 pass (#348–#357) closed most of her report. Re-checking each item against the current

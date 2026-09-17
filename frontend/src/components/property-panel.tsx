@@ -1,4 +1,4 @@
-import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
+import { type Component, Show, createMemo, For, createSignal, createEffect, Index, batch, onCleanup } from "solid-js";
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
 import { MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS } from "../utils/symmetry";
@@ -1497,6 +1497,16 @@ const PropertyPanel: Component = () => {
             }
 
 
+            // A `path` with no label has no text to style. Its Text Color / Font rows styled
+            // only the (empty) label, so on text converted to outlines they read as the glyph
+            // colour and did nothing — the glyphs are the path's Fill now. Keep just the Label
+            // box, so adding a label brings the rest back (Anshika's review, Sep 2026).
+            if (p.group === 'text' && p.key !== 'containerText') {
+                const isBarePath = (el?: DrawingElement) => el?.type === 'path' && !String(el.containerText ?? '').trim();
+                if (target.type === 'element' && isBarePath(target.data as DrawingElement)) return false;
+                if (target.type === 'multi' && store.selection.every(id => isBarePath(store.elements.find(e => e.id === id)))) return false;
+            }
+
             // Element-state check — for controls whose applicability depends on the element's
             // state rather than its type (e.g. Stroke Align needs a CLOSED outline, which an
             // `applicableTo` type list can't express: `path` covers both open and closed pens).
@@ -2084,7 +2094,7 @@ const PropertyPanel: Component = () => {
                 // that family's styles.
                 const familyGroups = createMemo(() =>
                     groupFontFamilies(
-                        filteredOptions().map(o => ({ value: String(o.value), label: String(o.label) })),
+                        filteredOptions().map(o => ({ value: String(o.value), label: String(o.label), weightRange: (o as { weightRange?: [number, number] }).weightRange })),
                         new Map(Object.entries(fontCapabilities)),
                     ));
 
@@ -2107,9 +2117,12 @@ const PropertyPanel: Component = () => {
                 const applyVariant = (v: { value: string; weight: number; italic: boolean }) => {
                     const target = activeTarget();
                     const id = target?.type === 'element' ? target?.data?.id : undefined;
-                    handleChange('fontFamily', v.value, target?.type, id);
-                    handleChange('fontWeight', v.weight, target?.type, id);
-                    handleChange('fontStyle', v.italic ? 'italic' : 'normal', target?.type, id);
+                    // One undo step for the three writes — each recorded its own, so undoing a
+                    // single font pick took three presses of Ctrl+Z.
+                    pushToHistory();
+                    handleChange('fontFamily', v.value, target?.type, id, false);
+                    handleChange('fontWeight', v.weight, target?.type, id, false);
+                    handleChange('fontStyle', v.italic ? 'italic' : 'normal', target?.type, id, false);
                 };
 
                 // Switching family keeps the style you were using where the new family has
@@ -2126,6 +2139,58 @@ const PropertyPanel: Component = () => {
                         : { weight: currentWeight(), italic: currentItalic() };
                     applyVariant(pickVariant(g, cur.weight, cur.italic));
                 };
+
+                // ── Hover preview (Illustrator-style) ────────────────────────────────────
+                //
+                // Hovering a family shows the selected text in it. The font is written to the
+                // elements for real, so the canvas, the text box refit and an open text editor
+                // all show it — but with history off, and the original font keys are kept so
+                // ending the preview puts them back exactly. Style carry-over matches a pick.
+                const FONT_PREVIEW_KEYS = ['fontFamily', 'fontWeight', 'fontStyle', 'x', 'y', 'width', 'height'] as const;
+                let previewSnap: { style: { weight: number; italic: boolean }; els: { id: string; saved: Record<string, any> }[] } | null = null;
+                const previewTargets = (): string[] => {
+                    const target = activeTarget();
+                    if (target?.type === 'element') return target.data?.id ? [target.data.id] : [];
+                    if (target?.type === 'multi') return supportedSelection('fontFamily');
+                    return [];
+                };
+                const endFontPreview = () => {
+                    const snap = previewSnap;
+                    previewSnap = null;
+                    if (!snap) return;
+                    batch(() => snap.els.forEach(({ id, saved }) => {
+                        if (store.elements.some(e => e.id === id)) updateElement(id, { ...saved }, false);
+                    }));
+                };
+                const previewFamily = (familyName: string | null) => {
+                    if (familyName === null) { endFontPreview(); return; }
+                    const g = familyGroups().find(x => x.family === familyName);
+                    const ids = previewTargets();
+                    if (!g || ids.length === 0) return;
+                    if (!previewSnap) {
+                        // Resolve the style to carry over from the ORIGINAL font, once — later
+                        // hovers would otherwise read the previewed family back as "current".
+                        const from = currentGroup();
+                        const style = from
+                            ? resolveActiveVariant(from, String(selectVal() ?? ''), currentWeight(), currentItalic())
+                            : { weight: currentWeight(), italic: currentItalic() };
+                        previewSnap = {
+                            style: { weight: style.weight, italic: style.italic },
+                            els: ids.flatMap(id => {
+                                const el = store.elements.find(e => e.id === id) as any;
+                                if (!el) return [];
+                                const saved: Record<string, any> = {};
+                                FONT_PREVIEW_KEYS.forEach(k => { saved[k] = el[k]; });
+                                return [{ id, saved }];
+                            }),
+                        };
+                    }
+                    const v = pickVariant(g, previewSnap.style.weight, previewSnap.style.italic);
+                    batch(() => previewSnap!.els.forEach(({ id }) => updateElement(id, {
+                        fontFamily: v.value, fontWeight: v.weight, fontStyle: v.italic ? 'italic' : 'normal',
+                    } as Partial<DrawingElement>, false)));
+                };
+                onCleanup(endFontPreview);
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
@@ -2153,6 +2218,7 @@ const PropertyPanel: Component = () => {
                                 options={familyOptions()}
                                 value={isMixed(selectVal()) ? '__mixed__' : (currentGroup()?.family ?? String(selectVal() ?? prop.defaultValue ?? ''))}
                                 onPick={pickFamily}
+                                onPreview={previewFamily}
                                 onGoogleFonts={() => setGoogleFontsOpen(true)}
                                 onAddFont={() => fontFileInput?.click()}
                             />
@@ -2183,7 +2249,7 @@ const PropertyPanel: Component = () => {
                     const builtinOptions = properties.find(p => p.key === 'fontFamily')?.options ?? [];
                     return groupFontFamilies(
                         [...builtinOptions.map(o => ({ value: String(o.value), label: String(o.label) })),
-                         ...customFontOptions().map(o => ({ value: String(o.value), label: String(o.label) }))],
+                         ...customFontOptions().map(o => ({ value: String(o.value), label: String(o.label), weightRange: o.weightRange }))],
                         new Map(Object.entries(fontCapabilities)),
                     );
                 });
@@ -2201,9 +2267,11 @@ const PropertyPanel: Component = () => {
                     if (!v) return;
                     const target = activeTarget();
                     const id = target?.type === 'element' ? target?.data?.id : undefined;
-                    handleChange('fontFamily', v.value, target?.type, id);
-                    handleChange('fontWeight', v.weight, target?.type, id);
-                    handleChange('fontStyle', v.italic ? 'italic' : 'normal', target?.type, id);
+                    // One undo step, as for the Font row (#382).
+                    pushToHistory();
+                    handleChange('fontFamily', v.value, target?.type, id, false);
+                    handleChange('fontWeight', v.weight, target?.type, id, false);
+                    handleChange('fontStyle', v.italic ? 'italic' : 'normal', target?.type, id, false);
                 };
                 return (
                     <Show when={(group()?.variants.length ?? 0) > 1}>

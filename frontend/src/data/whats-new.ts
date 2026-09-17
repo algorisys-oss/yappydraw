@@ -13,6 +13,17 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.259', date: '2026-09-17', items: [
+        'Drag a text box\u2019s corner to scale the text: drag freely to stretch the letters, or hold Shift to keep their shape. The side handles still set how wide the text wraps.',
+        'Variable fonts from Google Fonts work from a single file: add it once and pick Thin, Light, Bold, Black and every weight in between from Style.',
+        'Hover over a font in the Font list to see your selected text in it before you choose.',
+        'Design pages have a pasteboard: shapes you park beside the page stay visible, and the part of a shape hanging off the edge shows faded instead of disappearing. Exports are unchanged.',
+        'Starting a new design at a custom size? Pick Blank page at the top of the templates.',
+        'Dragging a mandala moves the whole mandala. Deleting it also turns off the purple symmetry guides it left behind, and a Kaleidoscope \u00d7 button in the status bar turns them off any time.',
+        'Save colour combinations: select your artwork and click Group in the Swatches panel.',
+        'Layers have a Blend mode, so a texture layer can sit on Multiply or Overlay over your artwork.',
+        'Text converted to outlines is recoloured with Fill, and a font pick is one undo step.',
+    ] },
     { version: '0.8.258', date: '2026-09-16', items: [
         'Unite, Subtract, Shape Builder and Offset Path keep brush and pencil shapes exactly where you drew them. Before, a small piece could jump up and to the left.',
         'PNG and JPG exports match the canvas: rotated shapes aren\u2019t cropped, clipping masks clip, and animated or parented layers export in the pose you see.',

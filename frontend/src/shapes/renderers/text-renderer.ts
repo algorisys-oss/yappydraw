@@ -18,7 +18,8 @@ export class TextRenderer extends ShapeRenderer {
     }
 
     private renderCommon(context: RenderContext): void {
-        const { renderer, element: el, isDarkMode } = context;
+        const { renderer, isDarkMode } = context;
+        let el = context.element;
 
         const fontSize = el.fontSize || 20;
         const fontFamily = resolveFontFamily(el.fontFamily);
@@ -42,6 +43,18 @@ export class TextRenderer extends ShapeRenderer {
             }
             renderer.restore();
             return;
+        }
+
+        // Horizontal scale (a free corner-drag stretch): lay the text out in the unscaled width,
+        // then stretch it about the box's left edge so it fills the real box exactly. After the
+        // background, which already fills the real box. Vertical text has no horizontal-scale
+        // meaning here and is left alone.
+        const sx = el.textScaleX;
+        if (sx && sx > 0 && Math.abs(sx - 1) > 1e-3 && !el.verticalText) {
+            renderer.translate(el.x, 0);
+            renderer.scale(sx, 1);
+            renderer.translate(-el.x, 0);
+            el = { ...el, width: el.width / sx };
         }
 
         // Rich text path — render per-span formatting

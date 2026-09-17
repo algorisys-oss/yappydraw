@@ -81,6 +81,7 @@
 }
 
 .opacity-control,
+.blend-control,
 .background-control,
 .color-tag-control {
     display: flex;
@@ -90,6 +91,7 @@
     color: var(--text-secondary);
 }
 
+.blend-control,
 .background-control,
 .color-tag-control {
     margin-top: 4px;
@@ -722,4 +724,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.blend-control select {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    padding: 2px 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary, transparent);
+    color: var(--text-primary, inherit);
 }

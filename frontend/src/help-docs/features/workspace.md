@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport"
+keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport"
 ---
 
 # Workspace & Productivity
@@ -232,7 +232,13 @@ Yappy.getGroupName(gid);
 ### Working with layers themselves
 
 The rows above the object lists are the **layers**. A layer is a container with its own
-visibility, lock, opacity, background and colour tag; the artwork on it stacks as a unit.
+visibility, lock, opacity, **blend mode**, background and colour tag; the artwork on it stacks as a unit.
+
+**Blend** (under Opacity) sets a blend mode for the whole layer, typically a paper or grain
+texture on *Multiply* or *Overlay* above the artwork. It applies to every object on the layer that
+doesn't set its own Blend Mode, and exports to PNG/JPG as shown. One difference from Photoshop:
+objects on the *same* blended layer also blend with each other where they overlap. For a texture
+layer that makes no difference. `Yappy.setLayerBlendMode(layerId, 'multiply')`.
 
 - **Click a layer row** to make it active — that is where the next thing you draw lands.
   **<kbd>Shift</kbd>-click** selects a whole **range** of layers, **<kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click**

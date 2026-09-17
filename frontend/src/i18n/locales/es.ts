@@ -753,6 +753,9 @@ export const es: Dictionary = {
         symmetryVertical: 'Simetría vertical — reflejar izquierda/derecha (Alt+Y alterna la simetría)',
         symmetryHorizontal: 'Simetría horizontal — reflejar arriba/abajo (Alt+Y alterna la simetría)',
         symmetryAxis: 'Mover el eje de simetría — arrastra el manejador para recolocarlo (Alt+Shift+Y)',
+        symmetryRadial: 'Radial',
+        symmetryKaleidoscope: 'Caleidoscopio',
+        symmetryOffTip: 'La simetría {{ mode }} está activada — haz clic para desactivarla (Alt+Y)',
         fillMode: 'Modo relleno — los trazos a mano alzada rellenan su silueta',
         // Display only. The STORED document name stays the literal 'Untitled' in
         // every locale: it is written into saved files and compared by
@@ -884,6 +887,32 @@ export const es: Dictionary = {
         resizeHandle: 'Arrastra para redimensionar (iconos por fila) · doble clic para restablecer',
         stabilizationOn: 'Estabilización del trazo (activada, {{ percent }} %) — Shift+S',
         stabilizationOff: 'Estabilización del trazo (desactivada) — Shift+S',
+    },
+
+    swatchesPanel: {
+        newGroup: 'Grupo',
+        newGroupTip: 'Nuevo grupo de colores a partir de la selección',
+        groupNamePrompt: 'Nombre del grupo de colores',
+        defaultGroupName: 'Paleta {{ n }}',
+        moveToGroup: 'Mover a grupo',
+        noGroup: 'Sin grupo',
+        newGroupOption: 'Nuevo grupo…',
+        deleteGroupConfirm: '¿Eliminar «{{ name }}» y sus {{ count }} muestras?',
+        emptyGroupsHint: 'Selecciona una ilustración y pulsa Grupo para guardar sus colores como combinación.',
+        renameGroupTip: 'Doble clic para renombrar',
+        addToGroupTip: 'Añadir los colores de la selección a este grupo',
+        deleteGroupTip: 'Eliminar este grupo y sus muestras',
+        ungrouped: 'Sin agrupar',
+    },
+
+    layers: {
+        blend: 'Fusión',
+        blendTip: 'Modo de fusión para cada objeto de esta capa sin modo propio (p. ej., una textura en Multiplicar)',
+    },
+
+    templateBrowser: {
+        blankPage: 'Página en blanco',
+        blankPageDesc: 'Empieza con una página vacía del tamaño elegido',
     },
 
     fillStroke: {

@@ -24,6 +24,14 @@ export interface FontPickerProps {
     onPick: (value: string) => void;
     onGoogleFonts: () => void;
     onAddFont: () => void;
+    /**
+     * Live preview (Illustrator-style): called with a row's value while it is hovered or
+     * arrowed to, and with `null` when the preview should end — the pointer leaves the list,
+     * or the popup closes without a pick. The caller applies the font temporarily, outside
+     * undo history, and puts the original back on `null`. A pick is still sent to `onPick`,
+     * so the caller must end any preview before applying it.
+     */
+    onPreview?: (value: string | null) => void;
 }
 
 /**
@@ -52,6 +60,14 @@ const FontPicker: Component<FontPickerProps> = (props) => {
         return q ? props.options.filter(o => o.label.toLowerCase().includes(q)) : props.options;
     });
     createEffect(() => { filtered(); setFocusIdx(-1); });
+
+    // One preview at a time, and always ended: a hover left behind after the popup closes
+    // would silently keep a font the user never chose.
+    let previewing = false;
+    const preview = (v: string | number) => { previewing = true; props.onPreview?.(String(v)); };
+    const endPreview = () => { if (!previewing) return; previewing = false; props.onPreview?.(null); };
+    createEffect(() => { if (!open()) endPreview(); });
+    onCleanup(endPreview);
 
     const POPUP_W = 240;
     const openPopup = () => {
@@ -94,13 +110,13 @@ const FontPicker: Component<FontPickerProps> = (props) => {
         (listRef.children[idx] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' });
     });
 
-    const pick = (v: string | number) => { props.onPick(String(v)); setOpen(false); triggerRef?.focus(); };
+    const pick = (v: string | number) => { endPreview(); props.onPick(String(v)); setOpen(false); triggerRef?.focus(); };
 
     const onListKeys = (e: KeyboardEvent) => {
         e.stopPropagation();
         const list = filtered();
-        if (e.key === 'ArrowDown') { e.preventDefault(); setFocusIdx(i => Math.min(list.length - 1, i + 1)); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); setFocusIdx(i => Math.max(0, i - 1)); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); setFocusIdx(i => Math.min(list.length - 1, i + 1)); if (list[focusIdx()]) preview(list[focusIdx()].value); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setFocusIdx(i => Math.max(0, i - 1)); if (list[focusIdx()]) preview(list[focusIdx()].value); }
         else if (e.key === 'Enter' && focusIdx() >= 0 && list[focusIdx()]) { e.preventDefault(); pick(list[focusIdx()].value); }
     };
 
@@ -130,13 +146,13 @@ const FontPicker: Component<FontPickerProps> = (props) => {
                         <input ref={el => inputRef = el} class="fp-search" type="text"
                             placeholder="Search fonts… (↑↓ + Enter)"
                             value={query()} onInput={e => setQuery(e.currentTarget.value)} />
-                        <div class="fp-list" ref={el => listRef = el}>
+                        <div class="fp-list" ref={el => listRef = el} onMouseLeave={endPreview}>
                             <For each={filtered()} fallback={<div class="fp-empty">No fonts match.</div>}>
                                 {(opt, i) => (
                                     <button type="button" class="fp-item"
                                         classList={{ selected: String(opt.value) === props.value, focused: focusIdx() === i() }}
                                         style={{ 'font-family': resolveFontFamily(opt.previewValue ?? String(opt.value)) }}
-                                        onMouseEnter={() => setFocusIdx(i())}
+                                        onMouseEnter={() => { setFocusIdx(i()); preview(opt.value); }}
                                         onClick={() => pick(opt.value)}>
                                         <span class="fp-item-label">{opt.label}</span>
                                         <Show when={String(opt.value) === props.value}><Check size={13} /></Show>

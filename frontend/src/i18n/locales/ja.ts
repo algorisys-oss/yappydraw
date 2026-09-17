@@ -753,6 +753,9 @@ export const ja: Dictionary = {
         symmetryVertical: '垂直対称 — 左右を反転（Alt+Y で対称を切り替え）',
         symmetryHorizontal: '水平対称 — 上下を反転（Alt+Y で対称を切り替え）',
         symmetryAxis: '対称軸を移動 — ハンドルをドラッグして位置を変更（Alt+Shift+Y）',
+        symmetryRadial: '放射',
+        symmetryKaleidoscope: '万華鏡',
+        symmetryOffTip: '{{ mode }}対称がオンです — クリックでオフ（Alt+Y）',
         fillMode: '塗りモード — フリーハンドの線がその輪郭を塗りつぶします',
         // Display only. The STORED document name stays the literal 'Untitled' in
         // every locale: it is written into saved files and compared by
@@ -884,6 +887,32 @@ export const ja: Dictionary = {
         resizeHandle: 'ドラッグでサイズ変更（1 行あたりのアイコン数）・ダブルクリックでリセット',
         stabilizationOn: '手ブレ補正（オン、{{ percent }}%）— Shift+S',
         stabilizationOff: '手ブレ補正（オフ）— Shift+S',
+    },
+
+    swatchesPanel: {
+        newGroup: 'グループ',
+        newGroupTip: '選択範囲の色から新しいカラーグループを作成',
+        groupNamePrompt: 'カラーグループの名前',
+        defaultGroupName: 'パレット {{ n }}',
+        moveToGroup: 'グループへ移動',
+        noGroup: 'グループなし',
+        newGroupOption: '新しいグループ…',
+        deleteGroupConfirm: '「{{ name }}」と {{ count }} 個のスウォッチを削除しますか？',
+        emptyGroupsHint: 'アートワークを選択して「グループ」をクリックすると、その色を組み合わせとして保存できます。',
+        renameGroupTip: 'ダブルクリックで名前を変更',
+        addToGroupTip: '選択範囲の色をこのグループに追加',
+        deleteGroupTip: 'このグループとスウォッチを削除',
+        ungrouped: '未分類',
+    },
+
+    layers: {
+        blend: '描画モード',
+        blendTip: '独自のモードを持たないこのレイヤーの全オブジェクトの描画モード（例: テクスチャを乗算に）',
+    },
+
+    templateBrowser: {
+        blankPage: '白紙のページ',
+        blankPageDesc: '選んだサイズの空白ページから始める',
     },
 
     fillStroke: {

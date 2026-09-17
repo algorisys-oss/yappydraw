@@ -1136,6 +1136,19 @@ export const properties: PropertyConfig[] = [
         defaultValue: 0
     },
     {
+        // Set by dragging a text box's corner without Shift (font size follows the height and
+        // this carries the rest of the stretch). 1 = normal; type 1 to remove a stretch.
+        key: 'textScaleX',
+        label: 'Horizontal Scale',
+        type: 'number',
+        min: 0.05,
+        max: 20,
+        step: 0.05,
+        group: 'text',
+        applicableTo: ['text', 'richtext'],
+        defaultValue: 1
+    },
+    {
         key: 'lineHeight',
         label: 'Line Spacing',
         type: 'number',
