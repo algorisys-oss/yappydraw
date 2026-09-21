@@ -9,7 +9,7 @@ import {
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
-  bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
+  bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, toggleGuidesVisible, toggleGuidesLocked, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
   transformAgain, recordTransform, convertTextToOutlines, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
@@ -22,6 +22,7 @@ import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
 import { RulerOverlay } from './components/ruler-overlay';
 import { RepeatDialog } from './components/repeat-dialog';
+import { LayoutGuidesDialog } from './components/layout-guides-dialog';
 import { MandalaDialog } from './components/mandala-dialog';
 import { canvasCenterClient } from './utils/dock-layout';
 import { SymmetryOverlay } from './components/symmetry-overlay';
@@ -488,6 +489,24 @@ const App: Component = () => {
 
       // 3. Regular Application Shortcuts (Blocked by inputs)
       if (isCtrlOrMeta) {
+        // Illustrator's grid/guide keys: Ctrl+' grid, Ctrl+; guides, Ctrl+Alt+; lock guides.
+        // Matched on e.code — the characters on those keys differ between layouts.
+        if (code === 'Quote' && !e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          toggleGrid();
+          return;
+        }
+        if (code === 'Semicolon' && !e.shiftKey) {
+          e.preventDefault();
+          if (e.altKey) {
+            toggleGuidesLocked();
+            showToast(store.guidesLocked ? 'Guides locked' : 'Guides unlocked', 'info');
+          } else {
+            toggleGuidesVisible();
+            showToast(store.guidesVisible ? 'Guides shown' : 'Guides hidden', 'info');
+          }
+          return;
+        }
         if (key === 'z') {
           e.preventDefault();
           // A multi-click tool that is mid-construction claims plain Ctrl+Z as "drop the
@@ -1570,6 +1589,7 @@ const App: Component = () => {
         </Show>
         <CropBar />
         <RepeatDialog />
+        <LayoutGuidesDialog />
         <MandalaDialog />
         {/* Support and About are mounted HERE, not inside <StatusBar />, because the status
             bar lives under `<Show when={!store.zenMode}>` — mounted there, both dialogs

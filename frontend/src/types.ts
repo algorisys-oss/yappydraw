@@ -1032,6 +1032,20 @@ export interface GridSettings {
     /** Grid style. 'diagonal' (45°) and 'isometric' (30° + verticals) are angled
      *  lattices — see utils/grid-lattice.ts, which both the renderer and the snapper use. */
     style: 'lines' | 'dots' | 'diagonal' | 'isometric';
+    /** Rotation of the whole grid in degrees. Snapping follows it. Default 0. */
+    angle?: number;
+    /** World point the lattice and the axes pass through. Default (0,0). */
+    originX?: number;
+    originY?: number;
+    /** Draw every Nth line stronger (a major line). ≤ 1 or unset = all lines alike. */
+    majorEvery?: number;
+    /** Unit the Properties panel shows spacing and origin in. `gridSize` stays in world px. */
+    unit?: 'px' | 'mm' | 'cm' | 'in';
+    /** Draw the grid over the artwork instead of under it. Default false. */
+    onTop?: boolean;
+    /** Draw the two axis lines through the origin — shown even with the grid itself hidden. */
+    showAxes?: boolean;
+    axisColor?: string;
 }
 
 /**

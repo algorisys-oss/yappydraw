@@ -9,7 +9,7 @@ import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
 import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry } from '../../store/app-store';
-import { snapPoint } from '../snap-helpers';
+import { gridSnap } from '../grid-lattice';
 import { generateId } from '../id-generator';
 
 // ─── Pointer Down: Create or append point ────────────────────────────
@@ -23,7 +23,7 @@ export function polylineOnDown(
     let px = x;
     let py = y;
     if (store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
+        const snapped = gridSnap(x, y, store.gridSettings);
         px = snapped.x;
         py = snapped.y;
     }
@@ -114,7 +114,7 @@ export function polylineOnMove(
     } else {
         // Grid snap only (no shape binding for polylines)
         if (store.gridSettings.snapToGrid) {
-            const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
+            const snapped = gridSnap(x, y, store.gridSettings);
             px = snapped.x;
             py = snapped.y;
         }

@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.260', date: '2026-09-22', items: [
+        'Put the grid over your artwork: turn on Draw above objects in Canvas properties \u25b8 Grid & Guides.',
+        'Shape the grid: set its spacing in px, mm, cm or inches, add a stronger line every few lines, rotate it, and move its origin. Snapping follows.',
+        'Show axes: two lines through the grid origin that work with every grid style, even with the grid hidden.',
+        'Rows & Columns: turn columns, rows, gutters and margins into guides on your page, artboard or selection, with a live preview.',
+        'Guides now snap when you move objects and are saved with your drawing. Ctrl+; hides and shows them, and Ctrl+\' shows the grid.',
+    ] },
     { version: '0.8.259', date: '2026-09-17', items: [
         'Drag a text box\u2019s corner to scale the text: drag freely to stretch the letters, or hold Shift to keep their shape. The side handles still set how wide the text wraps.',
         'Variable fonts from Google Fonts work from a single file: add it once and pick Thin, Light, Bold, Black and every weight in between from Style.',

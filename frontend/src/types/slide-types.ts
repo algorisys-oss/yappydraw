@@ -1,4 +1,4 @@
-import type { DrawingElement, Layer, GridSettings, FillStyle, GradientStop } from '../types';
+import type { DrawingElement, Layer, GridSettings, FillStyle, GradientStop, Guide } from '../types';
 import type { DisplayState } from './motion-types';
 import { createDefaultAnimTimeline } from './anim-types';
 
@@ -164,6 +164,8 @@ export interface SlideDocument {
     slides: Slide[];
     globalSettings?: GlobalSettings;
     gridSettings?: GridSettings;
+    /** Ruler guides (including layout guides from Rows & Columns). Absent in older files. */
+    guides?: Guide[];
     /** Drawing symmetry: mode, axis centre, spokes and tilt. Saved with the document
      *  so a mandala reopens on the axis you drew it on. The transient move-axis mode
      *  (`editing`) is deliberately NOT persisted — reopening a file with drawing

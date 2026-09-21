@@ -51,6 +51,8 @@ export function initAutoSave(): void {
                 store.states.length,
                 store.docType,
                 store.dirtyRevision,
+                // Guides are saved with the document; adding or removing one is an edit.
+                store.guides.length,
             ],
             () => {
                 if (_isSaving) return;
@@ -181,6 +183,7 @@ export function buildCurrentDocument(): SlideDocument {
         slides: JSON.parse(JSON.stringify(store.slides ?? [])),
         globalSettings: JSON.parse(JSON.stringify(store.globalSettings ?? {})),
         gridSettings: JSON.parse(JSON.stringify(store.gridSettings ?? {})),
+        guides: JSON.parse(JSON.stringify(store.guides ?? [])),
         states: JSON.parse(JSON.stringify(store.states ?? [])),
         symbols: JSON.parse(JSON.stringify(store.symbols ?? [])),
         graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles ?? [])),

@@ -34,14 +34,14 @@ import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
 import { store, addElement, updateElement, setStore, setSelectedTool, shouldRevertToSelect, pushToHistory, applyLiveSymmetry, perspectiveSnapActive, setPerspectiveSnapGuide, isLayerLocked, isLayerVisible, setPenResumeHint } from '../../store/app-store';
 import { showToast } from '../../components/toast';
-import { snapPoint } from '../snap-helpers';
+import { gridSnap } from '../grid-lattice';
 import { generateId } from '../id-generator';
 import { setAnchorHandle } from '../anchor-handle';
 import { constrainToAngle } from '../angle-constrain';
 import { snapPointToPerspective, snapVectorToPerspective } from '../perspective-snap';
 
 function snap(x: number, y: number): { x: number; y: number } {
-    if (store.gridSettings.snapToGrid) return snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
+    if (store.gridSettings.snapToGrid) return gridSnap(x, y, store.gridSettings);
     return { x, y };
 }
 

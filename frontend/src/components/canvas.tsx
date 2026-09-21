@@ -514,7 +514,8 @@ const Canvas: Component = () => {
         ctx.translate(panX, panY);
         ctx.scale(scale, scale);
 
-        renderGrid(ctx, canvasRef, store.gridSettings, scale, panX, panY, isDarkMode);
+        // Grid under the artwork by default; `onTop` draws it after the elements instead.
+        if (!store.gridSettings.onTop) renderGrid(ctx, canvasRef, store.gridSettings, scale, panX, panY, isDarkMode);
 
         // 5. Compute focus branch set (for Focus Mode dimming)
         let focusBranchIds: Set<string> | null = null;
@@ -612,6 +613,10 @@ const Canvas: Component = () => {
         if (store.dimensionAnnotations.length > 0) {
             renderDimensions(ctx, store.dimensionAnnotations, store.elements, animatedStates, scale, isDarkMode, store.globalSettings.measurementUnit ?? 'px');
         }
+
+        // Grid over the artwork (GridSettings.onTop) — above every element, below the
+        // selection chrome, so handles stay readable on a dense grid.
+        if (store.gridSettings.onTop) renderGrid(ctx, canvasRef, store.gridSettings, scale, panX, panY, isDarkMode);
 
         // 6. Overlays
         // Live W × H chip: only while an actual bbox handle is being dragged
@@ -775,6 +780,13 @@ const Canvas: Component = () => {
         store.gridSettings.gridColor;
         store.gridSettings.gridOpacity;
         store.gridSettings.style;
+        store.gridSettings.angle;
+        store.gridSettings.originX;
+        store.gridSettings.originY;
+        store.gridSettings.majorEvery;
+        store.gridSettings.onTop;
+        store.gridSettings.showAxes;
+        store.gridSettings.axisColor;
         store.canvasBackgroundColor;
         store.canvasTexture;
         store.theme;

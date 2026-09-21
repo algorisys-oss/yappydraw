@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport"
+keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport"
 ---
 
 # Workspace & Productivity
@@ -297,9 +297,15 @@ These match Illustrator and Figma. A multi-selection moves as one **block** — 
 Stacking is per **layer**: paint order is layer order first, then position within the layer. Stepping forward moves an object past its neighbours *on its own layer* — to put it above artwork on a higher layer, move the object to that layer (or reorder the layers with <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>]</kbd>).
 :::
 
-### Grid styles — including diagonal and isometric
+### Grid — styles, spacing, rotation, axes
 
-The grid has four styles, in *Settings → Canvas → Grid Style* or from the Command Palette (“Grid Style: …”):
+With nothing selected, open **Canvas properties** (<kbd>Alt</kbd>+<kbd>Enter</kbd>, or right-click → *Canvas Settings*) and scroll to **Grid & Guides**. <kbd>Ctrl</kbd>+<kbd>'</kbd> (or <kbd>Shift</kbd>+<kbd>'</kbd>) shows and hides the grid, and <kbd>Shift</kbd>+<kbd>;</kbd> turns Snap to Grid on and off.
+
+:::note
+**The grid is not the canvas texture.** The *Line Grid*, *Graph Paper* and *Dot Grid* chips under **Canvas Theme** are paper backgrounds. They always sit behind your artwork and nothing snaps to them. The grid described here is the one you can snap to, rotate, and draw on top of your artwork.
+:::
+
+The grid has four styles, set with the buttons in Grid & Guides or from the Command Palette ("Grid Style: …"):
 
 | Style | What you get |
 | --- | --- |
@@ -308,15 +314,32 @@ The grid has four styles, in *Settings → Canvas → Grid Style* or from the Co
 | **Diagonal** | A 45° cross-hatch, for laying out angled construction. |
 | **Isometric** | 30° lines both ways plus verticals — boxes, 3/4 views, and character construction. |
 
-**Snap follows the lines you can see.** On the angled styles, **Snap to Grid** (<kbd>Shift</kbd>+<kbd>;</kbd>) puts points on the *intersections of the slanted lines*, not on square coordinates — a slanted grid that still snapped to squares would drop every point between the lines. *Grid size* sets the spacing between parallel lines, measured across them.
+| Setting | What it does |
+| --- | --- |
+| **Spacing** + unit | The distance between lines, in **px, mm, cm or in** (96 px = 1 in). Switching the unit only changes how the number is shown, not the grid. |
+| **Major line every** | Draws every Nth line stronger, like graph paper. Set it to 0 to draw every line the same. |
+| **Rotation** | Turns the whole grid (−90° to 90° on the slider; type any angle). Snapping follows the rotation. |
+| **Colour / Opacity** | How the lines look. |
+| **Draw above objects** | Draws the grid over your artwork instead of behind it, so you can line things up against it on a filled shape. Selection handles still draw on top. |
+| **Show axes** | Two lines through the **origin**, along the grid's own directions, in their own colour. They work with every style and show even while the grid itself is hidden. |
+| **Origin X / Y** | Where the grid lines and axes cross. The grid is anchored there, so moving the origin shifts every line. *Reset origin & rotation* puts both back to 0. From the Command Palette, **Set Grid Origin to Selection** moves the origin to the centre of the selected objects. |
+
+**Snapping follows the lines you can see.** On angled and rotated grids, **Snap to Grid** puts points on the *intersections of the drawn lines*, not on square coordinates. A slanted grid that still snapped to squares would drop every point between the lines. Moving an object snaps it by whole cells along the grid's directions, so it stays on the lines it started on.
 
 :::tip
-Zoom out far enough and an angled grid draws every second line, then every fourth, so it stays a grid instead of turning into a grey wash. That is only what’s *drawn* — snapping always uses the full grid size, so a point placed while zoomed out is still exactly on the lattice at 100%.
+Zoom out far enough and the grid thins out: it draws only the major lines first, then every second one, so it stays a grid instead of turning into a grey wash. That only affects what's *drawn*. Snapping always uses the full spacing, so a point placed while zoomed out is still exactly on the grid at 100%.
 :::
+
+For **perspective** drawing (1-, 2- or 3-point, with wall and floor planes), use the **Perspective grid…** button at the bottom of Grid & Guides. It's the same Perspective Grid as in the Vector Tools palette; see the Illustrator tools doc.
 
 ```
 Y.setGridStyle('isometric');   // 'lines' | 'dots' | 'diagonal' | 'isometric'
 Y.updateGridSettings({ enabled: true, snapToGrid: true, gridSize: 40 });
+Y.setGridSpacing(5, 'mm');     // spacing in a unit (also sets the panel's unit)
+Y.setGridRotation(15);         // degrees; snapping follows
+Y.setGridOrigin(400, 300);     // world px; Y.setGridOrigin() = centre of the selection
+Y.updateGridSettings({ majorEvery: 5, onTop: true, showAxes: true, axisColor: '#b14cff' });
+Y.snapPointToGrid(123, 45);    // where a drag would land → { x, y }
 Y.gridStyles;                  // the list, with labels
 ```
 
@@ -415,14 +438,28 @@ With a selection live you can manage the whole set together:
 - **Arrow keys** nudge the selection by 1px — hold <kbd>Shift</kbd> for 10px.
 - <kbd>Delete</kbd> / <kbd>Backspace</kbd> removes every selected guide at once.
 
-Finished with a layout? *Lock / Unlock Guides* in the Command Palette freezes them — locked guides still draw, but they can't be dragged, selected, or deleted by accident.
+Finished with a layout? **Lock guides** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>;</kbd>, the Grid & Guides panel, or *Lock / Unlock Guides* in the Command Palette) freezes them. Locked guides still draw, but they can't be dragged, selected, or deleted by accident.
+
+**Hide them with <kbd>Ctrl</kbd>+<kbd>;</kbd>** (<kbd>⌘</kbd>+<kbd>;</kbd> on a Mac), the same key as Illustrator. Press it again to bring them back. Guides draw with the rulers, so showing guides while the rulers are off turns the rulers on too.
+
+### Rows & Columns — layout guides
+
+**Grid & Guides → Rows & Columns…** (or the Command Palette: *Rows & Columns Layout Guides…*) turns a layout grid into guides, like Affinity's Margins & Guides or Illustrator's Split into Grid → Add Guides.
+
+1. Pick what to divide. Select an object to use its bounding box. With nothing selected, Yappy uses the **active artboard**, or the current **page** in a slide or design document. On a bare infinite canvas with nothing selected, it uses the visible area. The dialog says which one it picked.
+2. Set the **Columns** and **Rows** counts and the **Gutter** between them, then the **Margins**. Untick *Same on all sides* to set each margin separately. Lengths use the grid's unit.
+3. The cells preview on the canvas, shaded pink, while you tune them. **Add guides** puts a guide at both edges of every column and row. Tick *Replace existing guides* to clear the old ones first.
+
+The result is ordinary guides: they move, lock, hide, snap and save like any other.
 
 ### Turning shapes into guides
 
 Select one or more shapes → Command Palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>) → *Convert Shapes to Guides*. Each shape drops a horizontal *and* a vertical guide at every edge of its bounding box, then the shape itself is removed — so a rectangle becomes a four-line frame you can lay out against. This is Illustrator's <kbd>⌘5</kbd>; pair it with *Split Into Grid* to build a whole guide scaffold in two commands (see the Effects doc).
 
 :::tip
-**Two things to know.** Guides are *visual references* — nothing snaps to them yet. For snapping, use **Snap to Grid** (<kbd>Shift</kbd>+<kbd>;</kbd>) and the automatic alignment guides that appear while you drag. And guides live for the *session*: they aren't saved into the document, so they're gone after a reload (the rulers themselves do stay on).
+**Guides snap and save.** While **Smart snapping** is on (Grid & Guides), a dragged object's edges and centre snap to a guide within a few pixels. An edge of a nearby object in reach wins over a guide. Guides are saved with the document. Hidden guides don't snap.
+
+**Known limitations:** only *moving* objects snaps to guides. Drawing a new shape, resizing, and placing pen points use the grid and object snapping, not guides. Guides are always horizontal or vertical; they don't rotate with a rotated grid.
 :::
 
 ```
@@ -447,6 +484,14 @@ Y.moveSelectedGuides(40, 0);      // v-guides take dx, h-guides take dy
 Y.removeSelectedGuides();         // delete them; returns how many went
 Y.clearGuideSelection();          // Esc
 Y.toggleGuidesLocked(true);       // freeze them in place
+Y.toggleGuidesVisible(false);     // Ctrl+; — hide (hidden guides don't snap)
+
+// Rows & Columns layout guides (world px). Target: the selection, else the active
+// artboard, else the current page — or pass opts.rect.
+Y.addLayoutGuides({ columns: 12, rows: 1, gutterX: 20, marginLeft: 40, marginRight: 40 });
+Y.addLayoutGuides({ columns: 3, rows: 4, gutterX: 16, gutterY: 16 },
+                  { rect: { x: 0, y: 0, width: 1080, height: 1350 }, replace: true });
+Y.openLayoutGuidesDialog();
 ```
 
 ## Measure tool

@@ -2,6 +2,31 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Grids and layout guides (Anshika's review, Sep 21 2026)
+
+- **Check what the tester actually used before building what they asked for.** "We don't see the
+  grid above the object" was half a missing feature and half a naming problem: her screenshot had
+  the *Line Grid* canvas theme on, a paper texture that looks exactly like the grid. The fix for the
+  second half was one sentence in the panel. The same review asked for a perspective grid, which
+  already existed in the Vector Tools palette but not beside the grid settings. Missing features
+  and features people can't find need different fixes, and it's worth finding out which one it is.
+- **Rotation and origin cost one frame change, not a new snapper.** Moving the point into the
+  grid's own frame (subtract origin, rotate by −angle), snapping with the unrotated rules, and moving
+  it back gives rotated snapping for every style, including the angled ones. The renderer draws
+  every style as line families through the origin, so the square grid lost its special case too.
+  Snapping and drawing share `grid-lattice.ts`, so they can't disagree.
+- **A snapped delta and a snapped point are different operations.** The move handler rounded `dx`
+  and `dy` on its own, which was only right for the square grid. It had been wrong for diagonal and
+  isometric grids since they shipped, and nobody noticed because the tests drew lines and never
+  moved objects. `gridSnapDelta` gives the move handler the lattice too.
+- **`generateId` in a loop needs a batch set, again.** `addLayoutGuides` created every guide with
+  the same id, the exact bug the Sep 16 entry above describes. The first e2e pass counted guides and
+  never compared ids, so it passed. The test now asserts the ids are distinct. Any loop that calls
+  `generateId` before committing to the store must pass a batch set.
+- **Verifying a feature is how you find the features next to it.** Rows & Columns only became
+  useful once guides snapped and saved, which they didn't, and the help doc said so. "Reuse the
+  existing guides" was only true after fixing the guides.
+
 ## A passing test only covers the cases in it: re-checking a tester's report two weeks later
 
 Anshika's Sep 2026 report was worked through on Sep 7 (v0.8.236). Re-checking every item against

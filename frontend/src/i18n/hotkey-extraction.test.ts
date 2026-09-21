@@ -72,8 +72,10 @@ describe("key combinations stayed OUT of the dictionary", () => {
         expect(missing).toEqual([]);
     });
 
-    it("preserves the one combo written with double quotes (Shift+')", () => {
+    it("preserves the one combo written with double quotes (Ctrl+' / Shift+')", () => {
+        // The grid toggle gained Illustrator's Ctrl+' (Sep 2026); the quote-in-a-combo case is
+        // what this guards, whichever keys the entry lists.
         const source = readFileSync(new URL("../components/help-dialog.tsx", import.meta.url).pathname, "utf8");
-        expect(source).toContain(`keys: "Shift+'"`);
+        expect(source).toContain(`keys: "Ctrl+' / Shift+'"`);
     });
 });

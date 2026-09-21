@@ -165,6 +165,7 @@ export function CloudStorageDialog(props: CloudStorageDialogProps) {
                 slides: JSON.parse(JSON.stringify(store.slides)),
                 globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
+                guides: JSON.parse(JSON.stringify(store.guides ?? [])),
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),

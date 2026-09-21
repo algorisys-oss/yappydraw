@@ -9,7 +9,7 @@ import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
 import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool, finishLiveSymmetry, cancelLiveSymmetry, perspectiveSnapActive, perspectivePlaneActive, setPerspectiveSnapGuide } from '../../store/app-store';
-import { snapPoint } from '../snap-helpers';
+import { gridSnap } from '../grid-lattice';
 import { constrainToAngle } from '../angle-constrain';
 import { snapPointToPerspective, perspectiveQuad, orderQuadForWarp } from '../perspective-snap';
 import { generateId } from '../id-generator';
@@ -125,7 +125,7 @@ export function drawOnDown(
     let creationX = x;
     let creationY = y;
     if (store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
+        const snapped = gridSnap(x, y, store.gridSettings);
         creationX = snapped.x;
         creationY = snapped.y;
     }
@@ -420,7 +420,7 @@ export function drawOnMove(
     }
 
     if (!angleConstrained && !signals.suggestedBinding() && !perspectiveSnapped && store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
+        const snapped = gridSnap(x, y, store.gridSettings);
         finalX = snapped.x;
         finalY = snapped.y;
     }

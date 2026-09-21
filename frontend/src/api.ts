@@ -2,7 +2,7 @@ import {
     store, addElement, updateElement, deleteElements, setViewState, rotateView, resetRotation, pushToHistory, setStore, zoomToFit,
     undo, redo, withoutHistory, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
     addLayer, deleteLayer, setActiveLayer, setLayerBlendMode, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
-    updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion, setGridStyle,
+    updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion, setGridStyle, setGridOrigin, setGridOriginToSelection, toggleGuidesVisible, addLayoutGuides,
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
@@ -39,7 +39,8 @@ import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
 import { socialTargetsForPage, SOCIAL_TARGETS } from "./utils/social-export";
-import { GRID_STYLES } from "./utils/grid-lattice";
+import { GRID_STYLES, gridSnap, gridUnitToPx } from "./utils/grid-lattice";
+import { openLayoutGuidesDialog } from "./components/layout-guides-dialog";
 import { WIDTH_PROFILES } from "./utils/width-profiles";
 import {
     buildMandala, defaultMandalaSpec, ringOuterRadius, MANDALA_PRESETS, MANDALA_MOTIFS,
@@ -2432,9 +2433,38 @@ export const YappyAPI = {
         resetRotation();
     },
 
+    /**
+     * Patch the grid settings. Besides `enabled`, `snapToGrid`, `objectSnapping`, `gridSize`
+     * (world px), `gridColor`, `gridOpacity` and `style`:
+     * - `angle` — rotate the whole grid, in degrees; snapping follows it.
+     * - `originX` / `originY` — the world point the lattice and axes pass through.
+     * - `majorEvery` — draw every Nth line stronger (0/1 = off).
+     * - `unit` — `'px' | 'mm' | 'cm' | 'in'`, the unit the Properties panel shows (gridSize stays px).
+     * - `onTop` — draw the grid above the artwork instead of behind it.
+     * - `showAxes` / `axisColor` — the two axis lines through the origin (shown even with the grid off).
+     */
     updateGridSettings(settings: any) {
         setStore("gridSettings", (s) => ({ ...s, ...settings }));
     },
+
+    /** Set the grid spacing in a unit: `setGridSpacing(5, 'mm')`. Also sets the panel's unit. */
+    setGridSpacing(value: number, unit: 'px' | 'mm' | 'cm' | 'in' = 'px') {
+        const px = gridUnitToPx(value, unit);
+        if (!(px > 0) || !Number.isFinite(px)) return;
+        setStore("gridSettings", (s) => ({ ...s, gridSize: px, unit }));
+    },
+    /** Rotate the grid (degrees). Snapping follows the rotation. */
+    setGridRotation(degrees: number) {
+        if (Number.isFinite(degrees)) setStore("gridSettings", (s) => ({ ...s, angle: degrees }));
+    },
+    /** Move the grid origin (world px). Omit both to put it on the selection's centre. */
+    setGridOrigin(x?: number, y?: number) {
+        if (x === undefined && y === undefined) return setGridOriginToSelection();
+        setGridOrigin(x ?? store.gridSettings.originX ?? 0, y ?? store.gridSettings.originY ?? 0);
+        return true;
+    },
+    /** Snap a world point to the current grid, exactly as a drag would (rotation and origin included). */
+    snapPointToGrid(x: number, y: number) { return gridSnap(x, y, store.gridSettings); },
 
     /**
      * Grid style. `'lines'` / `'dots'` are the square grid; `'diagonal'` (45° cross-hatch) and
@@ -3000,6 +3030,21 @@ export const YappyAPI = {
     moveSelectedGuides(dx: number, dy: number) { moveSelectedGuides(dx, dy); },
     /** Lock/unlock guides. Locked guides render but can't be dragged, selected or deleted. */
     toggleGuidesLocked(locked?: boolean) { toggleGuidesLocked(locked); },
+    /** Show/hide guides (Ctrl+;). Showing them turns the rulers on — guides draw with the rulers. Hidden guides don't snap. */
+    toggleGuidesVisible(visible?: boolean) { toggleGuidesVisible(visible); },
+    /**
+     * Rows & Columns layout guides: divide `opts.rect` — default the selection's bounds, else the
+     * active artboard, else the current page — into columns and rows with gutters and margins
+     * (world px), as ordinary guides. `opts.replace` clears existing guides first. Moving objects
+     * snaps to guides while Smart snapping is on. Returns the new guide ids.
+     * `addLayoutGuides({ columns: 12, gutterX: 20, marginLeft: 40, marginRight: 40 })`
+     */
+    addLayoutGuides(spec: { columns?: number; rows?: number; gutterX?: number; gutterY?: number; marginTop?: number; marginRight?: number; marginBottom?: number; marginLeft?: number },
+        opts?: { rect?: { x: number; y: number; width: number; height: number }; replace?: boolean }) {
+        return addLayoutGuides(spec, opts);
+    },
+    /** Open the Rows & Columns dialog. */
+    openLayoutGuidesDialog() { openLayoutGuidesDialog(); },
     toggleZenMode(visible?: boolean) { toggleZenMode(visible); },
     /** Start (or replay) the first-visit onboarding tour. */
     startTour() { void import('./components/onboarding-tour').then(m => m.startTour()); },
@@ -5128,6 +5173,7 @@ export const YappyAPI = {
                 slides: JSON.parse(JSON.stringify(store.slides)),
                 globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
+                guides: JSON.parse(JSON.stringify(store.guides ?? [])),
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),

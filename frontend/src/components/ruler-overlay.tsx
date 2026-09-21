@@ -227,7 +227,7 @@ export const RulerOverlay = () => {
         if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
 
         // Ctrl/Cmd+Shift+A → select every guide. Plain Ctrl+A stays with the elements.
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a' && store.guides.length) {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a' && store.guides.length && store.guidesVisible) {
             if (store.guidesLocked) return;
             e.preventDefault();
             selectAllGuides();
@@ -277,7 +277,7 @@ export const RulerOverlay = () => {
         <>
             {/* Guide lines — full-viewport overlay, individual lines catch pointer. */}
             <div style={{ position: 'fixed', inset: '0', 'pointer-events': 'none', 'z-index': 38 }}>
-                <For each={store.guides}>
+                <For each={store.guidesVisible ? store.guides : []}>
                     {(g) => {
                         const screen = () => g.axis === 'h' ? worldToScreenY(g.pos) : worldToScreenX(g.pos);
                         const selected = () => store.selectedGuideIds.includes(g.id);

@@ -19,7 +19,7 @@ import { buildFilterString } from './image-filter-utils';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
-import { gridFamilyAngles } from './grid-lattice';
+import { rotatedGridFamilies, gridDrawStep, isMajorLine } from './grid-lattice';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle, renderKeyObjectHighlight } from './selection-renderer';
 import { clusterSelection } from './alignment';
 import { renderSnappingGuides, renderSpacingGuides, renderMeasureGaps, renderPointSnapMarker, renderSizeReadout } from './snap-renderer';
@@ -652,7 +652,8 @@ export function renderGrid(
     panY: number,
     _isDarkMode: boolean
 ): void {
-    if (!gridSettings.enabled) return;
+    const showAxes = !!gridSettings.showAxes;
+    if (!gridSettings.enabled && !showAxes) return;
 
     const gridSize = gridSettings.gridSize;
     const gridColor = gridSettings.gridColor;
@@ -660,6 +661,10 @@ export function renderGrid(
 
     const gridOpacity = gridSettings.gridOpacity;
     const gridStyle = gridSettings.style || 'lines';
+    const majorEvery = gridSettings.majorEvery > 1 ? Math.floor(gridSettings.majorEvery) : 0;
+    const ox = Number.isFinite(gridSettings.originX) ? gridSettings.originX : 0;
+    const oy = Number.isFinite(gridSettings.originY) ? gridSettings.originY : 0;
+    const families = rotatedGridFamilies(gridSettings);
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -668,88 +673,111 @@ export function renderGrid(
     ctx.globalAlpha = gridOpacity;
     ctx.lineWidth = 1;
 
-    const gridStartX = Math.floor((-panX / scale) / gridSize) * gridSize;
-    const endX = Math.ceil((canvas.width - panX) / scale / gridSize) * gridSize;
-    const gridStartY = Math.floor((-panY / scale) / gridSize) * gridSize;
-    const endY = Math.ceil((canvas.height - panY) / scale / gridSize) * gridSize;
+    // Viewport corners in world space, to bound which lines can be visible.
+    const wx0 = -panX / scale, wy0 = -panY / scale;
+    const wx1 = (canvas.width - panX) / scale, wy1 = (canvas.height - panY) / scale;
+    const corners: [number, number][] = [[wx0, wy0], [wx1, wy0], [wx0, wy1], [wx1, wy1]];
+    // Half-length that always crosses the viewport, whatever the angle.
+    const reach = Math.hypot(wx1 - wx0, wy1 - wy0) + Math.hypot(ox - wx0, oy - wy0);
+    const toScreen = (x: number, y: number): [number, number] => [x * scale + panX, y * scale + panY];
+    const crisp = (v: number) => Math.round(v - 0.5) + 0.5;
 
-    const angled = gridFamilyAngles(gridStyle);
-    if (angled.length) {
-        // Angled families. A family at angle θ is the lines whose signed distance along the
-        // family's NORMAL is a multiple of gridSize; the same definition the snapper uses, so
-        // the drawn intersections are exactly the points a drag lands on.
-        //
-        // Spacing is in WORLD units, so the on-screen gap tracks zoom. Three families at a few
-        // px apart stop reading as a grid — at 5% zoom they covered ~83% of the canvas, a grey
-        // wash costing ~1600 strokes a frame — so thin them by powers of two below a legible
-        // gap. Doubling keeps every drawn line a line that was there before, so the grid never
-        // appears to shift as you zoom.
-        //
-        // This is PURELY visual: snapping always uses `gridSize`, never `worldStep`. Thinning
-        // the snap too would silently coarsen the lattice as you zoomed out, so a point placed
-        // at low zoom would sit off-grid at high zoom.
-        const MIN_SCREEN_GAP = 10;
-        let worldStep = gridSize;
-        while (worldStep * scale < MIN_SCREEN_GAP) worldStep *= 2;
+    // Every style is drawn as families of parallel lines through the grid origin: a family at
+    // angle θ is the lines whose signed distance from the origin along the family's NORMAL is
+    // a multiple of gridSize — the same definition gridSnap uses, so the drawn lines are
+    // exactly the ones a drag lands on, rotated or not.
+    //
+    // Spacing is in WORLD units, so the on-screen gap tracks zoom. Lines a few px apart stop
+    // reading as a grid (at 5% zoom the isometric grid covered ~83% of the canvas, a grey wash
+    // costing ~1600 strokes a frame), so gridDrawStep thins them — to the major lines first,
+    // then by doubling. PURELY visual: snapping always uses `gridSize`. Thinning the snap too
+    // would silently coarsen the lattice as you zoomed out.
+    if (gridSettings.enabled && gridSize > 0 && Number.isFinite(gridSize)) {
+        const step = gridDrawStep(gridSize, scale, majorEvery);
+        const minorAlpha = majorEvery ? gridOpacity * 0.45 : gridOpacity;
 
-        // Viewport corners in world space, to bound which lines can be visible.
-        const wx0 = -panX / scale, wy0 = -panY / scale;
-        const wx1 = (canvas.width - panX) / scale, wy1 = (canvas.height - panY) / scale;
-        const corners: [number, number][] = [[wx0, wy0], [wx1, wy0], [wx0, wy1], [wx1, wy1]];
-        // Half-length that always crosses the viewport, whatever the angle.
-        const reach = Math.hypot(wx1 - wx0, wy1 - wy0);
-
-        ctx.beginPath();
-        for (const a of angled) {
-            const dx = Math.cos(a), dy = Math.sin(a);
-            const nx = -dy, ny = dx;
-            let dMin = Infinity, dMax = -Infinity;
+        if (gridStyle === 'dots') {
+            // Dots sit on the intersections of the two (possibly rotated) families.
+            const rot = families[0].angle;
+            const c = Math.cos(rot), s = Math.sin(rot);
+            // Viewport corners in the grid's own frame → the cell range to visit.
+            let iMin = Infinity, iMax = -Infinity, jMin = Infinity, jMax = -Infinity;
             for (const [cx, cy] of corners) {
-                const d = cx * nx + cy * ny;
-                if (d < dMin) dMin = d;
-                if (d > dMax) dMax = d;
+                const dx = cx - ox, dy = cy - oy;
+                const li = (dx * c + dy * s) / gridSize, lj = (-dx * s + dy * c) / gridSize;
+                iMin = Math.min(iMin, li); iMax = Math.max(iMax, li);
+                jMin = Math.min(jMin, lj); jMax = Math.max(jMax, lj);
             }
-            const first = Math.floor(dMin / worldStep) * worldStep;
-            for (let d = first; d <= dMax; d += worldStep) {
-                // A point on this line, then walk ±reach along it.
-                const px = nx * d, py = ny * d;
-                const x1 = (px - dx * reach) * scale + panX, y1 = (py - dy * reach) * scale + panY;
-                const x2 = (px + dx * reach) * scale + panX, y2 = (py + dy * reach) * scale + panY;
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+            const dotSize = 3;
+            const baseFill = (gridColor === '#e0e0e0' || gridColor === '#fafafa') ? dk('#b0b0b0') : dk(gridColor);
+            ctx.fillStyle = baseFill;
+            const i0 = Math.floor(iMin / step) * step, j0 = Math.floor(jMin / step) * step;
+            for (const major of majorEvery ? [false, true] : [false]) {
+                ctx.globalAlpha = major ? gridOpacity : minorAlpha;
+                const r = (major ? dotSize * 1.5 : dotSize) / 2;
+                ctx.beginPath();
+                for (let i = i0; i <= iMax; i += step) {
+                    for (let j = j0; j <= jMax; j += step) {
+                        if (majorEvery && (isMajorLine(i, majorEvery) && isMajorLine(j, majorEvery)) !== major) continue;
+                        const lx = i * gridSize, ly = j * gridSize;
+                        const [sx, sy] = toScreen(ox + lx * c - ly * s, oy + lx * s + ly * c);
+                        if (sx < -dotSize || sx > canvas.width + dotSize || sy < -dotSize || sy > canvas.height + dotSize) continue;
+                        ctx.moveTo(sx + r, sy);
+                        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+                    }
+                }
+                ctx.fill();
             }
-        }
-        ctx.stroke();
-    } else if (gridStyle === 'lines') {
-        ctx.beginPath();
-        for (let x = gridStartX; x <= endX; x += gridSize) {
-            const screenX = x * scale + panX;
-            ctx.moveTo(screenX, 0);
-            ctx.lineTo(screenX, canvas.height);
-        }
-        for (let y = gridStartY; y <= endY; y += gridSize) {
-            const screenY = y * scale + panY;
-            ctx.moveTo(0, screenY);
-            ctx.lineTo(canvas.width, screenY);
-        }
-        ctx.stroke();
-    } else {
-        const dotSize = 3;
-        if (gridStyle === 'dots' && (gridColor === '#e0e0e0' || gridColor === '#fafafa')) {
-            ctx.fillStyle = dk('#b0b0b0');
-        }
-        for (let x = gridStartX; x <= endX; x += gridSize) {
-            for (let y = gridStartY; y <= endY; y += gridSize) {
-                const screenX = x * scale + panX;
-                const screenY = y * scale + panY;
-                if (screenX >= -dotSize && screenX <= canvas.width + dotSize &&
-                    screenY >= -dotSize && screenY <= canvas.height + dotSize) {
-                    ctx.beginPath();
-                    ctx.arc(screenX, screenY, dotSize / 2, 0, Math.PI * 2);
-                    ctx.fill();
+        } else {
+            const minor = new Path2D();
+            const major = new Path2D();
+            for (const { angle } of families) {
+                const dx = Math.cos(angle), dy = Math.sin(angle);
+                const nx = -dy, ny = dx;
+                let dMin = Infinity, dMax = -Infinity;
+                for (const [cx, cy] of corners) {
+                    const d = (cx - ox) * nx + (cy - oy) * ny;
+                    if (d < dMin) dMin = d;
+                    if (d > dMax) dMax = d;
+                }
+                const kFirst = Math.floor(dMin / gridSize / step) * step;
+                for (let k = kFirst; k * gridSize <= dMax; k += step) {
+                    const d = k * gridSize;
+                    // A point on this line, then walk ±reach along it.
+                    const px = ox + nx * d, py = oy + ny * d;
+                    const [x1, y1] = toScreen(px - dx * reach, py - dy * reach);
+                    const [x2, y2] = toScreen(px + dx * reach, py + dy * reach);
+                    const path = isMajorLine(k, majorEvery) ? major : minor;
+                    // Centre on a pixel so a 1px line is one crisp pixel, not two half-tone
+                    // ones (which all but vanish over artwork when the grid is drawn on top).
+                    path.moveTo(crisp(x1), crisp(y1));
+                    path.lineTo(crisp(x2), crisp(y2));
                 }
             }
+            ctx.globalAlpha = minorAlpha;
+            ctx.stroke(minor);
+            ctx.globalAlpha = gridOpacity;
+            ctx.stroke(major);
         }
+    }
+
+    // Axes: the two lines through the origin along the grid's own directions. They go with
+    // any style (Anshika's review: the only axis Yappy had was the symmetry one, which you
+    // couldn't combine with a grid), and show even with the grid hidden.
+    if (showAxes) {
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = gridSettings.axisColor || '#b14cff';
+        ctx.lineWidth = 1.5;
+        const rot = families[0].angle;
+        ctx.beginPath();
+        for (const a of [rot, rot + Math.PI / 2]) {
+            const dx = Math.cos(a), dy = Math.sin(a);
+            const [x1, y1] = toScreen(ox - dx * reach, oy - dy * reach);
+            const [x2, y2] = toScreen(ox + dx * reach, oy + dy * reach);
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+        }
+        ctx.stroke();
     }
 
     ctx.restore();

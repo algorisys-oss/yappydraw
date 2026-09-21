@@ -4,7 +4,7 @@ import {
     duplicateArtboard, fitArtboardToArtwork, shuffleSelectionColors,
     convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel, toggleElementsPanel,
-    selectAllGuides, removeSelectedGuides, toggleGuidesLocked,
+    selectAllGuides, removeSelectedGuides, toggleGuidesLocked, toggleGuidesVisible, updateGridSettings, setGridOriginToSelection,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
     toggleSymmetry, toggleSymmetryAxis, setSymmetryMode, toggleSymmetryEditing,
@@ -24,6 +24,7 @@ import { flipSelected, lockSelected, unlockAllElements } from "./object-context-
 import { showToast } from "../components/toast";
 import { openRepeatDialog } from "../components/repeat-dialog";
 import { openMandalaDialog } from "../components/mandala-dialog";
+import { openLayoutGuidesDialog } from "../components/layout-guides-dialog";
 import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
 import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
 import { openSupport } from "../components/support-dialog";
@@ -384,7 +385,7 @@ export const getCommands = (): Command[] => {
         }, shortcut: 'Ctrl+Alt+2' },
 
         // View
-        { id: 'view-grid', label: t('commands.view-grid'), category: 'View', action: () => toggleGrid(), shortcut: 'Shift+\'' },
+        { id: 'view-grid', label: t('commands.view-grid'), category: 'View', action: () => toggleGrid(), shortcut: 'Ctrl+\'' },
         { id: 'grid-style-lines', label: t('commands.grid-style-lines'), category: 'View', action: () => setGridStyle('lines') },
         { id: 'grid-style-dots', label: t('commands.grid-style-dots'), category: 'View', action: () => setGridStyle('dots') },
         { id: 'grid-style-diagonal', label: t('commands.grid-style-diagonal'), category: 'View', action: () => setGridStyle('diagonal') },
@@ -404,7 +405,13 @@ export const getCommands = (): Command[] => {
         { id: 'view-clear-guides', label: t('commands.view-clear-guides'), category: 'View', action: () => clearGuides() },
         { id: 'view-select-all-guides', label: t('commands.view-select-all-guides'), category: 'View', action: () => selectAllGuides(), shortcut: 'Ctrl+Shift+A' },
         { id: 'view-delete-selected-guides', label: t('commands.view-delete-selected-guides'), category: 'View', action: () => { const n = removeSelectedGuides(); showToast(n ? `Deleted ${n} guide${n === 1 ? '' : 's'}` : 'No guides selected', n ? 'success' : 'info'); } },
-        { id: 'view-lock-guides', label: t('commands.view-lock-guides'), category: 'View', action: () => { toggleGuidesLocked(); showToast(store.guidesLocked ? 'Guides locked' : 'Guides unlocked', 'info'); } },
+        { id: 'view-lock-guides', label: t('commands.view-lock-guides'), category: 'View', action: () => { toggleGuidesLocked(); showToast(store.guidesLocked ? 'Guides locked' : 'Guides unlocked', 'info'); }, shortcut: 'Ctrl+Alt+;' },
+        { id: 'view-show-guides', label: t('commands.view-show-guides'), category: 'View', action: () => { toggleGuidesVisible(); showToast(store.guidesVisible ? 'Guides shown' : 'Guides hidden', 'info'); }, shortcut: 'Ctrl+;' },
+        { id: 'grid-rows-columns', label: t('commands.grid-rows-columns'), category: 'View', action: () => openLayoutGuidesDialog() },
+        { id: 'grid-on-top', label: t('commands.grid-on-top'), category: 'View', action: () => updateGridSettings({ onTop: !store.gridSettings.onTop, enabled: true }) },
+        { id: 'grid-axes', label: t('commands.grid-axes'), category: 'View', action: () => updateGridSettings({ showAxes: !store.gridSettings.showAxes }) },
+        { id: 'grid-origin-selection', label: t('commands.grid-origin-selection'), category: 'View', action: () => { if (setGridOriginToSelection()) showToast('Grid origin moved to the selection', 'success'); } },
+        { id: 'grid-origin-reset', label: t('commands.grid-origin-reset'), category: 'View', action: () => updateGridSettings({ originX: 0, originY: 0, angle: 0 }) },
         // Illustrator calls this Direct Selection, Inkscape calls it the Node tool — both
         // names are in the label so either search term finds it. Exclusive activation,
         // same as the Vector Tools palette button it mirrors.

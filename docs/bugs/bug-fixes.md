@@ -1,5 +1,52 @@
 # Bug Fixes Log
 
+## 2026-09-21 — Anshika's review: grids and layout guides
+
+### 393. The grid could only be drawn behind the artwork
+
+**Symptom:** "we do not see the grids above the object". Her screenshot had **Canvas Theme ▸ Line
+Grid** selected, which is a paper texture, not the grid.
+
+**Cause:** two things. `renderGrid` ran before the elements, with no option to draw it after. And
+the Canvas Theme chips (*Line Grid*, *Graph Paper*, *Dot Grid*) look like the grid but are
+background textures that can never snap or sit on top, with nothing in the panel saying so.
+
+**Fix:** `GridSettings.onTop` draws the grid after the elements and before the selection chrome
+(`canvas.tsx`). The theme section now says textures are backgrounds and points to Grid & Guides.
+Grid lines are pixel-centred, because a 1px line straddling two pixels all but vanished over a
+filled shape. Test: `grid-customization.spec.ts` counts grid pixels inside a filled rectangle
+(0 behind, >500 on top).
+
+### 394. Grid spacing couldn't be changed from the UI
+
+**Symptom:** part of "very less customisation". The Properties panel had Show / Snap / Style /
+Colour / Opacity, but no spacing, so the grid was 20px unless you used the API.
+
+**Fix:** a new **Grid & Guides** section (`components/grid-settings-section.tsx`) with spacing in
+px/mm/cm/in, major lines, rotation, origin, axes, draw-above, and guide controls. It replaces the
+grid rows of the generic Canvas config group.
+
+### 395. Moving an object on an angled grid rounded x and y separately
+
+**Symptom:** with Snap to Grid on a Diagonal or Isometric grid, dragging an object moved it by a
+square step, taking it off the slanted lines it started on. Drawing already snapped to the lattice.
+
+**Cause:** the move handler rounded `dx` and `dy` to `gridSize` directly. Only the point snapper
+knew about angled grids.
+
+**Fix:** `gridSnapDelta` moves by whole lattice cells, for angled and rotated grids alike.
+
+### 396. Guides didn't snap and weren't saved
+
+**Symptom:** found while building Rows & Columns: layout guides that vanish on reload and that
+nothing snaps to are decoration. The help doc said so ("nothing snaps to them yet").
+
+**Fix:** guides are saved in the document (all five save paths plus `loadDocument`, which also
+clears the previous document's guides). Moving objects snaps to visible guides when Smart snapping
+is on, after object snapping, on whichever axis it left free (`utils/guide-snapping.ts`, kept out
+of `object-snapping.ts` so the WASM twin is untouched). Drawing, resizing and pen points still
+don't snap to guides.
+
 ## 2026-09-17 — Anshika's review, fourth batch (mandala, text scaling, swatch groups, layer blend)
 
 ### 387. Dragging a selected mandala "broke it into pieces"

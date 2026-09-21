@@ -58,6 +58,7 @@ import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
+import { layoutGuidePositions, DEFAULT_LAYOUT_GRID, type LayoutGridSpec } from "../utils/layout-guides";
 import { canvasCenterClient } from "../utils/dock-layout";
 import {
     buildSymmetryOps, defaultSymmetryState, MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS,
@@ -427,6 +428,8 @@ interface AppState {
     selectedGuideIds: string[];
     /** When true, guides render but can't be dragged, selected, or deleted by pointer. */
     guidesLocked: boolean;
+    /** Show/hide every guide (Ctrl+;). Hidden guides don't snap. Persisted per browser. */
+    guidesVisible: boolean;
     symmetry: {
         mode: SymmetryMode;
         /** Symmetry centre / axis crossing point, in world coordinates. */
@@ -777,6 +780,7 @@ const initialState: AppState = {
     guides: [],
     selectedGuideIds: [],
     guidesLocked: (() => { try { return localStorage.getItem('guidesLocked') === '1'; } catch { return false; } })(),
+    guidesVisible: (() => { try { return localStorage.getItem('guidesVisible') !== '0'; } catch { return true; } })(),
     symmetry: defaultSymmetryState(),
     zenMode: false,
     appMode: 'design',
@@ -3009,6 +3013,19 @@ export const loadDocument = (doc: any) => {
         setStore("patterns", JSON.parse(JSON.stringify(doc.patterns || [])));
         repairLibraryIds(); // heal duplicate ids from docs made before the id fix
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
+        // Guides travel with the document; older files have none, and the previous
+        // document's guides must not leak into this one.
+        // A missing or repeated id gets a fresh one: guides are moved and deleted by id.
+        const guideIds = new Set<string>();
+        setStore('guides', Array.isArray(doc.guides)
+            ? doc.guides.filter((g: any) => g && (g.axis === 'h' || g.axis === 'v') && Number.isFinite(g.pos))
+                .map((g: any) => {
+                    const id = g.id != null && !guideIds.has(String(g.id)) ? String(g.id) : generateId('guide', guideIds);
+                    guideIds.add(id);
+                    return { id, axis: g.axis, pos: g.pos };
+                })
+            : []);
+        setStore('selectedGuideIds', []);
         // Symmetry travels with the document (axis position is drawing-specific).
         // Older files have none — fall back to the pristine defaults rather than
         // leaving the previous document's axis in place.
@@ -5678,6 +5695,99 @@ export const toggleGuidesLocked = (locked?: boolean) => {
     setStore('guidesLocked', next);
     if (next) setStore('selectedGuideIds', []);
     try { localStorage.setItem('guidesLocked', next ? '1' : '0'); } catch { /* ignore */ }
+};
+
+/**
+ * Show/hide guides (Illustrator's Ctrl+;). Guides are drawn by the ruler overlay, so showing
+ * them while the rulers are off turns the rulers on — otherwise "show guides" would visibly
+ * do nothing.
+ */
+export const toggleGuidesVisible = (visible?: boolean) => {
+    const next = visible ?? !store.guidesVisible;
+    setStore('guidesVisible', next);
+    if (!next) setStore('selectedGuideIds', []);
+    if (next && !store.showRulers) toggleRulers(true);
+    try { localStorage.setItem('guidesVisible', next ? '1' : '0'); } catch { /* ignore */ }
+};
+
+/** Where Rows & Columns guides go when no rect is given. */
+export interface LayoutGuideTarget {
+    kind: 'selection' | 'artboard' | 'page';
+    label: string;
+    rect: { x: number; y: number; width: number; height: number };
+}
+
+/**
+ * The rectangle a layout grid should divide: the selection's bounds, else the active (or only)
+ * artboard, else the current page of a paged document. Null on a bare infinite canvas — the
+ * caller decides what to do then (the dialog falls back to the visible area).
+ */
+export const resolveLayoutGuideTarget = (): LayoutGuideTarget | null => {
+    if (store.selection.length) {
+        const els = store.elements.filter(e => store.selection.includes(e.id));
+        if (els.length) {
+            const x0 = Math.min(...els.map(e => e.x)), y0 = Math.min(...els.map(e => e.y));
+            const x1 = Math.max(...els.map(e => e.x + e.width)), y1 = Math.max(...els.map(e => e.y + e.height));
+            if (x1 > x0 && y1 > y0) return { kind: 'selection', label: 'Selection', rect: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } };
+        }
+    }
+    const ab = store.artboards.find(a => a.id === store.activeArtboardId) ?? (store.artboards.length === 1 ? store.artboards[0] : undefined);
+    if (ab) return { kind: 'artboard', label: ab.name || 'Artboard', rect: { x: ab.x, y: ab.y, width: ab.width, height: ab.height } };
+    if (isPagedDocType(store.docType)) {
+        const s = store.slides[store.activeSlideIndex];
+        if (s?.dimensions && s.spatialPosition) {
+            return { kind: 'page', label: `Page ${store.activeSlideIndex + 1}`, rect: { x: s.spatialPosition.x, y: s.spatialPosition.y, width: s.dimensions.width, height: s.dimensions.height } };
+        }
+    }
+    return null;
+};
+
+/**
+ * Rows & Columns layout guides (Affinity's Margins & Guides, Illustrator's Split into Grid →
+ * Add Guides): divide `rect` (default: resolveLayoutGuideTarget) into columns and rows with
+ * gutters and margins, as ordinary ruler guides. `replace` clears the existing guides first.
+ * Returns the new guide ids ([] when there's no target or the spacing leaves no room).
+ */
+export const addLayoutGuides = (
+    spec: Partial<LayoutGridSpec>,
+    opts: { rect?: { x: number; y: number; width: number; height: number }; replace?: boolean } = {},
+): string[] => {
+    const rect = opts.rect ?? resolveLayoutGuideTarget()?.rect;
+    if (!rect) { showToast('Rows & Columns: select something, or add an artboard first', 'info'); return []; }
+    const { v, h } = layoutGuidePositions(rect, { ...DEFAULT_LAYOUT_GRID, ...spec });
+    if (!v.length && !h.length) { showToast('Rows & Columns: margins and gutters leave no room', 'info'); return []; }
+    const existing = opts.replace ? [] : store.guides;
+    // Don't stack a second guide on one that's already there (re-applying the same grid).
+    const has = (axis: 'h' | 'v', pos: number) => existing.some(g => g.axis === axis && Math.abs(g.pos - pos) < 0.01);
+    const added: Guide[] = [];
+    // generateId scans the store, and these aren't in it yet — without the batch set every
+    // guide in the loop gets the same id, and moving or deleting one moves or deletes them all.
+    const batchIds = new Set<string>();
+    for (const pos of v) if (!has('v', pos)) added.push({ id: generateId('guide', batchIds), axis: 'v', pos });
+    for (const pos of h) if (!has('h', pos)) added.push({ id: generateId('guide', batchIds), axis: 'h', pos });
+    batch(() => {
+        setStore('guides', [...existing, ...added]);
+        setStore('selectedGuideIds', []);
+    });
+    bumpDirtyRevision();   // guides are saved with the document now
+    if (!store.guidesVisible || !store.showRulers) toggleGuidesVisible(true);
+    return added.map(g => g.id);
+};
+
+/** Move the grid's origin (where the lattice and the axes cross), in world px. */
+export const setGridOrigin = (x: number, y: number) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    setStore('gridSettings', { originX: x, originY: y });
+};
+
+/** Put the grid origin at the centre of the selection. Returns false with nothing selected. */
+export const setGridOriginToSelection = (): boolean => {
+    const els = store.elements.filter(e => store.selection.includes(e.id));
+    if (!els.length) { showToast('Select something to put the grid origin on', 'info'); return false; }
+    const x0 = Math.min(...els.map(e => e.x)), y0 = Math.min(...els.map(e => e.y));
+    const x1 = Math.max(...els.map(e => e.x + e.width)), y1 = Math.max(...els.map(e => e.y + e.height));
+    setGridOrigin((x0 + x1) / 2, (y0 + y1) / 2);
+    return true;
 };
 
 export const toggleZenMode = (visible?: boolean) => {

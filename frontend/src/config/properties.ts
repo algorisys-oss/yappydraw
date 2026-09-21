@@ -245,63 +245,8 @@ export const properties: PropertyConfig[] = [
         applicableTo: ['canvas'],
         defaultValue: 20
     },
-    {
-        key: 'gridEnabled',
-        label: 'Show Grid',
-        type: 'toggle',
-        group: 'canvas',
-        applicableTo: ['canvas'],
-        defaultValue: false
-    },
-    {
-        key: 'snapToGrid',
-        label: 'Snap to Grid',
-        type: 'toggle',
-        group: 'canvas',
-        applicableTo: ['canvas'],
-        defaultValue: false
-    },
-    {
-        key: 'objectSnapping',
-        label: 'Smart Snapping',
-        type: 'toggle',
-        group: 'canvas',
-        applicableTo: ['canvas'],
-        defaultValue: true
-    },
-    {
-        key: 'gridStyle',
-        label: 'Grid Style',
-        type: 'select',
-        options: [
-            { label: 'Lines', value: 'lines' },
-            { label: 'Dots', value: 'dots' },
-            { label: 'Diagonal (45°)', value: 'diagonal' },
-            { label: 'Isometric (30°)', value: 'isometric' }
-        ],
-        group: 'canvas',
-        applicableTo: ['canvas'],
-        defaultValue: 'lines'
-    },
-    {
-        key: 'gridColor',
-        label: 'Grid Color',
-        type: 'color',
-        group: 'canvas',
-        applicableTo: ['canvas'],
-        defaultValue: '#e0e0e0'
-    },
-    {
-        key: 'gridOpacity',
-        label: 'Grid Opacity',
-        type: 'slider',
-        min: 0.1,
-        max: 1,
-        step: 0.1,
-        group: 'canvas',
-        applicableTo: ['canvas'],
-        defaultValue: 0.5
-    },
+    // Grid, snapping and guide settings live in their own GRID & GUIDES section
+    // (components/grid-settings-section.tsx), not in this config group.
 
     // Slide Transition Properties
     {

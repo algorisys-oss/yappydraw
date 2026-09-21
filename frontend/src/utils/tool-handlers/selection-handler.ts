@@ -15,13 +15,14 @@ import { setTransformPivot, getElementPivot, getCustomPivot } from '../transform
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition, getSelectionBoundingBox } from '../handle-detection';
 import { getDescendants } from '../hierarchy';
-import { snapPoint } from '../snap-helpers';
+import { gridSnap, gridSnapDelta } from '../grid-lattice';
 import { confirmAndReparent } from '../reparent';
 import { isPointInPolygon, rotatePoint } from '../geometry';
 import { expandToPortGroups } from '../binding-logic';
 import { getWarpGrid, defaultWarpGrid } from '../envelope-warp';
 import { cylinderCapRatioForDistance } from '../shape-geometry';
-import { getSnappingGuides } from '../object-snapping';
+import { getSnappingGuides, type SnappingGuide } from '../object-snapping';
+import { snapBoxToGuides } from '../guide-snapping';
 import { getSpacingGuides } from '../spacing';
 import { getPointSnap } from '../point-snapping';
 import { getIntersectionPoints } from '../path-intersection';
@@ -1554,7 +1555,7 @@ function handleResize(
 
     // Snap handle position to grid if enabled
     if (store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
+        const snapped = gridSnap(x, y, store.gridSettings);
         resizeX = snapped.x;
         resizeY = snapped.y;
     }
@@ -1924,7 +1925,7 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
 
     let tx = x, ty = y;
     if (store.gridSettings.snapToGrid) {
-        const s = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
+        const s = gridSnap(x, y, store.gridSettings);
         tx = s.x; ty = s.y;
     }
     // Anchors live in the element's UN-rotated local frame, so map the world pointer back
@@ -2389,6 +2390,7 @@ function handleMove(
 
         if (now - pState.lastSnappingTime >= SNAPPING_THROTTLE_MS) {
             const threshold = 5 / store.viewState.scale;
+            let pointSnapped = false;
             // Anchor-point snapping first: a corner/centre/path-anchor landing on a
             // target anchor (both axes) is an intentional "snap to point" and wins
             // over 1-D edge/centre alignment. Only when no point snaps do we fall
@@ -2427,6 +2429,7 @@ function handleMove(
             }
             const ps = getPointSnap(store.selection, snapEls, dx, dy, threshold, pState.intersectionSnapPoints);
             if (ps.snapped) {
+                pointSnapped = true;
                 dx = ps.dx;
                 dy = ps.dy;
                 signals.setPointSnap(ps.marker);
@@ -2445,6 +2448,31 @@ function handleMove(
                 signals.setSpacingGuides(spacing.guides);
             }
 
+            // Ruler guides (incl. Rows & Columns layout guides), on whichever axis nothing
+            // above claimed — an element edge in reach still wins over a guide. Only visible
+            // guides pull: a guide you've hidden with Ctrl+; shouldn't grab things unseen.
+            if (store.guides.length && store.guidesVisible && store.showRulers) {
+                const taken = signals.snappingGuides();
+                const axes = {
+                    x: !pointSnapped && !taken.some(g => g.type === 'vertical'),
+                    y: !pointSnapped && !taken.some(g => g.type === 'horizontal'),
+                };
+                const starts = store.selection.map(id => pState.initialPositions.get(id)).filter(Boolean) as { x: number; y: number; width: number; height: number }[];
+                if ((axes.x || axes.y) && starts.length) {
+                    const box = {
+                        minX: Math.min(...starts.map(p => p.x)), minY: Math.min(...starts.map(p => p.y)),
+                        maxX: Math.max(...starts.map(p => p.x + p.width)), maxY: Math.max(...starts.map(p => p.y + p.height)),
+                    };
+                    const gs = snapBoxToGuides(box, dx, dy, store.guides, threshold, axes);
+                    dx = gs.dx;
+                    dy = gs.dy;
+                    const extra: SnappingGuide[] = [];
+                    if (gs.x !== null) extra.push({ type: 'vertical', coordinate: gs.x, elementIds: [] });
+                    if (gs.y !== null) extra.push({ type: 'horizontal', coordinate: gs.y, elementIds: [] });
+                    if (extra.length) signals.setSnappingGuides([...taken, ...extra]);
+                }
+            }
+
             pState.lastSnappingTime = now;
         }
     } else {
@@ -2455,9 +2483,11 @@ function handleMove(
 
     // Snap delta to grid if enabled and no object snapping guides
     if (store.gridSettings.snapToGrid && !e.shiftKey && signals.snappingGuides().length === 0) {
-        const gridSize = store.gridSettings.gridSize;
-        dx = Math.round(dx / gridSize) * gridSize;
-        dy = Math.round(dy / gridSize) * gridSize;
+        // Whole cells along the grid's own directions, so a rotated or angled grid keeps the
+        // object on the lines it started on (plain per-axis rounding only suits a square grid).
+        const d = gridSnapDelta(dx, dy, store.gridSettings);
+        dx = d.x;
+        dy = d.y;
     }
 
     // Shift constrains the move to a clean axis — horizontal / vertical / 45° — keeping

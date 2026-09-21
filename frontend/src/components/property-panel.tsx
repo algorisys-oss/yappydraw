@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index, batch, onCleanup } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
 import { MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS } from "../utils/symmetry";
 import { WIDTH_PROFILES } from "../utils/width-profiles";
@@ -48,6 +48,7 @@ import { getImage } from "../utils/image-cache";
 import { PATTERN_PRESETS, defaultPatternFill } from "../utils/pattern-fill";
 import { showToast } from "./toast";
 import MathNumberInput from "./math-number-input";
+import { GridSettingsSection } from "./grid-settings-section";
 import { ColorPickerPro } from "./color-picker-pro";
 import { CANVAS_THEMES, matchCanvasTheme } from "../config/canvas-themes";
 import { playSequence } from "../utils/animation/orchestrator";
@@ -1864,12 +1865,6 @@ const PropertyPanel: Component = () => {
         } else if (target.type === 'canvas') {
             if (key === 'theme') setTheme(value as 'light' | 'dark' | 'focus' | 'system');
             else if (key === 'canvasBackgroundColor') setCanvasBackgroundColor(value);
-            else if (key === 'gridEnabled') updateGridSettings({ enabled: value });
-            else if (key === 'snapToGrid') updateGridSettings({ snapToGrid: value });
-            else if (key === 'gridStyle') setGridStyle(value);
-            else if (key === 'gridColor') updateGridSettings({ gridColor: value });
-            else if (key === 'gridOpacity') updateGridSettings({ gridOpacity: value });
-            else if (key === 'objectSnapping') updateGridSettings({ objectSnapping: value });
             else if (key === 'maxLayers') setMaxLayers(parseInt(value));
             else if (key === 'canvasTexture') setCanvasTexture(value);
             else if (key === 'renderStyle') updateGlobalSettings({ renderStyle: value });
@@ -1918,11 +1913,6 @@ const PropertyPanel: Component = () => {
         if (target.type === 'canvas') {
             if (prop.key === 'theme') return store.theme;
             if (prop.key === 'canvasBackgroundColor') return store.canvasBackgroundColor;
-            if (prop.key === 'gridEnabled') return store.gridSettings.enabled;
-            if (prop.key === 'gridStyle') return store.gridSettings.style;
-            if (['snapToGrid', 'gridColor', 'gridOpacity', 'objectSnapping'].includes(prop.key)) {
-                return (store.gridSettings as any)[prop.key];
-            }
             if (prop.key === 'maxLayers') return store.maxLayers;
             if (prop.key === 'renderStyle') return store.globalSettings.renderStyle;
             if (prop.key === 'showQuickToolbar') return store.globalSettings.showQuickToolbar;
@@ -2761,7 +2751,14 @@ const PropertyPanel: Component = () => {
                                             </select>
                                         </div>
                                         <div class="group-title" style={{ "margin-top": "6px", opacity: 0.6, "font-weight": "normal", "font-style": "italic" }}>Theme sets background + texture; tweak either here or in Background below.</div>
+                                        {/* The Line Grid / Graph Paper themes look like the grid but are paper
+                                            textures: always behind the artwork, never snapping. People reach for
+                                            them expecting the grid (Anshika's review, Sep 2026). */}
+                                        <div class="group-title" style={{ "margin-top": "2px", opacity: 0.6, "font-weight": "normal", "font-style": "italic" }}>{t('gridPanel.textureNote')}</div>
                                     </div>
+                                </Show>
+                                <Show when={targetType() === 'canvas'}>
+                                    <GridSettingsSection />
                                 </Show>
                                 <Show when={activeProperties().length > 0}>
                                     <div class="property-search">

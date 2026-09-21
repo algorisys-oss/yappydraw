@@ -83,3 +83,103 @@ export function latticeSnap(
         y: (d2 * n1x - d1 * n2x) / det,
     };
 }
+
+// ─── Rotation, origin, units, major lines ───────────────────────────────────
+//
+// Everything above is anchored at world (0,0) with no rotation. A grid can also be turned
+// and have its origin moved (Anshika's review, Sep 2026: "the grid we already have can be
+// customised … and can be rotated regardless of the axial line"). Both are handled the same
+// way: move the point into the grid's own frame (subtract the origin, rotate by −angle),
+// snap there with the unrotated rules above, and move it back. So a rotated grid snaps
+// exactly like an unrotated one does, and the renderer uses the same frame to draw it.
+
+/** The geometric part of GridSettings: enough to draw or snap, nothing about colour. */
+export interface GridGeometry {
+    gridSize: number;
+    style?: GridStyle;
+    /** Rotation of the whole grid, in degrees (counter-clockwise on screen is negative). */
+    angle?: number;
+    /** World point the lattice (and the axes) pass through. Default (0,0). */
+    originX?: number;
+    originY?: number;
+}
+
+export type GridUnit = 'px' | 'mm' | 'cm' | 'in';
+
+export const GRID_UNITS: { id: GridUnit; label: string }[] = [
+    { id: 'px', label: 'px' },
+    { id: 'mm', label: 'mm' },
+    { id: 'cm', label: 'cm' },
+    { id: 'in', label: 'in' },
+];
+
+// CSS reference density, the same one utils/units.ts uses for the measurement readouts.
+const PX_PER_UNIT: Record<GridUnit, number> = { px: 1, mm: 96 / 25.4, cm: 96 / 2.54, in: 96 };
+
+/** A length in `unit` → world px. Unknown units are treated as px. */
+export function gridUnitToPx(value: number, unit: GridUnit | undefined): number {
+    return value * (PX_PER_UNIT[unit ?? 'px'] ?? 1);
+}
+
+/** World px → a length in `unit`, rounded to 3 decimals so inputs don't show float noise. */
+export function pxToGridUnit(px: number, unit: GridUnit | undefined): number {
+    return Math.round((px / (PX_PER_UNIT[unit ?? 'px'] ?? 1)) * 1000) / 1000;
+}
+
+/**
+ * Angles (radians, world frame) of every line family the grid draws, with the grid's
+ * rotation applied. Square styles are two families (the rows and the columns), so rotation
+ * needs no special case in the renderer. `primary` marks the two families snapping uses.
+ */
+export function rotatedGridFamilies(g: GridGeometry): { angle: number; primary: boolean }[] {
+    const rot = Number.isFinite(g.angle) ? g.angle! * DEG : 0;
+    const style = g.style ?? 'lines';
+    const base = isAngledGrid(style) ? gridFamilyAngles(style) : [0, 90 * DEG];
+    return base.map((a, i) => ({ angle: a + rot, primary: i < 2 }));
+}
+
+/** Snap a world point to the grid, honouring rotation and origin. */
+export function gridSnap(x: number, y: number, g: GridGeometry): { x: number; y: number } {
+    if (!(g.gridSize > 0) || !Number.isFinite(g.gridSize)) return { x, y };
+    const ox = Number.isFinite(g.originX) ? g.originX! : 0;
+    const oy = Number.isFinite(g.originY) ? g.originY! : 0;
+    const rot = Number.isFinite(g.angle) ? g.angle! * DEG : 0;
+    if (!rot && !ox && !oy) return latticeSnap(x, y, g.gridSize, g.style);
+    const c = Math.cos(rot), s = Math.sin(rot);
+    const dx = x - ox, dy = y - oy;
+    // Into the grid's frame: rotate by −angle.
+    const lx = dx * c + dy * s, ly = -dx * s + dy * c;
+    const p = latticeSnap(lx, ly, g.gridSize, g.style);
+    return { x: ox + p.x * c - p.y * s, y: oy + p.x * s + p.y * c };
+}
+
+/**
+ * Snap a DISPLACEMENT to the grid: a move by a whole number of cells along the grid's own
+ * directions. The origin doesn't matter for a displacement, the rotation does — rounding dx
+ * and dy on a rotated grid would slide an object off the lines it started on.
+ */
+export function gridSnapDelta(dx: number, dy: number, g: GridGeometry): { x: number; y: number } {
+    return gridSnap(dx, dy, { ...g, originX: 0, originY: 0 });
+}
+
+/** Is line number `k` (counted from the origin) a major line? `every` ≤ 1 means no majors. */
+export function isMajorLine(k: number, every: number | undefined): boolean {
+    if (!every || every <= 1) return false;
+    return ((Math.round(k) % every) + every) % every === 0;
+}
+
+/**
+ * How many cells apart the drawn lines should be at this zoom. Below a legible on-screen gap
+ * the grid is thinned: first to the major lines (if there are any), then by doubling. Every
+ * line drawn at a coarser step is also drawn at the finer one, so zooming never makes the
+ * grid appear to jump. Purely visual — snapping always uses the full grid.
+ */
+export function gridDrawStep(gridSize: number, scale: number, majorEvery?: number, minGap = 10): number {
+    if (!(gridSize > 0) || !(scale > 0)) return 1;
+    let m = 1;
+    // Guard against a pathological zoom: 2^40 cells is far past anything drawable.
+    for (let i = 0; i < 40 && gridSize * m * scale < minGap; i++) {
+        m = majorEvery && majorEvery > 1 && m < majorEvery ? majorEvery : m * 2;
+    }
+    return m;
+}
