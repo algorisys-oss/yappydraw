@@ -3,6 +3,7 @@ import type { DrawingElement, ElementType } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
 import { getPathSubpaths, subpathsToPathData } from "./math/path-utils";
+import { rawOf } from "./store-raw";
 import { warpGeometry, getEffectiveGrid } from "./envelope-warp";
 import { applyTurntable } from "./turntable";
 
@@ -421,6 +422,17 @@ export const getCentredShapeGeometry = (el: DrawingElement): ShapeGeometry | nul
     return { type: 'points', points: normalizeElementPoints(el.points).map(p => ({ x: p.x - hw, y: p.y - hh })) } as ShapeGeometry;
 };
 
+/**
+ * A path element's geometry, remembered per anchor (or subpath) array.
+ *
+ * Keyed on the array's identity, which is sound because the store never edits geometry in
+ * place: every edit (node drag, pen, pathfinder, doodle update) writes a NEW array through
+ * `updateElement`/`setStore`, and the in-place writes that exist all build local copies
+ * first. The offset (half the box) and the closed flag live outside the array, so a hit
+ * checks those too. A WeakMap, so a replaced array's entry is collected with it.
+ */
+const pathDataMemo = new WeakMap<object, { mw: number; mh: number; closed: boolean; geometry: ShapeGeometry | null }>();
+
 export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     const geo = getBaseShapeGeometry(el);
     // Envelope / mesh warp deforms the sampled outline (non-affine) → a warped path
@@ -462,10 +474,27 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             // the even-odd fill rule.
             // Live Turntable: rotate the anchors in pseudo-3D first, then render the result
             // as an ordinary path so fill/stroke + sketch/architectural parity come for free.
-            const subs = applyTurntable(el) ?? getPathSubpaths(el);
+            const turned = applyTurntable(el);
+            if (turned) {
+                if (turned.length === 0) return null;
+                const d = subpathsToPathData(turned, -mw, -mh);
+                return d ? { type: 'path', path: d, evenOdd: turned.length > 1 } : null;
+            }
+            // Raw (unproxied) anchors, and the `d` string remembered per anchor array:
+            // serialising a big path every frame through store proxies cost ~45 ms/frame
+            // on a page-sized doodle (#400). See pathDataMemo for why identity is safe.
+            const rawSubs = rawOf(el.pathSubpaths);
+            const rawAnchors = rawOf(el.pathAnchors);
+            const src = (rawSubs && rawSubs.length ? rawSubs : rawAnchors) as object | undefined;
+            const closed = !!el.pathClosed;
+            const hit = src ? pathDataMemo.get(src) : undefined;
+            if (hit && hit.mw === mw && hit.mh === mh && hit.closed === closed) return hit.geometry;
+            const subs = getPathSubpaths({ pathSubpaths: rawSubs, pathAnchors: rawAnchors, pathClosed: el.pathClosed });
             if (subs.length === 0) return null;
             const d = subpathsToPathData(subs, -mw, -mh);
-            return d ? { type: 'path', path: d, evenOdd: subs.length > 1 } : null;
+            const geometry: ShapeGeometry | null = d ? { type: 'path', path: d, evenOdd: subs.length > 1 } : null;
+            if (src) pathDataMemo.set(src, { mw, mh, closed, geometry });
+            return geometry;
         }
 
         case 'rectangle':

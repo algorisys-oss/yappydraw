@@ -4,6 +4,19 @@ This document captures key lessons learned during the development of Yappy, part
 
 ## Doodles — seeded pattern generators (Sep 25 2026)
 
+- **Benchmark hot paths on the data the app actually has: store proxies, not plain objects.**
+  The render-cache key was 4 ms per 10k anchors in a Bun micro-benchmark and 115 ms per frame in
+  the browser, because every property read went through a Solid proxy. Profile in the real page
+  (a CDP sampling profile of a few pan frames gives self and inclusive times per function) before
+  calling a per-frame change cheap. For non-reactive reads such as rendering, hashing and
+  serialising, `rawOf()` returns the underlying object in O(1).
+- **"Native" time in a profile isn't automatically yours.** An empty canvas showed 13–75 ms per
+  frame of `(program)` on a loaded machine. Measure the empty case before attributing that column
+  to what you drew; JS self/inclusive time is the part your code controls.
+- **Memoising by array identity needs a stated invariant.** It's correct only if nothing
+  mutates the array in place. Before relying on it, grep for `push`/`splice`/index writes and
+  nested `setStore` paths into that field, limit the memo to the fields that pass, and write the
+  invariant in the code. Here: `pathAnchors`, `pathSubpaths`, `points`.
 - **Don't read another module's constants while your module is loading if that module can be
   in a cycle with you.** A component that imports from `api.ts` is almost certainly in a cycle
   (api → store/menus → component → api). Reading `api.ts` exports at call time is fine; reading

@@ -8,6 +8,26 @@
 
 import type { IRenderer, ICanvasGradient, ICanvasPattern, FillStyle, TextMetrics } from './IRenderer';
 
+/**
+ * Parsed `Path2D`s for recently drawn path strings. Parsing a big path every frame showed up
+ * in profiles (#400), and the same `d` comes back each frame: path geometry is memoised per
+ * anchor array, so it is even the same string object, which makes the Map lookup O(1).
+ * Path2D is immutable once built, so sharing one between draws is safe. Bounded: cleared
+ * when full, since a live edit produces a new string on every move.
+ */
+const path2dCache = new Map<string, Path2D>();
+const PATH2D_CACHE_MAX = 256;
+
+function parsedPath(d: string): Path2D {
+    let p = path2dCache.get(d);
+    if (!p) {
+        p = new Path2D(d);
+        if (path2dCache.size >= PATH2D_CACHE_MAX) path2dCache.clear();
+        path2dCache.set(d, p);
+    }
+    return p;
+}
+
 export class CanvasRenderer implements IRenderer {
     readonly ctx: CanvasRenderingContext2D;
     constructor(ctx: CanvasRenderingContext2D) {
@@ -63,14 +83,14 @@ export class CanvasRenderer implements IRenderer {
     }
 
     fillPath(svgPath: string, fillRule?: CanvasFillRule): void {
-        if (fillRule) this.ctx.fill(new Path2D(svgPath), fillRule);
-        else this.ctx.fill(new Path2D(svgPath));
+        if (fillRule) this.ctx.fill(parsedPath(svgPath), fillRule);
+        else this.ctx.fill(parsedPath(svgPath));
     }
     strokePath(svgPath: string): void {
-        this.ctx.stroke(new Path2D(svgPath));
+        this.ctx.stroke(parsedPath(svgPath));
     }
     clipPath(svgPath: string): void {
-        this.ctx.clip(new Path2D(svgPath));
+        this.ctx.clip(parsedPath(svgPath));
     }
 
     // ── Styling Properties ──

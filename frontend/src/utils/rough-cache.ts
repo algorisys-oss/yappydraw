@@ -1,6 +1,7 @@
 import type { RoughCanvas } from 'roughjs/bin/canvas';
 import type { Drawable } from 'roughjs/bin/core';
 import type { DrawingElement } from '../types';
+import { rawOf } from './store-raw';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmGenerateDrawable, isWasmSketchMethod } from '../wasm/bridge/sketch-engine-bridge';
 
@@ -192,13 +193,41 @@ function feed(h: number, v: unknown): number {
     }
 }
 
+/**
+ * Geometry arrays whose digest is remembered per array. The store replaces these on every
+ * edit and never writes into them (no `setStore` path reaches inside, and the in-place
+ * writes in the codebase all act on local copies), so an array's identity stands for its
+ * contents. Other object fields (table data, rich text…) may be written through nested
+ * store paths, keeping their identity while their contents change, so they are walked
+ * every time. They're small; anchors are what can be tens of thousands long.
+ */
+const MEMO_FIELDS = new Set(['pathAnchors', 'pathSubpaths', 'points']);
+const geometryDigest = new WeakMap<object, { h: number; sum: number; count: number }>();
+
+function feedGeometry(h: number, v: object): number {
+    let m = geometryDigest.get(v);
+    if (!m) {
+        const sum0 = numSum, count0 = numCount;
+        numSum = 0; numCount = 0;
+        m = { h: feed(2166136261, v), sum: numSum, count: numCount };
+        numSum = sum0; numCount = count0;
+        geometryDigest.set(v, m);
+    }
+    numSum += m.sum; numCount += m.count;
+    return Math.imul(h ^ m.h, FNV);
+}
+
 /** Digest of every drawing-relevant field (see HASH_IGNORED). */
 function digestElement(el: DrawingElement): string {
     numSum = 0; numCount = 0;
     let h = 2166136261;
     for (const k in el) {
         if (HASH_IGNORED.has(k)) continue;
-        h = feed(Math.imul(h ^ keyOf(k), FNV), (el as unknown as Record<string, unknown>)[k]);
+        // rawOf: walking anchors through store proxies cost ~115 ms/frame on a page-sized
+        // doodle; the raw walk is a few ms, and remembered geometry is a lookup (#400).
+        const v = rawOf((el as unknown as Record<string, unknown>)[k]);
+        h = Math.imul(h ^ keyOf(k), FNV);
+        h = v !== null && typeof v === 'object' && MEMO_FIELDS.has(k) ? feedGeometry(h, v) : feed(h, v);
     }
     return `${(h >>> 0).toString(36)}.${numCount}.${numSum}`;
 }

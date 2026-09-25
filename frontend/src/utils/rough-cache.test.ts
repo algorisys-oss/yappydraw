@@ -84,4 +84,13 @@ describe("computeElementHash — things that must NOT miss the cache", () => {
         }
         expect(best).toBeLessThan(10);
     });
+
+    it("a replaced anchor array is re-digested (the memo is per array, not per element)", () => {
+        const a = anchors();
+        const h1 = computeElementHash(path({ pathAnchors: a }));
+        expect(computeElementHash(path({ pathAnchors: a }))).toBe(h1);            // remembered
+        const b = anchors(); b[2] = { ...b[2], x: 99 };                            // new array
+        expect(computeElementHash(path({ pathAnchors: b }))).not.toBe(h1);
+        expect(computeElementHash(path({ pathAnchors: a }))).toBe(h1);            // old still right
+    });
 });

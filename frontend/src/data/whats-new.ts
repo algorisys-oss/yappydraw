@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.263', date: '2026-09-25', items: [
+        'Big drawings pan and zoom smoothly in both sketch and architectural style: large shapes such as traced images, imported SVGs and doodles no longer slow the canvas down.',
+    ] },
     { version: '0.8.261', date: '2026-09-25', items: [
         'Sketch style is much faster on big drawings: moving around the canvas no longer redraws every hand-drawn shape from scratch.',
         'Try Doodles (turn on Dev Mode in Settings \u25b8 General): fill a page with Truchet tiles, flowing lines or a contour map, reroll until you like it, colour it, or keep it as line art for colouring. Menu \u25b8 Doodle Generator\u2026',

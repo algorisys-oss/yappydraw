@@ -1,5 +1,34 @@
 # Bug Fixes Log
 
+## 2026-09-25 — Large-path render cost
+
+### 400. Every frame re-walked big paths through store proxies (and #398's key made it worse)
+
+**Symptom:** a page-sized doodle (≈7.5k curve points) cost ~130 ms of JavaScript per pan
+frame in both render styles, and a 2400×3400 one 1–1.5 s. v0.8.262's render-cache fix removed
+the RoughJS regeneration but not this.
+
+**Cause:** three per-frame costs, all O(anchors) and all reading through Solid store proxies,
+where each property read is ~30× slower than on a plain object:
+- the new render-cache key (#398) walked every anchor (~115 ms/frame, and it runs in
+  architectural style too, which never uses RoughJS). It was benchmarked on plain objects in
+  Bun (~4 ms), which is how it shipped;
+- `getShapeGeometry` re-serialised the path's `d` string (~45 ms/frame);
+- `CanvasRenderer.fillPath/strokePath` parsed a fresh `Path2D` from it (~4 ms/frame).
+
+**Fix:** `rawOf()` (`utils/store-raw.ts`) reads the store's underlying objects via `$RAW`. The
+path `d` string is memoised per anchor/subpath array (`WeakMap`, checked against the box offset
+and closed flag). Parsed `Path2D`s are cached by string (bounded, 256). The render-cache key
+remembers the digest of `pathAnchors` / `pathSubpaths` / `points` per array. Identity is sound
+for those three because the store always replaces them and nothing writes into them in place;
+fields that nested `setStore` paths might edit (table data, rich text…) are still walked every
+time. Result, measured with a CDP profile: JS per pan frame 128 → ~2 ms (page-sized,
+architectural), 1520 → ~2 ms (large, architectural), large sketch ~30 ms (RoughJS replaying its
+cached strokes). Tests: `shape-geometry-path-memo.test.ts` (reuse costs <1/20 of a build;
+replaced data rebuilds), `rough-cache.test.ts` (replaced array re-digests),
+`rough-element-cache.spec.ts` (a pan parses no big `Path2D`; seen failing with the cache off:
+12 parses in 4 frames).
+
 ## 2026-09-25 — Sketch render cache, doodles
 
 ### 399. The CDN SDK threw on load (Doodle palette read during an import cycle)

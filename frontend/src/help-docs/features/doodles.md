@@ -70,8 +70,8 @@ the same Done/Cancel rules apply.
 - **Ungrouping ends it.** Once ungrouped, the paths are ordinary paths and *Edit Doodle…* no
   longer appears for them together. Group them again and they are still ordinary paths.
 - **Very large doodles take a moment to rebuild.** A doodle several screens across is tens of
-  thousands of curve points, so each knob change takes a fraction of a second. Panning and
-  zooming reuse the cached drawing rather than rebuilding it.
+  thousands of curve points, so each knob change takes a fraction of a second. Once built,
+  panning and zooming reuse it, in both drawing styles.
 :::
 
 
