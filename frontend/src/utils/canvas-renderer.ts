@@ -18,6 +18,7 @@ import { hasRevolve, renderRevolve } from './revolve';
 import { buildFilterString } from './image-filter-utils';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
+import { isStaticAnimatedState } from './animation-utils';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
 import { rotatedGridFamilies, gridDrawStep, isMajorLine } from './grid-lattice';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle, renderKeyObjectHighlight } from './selection-renderer';
@@ -1114,7 +1115,15 @@ export function renderLayersAndElements(
                     if (store.outlineView) renderedEl = toOutlineElement(renderedEl, isDarkMode, scale);
                     // Masked elements skip the element cache so the mask tracks live edits.
                     // Outline view also bypasses the cache (its hash doesn't track the mode).
-                    const shouldCache = !ghost && !animState && !isFocusDimmed && !mask && !store.outlineView && !renderedEl.extrude;
+                    // `animState` exists for every element (static ones included), so test whether
+                    // it actually moves anything — `!animState` was false for all elements, which
+                    // left this cache permanently off and sketch style regenerating every frame.
+                    const animated = !isStaticAnimatedState(animState, el);
+                    // Stick rigs pose from the clock and symbol instances draw their symbol's
+                    // (separately stored) artwork: neither is a function of its own fields, so
+                    // neither may replay a cached drawable.
+                    const readsOutsideItself = renderedEl.type === 'stickRig' || renderedEl.type === 'symbolInstance';
+                    const shouldCache = !ghost && !animated && !readsOutsideItself && !isFocusDimmed && !mask && !store.outlineView && !renderedEl.extrude;
                     // Live 3D Extrude: draw the shaded depth body BEHIND, then the shape's front face
                     // renders on top via the normal path below. When TILTED, the body render also draws
                     // the (foreshortened) flat front, so skip the normal render. Skipped in outline view.
@@ -1135,7 +1144,9 @@ export function renderLayersAndElements(
                             renderElement(cachedRc, ctx, copyEl, isDarkMode, layerOpacity, sharedRenderer);
                         }
                     } else {
-                        if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
+                        // Theme and layer opacity reach the RoughJS options (dark mode adjusts the
+                        // colours) without being element fields, so they are part of the key.
+                        if (shouldCache) beginElement(renderedEl.id, `${computeElementHash(renderedEl)}|${isDarkMode ? 'd' : 'l'}|${layerOpacity}`);
                         renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);
                         if (shouldCache) endElement();
                     }

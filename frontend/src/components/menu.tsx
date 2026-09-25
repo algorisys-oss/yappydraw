@@ -21,8 +21,9 @@ import {
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
-, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand, Blend, GraduationCap, Heart, Info
+, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand, Blend, GraduationCap, Heart, Info, Waves
 } from "lucide-solid";
+import { openDoodleDialog } from './doodle-dialog';
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
@@ -874,6 +875,14 @@ const Menu: Component = () => {
                                             </div>
                                         </button>
                                     </Show>
+                                    </Show>
+                                    {/* Doodle generator — top level so it shows without expanding a group; Dev Mode only
+                                        while the generator set is built out. */}
+                                    <Show when={isDevMode()}>
+                                        <div class="menu-item" data-menu="doodle" onClick={() => { openDoodleDialog(); setIsMenuOpen(false); }}>
+                                            <Waves size={16} />
+                                            <span class="label">{t('menu.doodleGenerator')}</span>
+                                        </div>
                                     </Show>
                                     <div class="menu-separator"></div>
                                     {/* File tools (open / save / export / history / time-lapse) — placed right

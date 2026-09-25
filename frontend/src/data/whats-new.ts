@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.261', date: '2026-09-25', items: [
+        'Sketch style is much faster on big drawings: moving around the canvas no longer redraws every hand-drawn shape from scratch.',
+        'Try Doodles (turn on Dev Mode in Settings \u25b8 General): fill a page with Truchet tiles, flowing lines or a contour map, reroll until you like it, colour it, or keep it as line art for colouring. Menu \u25b8 Doodle Generator\u2026',
+        'A doodle stays editable: right-click it \u25b8 Edit Doodle\u2026 to change any setting, even after you have moved, resized or rotated it.',
+    ] },
     { version: '0.8.260', date: '2026-09-22', items: [
         'Put the grid over your artwork: turn on Draw above objects in Canvas properties \u25b8 Grid & Guides.',
         'Shape the grid: set its spacing in px, mm, cm or inches, add a stronger line every few lines, rotate it, and move its origin. Snapping follows.',

@@ -553,6 +553,9 @@ Today it reveals:
 - **Menu → Game** — the whole Arcade group: *New Game*, *My Games*, *Build*, *Node Graph*,
   *Blueprint*, *Play* and *Code* (see the **Arcade** doc).
 - **Edit Behaviors (Game)…** in the right-click menu of a single selected object.
+- **Doodles**: **Doodle Generator…** in the main menu and the command palette, *Insert →
+  Doodle…* on the canvas right-click menu, and **Edit Doodle…** when a doodle is selected (see
+  the **Doodles** doc).
 
 More work-in-progress features will appear behind this switch as they are built, so it is worth
 checking after an update.

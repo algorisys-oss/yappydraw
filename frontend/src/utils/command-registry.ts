@@ -24,6 +24,7 @@ import { flipSelected, lockSelected, unlockAllElements } from "./object-context-
 import { showToast } from "../components/toast";
 import { openRepeatDialog } from "../components/repeat-dialog";
 import { openMandalaDialog } from "../components/mandala-dialog";
+import { openDoodleDialog } from "../components/doodle-dialog";
 import { openLayoutGuidesDialog } from "../components/layout-guides-dialog";
 import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
 import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
@@ -357,6 +358,10 @@ export const getCommands = (): Command[] => {
         { id: 'action-mirror-v', label: t('commands.action-mirror-v'), category: 'Actions', action: () => mirrorCopy('vertical') },
         { id: 'action-repeat', label: t('commands.action-repeat'), category: 'Actions', action: () => openRepeatDialog() },
         { id: 'insert-mandala', label: t('commands.insert-mandala'), category: 'Tools', action: () => openMandalaDialog() },
+        // Doodles: Dev Mode only while the generator set is being built out.
+        ...(isDevMode()
+            ? [{ id: 'insert-doodle', label: t('commands.insert-doodle'), category: 'Tools' as const, action: () => openDoodleDialog() }]
+            : []),
         { id: 'action-symmetry-toggle', label: t('commands.action-symmetry-toggle'), category: 'Actions', shortcut: 'Alt+Y', action: () => {
             const s = store.viewState;
             const c = canvasCenterClient(); // drawing-area centre, not window centre

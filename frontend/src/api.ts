@@ -46,6 +46,10 @@ import {
     buildMandala, defaultMandalaSpec, ringOuterRadius, MANDALA_PRESETS, MANDALA_MOTIFS,
     type MandalaRing,
 } from "./utils/mandala";
+import {
+    buildDoodle, getDoodleGenerator, resolveDoodleParams, randomDoodleSeed, DOODLE_GENERATORS, DEFAULT_DOODLE_PALETTE,
+    type DoodleKind, type DoodleParams, type DoodleRole, type DoodleSpec, type DoodleLayer,
+} from "./utils/doodles";
 import { rasterizeSelection } from "./utils/rasterize";
 import { elementLabel, groupNameOf } from "./utils/object-label";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
@@ -78,7 +82,7 @@ import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-p
 import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
 import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
 import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
-import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, BlendMode, RichTextSpan, PathAnchor, PathSubpath } from "./types";
+import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, BlendMode, RichTextSpan, PathAnchor, PathSubpath, DoodlePalette, DoodleStamp } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { PropertyTrack, TimedKeyframe, TinyflyClip } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
@@ -508,6 +512,83 @@ function createTinyflyShape(shape: TinyflyShape): string | null {
         default:
             return YappyAPI.createElement(shape.type, x, y, width, height, options as ElementOptions);
     }
+}
+
+// ── Doodles (see utils/doodles) ─────────────────────────────────────────────
+
+
+/** Options accepted by `createDoodle` / `updateDoodle`. */
+export interface DoodleOptions {
+    seed?: number;
+    params?: Partial<DoodleParams>;
+    palette?: Partial<DoodlePalette>;
+    /** Stroke width of the ink role; bold contours are drawn at twice this. */
+    lineWeight?: number;
+    /** Line art only: drop the fill roles, e.g. for a colouring page. */
+    colouring?: boolean;
+}
+
+/** Subpaths normalised to their combined bbox (handles included), as `createMultiPath` does. */
+function normalizeDoodleSubpaths(subpaths: PathSubpath[]) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const sp of subpaths) for (const a of sp.anchors) {
+        const xs = [a.x, a.x + (a.outX ?? 0), a.x + (a.inX ?? 0)];
+        const ys = [a.y, a.y + (a.outY ?? 0), a.y + (a.inY ?? 0)];
+        minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
+        minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
+    }
+    return {
+        x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
+        subpaths: subpaths.map(sp => ({ closed: sp.closed, anchors: sp.anchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })) })),
+    };
+}
+
+/** The layers a stamp draws: generator output, plus the paper, minus fills for line art. */
+function doodleLayers(spec: DoodleSpec, palette: DoodlePalette, colouring: boolean): DoodleLayer[] {
+    let layers = buildDoodle(spec);
+    if (!layers.length) return [];
+    if (colouring) layers = layers.filter(l => l.role !== 'fill1' && l.role !== 'fill2');
+    if (palette.paper && palette.paper !== 'transparent') {
+        const { x, y, width: w, height: h } = spec;
+        const c = (px: number, py: number): PathAnchor => ({ x: px, y: py, kind: 'corner' });
+        layers = [{ role: 'paper', subpaths: [{ closed: true, anchors: [c(x, y), c(x + w, y), c(x + w, y + h), c(x, y + h)] }] }, ...layers];
+    }
+    return layers;
+}
+
+/** Paint for one role. Fill roles have no stroke, ink roles no fill. */
+function doodleRoleStyle(role: DoodleRole, palette: DoodlePalette, lineWeight: number): Partial<DrawingElement> {
+    switch (role) {
+        case 'paper': return { backgroundColor: palette.paper, strokeColor: 'transparent', strokeWidth: 0, fillStyle: 'solid' };
+        case 'fill1': return { backgroundColor: palette.fill1, strokeColor: 'transparent', strokeWidth: 0, fillStyle: 'solid' };
+        case 'fill2': return { backgroundColor: palette.fill2, strokeColor: 'transparent', strokeWidth: 0, fillStyle: 'solid' };
+        case 'ink': return { strokeColor: palette.ink, strokeWidth: lineWeight, backgroundColor: 'transparent' };
+        case 'inkBold': return { strokeColor: palette.ink, strokeWidth: lineWeight * 2, backgroundColor: 'transparent' };
+    }
+}
+
+const DOODLE_ROLE_LABEL: Record<DoodleRole, string> = {
+    paper: 'paper', fill1: 'fill 1', fill2: 'fill 2', ink: 'ink', inkBold: 'bold ink',
+};
+
+/**
+ * Which doodle an element belongs to. The stamp id alone is not enough: duplicate, paste
+ * and every other copy path clone the stamp verbatim, so a copy would share its source's
+ * id and editing one would rebuild both as one. Those paths all remap `groupIds`, though,
+ * so stamp id + group chain separates a copy from its source with no copy path having
+ * to know doodles exist. An ungrouped doodle (one role) is just its element.
+ */
+export function doodleKeyOf(el: DrawingElement): string | null {
+    if (!el.doodle) return null;
+    return `${el.doodle.id}|${el.groupIds?.length ? el.groupIds.join('/') : el.id}`;
+}
+
+/** Members of the doodle that element `memberId` belongs to, in document (z) order. */
+function doodleMembers(memberId: string): DrawingElement[] {
+    const el = store.elements.find(e => e.id === memberId);
+    const key = el && doodleKeyOf(el);
+    if (!key) return [];
+    return store.elements.filter(e => doodleKeyOf(e) === key);
 }
 
 export const YappyAPI = {
@@ -1008,6 +1089,174 @@ export const YappyAPI = {
     get mandalaPresets() { return MANDALA_PRESETS; },
     /** The motif vocabulary a mandala band can use. */
     get mandalaMotifs() { return MANDALA_MOTIFS; },
+
+    /**
+     * Doodle — a seeded, parametric pattern (Truchet tiles, flow-field streamlines,
+     * contour maps) filling the rectangle (x, y, width, height).
+     *
+     * Same `kind` + `seed` + `params` + region always gives the same drawing; omit `seed`
+     * for a random one. The result is a few multi-subpath elements, one per colour role
+     * (paper, fill1, fill2, ink, inkBold), grouped — so recolouring a role is one element,
+     * and a dense page stays cheap. Every member remembers the spec, so `updateDoodle`
+     * can change any knob later. See `doodleGenerators` for kinds and their params.
+     *
+     * Returns the id of one member element — pass it to `updateDoodle` / `getDoodle` —
+     * or null if the spec drew nothing, e.g. a region smaller than one Truchet tile.
+     */
+    createDoodle(kind: DoodleKind, x: number, y: number, width: number, height: number, opts: DoodleOptions = {}): string | null {
+        const gen = getDoodleGenerator(kind);
+        if (!gen) return null;
+        const spec: DoodleSpec = {
+            kind, x, y, width, height,
+            seed: Number.isFinite(opts.seed) ? Math.floor(opts.seed as number) : randomDoodleSeed(),
+            params: resolveDoodleParams(gen, opts.params),
+        };
+        const palette: DoodlePalette = { ...DEFAULT_DOODLE_PALETTE, ...opts.palette };
+        const lineWeight = Math.max(0.25, Number.isFinite(opts.lineWeight) ? opts.lineWeight as number : 1.5);
+        const colouring = !!opts.colouring;
+        const layers = doodleLayers(spec, palette, colouring);
+        if (!layers.length) return null;
+
+        // Not generateId: it counts existing ELEMENT ids, and no element has this one, so
+        // every doodle got 'dood-1' and a second doodle merged into the first.
+        const doodleId = `doodle-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        // ONE snapshot for the whole doodle, as createMandala does.
+        pushToHistory();
+        const ids = withoutHistory(() => {
+            const made: string[] = [];
+            for (const layer of layers) {
+                const n = normalizeDoodleSubpaths(layer.subpaths);
+                const roughness = layer.maxRoughness === undefined ? undefined
+                    : Math.min(store.defaultElementStyles.roughness ?? 0, layer.maxRoughness);
+                const id = this.createElement('path', n.x, n.y, n.width, n.height, {
+                    ...(doodleRoleStyle(layer.role, palette, lineWeight) as ElementOptions),
+                    ...(roughness === undefined ? {} : { roughness }),
+                    pathSubpaths: n.subpaths, pathAnchors: undefined,
+                } as ElementOptions);
+                const frame = { x: n.x, y: n.y, width: n.width, height: n.height };
+                updateElement(id, {
+                    name: `${gen.name} · ${DOODLE_ROLE_LABEL[layer.role]}`,
+                    doodle: { id: doodleId, role: layer.role, spec, palette, lineWeight, colouring, frame } satisfies DoodleStamp,
+                }, false);
+                made.push(id);
+            }
+            this.setSelected(made);
+            if (made.length > 1) groupSelected();
+            return made;
+        });
+        return ids[0] ?? null;
+    },
+
+    /**
+     * Change any part of an existing doodle — knobs, seed, colours, line weight, line-art
+     * mode, or kind. Members are updated in place (same ids, layer, group and z-order);
+     * if the set of roles changes (e.g. shading switched on) they are rebuilt at the same
+     * z-position. A doodle that has been moved or resized since it was made is rebuilt
+     * where it is now: the region follows the element, and the pattern re-lays at its own
+     * scale rather than stretching. One undo step. `id` is any member's id. Returns a
+     * member id to use from now on (a rebuild replaces the elements), or null if `id` is
+     * not part of a doodle or the new settings draw nothing.
+     */
+    updateDoodle(id: string, patch: DoodleOptions & { kind?: DoodleKind } = {}): string | null {
+        const members = doodleMembers(id);
+        if (!members.length) return null;
+        const ref = members[0];
+        const old = ref.doodle!;
+        const kind = patch.kind ?? old.spec.kind;
+        const gen = getDoodleGenerator(kind);
+        if (!gen) return null;
+
+        // Where the doodle is NOW. `frame` is the reference member's upright box at
+        // generation; the member may since have been moved, resized, or rotated with its
+        // group (which turns every member's centre about the group centre and adds to its
+        // angle). Undo that in the doodle's own frame: find the region centre that maps to
+        // the member's current centre under the current angle, rebuild upright there, then
+        // rotate each new member back into place below.
+        const f = old.frame;
+        const sx = f.width > 0 ? ref.width / f.width : 1, sy = f.height > 0 ? ref.height / f.height : 1;
+        const theta = ref.angle || 0;
+        const cos = Math.cos(theta), sin = Math.sin(theta);
+        const rot = (x: number, y: number) => ({ x: x * cos - y * sin, y: x * sin + y * cos });
+        const oldCx = old.spec.x + old.spec.width / 2, oldCy = old.spec.y + old.spec.height / 2;
+        const off = rot((f.x + f.width / 2 - oldCx) * sx, (f.y + f.height / 2 - oldCy) * sy);
+        const cx = ref.x + ref.width / 2 - off.x, cy = ref.y + ref.height / 2 - off.y;
+        const width = old.spec.width * sx, height = old.spec.height * sy;
+        const region = { x: cx - width / 2, y: cy - height / 2, width, height };
+        /** An upright box in the region → the rotated element box and angle. */
+        const place = (n: { x: number; y: number; width: number; height: number }) => {
+            const c = rot(n.x + n.width / 2 - cx, n.y + n.height / 2 - cy);
+            return { x: cx + c.x - n.width / 2, y: cy + c.y - n.height / 2, angle: theta };
+        };
+        const spec: DoodleSpec = {
+            kind, ...region,
+            seed: Number.isFinite(patch.seed) ? Math.floor(patch.seed as number) : old.spec.seed,
+            // Switching kind starts from the new generator's defaults; otherwise merge.
+            params: resolveDoodleParams(gen, kind === old.spec.kind ? { ...old.spec.params, ...patch.params } : patch.params),
+        };
+        const palette: DoodlePalette = { ...old.palette, ...patch.palette };
+        const lineWeight = Math.max(0.25, Number.isFinite(patch.lineWeight) ? patch.lineWeight as number : old.lineWeight);
+        const colouring = patch.colouring ?? old.colouring;
+        const layers = doodleLayers(spec, palette, colouring);
+        if (!layers.length) return null;
+
+        const stamp = (role: DoodleRole, n: ReturnType<typeof normalizeDoodleSubpaths>, layer: DoodleLayer, prev?: DrawingElement): Partial<DrawingElement> => ({
+            ...doodleRoleStyle(role, palette, lineWeight),
+            ...(layer.maxRoughness === undefined ? {} : {
+                roughness: Math.min(prev?.roughness ?? store.defaultElementStyles.roughness ?? 0, layer.maxRoughness),
+            }),
+            ...place(n), width: n.width, height: n.height,
+            pathSubpaths: n.subpaths, pathAnchors: undefined,
+            name: `${gen.name} · ${DOODLE_ROLE_LABEL[role]}`,
+            doodle: { id: old.id, role, spec, palette, lineWeight, colouring, frame: { x: n.x, y: n.y, width: n.width, height: n.height } },
+        });
+
+        const sameRoles = members.length === layers.length && layers.every((l, i) => members[i].doodle?.role === l.role);
+        pushToHistory();
+        return withoutHistory(() => {
+            if (sameRoles) {
+                layers.forEach((l, i) => updateElement(members[i].id, stamp(l.role, normalizeDoodleSubpaths(l.subpaths), l, members[i]), false));
+                return members[0].id;
+            }
+            // Rebuild: new elements take the old ones' place in the stack, layer and groups.
+            const at = store.elements.findIndex(e => e.id === members[0].id);
+            const { layerId, groupIds } = ref;
+            deleteElements(members.map(m => m.id));
+            const made = layers.map(l => {
+                const n = normalizeDoodleSubpaths(l.subpaths);
+                const newId = this.createElement('path', n.x, n.y, n.width, n.height, { layerId } as ElementOptions);
+                updateElement(newId, { ...stamp(l.role, n, l), groupIds: groupIds ? [...groupIds] : undefined }, false);
+                return newId;
+            });
+            const madeSet = new Set(made);
+            setStore('elements', els => {
+                const moved = els.filter(e => madeSet.has(e.id));
+                const rest = els.filter(e => !madeSet.has(e.id));
+                return [...rest.slice(0, at), ...moved, ...rest.slice(at)];
+            });
+            // A doodle that was never grouped (one role) and now has several gets a group.
+            if (!groupIds?.length && made.length > 1) { this.setSelected(made); groupSelected(); }
+            else this.setSelected(made);
+            return made[0] ?? null;
+        });
+    },
+
+    /** A doodle's settings and member ids, from any member's id; null if it is not a doodle.
+     *  `id` is a member id, like the one `createDoodle` returns. */
+    getDoodle(id: string): { id: string; spec: DoodleSpec; palette: DoodlePalette; lineWeight: number; colouring: boolean; elementIds: string[] } | null {
+        const members = doodleMembers(id);
+        const d = members[0]?.doodle;
+        if (!d) return null;
+        return {
+            // JSON, not structuredClone: `d` is a store proxy, which the structured clone refuses.
+            id: members[0].id, spec: JSON.parse(JSON.stringify(d.spec)), palette: { ...d.palette },
+            lineWeight: d.lineWeight, colouring: d.colouring, elementIds: members.map(m => m.id),
+        };
+    },
+
+    /** The doodle generators: id, name, tags and the params each accepts (with ranges/defaults). */
+    get doodleGenerators() {
+        return DOODLE_GENERATORS.map(({ build: _build, ...rest }) => rest);
+    },
 
     /**
      * Lens Flare — a bright centre glow, radiating rays, concentric halo rings, and a few

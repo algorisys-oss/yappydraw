@@ -37,6 +37,7 @@ import { meta as animationMeta } from './features/animation.md?meta';
 import { meta as plottingMeta } from './features/plotting.md?meta';
 import { meta as animateMeta } from './features/animate.md?meta';
 import { meta as arcadeMeta } from './features/arcade.md?meta';
+import { meta as doodlesMeta } from './features/doodles.md?meta';
 import { meta as embeddingMeta } from './features/embedding.md?meta';
 import { meta as yslTutorialMeta } from './features/ysl-tutorial.md?meta';
 import { meta as bulkEditingMeta } from './features/bulk-editing.md?meta';
@@ -101,6 +102,7 @@ const AnimationDoc = markdownDoc(() => import('./features/animation.md'));
 const PlottingDoc = markdownDoc(() => import('./features/plotting.md'));
 const AnimateDoc = markdownDoc(() => import('./features/animate.md'));
 const ArcadeDoc = markdownDoc(() => import('./features/arcade.md'));
+const DoodlesDoc = markdownDoc(() => import('./features/doodles.md'));
 const EmbeddingDoc = markdownDoc(() => import('./features/embedding.md'));
 const YslTutorialDoc = markdownDoc(() => import('./features/ysl-tutorial.md'));
 const BulkEditingDoc = markdownDoc(() => import('./features/bulk-editing.md'));
@@ -139,6 +141,7 @@ const shapeDocuments: ShapeDoc[] = [
     { ...plottingMeta, content: PlottingDoc },
     { ...animateMeta, content: AnimateDoc },
     { ...arcadeMeta, content: ArcadeDoc },
+    { ...doodlesMeta, content: DoodlesDoc },
     { ...embeddingMeta, content: EmbeddingDoc },
     { ...yslTutorialMeta, content: YslTutorialDoc },
     { ...bulkEditingMeta, content: BulkEditingDoc },

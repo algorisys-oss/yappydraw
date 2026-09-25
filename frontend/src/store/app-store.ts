@@ -1068,6 +1068,19 @@ export const redo = () => {
     setStore("redoStackLength", redoStack.length);
 };
 
+/**
+ * Undo the most recent snapshot and forget it — no redo entry left behind. For a live-edit
+ * dialog's Cancel, which must leave history as it found it: a plain `undo()` would park the
+ * cancelled edit on the redo stack, where Ctrl+Y brings back what the user just rejected.
+ * Callers must check that the top snapshot is theirs (compare `undoStackLength`).
+ */
+export const discardLastSnapshot = () => {
+    if (undoStack.length === 0) return;
+    undo();
+    redoStack.pop();
+    setStore("redoStackLength", redoStack.length);
+};
+
 export const toggleHistoryPanel = (visible?: boolean) => setPanelOpen('history', visible);
 
 /** Toggle (or set) the pen/vector-path Clock-Method handle constrain. */

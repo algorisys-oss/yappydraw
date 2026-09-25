@@ -104,6 +104,25 @@ export const calculateAnimatedState = (
 };
 
 /**
+ * Does this animated state leave the element exactly as stored?
+ *
+ * `calculateAllAnimatedStates` returns a state for EVERY element, so "has a state" is not
+ * "is animated". The renderer used to read it that way and switched the RoughJS element
+ * cache off for everything. A state is static when every key it carries equals the
+ * element's own value (angle/opacity compared with their render defaults).
+ */
+export const isStaticAnimatedState = (state: Record<string, unknown> | AnimatedTransform | undefined, el: DrawingElement): boolean => {
+    if (!state) return true;
+    const own = el as unknown as Record<string, unknown>;
+    for (const k in state) {
+        const v = (state as Record<string, unknown>)[k];
+        const base = k === 'angle' ? (el.angle || 0) : k === 'opacity' ? (el.opacity ?? 100) : own[k];
+        if (v !== base) return false;
+    }
+    return true;
+};
+
+/**
  * Batch calculates animated states for all elements provided.
  */
 export const calculateAllAnimatedStates = (

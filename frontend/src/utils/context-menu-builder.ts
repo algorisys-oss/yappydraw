@@ -46,6 +46,7 @@ import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from './transform-pivot';
 import { openRepeatDialog } from '../components/repeat-dialog';
 import { openMandalaDialog } from '../components/mandala-dialog';
+import { openDoodleDialog, selectedDoodleId } from '../components/doodle-dialog';
 import { YappyAPI } from '../api';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
 import { rasterizeSelection } from './rasterize';
@@ -1486,6 +1487,8 @@ function buildContextMenuItems(
                 { label: 'Recolor Artwork…', icon: '🌈', onClick: () => toggleRecolorPanel(true) },
                 // Game authoring is Dev Mode only (see isDevMode) — it is still being built.
                 ...(selectionCount === 1 && isDevMode() ? [{ label: 'Edit Behaviors (Game)…', icon: '🎮', onClick: () => toggleBehaviorsPanel(true) }] : []),
+                // Doodles are Dev Mode only while the generator set is being built out.
+                ...((() => { const d = isDevMode() ? selectedDoodleId() : null; return d ? [{ label: 'Edit Doodle…', icon: '〰', onClick: () => openDoodleDialog(d) }] : []; })()),
             );
         }
         if (selectionCount === 2) {
@@ -1680,6 +1683,7 @@ function buildContextMenuItems(
                         { label: 'Rectangular Grid', onClick: () => YappyAPI.createRectGrid(cx - 100, cy - 80, 200, 160, 4, 4) },
                         { label: 'Polar Grid', onClick: () => YappyAPI.createPolarGrid(cx, cy, 100, 3, 8) },
                         { label: 'Mandala…', onClick: () => openMandalaDialog() },
+                        ...(isDevMode() ? [{ label: 'Doodle…', onClick: () => openDoodleDialog() }] : []),
                         { label: 'Lens Flare', onClick: () => { const ds = store.defaultElementStyles; YappyAPI.createFlare(cx, cy, 90, 12, 4, { strokeColor: ds.strokeColor || undefined, backgroundColor: (ds.backgroundColor && ds.backgroundColor !== 'transparent') ? ds.backgroundColor : undefined }); } },
                     ];
                 })(),

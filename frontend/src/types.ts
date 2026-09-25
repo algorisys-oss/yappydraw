@@ -1,4 +1,23 @@
 import type { ElementAnimation } from './types/motion-types';
+import type { DoodleRole, DoodleSpec } from './utils/doodles';
+
+/** Colours a doodle's roles are painted in. `paper` may be 'transparent' (no backdrop). */
+export interface DoodlePalette { paper: string; ink: string; fill1: string; fill2: string }
+
+/** What a doodle member remembers about the doodle it belongs to (see `DrawingElement.doodle`). */
+export interface DoodleStamp {
+    /** Shared by every member of one doodle. */
+    id: string;
+    role: DoodleRole;
+    spec: DoodleSpec;
+    palette: DoodlePalette;
+    lineWeight: number;
+    /** Line art only — fill roles are not drawn. */
+    colouring: boolean;
+    /** This element's box when it was generated. Comparing it with the element's current
+     *  box tells a rebuild how far the doodle has since been moved or resized. */
+    frame: { x: number; y: number; width: number; height: number };
+}
 export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'richtext' | 'fineliner' | 'inkbrush' | 'marker' | 'eraser' | 'pan' | 'selection' | 'image' | 'bezier' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowUp' | 'arrowDown' | 'arrowRight' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'starPerson' | 'scroll' | 'wavyDivider' | 'doubleBanner' | 'lightbulb' | 'signpost' | 'burstBlob' | 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField' | 'organicBranch' | 'polygon' | 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'ink' | 'laser' | 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'solidBlock' | 'perspectiveBlock' | 'openBox' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlEnum' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface' | 'umlNode' | 'umlArtifact' | 'umlObject' | 'umlPort' | 'umlHistory' | 'umlAction'
     | 'trophy' | 'clock' | 'gear' | 'target' | 'rocket' | 'flag'
     | 'key' | 'magnifyingGlass' | 'book' | 'megaphone' | 'eye' | 'thoughtBubble'
@@ -629,6 +648,11 @@ export interface DrawingElement {
      *  elements through save/load, history, duplication and copy-paste for free. Read it with
      *  `groupNameOf` (utils/object-label), write it with `setGroupName` (store). */
     groupNames?: Record<string, string>;
+    /** Membership of a generated doodle (`Yappy.createDoodle`): which doodle, which colour
+     *  role this element draws, and everything needed to rebuild it — so selecting a doodle
+     *  can reopen its knobs instead of leaving dead paths. On EVERY member, for the reason
+     *  given on `groupNames`. */
+    doodle?: DoodleStamp;
     boundElements?: { id: string; type: 'arrow' | 'text' | 'organicBranch' }[] | null;
     isSelected?: boolean;
     layerId: string; // Reference to parent layer

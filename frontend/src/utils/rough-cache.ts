@@ -106,6 +106,103 @@ export function createCachedRc(rc: RoughCanvas): RoughCanvas {
 
 // ── Element hash ─────────────────────────────────────────────────
 
+/**
+ * Fields that cannot change an element's RoughJS drawables: identity and bookkeeping,
+ * plus what the renderer applies as a canvas transform/alpha rather than geometry.
+ * Everything NOT listed is digested — an unknown or newly added field therefore costs at
+ * worst a cache miss, never a stale drawing. (The hand-written list below used to be the
+ * whole hash; it omitted path anchors, so an edited path would have replayed its old shape.)
+ */
+const HASH_IGNORED = new Set<string>([
+    'id', 'name', 'groupIds', 'groupNames', 'layerId', 'locked', 'visible', 'isSelected',
+    'link', 'tag', 'opacity', 'angle', 'doodle', 'animations', 'boundElements',
+]);
+
+/** Long strings (image data URLs) are hashed once per distinct string, not per frame. */
+const longStringDigest = new Map<string, number>();
+/** Property names repeat endlessly (x, y, kind…); hash each name once. */
+const keyDigest = new Map<string, number>();
+
+const f64 = new Float64Array(1);
+const u32 = new Uint32Array(f64.buffer);
+const FNV = 16777619;
+
+function stringDigest(s: string): number {
+    let d = 2166136261;
+    for (let i = 0; i < s.length; i++) d = Math.imul(d ^ s.charCodeAt(i), FNV);
+    return d;
+}
+
+function keyOf(k: string): number {
+    let d = keyDigest.get(k);
+    if (d === undefined) {
+        d = stringDigest(k);
+        if (keyDigest.size > 5000) keyDigest.clear();
+        keyDigest.set(k, d);
+    }
+    return d;
+}
+
+/**
+ * Second, independent check: a weighted running sum of every number fed. A stale drawing
+ * needs the FNV lane AND this sum to collide at once. Kept as module state (not a second
+ * FNV lane) because a two-lane walk measured 3x slower on a 10k-anchor path.
+ */
+let numSum = 0;
+let numCount = 0;
+
+/** Structural FNV-1a digest of any JSON-like value. Key order is the object's own, which is
+ *  stable for elements built by the same code; a reordering only costs a miss. */
+function feed(h: number, v: unknown): number {
+    switch (typeof v) {
+        case 'number':
+            numSum += v * (1 + (++numCount % 97) * 1e-7);
+            f64[0] = v;
+            return Math.imul(Math.imul(h ^ u32[0], FNV) ^ u32[1], FNV);
+        case 'string': {
+            if (v.length > 256) {
+                let d = longStringDigest.get(v);
+                if (d === undefined) {
+                    d = stringDigest(v);
+                    if (longStringDigest.size > 200) longStringDigest.clear();
+                    longStringDigest.set(v, d);
+                }
+                return Math.imul(Math.imul(h ^ v.length, FNV) ^ d, FNV);
+            }
+            h = Math.imul(h ^ (v.length + 0x100), FNV);
+            for (let i = 0; i < v.length; i++) h = Math.imul(h ^ v.charCodeAt(i), FNV);
+            return h;
+        }
+        case 'boolean': return Math.imul(h ^ (v ? 3 : 4), FNV);
+        case 'undefined': return Math.imul(h ^ 5, FNV);
+        case 'object': {
+            if (v === null) return Math.imul(h ^ 6, FNV);
+            if (Array.isArray(v)) {
+                h = Math.imul(Math.imul(h ^ 7, FNV) ^ v.length, FNV);
+                for (let i = 0; i < v.length; i++) h = feed(h, v[i]);
+                return h;
+            }
+            h = Math.imul(h ^ 8, FNV);
+            for (const k in v as Record<string, unknown>) {
+                h = feed(Math.imul(h ^ keyOf(k), FNV), (v as Record<string, unknown>)[k]);
+            }
+            return h;
+        }
+        default: return Math.imul(h ^ 9, FNV);   // functions/symbols: not part of a drawing
+    }
+}
+
+/** Digest of every drawing-relevant field (see HASH_IGNORED). */
+function digestElement(el: DrawingElement): string {
+    numSum = 0; numCount = 0;
+    let h = 2166136261;
+    for (const k in el) {
+        if (HASH_IGNORED.has(k)) continue;
+        h = feed(Math.imul(h ^ keyOf(k), FNV), (el as unknown as Record<string, unknown>)[k]);
+    }
+    return `${(h >>> 0).toString(36)}.${numCount}.${numSum}`;
+}
+
 export function computeElementHash(el: DrawingElement): string {
     // Core visual properties that affect RoughJS drawable generation.
     // Excludes: opacity, angle, blendMode, shadow*, text*, layerId
@@ -192,5 +289,7 @@ export function computeElementHash(el: DrawingElement): string {
         if (el.tableAnimStyle) h += `|tasty${el.tableAnimStyle}`;
     }
 
-    return h;
+    // The readable prefix above is kept for debugging; the digest is what makes the key
+    // complete (path anchors, subpaths, dash arrays, and any field added later).
+    return `${h}|g${digestElement(el)}`;
 }

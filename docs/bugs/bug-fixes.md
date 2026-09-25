@@ -1,5 +1,56 @@
 # Bug Fixes Log
 
+## 2026-09-25 — Sketch render cache, doodles
+
+### 399. The CDN SDK threw on load (Doodle palette read during an import cycle)
+
+**Symptom:** the 0.8.261 open-source publish refused to push: `verify-sdk` reported
+`ReferenceError: Cannot access 'v3' before initialization`, and `yappy.js` exported nothing.
+
+**Cause:** `doodle-dialog.tsx` read `DEFAULT_DOODLE_PALETTE` from `api.ts` at module load (in its
+palette list and its initial signal). `api.ts` is in an import cycle with the menus that import
+the dialog. In the app bundle the order happened to work; in the SDK bundle the dialog
+evaluated first and hit the `const` in its temporal dead zone.
+
+**Fix:** the constant lives in `utils/doodles`, which imports nothing from the app. Reproduced
+with `npm run build:sdk && node scripts/verify-sdk.mjs dist-sdk` (8 checks failing), all 11 pass
+after. Shipped as 0.8.262; the 0.8.261 tag was already pushed and tags are never moved.
+
+### 397. The sketch-style render cache never hit, so every shape was regenerated every frame
+
+**Symptom:** a page-sized doodle took ~400 ms per frame to pan in sketch style (~50 ms in
+architectural). Any heavy sketch drawing had the same cost, but a doodle made it visible.
+
+**Cause:** `calculateAllAnimatedStates` returns a state for every element, animated or not, and
+`canvas-renderer` treated "has a state" as "is animated": `shouldCache = … && !animState`. That
+was false for every element, so the RoughJS element cache in `rough-cache.ts` never stored
+anything. It had been like this since before the frontend/backend split.
+
+**Fix:** `isStaticAnimatedState` (animation-utils) checks whether the state actually changes
+anything. The cache key had never been exercised and was incomplete, so it was fixed in the
+same change (#398). Stick rigs and symbol instances stay uncached because they draw from state
+outside their own fields (the clock, the symbol definition). The theme and layer opacity are part
+of the key, because dark mode changes the colours passed to RoughJS. A pan now runs zero RoughJS
+generations (it regenerated every shape before). Tests: `rough-element-cache.spec.ts` (a pan runs zero
+RoughJS generations, an edit that keeps the box still redraws, a theme switch recolours a cached
+shape), each seen failing against the matching half of the fix; `animation-utils.test.ts`.
+
+### 398. The render-cache key left out path geometry (and the draw-in trace shared it)
+
+**Symptom:** latent while the cache was off (#397): with it on, editing a path's anchors without
+changing its box would have replayed the old drawing. The draw-in stroke trace
+(`rough-stroke-trace`) is memoised on the same key without the element id, so two paths with the
+same box, colours and seed could already share one reveal trace.
+
+**Cause:** `computeElementHash` was a hand-written list of fields and missed `pathAnchors`,
+`pathSubpaths`, `pathClosed`, `strokeDashArray` and anything added later.
+
+**Fix:** the key now ends with a structural digest of every element field except a short list
+that can't affect RoughJS output (id, name, grouping, layer, selection, opacity, angle). Unknown
+fields are included by default, so a new field can cause a cache miss but never a stale drawing.
+Long strings (image data URLs) are digested once per distinct string. A 10k-anchor path hashes in
+a few ms. Test: `rough-cache.test.ts`.
+
 ## 2026-09-21 — Anshika's review: grids and layout guides
 
 ### 393. The grid could only be drawn behind the artwork

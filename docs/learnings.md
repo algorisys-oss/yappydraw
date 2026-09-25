@@ -2,6 +2,61 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Doodles — seeded pattern generators (Sep 25 2026)
+
+- **Don't read another module's constants while your module is loading if that module can be
+  in a cycle with you.** A component that imports from `api.ts` is almost certainly in a cycle
+  (api → store/menus → component → api). Reading `api.ts` exports at call time is fine; reading
+  them at load time (a top-level array, an initial `createSignal(...)`) works or throws depending
+  on bundle order. The app build worked and the SDK bundle threw. Put shared constants in a leaf
+  module. Only `verify-sdk` catches this, so run `npm run build:sdk && node
+  scripts/verify-sdk.mjs dist-sdk` before shipping anything that adds imports from `api.ts`.
+- **Group the output by colour role, not by shape.** A page of Truchet tiles is ~2,000 arcs. One
+  element per arc would mean 2,000 elements to hit-test, render and snapshot. Chaining the pieces
+  into continuous lines and putting each role (fill1, fill2, ink, bold ink) in one multi-subpath
+  `path` keeps a doodle at 2–5 elements however dense it is, and recolouring a role touches one
+  element.
+- **Chaining by coordinate needs bit-identical shared points.** Marching-squares crossings are
+  interpolated from the edge's two grid values in a fixed (lower index first) order, so both cells
+  that share an edge produce the same float. Truchet radii are symmetric about s/2 for the same
+  reason: an edge is crossed at r by one orientation and at s − r by the other, so only a radius
+  set equal to its own mirror lines up in every combination. The test that caught the difference
+  checks that no open line ends inside the tiled area.
+- **A `smooth` anchor without handles is a straight segment.** `anchorsToPathData` only emits `C`
+  when a handle is present, so generated curves need real handles: exact κ = 0.5523 handles for
+  quarter arcs, Catmull-Rom tangents / 6 for streamlines and contours.
+- **`generateId(prefix)` counts existing ELEMENT ids.** An id that no element carries (a doodle id,
+  anything that isn't an element) comes back as `<prefix>-1` every time, so the second doodle merged
+  into the first. Use a random id for non-element identities.
+- **Don't identify a multi-element object by a stamp id alone.** Duplicate, paste and every other
+  copy path clone the stamp verbatim, but they all remap `groupIds`. Keying membership on stamp id +
+  group chain separates copies without any copy path knowing doodles exist.
+- **Evenly spaced streamlines need neighbour seeding.** Seeding only from a jittered grid left holes
+  about 1.4 spacings wide. Seeding each new line one spacing beside an accepted one (Jobard & Lefer
+  1997) brings the widest gap down to about 1.0. The coverage test measures the widest gap, not a
+  percentage, because a percentage passed with the holes still there.
+- **A live-edit dialog should own exactly one undo snapshot, and Cancel should take back only that
+  one.** Cancel checks `undoStackLength` against the value it recorded before using
+  `discardLastSnapshot`. If something else was pushed while the non-modal panel was open, it
+  restores the doodle directly instead of undoing somebody else's step. Also, a right-press over a
+  selection pushes its own snapshot before any menu opens, so a test's baseline belongs after the
+  menu.
+- **The rough.js element cache never hit (#397, fixed).** `calculateAllAnimatedStates` returns a
+  state for every element, and `canvas-renderer` treated any `animState` as "animated", so the
+  cache was off for everything. Turning it on needed its key fixed first (#398): a hand-listed
+  hash that has never run can't be trusted, so the key now digests every field except a short
+  denylist. The same audit found two renderers that read outside their element (stick rigs pose
+  from the clock, symbol instances draw their symbol), and those stay uncached. Look for that
+  class of input before switching on any per-element cache.
+- **Count work instead of timing it.** "A pan regenerates nothing" is a deterministic test:
+  wrap the RoughJS generator prototype and count calls. Take the module from the URL the app
+  actually loaded, since Vite's `?v=` means a bare import gets a second copy, and count only calls
+  whose stack passes through `canvas-renderer`, because the page-thumbnail capture renders
+  off-screen on its own debounce. A frame-time threshold would have been flaky for both reasons.
+- **Check what a pixel probe actually samples.** The first theme test summed a strip that
+  included background, which changes with the theme, so it passed with the fix removed. Comparing
+  the cached shape with a same-seed twin drawn fresh in the new theme is what made it fail.
+
 ## Grids and layout guides (Anshika's review, Sep 21 2026)
 
 - **Check what the tester actually used before building what they asked for.** "We don't see the

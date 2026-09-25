@@ -24,6 +24,7 @@ import { RulerOverlay } from './components/ruler-overlay';
 import { RepeatDialog } from './components/repeat-dialog';
 import { LayoutGuidesDialog } from './components/layout-guides-dialog';
 import { MandalaDialog } from './components/mandala-dialog';
+import { DoodleDialog } from './components/doodle-dialog';
 import { canvasCenterClient } from './utils/dock-layout';
 import { SymmetryOverlay } from './components/symmetry-overlay';
 import { NodeToolOverlay } from './components/node-tool-overlay';
@@ -1591,6 +1592,7 @@ const App: Component = () => {
         <RepeatDialog />
         <LayoutGuidesDialog />
         <MandalaDialog />
+        <DoodleDialog />
         {/* Support and About are mounted HERE, not inside <StatusBar />, because the status
             bar lives under `<Show when={!store.zenMode}>` — mounted there, both dialogs
             simply ceased to exist in Zen mode and their menu items did nothing. A dialog
