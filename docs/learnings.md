@@ -2,6 +2,32 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Canvas/Cairo-style drawing API — `Yappy.draw` (Sep 27 2026)
+
+- **Immediate mode maps onto retained mode at the paint call.** A pen API has no objects;
+  `fill()`/`stroke()` is the only point where a mark is finished. So one paint call becomes one
+  `path` element, and a fill then a stroke of the same *unchanged* path (a version counter bumped
+  on every path edit) update one element instead of stacking two. Without that merge, the most
+  common canvas idiom (`fill(); stroke();`) would leave two elements on top of each other.
+- **Canvas and Cairo disagree on whether painting consumes the path.** Canvas keeps it until
+  `beginPath()`; Cairo clears it (`fill_preserve` keeps it). A Cairo loop run with canvas
+  semantics re-fills a growing path every iteration, so each rectangle is filled again
+  once for every later iteration, and nothing errors. That's why it's an explicit `mode: 'cairo'`
+  rather than a guess.
+- **Transforms are baked into the anchors.** The CTM is applied to points *and* control points
+  (a Bézier is affine-invariant), so the element stores device-space geometry and needs no
+  transform field. A rotated rectangle stays a real four-anchor path that can be node-edited.
+- **TS `private` is not a runtime boundary.** The JSON op form (needed because a callback can't
+  cross the embed bridge) first checked "is it a function on the context?", which would have
+  let `['paint', …]` or `['cubicDevice', …]` reach internals. It now uses an explicit allowlist, and
+  a unit test asserts every allowlisted name exists so the list can't rot.
+- **Pin the defaults you are emulating.** Canvas and Cairo both default to butt caps and mitred
+  joins; Yappy defaults to round. Ported code must get the library's defaults, not the app's,
+  or every stroke end changes shape.
+- **`erasableSyntaxOnly` rejects constructor parameter properties** (`constructor(private x)`).
+  Bun runs them fine, so only `tsc -p tsconfig.app.json` catches it. Run the type-check,
+  not just the unit tests.
+
 ## Doodles — seeded pattern generators (Sep 25 2026)
 
 - **Benchmark hot paths on the data the app actually has: store proxies, not plain objects.**

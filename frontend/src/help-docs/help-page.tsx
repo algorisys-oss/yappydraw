@@ -35,6 +35,7 @@ import { meta as mindmapMeta } from './shapes/mindmap.md?meta';
 import { meta as tableMeta } from './shapes/table.md?meta';
 import { meta as animationMeta } from './features/animation.md?meta';
 import { meta as plottingMeta } from './features/plotting.md?meta';
+import { meta as drawApiMeta } from './features/draw-api.md?meta';
 import { meta as animateMeta } from './features/animate.md?meta';
 import { meta as arcadeMeta } from './features/arcade.md?meta';
 import { meta as doodlesMeta } from './features/doodles.md?meta';
@@ -100,6 +101,7 @@ const MindmapDoc = markdownDoc(() => import('./shapes/mindmap.md'));
 const TableDoc = markdownDoc(() => import('./shapes/table.md'));
 const AnimationDoc = markdownDoc(() => import('./features/animation.md'));
 const PlottingDoc = markdownDoc(() => import('./features/plotting.md'));
+const DrawApiDoc = markdownDoc(() => import('./features/draw-api.md'));
 const AnimateDoc = markdownDoc(() => import('./features/animate.md'));
 const ArcadeDoc = markdownDoc(() => import('./features/arcade.md'));
 const DoodlesDoc = markdownDoc(() => import('./features/doodles.md'));
@@ -139,6 +141,7 @@ const shapeDocuments: ShapeDoc[] = [
     { ...tableMeta, content: TableDoc },
     { ...animationMeta, content: AnimationDoc },
     { ...plottingMeta, content: PlottingDoc },
+    { ...drawApiMeta, content: DrawApiDoc },
     { ...animateMeta, content: AnimateDoc },
     { ...arcadeMeta, content: ArcadeDoc },
     { ...doodlesMeta, content: DoodlesDoc },

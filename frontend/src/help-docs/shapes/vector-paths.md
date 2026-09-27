@@ -286,6 +286,10 @@ Compound paths are **fully node-editable** — select one and every subpath's an
 
 Everything the Pen tool and the right-click **Path** menu do is also available programmatically. The global entry point is `window.Yappy` (usable as `Yappy` in the console or a script block). Anchors use the ` PathAnchor` shape `{ x, y, kind?: 'corner' | 'smooth', inX?, inY?, outX?, outY? }`, where the handle offsets are relative to the anchor.
 
+:::tip
+Porting Canvas 2D or Cairo code? `Yappy.draw(ctx => { ctx.moveTo(…); ctx.arc(…); ctx.fill(); })` builds these same path elements from pen calls. See the **Canvas-style Drawing** doc.
+:::
+
 ### Create & read paths
 
 ```

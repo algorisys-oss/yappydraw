@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.264', date: '2026-09-27', items: [
+        'Draw from code the way you would on an HTML canvas or with Cairo: Yappy.draw(ctx => { ctx.moveTo(…); ctx.arc(…); ctx.fill(); }). Everything you draw becomes a normal shape you can select, edit, animate and export. See Help \u25b8 Canvas-style Drawing.',
+    ] },
     { version: '0.8.263', date: '2026-09-25', items: [
         'Big drawings pan and zoom smoothly in both sketch and architectural style: large shapes such as traced images, imported SVGs and doodles no longer slow the canvas down.',
     ] },

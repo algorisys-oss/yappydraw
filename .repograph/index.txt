@@ -1667,7 +1667,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 5730 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 HarmonyType:84 PlayOptions:89 PlaySpec:89 PlayTargets:89 TexPart:90 AxesOptions:97 AxesSpec:97 PlotFn:97 VectorFieldOptions:97 VectorFn:97 TinyflyShape:102 DimensionMeasure:110 ElementOptions:184 normalizeElementType:424 plotRuns:455 addTinyflyClip:471 createTinyflyShape:494 DoodleOptions:521 normalizeDoodleSubpaths:532 doodleLayers:547 doodleRoleStyle:560 doodleKeyOf:581 doodleMembers:587 ElementType:831 as:831 Window:5719
+frontend/src/api.ts | typescript | 5785 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 HarmonyType:84 PlayOptions:89 PlaySpec:89 PlayTargets:89 TexPart:90 AxesOptions:97 AxesSpec:97 PlotFn:97 VectorFieldOptions:97 VectorFn:97 DrawOp:99 TinyflyShape:103 DimensionMeasure:111 ElementOptions:185 normalizeElementType:425 plotRuns:456 addTinyflyClip:472 createTinyflyShape:495 DoodleOptions:522 normalizeDoodleSubpaths:533 doodleLayers:548 doodleRoleStyle:561 doodleKeyOf:582 doodleMembers:588 ElementType:832 as:832 Window:5774
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1668 | Component:1 App:105 moves:130 onPenMove:131 hidePen:135 handleKeyUp:174 handleKeyDown:184 as:873 the:924 handleFullscreenChange:1043 handleBeforeUnload:1049 handlePaste:1053 of:1167 isInternalPanelDrag:1170 handleGlobalDragEnter:1173 handleGlobalDragOver:1187 showDropFallbackPrompt:1205 cleanup:1235 outsideClick:1263 isImageFile:1275 first:1276 must:1289 extractDropData:1291 processExtractedDrop:1346 handleGlobalDrop:1467 handleDocumentDrop:1513
 frontend/src/assets/solid.svg | - | 1 |
@@ -1945,7 +1945,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 896 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 899 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2022,6 +2022,7 @@ frontend/src/help-docs/features/artboards.md | - | 104 |
 frontend/src/help-docs/features/bulk-editing.md | - | 103 |
 frontend/src/help-docs/features/design-studio.md | - | 211 |
 frontend/src/help-docs/features/doodles.md | - | 98 |
+frontend/src/help-docs/features/draw-api.md | - | 102 |
 frontend/src/help-docs/features/effects.md | - | 229 |
 frontend/src/help-docs/features/elements-search.md | - | 73 |
 frontend/src/help-docs/features/embedding.md | - | 247 |
@@ -2037,7 +2038,7 @@ frontend/src/help-docs/features/workspace.md | - | 845 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 581 |
 frontend/src/help-docs/help-md.d.ts | typescript | 28 |
 frontend/src/help-docs/help-page.css | - | 587 |
-frontend/src/help-docs/help-page.tsx | typescript | 332 | Component:6 ShapeDoc:47 markdownDoc:70 shapeFromPath:208 HelpPage:213 navigateToShape:225 filteredShapes:230 currentDoc:241 handleBackToApp:243
+frontend/src/help-docs/help-page.tsx | typescript | 335 | Component:6 ShapeDoc:48 markdownDoc:71 shapeFromPath:211 HelpPage:216 navigateToShape:228 filteredShapes:233 currentDoc:244 handleBackToApp:246
 frontend/src/help-docs/markdown.test.ts | typescript | 299 | the:4 render:20 and:102
 frontend/src/help-docs/markdown.ts | typescript | 363 | Token:32 Tokens:32 DocMeta:34 RenderedDoc:60
 frontend/src/help-docs/shapes/basic-shapes.md | - | 253 |
@@ -2051,7 +2052,7 @@ frontend/src/help-docs/shapes/mindmap.md | - | 203 |
 frontend/src/help-docs/shapes/sketchnote.md | - | 203 |
 frontend/src/help-docs/shapes/table.md | - | 407 |
 frontend/src/help-docs/shapes/uml.md | - | 220 |
-frontend/src/help-docs/shapes/vector-paths.md | - | 409 |
+frontend/src/help-docs/shapes/vector-paths.md | - | 413 |
 frontend/src/help-docs/shapes/wireframing.md | - | 171 |
 frontend/src/help-docs/vite-plugin-help-md.ts | typescript | 76 | helpMarkdownPlugin:28
 frontend/src/i18n/__fixtures__/pre-i18n-hotkeys.json | - | 391 |
@@ -2309,6 +2310,8 @@ frontend/src/utils/doodles/rng.ts | typescript | 73 | Rng:10 makeRng:13 shuffle:
 frontend/src/utils/doodles/topography.ts | typescript | 93 | Rng:12 buildTopography:14
 frontend/src/utils/doodles/truchet.ts | typescript | 86 | buildTruchet:21
 frontend/src/utils/draggable-panel.ts | typescript | 54 | makeDraggable:13 draggablePanel:49
+frontend/src/utils/draw-context.test.ts | typescript | 223 | close:4 recorder:153 emit:156
+frontend/src/utils/draw-context.ts | typescript | 363 | Matrix:13 finite:25 PathBuilder:30{save:41 restore:42 translate:43 scale:44 rotate:45 transform:50 setTransform:51 resetTransform:52 beginPath:55 moveTo:57 lineTo:66 bezierCurveTo:75 quadraticCurveTo:81 arc:94 arcNegative:99 ellipse:103 rect:136 closePath:142 if:152} DrawStyle:214 DrawPaint:224 DrawEmit:231 DrawContext:243{constructor:259 save:261 restore:262 setLineDash:268 getLineDash:269 setSourceRgb:272 setSourceRgba:273 setLineWidth:278 setLineCap:279 setLineJoin:280 newPath:281 curveTo:282 rectangle:283 fillRect:286 strokeRect:287 fill:289 stroke:290 fillPreserve:291 strokePreserve:292 style:294 paint:301 paintShape:312 restoreSubpath:319 segTo:329} DrawOp:347 runDrawOps:354
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 369 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:154 getShapeTooltip:350 getCurveTypeOptions:354 getCurveTypeIcon:358 getCurveTypeTooltip:367
 frontend/src/utils/envelope-warp-projective.test.ts | typescript | 113 | gridOf:21
@@ -2672,6 +2675,7 @@ tests/design-templates.spec.ts | typescript | 148 | Window:6
 tests/dimension-annotations.spec.ts | typescript | 48 |
 tests/docType-redraw.spec.ts | typescript | 36 | countMagenta:9
 tests/doodle-generator.spec.ts | typescript | 293 | boot:15 Y:34 openFromPalette:37 inkOf:76 members:103 snap:123 copyInk:218 inkOf:247 rough:275
+tests/draw-api.spec.ts | typescript | 119 |
 tests/draw-in-sketch-trace.spec.ts | typescript | 151 | boot:17 sampleInk:24 inkPixels:47 setup:57 afterRepaint:77 setProgress:81 clearProgress:92 of:101
 tests/drawings-gallery.spec.ts | typescript | 128 | Window:9 boot:11
 tests/dsl-byte-grid.spec.ts | typescript | 273 | cellsOf:12 S:21 S:67 cellText:79 S:110 S:180 run:193 S:224

@@ -96,6 +96,7 @@ import {
     logTickValues, formatTick,
     type AxesSpec, type AxesOptions, type PlotFn, type VectorFn, type VectorFieldOptions,
 } from "./utils/plot";
+import { DrawContext, runDrawOps, DRAW_PROPS, DRAW_METHODS, type DrawOp } from "./utils/draw-context";
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides, withExtraOverrides } from "./utils/animation/composition-evaluator";
 import { evaluateTinyflyClips, ensureTinyflyEngine, resolveClipBindings, unsupportedClipProperties, clipDurationMs, bakeTinyflyClip } from "./utils/animation/tinyfly-clips";
 import type { TimelineDefinition } from "./vendor/tinyfly/tinyfly-engine";
@@ -936,6 +937,60 @@ export const YappyAPI = {
         if (el.pathSubpaths && el.pathSubpaths.length) return { subpaths: el.pathSubpaths };
         if (el.pathAnchors) return { anchors: el.pathAnchors, closed: !!el.pathClosed };
         return null;
+    },
+
+    /**
+     * Immediate-mode drawing, for code written against Canvas 2D or Cairo. The callback
+     * gets a context with the usual pen verbs (`moveTo`, `lineTo`, `bezierCurveTo`/`curveTo`,
+     * `quadraticCurveTo`, `arc`/`arcNegative`, `ellipse`, `rect`, `closePath`, Cairo's
+     * `rel*` ops), a transform stack (`save`/`restore`/`translate`/`rotate`/`scale`/
+     * `transform`) and paint state (`fillStyle`, `strokeStyle`, `lineWidth`, `globalAlpha`,
+     * `lineCap`, `lineJoin`, `setLineDash`, Cairo's `setSourceRgb(a)`/`setLineWidth`/`setLineCap`/
+     * `setLineJoin`). Each `fill()` or `stroke()`
+     * becomes one editable `path` element; a fill and a stroke of the same unchanged path
+     * share one element. Returns the new ids, all in one undo step.
+     *
+     * Semantics follow Canvas (`fill()` keeps the path) unless `mode: 'cairo'`, where
+     * `fill()`/`stroke()` clear it and `fillPreserve()`/`strokePreserve()` keep it.
+     * Colours are CSS strings (no gradient objects). Multi-subpath fills use the even-odd
+     * rule — Canvas and Cairo default to non-zero, so overlapping same-direction subpaths
+     * leave a hole here where they would not there.
+     *
+     * Over the embed bridge a callback can't be sent: pass the same calls as data,
+     * `[['moveTo', 0, 0], ['lineTo', 50, 0], ['strokeStyle', '#f00'], ['stroke']]`.
+     *
+     * @example Yappy.draw(ctx => { ctx.arc(200, 200, 80, 0, Math.PI * 2); ctx.fillStyle = '#fde68a'; ctx.fill(); ctx.stroke(); })
+     */
+    draw(
+        program: ((ctx: DrawContext) => void) | DrawOp[],
+        options: ElementOptions & { mode?: 'canvas' | 'cairo'; renderStyle?: 'sketch' | 'architectural' } = {},
+    ): string[] {
+        const { mode, renderStyle, ...elementOptions } = options;
+        return YappyAPI.batch(() => {
+            const ctx = new DrawContext((subpaths, paint, style, mergeInto) => {
+                const fillColor = style.fillStyle;
+                const dashed = style.lineDash.some(n => n > 0);
+                if (mergeInto) {
+                    updateElement(mergeInto, paint === 'fill'
+                        ? { backgroundColor: fillColor, fillStyle: 'solid' }
+                        : { strokeColor: style.strokeStyle, strokeWidth: style.lineWidth, strokeStyle: dashed ? 'dashed' : 'solid', strokeLineCap: style.lineCap, strokeLineJoin: style.lineJoin }, false);
+                    return mergeInto;
+                }
+                const id = YappyAPI.createMultiPath(subpaths, {
+                    roughness: 0,
+                    ...elementOptions,
+                    opacity: Math.round(Math.min(1, Math.max(0, style.globalAlpha)) * 100),
+                    ...(paint === 'fill'
+                        ? { backgroundColor: fillColor, fillStyle: 'solid', strokeColor: 'transparent' }
+                        : { backgroundColor: 'transparent', strokeColor: style.strokeStyle, strokeWidth: style.lineWidth, strokeStyle: dashed ? 'dashed' : 'solid', strokeLineCap: style.lineCap, strokeLineJoin: style.lineJoin }),
+                });
+                if (id && renderStyle) updateElement(id, { renderStyle }, false);
+                return id;
+            }, mode === 'cairo');
+            if (typeof program === 'function') program(ctx);
+            else runDrawOps(ctx as unknown as Record<string, unknown>, program, DRAW_PROPS, DRAW_METHODS);
+            return ctx.ids;
+        });
     },
 
     // --- Generative shapes (Illustrator: Spiral / Arc / Rectangular & Polar Grid) ---
