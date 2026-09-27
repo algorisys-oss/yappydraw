@@ -1667,7 +1667,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 5852 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 FrameRegion:74 FrameRegionInfo:74 as:74 HarmonyType:84 PlayOptions:89 PlaySpec:89 PlayTargets:89 TexPart:90 AxesOptions:97 AxesSpec:97 PlotFn:97 VectorFieldOptions:97 VectorFn:97 DrawOp:99 TinyflyShape:103 DimensionMeasure:111 ElementOptions:185 normalizeElementType:425 plotRuns:456 addTinyflyClip:472 createTinyflyShape:495 DoodleOptions:522 normalizeDoodleSubpaths:533 doodleLayers:548 doodleRoleStyle:561 doodleKeyOf:582 doodleMembers:588 ElementType:832 Window:5841
+frontend/src/api.ts | typescript | 5909 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 FrameRegion:74 FrameRegionInfo:74 as:74 HarmonyType:86 PlayOptions:91 PlaySpec:91 PlayTargets:91 TexPart:93 AxesOptions:100 AxesSpec:100 PlotFn:100 VectorFieldOptions:100 VectorFn:100 DrawOp:102 TinyflyShape:106 DimensionMeasure:114 ElementOptions:188 normalizeElementType:428 plotRuns:459 addTinyflyClip:475 createTinyflyShape:498 DoodleOptions:525 normalizeDoodleSubpaths:536 doodleLayers:551 doodleRoleStyle:564 doodleKeyOf:585 doodleMembers:591 ElementType:835 Window:5898
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1668 | Component:1 App:105 moves:130 onPenMove:131 hidePen:135 handleKeyUp:174 handleKeyDown:184 as:873 the:924 handleFullscreenChange:1043 handleBeforeUnload:1049 handlePaste:1053 of:1167 isInternalPanelDrag:1170 handleGlobalDragEnter:1173 handleGlobalDragOver:1187 showDropFallbackPrompt:1205 cleanup:1235 outsideClick:1263 isImageFile:1275 first:1276 must:1289 extractDropData:1291 processExtractedDrop:1346 handleGlobalDrop:1467 handleDocumentDrop:1513
 frontend/src/assets/solid.svg | - | 1 |
@@ -1850,8 +1850,8 @@ frontend/src/components/rocket-settings-dialog.tsx | typescript | 182 | Componen
 frontend/src/components/ruler-overlay.tsx | typescript | 348 | niceStep:17 DragState:25 RulerOverlay:47 size:53 theme:56 palette:57 worldToScreenX:65 worldToScreenY:66 screenToWorldX:67 screenToWorldY:68 drawRuler:70 onWindowPointerMove:154 onWindowPointerUp:170 startCreate:183 startMove:196 onWindowPointerDown:219 onKeyDown:224 screen:282 selected:283
 frontend/src/components/save-dialog.css | - | 119 |
 frontend/src/components/save-dialog.tsx | typescript | 82 | Component:1 SaveDialogProps:6 SaveDialog:13 handleSave:29 handleKeyDown:36
-frontend/src/components/scene-timeline.css | - | 75 |
-frontend/src/components/scene-timeline.tsx | typescript | 194 | Component:1 clipColor:14 clipName:15 FigTrack:17 SceneTimeline:19 reorderStep:35 move:43 up:55 resizeStep:61 move:68 up:73 dur:88 pct:89 play:91 restart:92 seekFromEvent:95 onRulerDown:101 move:104 up:105 selectFigure:110 end:163 ids:164
+frontend/src/components/scene-timeline.css | - | 86 |
+frontend/src/components/scene-timeline.tsx | typescript | 253 | Component:1 FaceKey:5 clipColor:15 clipName:16 FigTrack:18 keyThumb:21 keyName:25 SceneTimeline:31 reorderStep:47 move:55 up:67 resizeStep:73 move:80 up:85 dragFaceKey:91 move:100 up:110 dur:125 pct:126 play:128 restart:129 seekFromEvent:132 onRulerDown:138 move:141 up:142 selectFigure:147 end:222 ids:223
 frontend/src/components/scroll-back-button.tsx | typescript | 136 | Component:8 ScrollBackButtonProps:12 ScrollBackButton:16 handleScrollBack:65
 frontend/src/components/settings-dialog.css | - | 350 |
 frontend/src/components/settings-dialog.tsx | typescript | 646 | Component:1 SettingsDialogProps:13 SettingsDialog:48 categories:54 languageOptions:61 handleKeyDown:103 defaults:114 CloudSettingsContent:574 handleSignIn:587 handleSignOut:599
@@ -1872,8 +1872,8 @@ frontend/src/components/state-panel.tsx | typescript | 110 | Component:1 StatePa
 frontend/src/components/status-bar.css | - | 292 |
 frontend/src/components/status-bar.tsx | typescript | 403 | Component:1 Hint:16 isMindmapNode:27 getContextHints:34 ToolLabelKey:94 isToolLabelKey:95 StatusBar:97 handleZoomIn:100 handleZoomOut:105 zoomToCenter:110 resetZoom:122 rotationDeg:127 toolLabel:129
 frontend/src/components/status-tool-group.tsx | typescript | 154 | Component:1 StatusToolGroup:48 handler:56 getActiveTool:66 handleToolClick:75 as:83 as:89 handleRightClick:97 toggleMenu:102 activeTool:109 isActive:110
-frontend/src/components/stick-face-controls.css | - | 62 |
-frontend/src/components/stick-face-controls.tsx | typescript | 256 | Component:15 TrouserStyle:21 FaceHairChoice:25 thumb:37 legThumb:47 topThumb:57 StickFaceControls:72 pref:73 apply:105
+frontend/src/components/stick-face-controls.css | - | 76 |
+frontend/src/components/stick-face-controls.tsx | typescript | 350 | Component:15 FaceOpts:20 TrouserStyle:23 TalkMode:27 FaceHairChoice:28 thumb:40 partThumb:49 legThumb:69 topThumb:79 StickFaceControls:94 pref:95 rigIds:129 keying:137 apply:140
 frontend/src/components/stick-figure-panel.css | - | 230 |
 frontend/src/components/stick-figure-panel.tsx | typescript | 391 | Component:1 StickAsset:16 ActiveCat:21 ActiveVariant:22 clipThumb:25 StickFigurePanel:37 byId:42 dropCentered:60 previewSvg:63 onGridKey:70 setOutline:83 setAccent:84 setHair:86 addToSymbols:89 dropAnimated:99 bakeSelected:100 writeSeq:104 addStep:105 editStep:106 removeStep:107 setSpeed:111 setLap:115 walkPath:124
 frontend/src/components/support-dialog.css | - | 151 |
@@ -1945,7 +1945,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 902 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 908 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2031,8 +2031,8 @@ frontend/src/help-docs/features/logo-toolkit.md | - | 357 |
 frontend/src/help-docs/features/masks-appearance-trace.md | - | 311 |
 frontend/src/help-docs/features/plotting.md | - | 200 |
 frontend/src/help-docs/features/qr-code.md | - | 124 |
-frontend/src/help-docs/features/stick-animation.md | - | 162 |
-frontend/src/help-docs/features/stick-library.md | - | 237 |
+frontend/src/help-docs/features/stick-animation.md | - | 184 |
+frontend/src/help-docs/features/stick-library.md | - | 242 |
 frontend/src/help-docs/features/symbols.md | - | 159 |
 frontend/src/help-docs/features/workspace.md | - | 845 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 581 |
@@ -2066,11 +2066,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1252 |
-frontend/src/i18n/locales/en.ts | typescript | 1284 | Dictionary:1284
-frontend/src/i18n/locales/es.ts | typescript | 1251 |
-frontend/src/i18n/locales/fr.ts | typescript | 1273 | de:108
-frontend/src/i18n/locales/ja.ts | typescript | 1251 |
+frontend/src/i18n/locales/de.ts | typescript | 1274 |
+frontend/src/i18n/locales/en.ts | typescript | 1306 | Dictionary:1306
+frontend/src/i18n/locales/es.ts | typescript | 1273 |
+frontend/src/i18n/locales/fr.ts | typescript | 1295 | de:108
+frontend/src/i18n/locales/ja.ts | typescript | 1273 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -2088,18 +2088,22 @@ frontend/src/library/elements/illustrations/index-data.ts | typescript | 11 |
 frontend/src/library/elements/illustrations/registry.test.ts | typescript | 97 | fetcher:72 fetcher:80 fetcher:87 fetcher:93
 frontend/src/library/elements/illustrations/registry.ts | typescript | 102 | Illustration:9 Row:16 score:40 searchIllustrations:53
 frontend/src/library/elements/search.ts | typescript | 280 | StockPhoto:15 AssetKind:24 AssetHit:26 insertOrigin:55 renderLucideSvg:67 ShapeDef:80 insertShapeEl:94 insertIconEl:103 insertIllustrationEl:109 iconHits:127 illustrationHits:168 shapeHits:179 applyTemplateHit:193 templateHits:214 collectOfflineHits:238 searchPhotoHits:243 SearchElementsOptions:252 searchElements:266
-frontend/src/library/stick-figures/anim/clips.ts | typescript | 466 | ClipPose:6 MotionClip:6 RigPose:6 footAt:22 runFootAt:154 poseAt:461
+frontend/src/library/stick-figures/anim/clips.ts | typescript | 491 | ClipPose:6 MotionClip:6 RigPose:6 footAt:40 runFootAt:177 poseAt:486
+frontend/src/library/stick-figures/anim/face-motion.test.ts | typescript | 81 | LiveFace:2
+frontend/src/library/stick-figures/anim/face-motion.ts | typescript | 120 | AccentStyle:11 BrowStyle:11 EyeStyle:11 FaceParts:11 FaceStyle:11 MouthStyle:11 FaceKey:15 TalkMode:25 LiveFace:27 hash:30 normalizeFaceKeys:36 faceKeyAt:54 blinkAt:70 talkMouthAt:86 liveFace:99
 frontend/src/library/stick-figures/anim/path-follow.ts | typescript | 104 | PathSample:8 isPathLike:18 sampleAnchors:27 localPolyline:47 elementPathSample:77 PathPoint:91 sampleAt:94
-frontend/src/library/stick-figures/anim/rig.ts | typescript | 283 | FaceOpts:13 FaceStyle:13 HairStyle:13 GarmentOpts:14 NeckStyle:14 ShoeStyle:14 TopStyle:14 TrouserStyle:14 JointId:16 Bone:21 Vec:30 StickRig:62 StickRigData:75 ClipPose:109 MotionClip:118 solveTwoBone:131 RigPose:142 lerpRigPose:150 evaluateRig:164 headAttach:215 legPolylines:228 upperPolylines:241 rigPoseToSvg:258
+frontend/src/library/stick-figures/anim/rig.ts | typescript | 298 | AccentStyle:13 BrowStyle:13 EyeStyle:13 FaceOpts:13 FaceStyle:13 HairStyle:13 MouthStyle:13 GarmentOpts:15 NeckStyle:15 ShoeStyle:15 TopStyle:15 TrouserStyle:15 JointId:17 Bone:22 Vec:31 StickRig:63 StickRigData:76 ClipPose:121 MotionClip:130 solveTwoBone:143 RigPose:154 lerpRigPose:162 evaluateRig:176 headAttach:230 legPolylines:243 upperPolylines:256 rigPoseToSvg:273
+frontend/src/library/stick-figures/anim/walk.test.ts | typescript | 87 | RigPose:2
 frontend/src/library/stick-figures/assets.ts | typescript | 47 | Variant:11 buildVariantAssets:22
 frontend/src/library/stick-figures/builder.ts | typescript | 208 | FaceOpts:20 FaceStyle:20 HairStyle:20 GarmentOpts:24 TrouserStyle:24 Variant:30 doc:52 subToPoints:63 curveLimb:70 Pose:131 figureInner:155 buildFigure:165
-frontend/src/library/stick-figures/face.ts | typescript | 504 | Prim:20 FaceStyle:24 HairStyle:28 FaceOpts:82 EyeKind:112 BrowKind:113 MouthKind:114 eyePrims:131 browPrims:157 mouthPrims:183 faceGeometry:214 capPath:247 hairGeometry:269 fringePrims:468 faceHairSvg:488 faceStateAttrs:501
+frontend/src/library/stick-figures/face.test.ts | typescript | 85 | geo:9
+frontend/src/library/stick-figures/face.ts | typescript | 765 | Prim:20 FaceStyle:24 HairStyle:30 EyeStyle:70 BrowStyle:72 MouthStyle:73 AccentStyle:76 FaceParts:114 mergeFaceParts:133 FaceOpts:180 FaceRecipe:218 faceRecipe:251 heartD:256 dropD:264 eyePrims:273 browPrims:335 mouthPrims:374 accentPrims:440 faceGeometry:465 capPath:504 hairGeometry:526 fringePrims:725 faceHairSvg:745 faceStateAttrs:758
 frontend/src/library/stick-figures/garments.test.ts | typescript | 172 |
 frontend/src/library/stick-figures/garments.ts | typescript | 523 | Prim:26 Pt:26 TrouserStyle:31 ShoeStyle:35 TopStyle:37 NeckStyle:40 GarmentOpts:102 subToPoints:124 legChains:140 distSeg:163 UpperBody:172 upperBody:191 skirtPrims:218 shoePrims:241 topPrims:337 neckPrims:385 garmentGeometry:465 garmentStateAttrs:507 garmentSvg:519
-frontend/src/library/stick-figures/index.ts | typescript | 988 | FaceOpts:19 FaceStyle:19 HairStyle:19 NeckStyle:24 ShoeStyle:24 TopStyle:24 TrouserStyle:24 StickPartRole:49 parseHex:53 roleFromFill:65 InsertStickOptions:76 prepareStickFigureElements:111 insertStickFigure:162 StickRecolor:182 recolorStickFigure:193 expandToFigures:223 placeOnHead:237 polylineOf:259 legsOfFigure:267 upperOfFigure:276 hipOfFigure:286 headOf:294 restyleStickFace:319 stickFaceStateOf:414 selectionHasStickFigure:420 toMonochromeSvg:433 FaceHairChoice:465 StickFaceState:482 readHeadState:513 mergeChoice:531 pathAnchorPoints:564 legsFromSvg:576 upperFromSvg:584 svgFragment:593 applyFaceHair:611 headStatesOf:667 linkFaceParts:685 InsertAnimatedOptions:708 insertAnimatedFigure:720 setAnimatedFigurePlaying:776 setAnimatedFigureFace:793 animatedFigureFaceState:809 rigState:816 setAnimatedFigureSpeed:838 setAnimatedFigureClip:850 attachFigureToPath:859 detachFigurePath:871 setFigurePathDuration:880 pathFollowCandidate:891 selectedFigurePath:900 setFigureSequence:906 getFigureSequence:915 flipAnimatedFigure:921 selectionHasAnimatedFigure:933 bakeAnimatedFigure:942
+frontend/src/library/stick-figures/index.ts | typescript | 1106 | FaceOpts:20 FaceParts:20 FaceStyle:20 HairStyle:20 AccentStyle:21 BrowStyle:21 EyeStyle:21 MouthStyle:21 NeckStyle:26 ShoeStyle:26 TopStyle:26 TrouserStyle:26 FaceKey:33 TalkMode:33 StickPartRole:53 parseHex:57 roleFromFill:69 InsertStickOptions:80 prepareStickFigureElements:120 insertStickFigure:174 StickRecolor:194 recolorStickFigure:205 expandToFigures:235 placeOnHead:249 polylineOf:271 legsOfFigure:279 upperOfFigure:288 hipOfFigure:298 headOf:306 restyleStickFace:331 stickFaceStateOf:426 selectionHasStickFigure:435 toMonochromeSvg:448 FaceHairChoice:480 StickFaceState:506 readHeadState:539 mergeChoice:558 pathAnchorPoints:593 legsFromSvg:605 upperFromSvg:613 svgFragment:622 applyFaceHair:640 headStatesOf:702 linkFaceParts:720 InsertAnimatedOptions:743 insertAnimatedFigure:760 setAnimatedFigurePlaying:821 setAnimatedFigureFace:838 animatedFigureFaceState:854 rigState:861 setAnimatedFigureSpeed:884 setAnimatedFigureClip:896 attachFigureToPath:905 detachFigurePath:917 setFigurePathDuration:926 pathFollowCandidate:937 selectedFigurePath:946 setFigureSequence:952 getFigureSequence:961 setFigureFaceKeys:971 getFigureFaceKeys:980 addFigureFaceKey:989 removeFigureFaceKey:998 moveFigureFaceKey:1005 patchRigs:1012 setFigureBlink:1022 setFigureTalk:1027 flipAnimatedFigure:1033 selectionHasAnimatedFigure:1045 bakeAnimatedFigure:1054
 frontend/src/library/stick-figures/poses.ts | typescript | 287 | Pose:9
-frontend/src/library/stick-figures/prefs.ts | typescript | 114 | FaceStyle:7 HairStyle:7 NeckStyle:11 ShoeStyle:11 TopStyle:11 TrouserStyle:11 load:20 save:24 toggleStickFavorite:32 pushStickRecent:41 StickColorMode:47 setStickColorMode:50 StickFacePref:62 normFacePref:88 setStickFacePref:111
-frontend/src/library/stick-figures/prims.ts | typescript | 132 | Prim:18 FacePrim:27 Pt:32 arcD:35 primToSvg:47 polyLength:69 resample:80 truncate:104 offsetOutline:117
+frontend/src/library/stick-figures/prefs.ts | typescript | 117 | FaceParts:7 FaceStyle:7 HairStyle:7 NeckStyle:11 ShoeStyle:11 TopStyle:11 TrouserStyle:11 load:20 save:24 toggleStickFavorite:32 pushStickRecent:41 StickColorMode:47 setStickColorMode:50 StickFacePref:62 normFacePref:89 setStickFacePref:113
+frontend/src/library/stick-figures/prims.ts | typescript | 134 | Prim:20 FacePrim:29 Pt:34 arcD:37 primToSvg:49 polyLength:71 resample:82 truncate:106 offsetOutline:119
 frontend/src/library/stick-figures/props.ts | typescript | 48 | pdoc:11 PropDef:15
 frontend/src/library/stick-figures/registry.ts | typescript | 63 | StickVariant:21 filterStickAssets:37 searchStickAssets:54
 frontend/src/library/stick-figures/scenes.ts | typescript | 67 | sdoc:9 SceneDef:13
@@ -2147,7 +2151,7 @@ frontend/src/shapes/renderers/rectangle-renderer.ts | typescript | 82 | CornerRa
 frontend/src/shapes/renderers/sketchnote-renderer.ts | typescript | 797 | SketchnoteRenderer:7{renderArchitectural:8 renderSketch:290}
 frontend/src/shapes/renderers/specialty-shape-renderer.ts | typescript | 371 | SpecialtyShapeRenderer:9{createShadedGradient:14 hasGradientFill:66 renderArchitectural:72 renderSketch:220 renderSketchGeometry:291 definePath:343 traceDrawStroke:359}
 frontend/src/shapes/renderers/status-renderer.ts | typescript | 285 | StatusRenderer:7{renderArchitectural:8 renderSketch:144 roundRect:204 drawSymbol:218 getTagPath:229 getPinPath:243 getStampPath:256 definePath:279}
-frontend/src/shapes/renderers/stick-rig-renderer.ts | typescript | 281 | JointId:16 RigPose:16 FacePrim:20 BoxPose:23 StickRigRenderer:45{computePose:47}
+frontend/src/shapes/renderers/stick-rig-renderer.ts | typescript | 297 | JointId:16 RigPose:16 FacePrim:21 BoxPose:24 StickRigRenderer:46{computePose:48}
 frontend/src/shapes/renderers/sticky-note-renderer.ts | typescript | 83 | StickyNoteRenderer:6{renderArchitectural:7 renderSketch:35 getPoints:46 definePath:67}
 frontend/src/shapes/renderers/symbol-instance-renderer.ts | typescript | 133 | SymbolInstanceRenderer:53{renderArchitectural:54 renderSketch:55 draw:57 definePath:132}
 frontend/src/shapes/renderers/table-renderer.ts | typescript | 1649 | MergedCellRegion:12 TableRenderer:20{renderArchitectural:21 renderSketch:26 renderTable:32}
@@ -2230,7 +2234,7 @@ frontend/src/templates/data/presentations/tech-architecture.ts | typescript | 96
 frontend/src/templates/registry.ts | typescript | 261 | isCategoryVisible:20 TemplateRegistry:28
 frontend/src/templates/template-preview.ts | typescript | 211 | Box:48 markFor:51 boundsOf:110 pageBackground:131 templatePreviewSvg:151 templatePreviewDataUrl:208
 frontend/src/templates/user-templates.ts | typescript | 124 | listUserTemplates:39 persist:43 saveCurrentAsTemplate:50 deleteUserTemplate:119
-frontend/src/types.ts | typescript | 1096 | DoodlePalette:5 DoodleStamp:8 ElementType:21 SymbolDef:47 Artboard:66 GraphicStyle:70 Swatch:78 PatternSwatch:82 ToolType:84 PathAnchor:92 PathSubpath:117 AppMode:122 FillStyle:123 PatternType:127 PatternFill:135 MeshGradient:159 StrokeStyle:171 FontFamily:175 TextAlign:176 VerticalAlign:177 ArrowHead:178 RichTextSpan:180 GradientStop:195 GradientType:200 BlendMode:202 Point:224 EntranceAnimation:231 ExitAnimation:267 PaintFill:293 PaintStroke:295 TransformEffect:305 Inflate3D:334 Extrude3D:357 Turntable:375 DrawingElement:395 TableCellSelection:995 TableCellFormatType:1003 TableCellFormat:1005 TableBorderStyle:1018 TableCellBorder:1020 TableCellBorders:1025 Layer:1032 GridSettings:1049 Guide:1079 ViewState:1085
+frontend/src/types.ts | typescript | 1107 | DoodlePalette:5 DoodleStamp:8 ElementType:21 SymbolDef:47 Artboard:66 GraphicStyle:70 Swatch:78 PatternSwatch:82 ToolType:84 PathAnchor:92 PathSubpath:117 AppMode:122 FillStyle:123 PatternType:127 PatternFill:135 MeshGradient:159 StrokeStyle:171 FontFamily:175 TextAlign:176 VerticalAlign:177 ArrowHead:178 RichTextSpan:180 GradientStop:195 GradientType:200 BlendMode:202 Point:224 EntranceAnimation:231 ExitAnimation:267 PaintFill:293 PaintStroke:295 TransformEffect:305 Inflate3D:334 Extrude3D:357 Turntable:375 DrawingElement:395 TableCellSelection:1006 TableCellFormatType:1014 TableCellFormat:1016 TableBorderStyle:1029 TableCellBorder:1031 TableCellBorders:1036 Layer:1043 GridSettings:1060 Guide:1090 ViewState:1096
 frontend/src/types/anim-types.test.ts | typescript | 51 |
 frontend/src/types/anim-types.ts | typescript | 143 | TweenKind:15 FrameAction:20 PegTransform:32 AnimKeyframe:42 AnimLayer:61 AnimAudioClip:71 AnimCameraKey:84 AnimMarker:96 AnimTimeline:103 OnionSettings:121
 frontend/src/types/brand-types.ts | typescript | 41 | BrandColors:5 BrandFonts:13 BrandKit:20
@@ -2263,7 +2267,7 @@ frontend/src/utils/animation/orchestrator.ts | typescript | 59 | ElementAnimatio
 frontend/src/utils/animation/pixel-effect-animator.ts | typescript | 206 | PixelEffectAnimationConfig:12 animatePixelEffect:30 stopPixelEffect:99
 frontend/src/utils/animation/rough-stroke-trace.test.ts | typescript | 260 | drawable:6 mockRenderer:170
 frontend/src/utils/animation/rough-stroke-trace.ts | typescript | 332 | TracedPath:27 createCaptureRc:58 createNullPaintRenderer:91 sampleCubic:110 polylineLength:129 flattenDrawables:145 Box:190 bboxOf:192 groupPasses:219 strokeTraced:264 tracedFor:312 clearStrokeTraceCache:330
-frontend/src/utils/animation/scene-clock.ts | typescript | 112 | figureTrackSeconds:25 computeSceneDuration:40 withExportTime:59 sceneTime:76 startScenePlayback:87
+frontend/src/utils/animation/scene-clock.ts | typescript | 123 | figureTrackSeconds:25 faceKeysSeconds:40 computeSceneDuration:51 withExportTime:70 sceneTime:87 startScenePlayback:98
 frontend/src/utils/animation/scene-script.ts | typescript | 152 | EasingName:17 checkEasing:25 PlayTargets:35 PlayOptions:37 PlaySpec:53 SceneHost:61{getProperty:62 addKeyframe:63 commit:65 clearComposition:66} SceneScript:69{constructor:74 play:84 playAll:102 playLagged:117 wait:131 at:137 seek:142 reset:148}
 frontend/src/utils/animation/sequence-animator.ts | typescript | 348 | ElementAnimationConfig:1 ElementAnimationTarget:1 SequenceAnimator:10
 frontend/src/utils/animation/slide-build-manager.ts | typescript | 237 | BuildStep:6 SlideBuildManager:15
@@ -2828,8 +2832,8 @@ tests/social-export.spec.ts | typescript | 133 | Page:1 Window:6 exportAndSample
 tests/solid-block.spec.ts | typescript | 38 |
 tests/spacing-guides.spec.ts | typescript | 106 | w2v:16
 tests/stick-anim-demo-check.spec.ts | typescript | 46 | Window:6
-tests/stick-animation-speed.spec.ts | typescript | 143 | Window:10
-tests/stick-face.spec.ts | typescript | 392 | Window:13
+tests/stick-animation-speed.spec.ts | typescript | 140 | Window:10 Region:20
+tests/stick-face.spec.ts | typescript | 620 | Window:13
 tests/stick-figure-drop-position.spec.ts | typescript | 74 | Window:16 dropAndMeasure:32
 tests/stick-rig-smoke.spec.ts | typescript | 86 | Window:6
 tests/storage-failure.spec.ts | typescript | 102 | stubIndexedDB:26

@@ -18,7 +18,7 @@ Twenty built-in motion clips, each loops smoothly.
 **Movement & expression**
 
 - **Idle** — a subtle breathing stand.
-- **Walk** / **Run** — foot-planted cycles (no skating); Run leans in and pumps its arms.
+- **Walk** / **Run** — foot-planted cycles: the planted foot stays on the ground while the body rises over it, the back foot peels up and swings through, and the arms swing opposite the legs. Knees bend the right way whichever way the figure faces. Run leans in and pumps its arms.
 - **Wave** — one arm raised, hand waving.
 - **Talk** — hands gesturing near the chest.
 - **Point** — an arm extended in the facing direction.
@@ -110,20 +110,42 @@ Y.setFigurePathDuration(8, a);                    // 8s for one lap of the route
 // Faces & hair (same call as for dropped library figures)
 Y.setStickFace({ face: 'excited', hair: 'spiky' }, [a]);
 Y.insertAnimatedFigure('walk', { face: 'happy', hair: 'long', headFill: true });
+
+// Faces over time
+Y.addFigureExpression(2, { face: 'surprised' }, a);   // at 2s on the Scene Timeline
+Y.addFigureExpression(3.5, { face: 'happy', accent: 'blush' }, a);
+Y.getFigureExpressions(a);                             // [{ t: 2, face: 'surprised' }, …]
+Y.setFigureBlink(false, [a]);                          // new figures blink; turn it off
+Y.setFigureTalking('on', [b]);                         // 'auto' (during Talk) | 'on' | 'off'
 ```
 
 :::tip
-API: `listStickFigureClips()`, `insertAnimatedFigure(clip, opts?)`, ` setAnimatedFigureClip(clip, ids?)`, `setAnimatedFigurePlaying(playing?, ids?)`, ` flipAnimatedFigure(ids?)`, `bakeAnimatedFigure(id?)`, ` setAnimatedFigureSpeed(speed, ids?)`, `setFigurePathDuration(dur, id?)`, ` setStickFace(opts, ids?)`, `getStickFace(ids?)`.
+API: `listStickFigureClips()`, `insertAnimatedFigure(clip, opts?)`, `addFigureExpression(t, choice, id?)`, `setFigureExpressions(keys, id?)`, `getFigureExpressions(id?)`, `removeFigureExpression(index, id?)`, `setFigureBlink(on?, ids?)`, `setFigureTalking(mode, ids?)`, ` setAnimatedFigureClip(clip, ids?)`, `setAnimatedFigurePlaying(playing?, ids?)`, ` flipAnimatedFigure(ids?)`, `bakeAnimatedFigure(id?)`, ` setAnimatedFigureSpeed(speed, ids?)`, `setFigurePathDuration(dur, id?)`, ` setStickFace(opts, ids?)`, `getStickFace(ids?)`.
 :::
 
 ## Give it a face
 
-An animated figure wears an expression and hair just like a library figure. Select it and use the **Face & hair** section (bottom of the Stick Figures panel, and in **Properties**) to pick from 12 expressions and 10 hair styles.
+An animated figure wears an expression and hair just like a library figure. Select it and use the **Face & hair** section (bottom of the Stick Figures panel, and in **Properties**) to pick from 26 expressions and 18 hair styles, or set the eyes, brows, mouth and extras (blush, tears, sweat, Zzz) one at a time under **Fine-tune face**.
 
 Nothing has to be regenerated — the face is drawn from the head's live position every frame, so it keeps up with the motion, follows the figure when you **Flip** it, and comes along when you **Bake** the frame to editable paths.
 
+## Faces that change over time
+
+A face doesn't have to hold still for the whole animation.
+
+- **Blink** — new figures blink every few seconds while they play, each on its own rhythm, so a crowd never blinks in unison. Only open eyes blink (hearts, crosses and closed eyes don't). Turn it off with the **Blink** checkbox in Face & hair. Figures made before blinking existed don't blink until you tick it.
+- **Talking** — the mouth opens and closes in syllables, with a pause between phrases. **Auto** (the default) talks while the figure plays the *Talk* motion. **Always** talks during any motion, for example walking and chatting. **Off** keeps the mouth still.
+- **Expression changes** — make a figure look *neutral*, then *surprised* at 2 s, then *laughing* at 3.5 s:
+  1. Open the **Scene Timeline** and select the figure.
+  2. In Face & hair, tick **Set at playhead**.
+  3. Drag the playhead to a moment and click an expression (or a Fine-tune part). That adds an expression change there instead of changing the whole animation. Repeat for each moment.
+
+  Each change shows as a small face on the figure's **face** row in the timeline. Drag it to retime it, or double-click it to remove it. The face switches at each change and holds until the next; before the first one the figure wears its own face. Untick **Set at playhead** to go back to changing the figure's face for the whole animation.
+
+Expression changes follow the scene clock, so they play, scrub, loop and export in step with the motion. The scene is at least long enough to show the last change for a second. **Bake** takes the expression in effect at the playhead, without a blink or a half-open mouth.
+
 :::tip
-Chain it with a sequence for simple acting: Walk with a *neutral* face, then switch to *surprised* from a script at the moment something happens.
+The face switches instantly, as in hand-drawn animation. A frown can't morph smoothly into an open "O", so there is no tween between expressions.
 :::
 
 ## Direct the whole scene (Scene Timeline)

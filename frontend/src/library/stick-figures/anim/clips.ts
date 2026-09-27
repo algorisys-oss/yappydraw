@@ -8,47 +8,69 @@ import { defaultRig, evaluateRig, type ClipPose, type MotionClip, type RigPose }
 const TAU = Math.PI * 2;
 
 // ─── Walk (side profile, foot-planting) ─────────────────────────────────────
-const STRIDE = 26;     // ± foot travel in x under the hip
-/** Ground distance the body advances per walk cycle (rig units) — for path stride-sync. */
-export const WALK_STRIDE = STRIDE * 2;
-const LIFT = 22;       // swing-foot lift height
-const GROUND_Y = 76;   // foot depth below the pelvis at rest
+//
+// A walk is an inverted pendulum, not a swing: the body vaults over a nearly straight
+// planted leg, rising to its highest as the legs pass and dropping at each foot-strike.
+// What sells it:
+//   • legs nearly straight at contact and mid-stance (GROUND_Y close to the 84 leg length);
+//   • the planted foot stays on the ground — foot targets are PELVIS-relative, so the
+//     hip bob is subtracted back out of them;
+//   • the swing foot peels up BEHIND the body, then reaches forward low to land. A
+//     symmetric arc peaking under the hip reads as a high-stepping leg swing;
+//   • arms oppose the legs and are furthest out AT foot contact, with the elbow bending
+//     more on the forward swing.
+const STRIDE = 24;     // ± foot travel in x under the hip
 const STANCE = 0.6;    // fraction of the cycle a foot is planted
-const HIP_BOB = 5;     // pelvis vertical bob amplitude
-const ARM_SWING = 0.5; // shoulder swing amplitude (rad)
-const ELBOW = -0.4;    // slight elbow bend — forearm leads FORWARD (negative = hand in front)
+/**
+ * Ground the body covers per walk cycle (rig units), for path stride-sync. A planted foot
+ * slides 2·STRIDE in STANCE of a cycle, so the ground moves 2·STRIDE / STANCE per cycle.
+ * It used to be 2·STRIDE, which made a path-following figure's feet skate forward.
+ */
+export const WALK_STRIDE = (STRIDE * 2) / STANCE;
+const LIFT = 13;       // swing-foot clearance
+/** Foot depth below the pelvis at rest (leg length 84). Also the squat's ground line. */
+export const GROUND_Y = 80;
+const HIP_BOB = 3;     // pelvis rise at the passing position
+const ARM_SWING = 0.42; // shoulder swing amplitude (rad)
 
-/** Foot target (pelvis-relative) for a leg at its own phase q. */
-function footAt(q: number): { x: number; y: number } {
+/** Pelvis rise (negative = up): highest as the legs pass, lowest just after each strike. */
+const hipBob = (p: number) => -HIP_BOB * Math.abs(Math.sin(TAU * (p - 0.05)));
+
+/** Foot target (pelvis-relative) for a leg at its own phase q, with the pelvis at `bob`. */
+function footAt(q: number, bob: number): { x: number; y: number } {
     q = ((q % 1) + 1) % 1;
+    const ground = GROUND_Y - bob;   // keep the planted foot where the ground is
     if (q < STANCE) {
         // Planted: slides from front to back at a constant rate (treadmill).
         const u = q / STANCE;
-        return { x: STRIDE - 2 * STRIDE * u, y: GROUND_Y };
+        return { x: STRIDE - 2 * STRIDE * u, y: ground };
     }
-    // Swing: arcs from back to front, lifting.
+    // Swing: slow to leave, quick through the middle, easing into the landing.
     const u = (q - STANCE) / (1 - STANCE);
-    return { x: -STRIDE + 2 * STRIDE * u, y: GROUND_Y - LIFT * Math.sin(Math.PI * u) };
+    const ease = u * u * (3 - 2 * u);
+    // Lift peaks early (u ≈ 0.35, still behind the hip) and is gone by the strike.
+    const lift = Math.sin(Math.PI * Math.pow(u, 0.65));
+    return { x: -STRIDE + 2 * STRIDE * ease, y: ground - LIFT * lift };
 }
 
 export const walkClip: MotionClip = {
     id: 'walk', name: 'Walk', duration: 1.0, loop: true,
     sample(p: number): ClipPose {
-        const footL = footAt(p);
-        const footR = footAt(p + 0.5);
-        // Hip is lowest around each foot-strike (twice per cycle).
-        const bob = -HIP_BOB * Math.abs(Math.sin(TAU * p));
-        // Arms counter-swing the legs (left arm with right leg).
-        const armL = ARM_SWING * Math.sin(TAU * (p + 0.5));
-        const armR = ARM_SWING * Math.sin(TAU * p);
+        const bob = hipBob(p);
+        // p = 0: left foot lands in front, so the left arm is back and the right forward.
+        // Positive = back (see the offset convention under "Daily actions").
+        const armL = ARM_SWING * Math.cos(TAU * p);
+        const armR = -armL;
+        // The elbow folds as the arm comes forward and hangs nearly straight behind.
+        const elbow = (arm: number) => -0.12 - 0.5 * Math.max(0, -arm / ARM_SWING);
         return {
             root: { x: 0, y: bob },
             angles: {
                 shoulder: 0.06,                    // slight forward lean
-                upperArmL: armL, foreArmL: ELBOW,
-                upperArmR: armR, foreArmR: ELBOW,
+                upperArmL: armL, foreArmL: elbow(armL),
+                upperArmR: armR, foreArmR: elbow(armR),
             },
-            footTargets: { footL, footR },
+            footTargets: { footL: footAt(p, bob), footR: footAt(p + 0.5, bob) },
         };
     },
 };
@@ -151,26 +173,29 @@ export const jumpClip: MotionClip = {
 
 // ─── Run (faster, longer stride, forward lean, arms pumping) ────────────────
 const R_STRIDE = 36, R_LIFT = 30, R_GROUND = 72, R_STANCE = 0.42;
-function runFootAt(q: number): { x: number; y: number } {
+/** Like the walk's `footAt`: pelvis-relative, so `bob` is taken back out of the target. */
+function runFootAt(q: number, bob: number): { x: number; y: number } {
     q = ((q % 1) + 1) % 1;
-    if (q < R_STANCE) { const u = q / R_STANCE; return { x: R_STRIDE - 2 * R_STRIDE * u, y: R_GROUND }; }
+    if (q < R_STANCE) { const u = q / R_STANCE; return { x: R_STRIDE - 2 * R_STRIDE * u, y: R_GROUND - bob }; }
     const u = (q - R_STANCE) / (1 - R_STANCE);
-    return { x: -R_STRIDE + 2 * R_STRIDE * u, y: R_GROUND - R_LIFT * Math.sin(Math.PI * u) };
+    return { x: -R_STRIDE + 2 * R_STRIDE * u, y: R_GROUND - bob - R_LIFT * Math.sin(Math.PI * u) };
 }
 export const runClip: MotionClip = {
     id: 'run', name: 'Run', duration: 0.62, loop: true,
     sample(p: number): ClipPose {
-        const armL = 0.85 * Math.sin(TAU * (p + 0.5));
-        const armR = 0.85 * Math.sin(TAU * p);
+        // Arms oppose the legs and peak at foot contact (p = 0: left foot in front).
+        const armL = 0.85 * Math.cos(TAU * p);
+        const armR = -armL;
+        const bob = -8 * Math.abs(Math.sin(TAU * p));
         return {
-            root: { x: 0, y: -8 * Math.abs(Math.sin(TAU * p)) },
+            root: { x: 0, y: bob },
             angles: {
                 shoulder: 0.3,                        // forward lean
                 upperArmL: armL, foreArmL: -0.95,     // bent, pumping
                 upperArmR: armR, foreArmR: -0.95,
                 head: 0.08,
             },
-            footTargets: { footL: runFootAt(p), footR: runFootAt(p + 0.5) },
+            footTargets: { footL: runFootAt(p, bob), footR: runFootAt(p + 0.5, bob) },
         };
     },
 };

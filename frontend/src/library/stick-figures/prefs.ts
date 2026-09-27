@@ -4,7 +4,7 @@
  * Backed by localStorage and exposed as Solid signals so the panel reacts.
  */
 import { createSignal } from 'solid-js';
-import { asFaceStyle, asHairStyle, DEFAULT_HAIR_COLOR, type FaceStyle, type HairStyle } from './face';
+import { asFaceStyle, asHairStyle, DEFAULT_HAIR_COLOR, AUTO_PARTS, facePartsOf, mergeFaceParts, type FaceStyle, type HairStyle, type FaceParts } from './face';
 import {
     asTrouserStyle, asShoeStyle, asTopStyle, asNeckStyle,
     DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR, DEFAULT_TOP_COLOR, DEFAULT_NECK_COLOR,
@@ -59,7 +59,7 @@ export function setStickColorMode(mode: StickColorMode): void {
  * library keeps its per-pose expressions and per-variant hairstyles until the
  * user explicitly picks one.
  */
-export interface StickFacePref {
+export interface StickFacePref extends FaceParts {
     face: FaceStyle | 'auto';
     hair: HairStyle | 'auto';
     hairColor: string;
@@ -82,6 +82,7 @@ const FACE_DEFAULT: StickFacePref = {
     shoes: 'auto', shoeColor: DEFAULT_SHOE_COLOR,
     top: 'auto', topColor: DEFAULT_TOP_COLOR,
     neck: 'auto', neckColor: DEFAULT_NECK_COLOR,
+    ...AUTO_PARTS,
 };
 
 /** Normalise a persisted (possibly stale) preference blob. */
@@ -100,6 +101,7 @@ function normFacePref(v: Partial<StickFacePref> | null): StickFacePref {
         topColor: typeof v.topColor === 'string' ? v.topColor : DEFAULT_TOP_COLOR,
         neck: v.neck === 'auto' || v.neck === undefined ? 'auto' : asNeckStyle(v.neck),
         neckColor: typeof v.neckColor === 'string' ? v.neckColor : DEFAULT_NECK_COLOR,
+        ...facePartsOf(v),
     };
 }
 
@@ -109,6 +111,7 @@ export const stickFacePref = facePref;
 
 /** Patch the drop-time face/hair preference. */
 export function setStickFacePref(patch: Partial<StickFacePref>): void {
-    const next = normFacePref({ ...facePref(), ...patch });
+    const cur = facePref();
+    const next = normFacePref({ ...cur, ...patch, ...mergeFaceParts(cur, patch) });
     setFacePrefSignal(next); save(FACE_KEY, next);
 }

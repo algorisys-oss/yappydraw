@@ -2,7 +2,8 @@ import { type Component, For, Show, createMemo, createEffect, on } from 'solid-j
 import { store, setStore, toggleSceneTimeline } from '../store/app-store';
 import { isPagedDocType } from '../types/slide-types';
 import { tinyflyClipEnd } from '../utils/animation/tinyfly-clips';
-import { getClip, CLIP_LIST, getFigureSequence, setFigureSequence } from '../library/stick-figures';
+import { getClip, CLIP_LIST, getFigureSequence, setFigureSequence, getFigureFaceKeys, moveFigureFaceKey, removeFigureFaceKey, faceHairSvg, FACE_STYLES, type FaceKey } from '../library/stick-figures';
+import { t } from '../i18n';
 import { Play, Pause, RotateCcw, Repeat, X, Film, MonitorPlay } from 'lucide-solid';
 import './scene-timeline.css';
 
@@ -14,7 +15,18 @@ const CLIP_COLOR: Record<string, string> = {
 const clipColor = (id: string) => CLIP_COLOR[id] || '#6366f1';
 const clipName = (id: string) => CLIP_LIST.find(c => c.id === id)?.name || id;
 
-interface FigTrack { id: string; label: string; steps: { clip: string; dur: number }[]; total: number; editable: boolean; }
+interface FigTrack { id: string; label: string; steps: { clip: string; dur: number }[]; total: number; editable: boolean; faceKeys: FaceKey[]; }
+
+/** A small head wearing a key's expression, for the timeline marker. */
+const keyThumb = (k: FaceKey): string =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor"`
+    + ` stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="50" r="40"/>`
+    + faceHairSvg(50, 50, 40, { face: k.face ?? 'neutral', eyes: k.eyes, brows: k.brows, mouth: k.mouth, accent: k.accent }) + `</svg>`;
+const keyName = (k: FaceKey): string => {
+    const parts = (['eyes', 'brows', 'mouth', 'accent'] as const).filter(p => k[p] && k[p] !== 'auto').map(p => `${p}: ${k[p]}`);
+    const face = k.face ? FACE_STYLES.find(f => f.id === k.face)?.name ?? k.face : t('stickFace.ownFace');
+    return parts.length ? `${face} (${parts.join(', ')})` : face;
+};
 
 const SceneTimeline: Component = () => {
     /** Animated figures on the canvas → track rows. */
@@ -27,7 +39,7 @@ const SceneTimeline: Component = () => {
             else if (r.path) steps = [{ clip: 'walk', dur: r.path.dur || 4 }];
             else steps = [{ clip: r.clip, dur: getClip(r.clip).duration }];
             const total = steps.reduce((s, a) => s + Math.max(0.1, a.dur), 0);
-            return { id: e.id, label: `Figure ${i + 1}`, steps, total, editable: !!r.sequence?.length };
+            return { id: e.id, label: `Figure ${i + 1}`, steps, total, editable: !!r.sequence?.length, faceKeys: getFigureFaceKeys(e.id) };
         });
     });
 
@@ -70,6 +82,31 @@ const SceneTimeline: Component = () => {
             const cur = getFigureSequence(figureId);
             setFigureSequence(figureId, cur.map((s, i) => i === stepIndex ? { ...s, dur: nd } : s));
         };
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+    };
+
+    /** Drag an expression key along its row to retime it (snap 0.1 s). */
+    const dragFaceKey = (e: PointerEvent, figureId: string, index: number) => {
+        e.stopPropagation(); e.preventDefault();
+        const rowEl = (e.currentTarget as HTMLElement).closest('.st-row') as HTMLElement;
+        if (!rowEl) return;
+        const rect = rowEl.getBoundingClientRect();
+        const pps = rect.width / Math.max(0.5, store.storyDuration);
+        const startX = e.clientX;
+        const startT = getFigureFaceKeys(figureId)[index]?.t ?? 0;
+        let moved = false;
+        const move = (ev: PointerEvent) => {
+            if (!moved && Math.abs(ev.clientX - startX) < 3) return;
+            moved = true;
+            const t = Math.max(0, Math.round((startT + (ev.clientX - startX) / pps) * 10) / 10);
+            // Keys re-sort by time, so find this one again by its old time before each move.
+            const keys = getFigureFaceKeys(figureId);
+            const i = keys.findIndex(k => 1e-6 > Math.abs(k.t - lastT));
+            if (i >= 0 && t !== lastT) { moveFigureFaceKey(figureId, i, t); lastT = t; }
+        };
+        let lastT = startT;
         const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', up);
@@ -149,6 +186,28 @@ const SceneTimeline: Component = () => {
                                                             <div class="st-resize" onPointerDown={(e) => resizeStep(e, tk.id, i())} />
                                                         </Show>
                                                     </div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </div>
+                                )}
+                            </For>
+                            {/* Expression keys: one Face row per figure that has any. The face
+                                switches at each marker and holds until the next. */}
+                            <For each={tracks().filter(tk => tk.faceKeys.length > 0)}>
+                                {(tk) => (
+                                    <div class="st-track st-faces">
+                                        <button class={`st-label ${store.selection.includes(tk.id) ? 'sel' : ''}`}
+                                            title={t('stickFace.faceRowHint')}
+                                            onClick={() => selectFigure(tk.id)}>{t('stickFace.faceRow', { name: tk.label })}</button>
+                                        <div class="st-row">
+                                            <For each={tk.faceKeys}>
+                                                {(k, i) => (
+                                                    <div class="st-facekey" style={{ left: pct(k.t) }}
+                                                        title={t('stickFace.faceKeyHint', { time: k.t.toFixed(1), name: keyName(k) })}
+                                                        onPointerDown={(e) => dragFaceKey(e, tk.id, i())}
+                                                        onDblClick={() => removeFigureFaceKey(tk.id, i())}
+                                                        innerHTML={keyThumb(k)} />
                                                 )}
                                             </For>
                                         </div>

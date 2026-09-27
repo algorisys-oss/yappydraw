@@ -482,6 +482,17 @@ export interface DrawingElement {
         hairColor?: string;
         /** Fill the head white so the face reads over busy artwork. */
         headFill?: boolean;
+        /** Face-part overrides on top of `face`; 'auto' = the expression's own. */
+        eyes?: string;
+        brows?: string;
+        mouth?: string;
+        accent?: string;
+        /** Blink now and then while playing (library/stick-figures/anim/face-motion.ts). */
+        blink?: boolean;
+        /** Talking mouth: 'auto' (during the Talk clip), 'on' or 'off'. */
+        talk?: 'auto' | 'on' | 'off';
+        /** Expression changes at scene times (seconds); steps, not tweens. */
+        faceKeys?: { t: number; face?: string; eyes?: string; brows?: string; mouth?: string; accent?: string }[];
         /** Trousers drawn under the leg bones (see library/stick-figures/garments.ts). */
         trousers?: string;
         trouserColor?: string;

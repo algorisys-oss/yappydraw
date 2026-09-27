@@ -13,15 +13,17 @@
 
 /**
  * A mark in *absolute* coordinates. `w` is an absolute stroke width; `fill` present
- * means the mark is filled as well as stroked.
+ * means the mark is filled as well as stroked. `fillOnly` drops the stroke: a blush is
+ * a soft patch of colour, and without a stroke an outline recolour (which rewrites
+ * every stroked part) leaves it pink instead of turning it dark.
  */
 export type Prim =
     | { k: 'dot'; x: number; y: number; r: number }
     | { k: 'ring'; x: number; y: number; r: number; w: number; fill?: string }
-    | { k: 'oval'; x: number; y: number; rx: number; ry: number; w: number; fill?: string }
+    | { k: 'oval'; x: number; y: number; rx: number; ry: number; w: number; fill?: string; fillOnly?: boolean }
     | { k: 'arc'; x: number; y: number; r: number; a0: number; a1: number; w: number }
     | { k: 'poly'; pts: [number, number][]; w: number }
-    | { k: 'path'; d: string; w: number; fill?: string };
+    | { k: 'path'; d: string; w: number; fill?: string; fillOnly?: boolean };
 
 /** Back-compat alias — faces were the first consumer and named the type. */
 export type FacePrim = Prim;
@@ -53,13 +55,13 @@ export function primToSvg(p: Prim): string {
         case 'ring':
             return `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="${r1(p.r)}" stroke-width="${r1(p.w)}"${p.fill ? ` fill="${p.fill}"` : ''}/>`;
         case 'oval':
-            return `<ellipse cx="${r1(p.x)}" cy="${r1(p.y)}" rx="${r1(p.rx)}" ry="${r1(p.ry)}" stroke-width="${r1(p.w)}"${p.fill ? ` fill="${p.fill}"` : ''}/>`;
+            return `<ellipse cx="${r1(p.x)}" cy="${r1(p.y)}" rx="${r1(p.rx)}" ry="${r1(p.ry)}"${p.fillOnly ? ' stroke="none"' : ` stroke-width="${r1(p.w)}"`}${p.fill ? ` fill="${p.fill}"` : ''}/>`;
         case 'arc':
             return `<path d="${arcD(p.x, p.y, p.r, p.a0, p.a1)}" stroke-width="${r1(p.w)}"/>`;
         case 'poly':
             return `<path d="M${p.pts.map(([x, y]) => `${r1(x)} ${r1(y)}`).join('L')}" stroke-width="${r1(p.w)}"/>`;
         case 'path':
-            return `<path d="${p.d}" stroke-width="${r1(p.w)}"${p.fill ? ` fill="${p.fill}"` : ''}/>`;
+            return `<path d="${p.d}"${p.fillOnly ? ' stroke="none"' : ` stroke-width="${r1(p.w)}"`}${p.fill ? ` fill="${p.fill}"` : ''}/>`;
     }
 }
 

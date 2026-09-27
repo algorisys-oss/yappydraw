@@ -10,7 +10,8 @@
  * y pointing DOWN. Angles are radians measured from +x; `dir(π/2)` points down.
  */
 
-import { faceHairSvg, faceStateAttrs, type FaceOpts, type FaceStyle, type HairStyle } from '../face';
+import { faceHairSvg, faceStateAttrs, type FaceOpts, type FaceStyle, type HairStyle, type EyeStyle, type BrowStyle, type MouthStyle, type AccentStyle } from '../face';
+import type { FaceKey, TalkMode } from './face-motion';
 import { garmentSvg, garmentStateAttrs, type GarmentOpts, type TrouserStyle, type ShoeStyle, type TopStyle, type NeckStyle } from '../garments';
 
 export type JointId =
@@ -91,6 +92,17 @@ export interface StickRigData {
     hairColor?: string;
     /** Fill the head white so the face reads over busy artwork. */
     headFill?: boolean;
+    /** Part overrides on top of `face`; omitted / `'auto'` = the expression's own. */
+    eyes?: EyeStyle | 'auto';
+    brows?: BrowStyle | 'auto';
+    mouth?: MouthStyle | 'auto';
+    accent?: AccentStyle | 'auto';
+    /** Blink now and then while playing (see ./face-motion.ts). New figures: on. */
+    blink?: boolean;
+    /** Move the mouth as if talking. Default `auto`: while the Talk motion plays. */
+    talk?: TalkMode;
+    /** Expression changes at scene times, in seconds. Steps, not tweens. */
+    faceKeys?: FaceKey[];
     /** Trousers drawn under the leg bones (see ../garments.ts). */
     trousers?: TrouserStyle;
     trouserColor?: string;
@@ -198,9 +210,12 @@ export function evaluateRig(rig: StickRig, pose: ClipPose): RigPose {
         localPos.set(thigh, knee);   // 'thigh' joint id holds the KNEE position
         localPos.set(shin, target);  // 'shin' joint id holds the FOOT position
     };
-    // Knee bends forward (+x) so the shin can swing back — flip with facing.
-    legIK('thighL', 'shinL', 'footL', rig.facing === 1 ? -1 : 1);
-    legIK('thighR', 'shinR', 'footR', rig.facing === 1 ? -1 : 1);
+    // Knee bends forward (+x) so the shin can swing back. This is rig-LOCAL space, which
+    // `toWorld` mirrors for facing — so the bend must NOT also flip with facing. It used to,
+    // and a left-facing figure (any figure walking leftward along a path) had its knees
+    // bent backwards.
+    legIK('thighL', 'shinL', 'footL', -1);
+    legIK('thighR', 'shinR', 'footR', -1);
 
     const joints = new Map<JointId, Vec>();
     for (const [id, p] of localPos) joints.set(id, toWorld(p));

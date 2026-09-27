@@ -16,7 +16,9 @@ import { getStickAsset } from './registry';
 import { stickColorMode, pushStickRecent, stickFacePref } from './prefs';
 import {
     faceHairSvg, asFaceStyle, asHairStyle, DEFAULT_HAIR_COLOR,
-    type FaceOpts, type FaceStyle, type HairStyle,
+    AUTO_PARTS, facePartsOf, mergeFaceParts,
+    type FaceOpts, type FaceStyle, type HairStyle, type FaceParts,
+    type EyeStyle, type BrowStyle, type MouthStyle, type AccentStyle,
 } from './face';
 import {
     garmentSvg, asTrouserStyle, asShoeStyle, asTopStyle, asNeckStyle,
@@ -28,6 +30,7 @@ export * from './prims';
 import { defaultRig, rigPoseToSvg, RIG_W, RIG_H } from './anim/rig';
 import { getClip, poseAt } from './anim/clips';
 import { isPathLike } from './anim/path-follow';
+import { normalizeFaceKeys, liveFace, type FaceKey, type TalkMode } from './anim/face-motion';
 import type { DrawingElement } from '../../types';
 
 export * from './types';
@@ -37,6 +40,7 @@ export * from './face';
 export { STICK_ASSETS } from './assets';
 export { CLIPS, CLIP_LIST, getClip, poseAt } from './anim/clips';
 export { rigPoseToSvg, defaultRig, evaluateRig, RIG_W, RIG_H } from './anim/rig';
+export { normalizeFaceKeys, faceKeyAt, type FaceKey, type TalkMode } from './anim/face-motion';
 
 /** Default on-canvas width for a dropped figure (world units). Height ≈ 1.86×
  *  this (viewBox 140×260), so ~110 lands a figure at roughly 110×204. */
@@ -83,6 +87,11 @@ export interface InsertStickOptions {
     monochrome?: boolean;
     /** Face / hair overrides. Omit to use the panel's current face preference. */
     face?: FaceStyle | 'auto';
+    /** Part overrides on top of `face` (see FaceParts). */
+    eyes?: EyeStyle | 'auto';
+    brows?: BrowStyle | 'auto';
+    mouth?: MouthStyle | 'auto';
+    accent?: AccentStyle | 'auto';
     hair?: HairStyle | 'auto';
     hairColor?: string;
     headFill?: boolean;
@@ -114,7 +123,10 @@ export function prepareStickFigureElements(assetId: string, opts: InsertStickOpt
 
     // Face / hair: explicit options win, otherwise the panel's current preference.
     const pref = stickFacePref();
+    // An explicit expression brings its own parts unless parts are given with it.
+    const parts = opts.face !== undefined ? mergeFaceParts(AUTO_PARTS, opts) : mergeFaceParts(pref, opts);
     const svg = applyFaceHair(asset.svg, {
+        ...parts,
         face: opts.face ?? pref.face,
         hair: opts.hair ?? pref.hair,
         hairColor: opts.hairColor ?? pref.hairColor,
@@ -413,7 +425,10 @@ export function restyleStickFace(ids: string[], choice: FaceHairChoice): number 
 /** The face/hair state of the first head part in `ids` (for showing current values). */
 export function stickFaceStateOf(ids: string[]): StickFaceState | null {
     const head = expandToFigures(ids).find(e => e.sfRole === 'head' && e.sfFace);
-    return head ? { ...(head.sfFace as StickFaceState) } : null;
+    if (!head) return null;
+    // Figures dropped before face parts existed have no part fields: they are all 'auto'.
+    const st = head.sfFace as StickFaceState;
+    return { ...st, ...facePartsOf(st) };
 }
 
 /** True if `ids` includes at least one stick-figure part (has an `sfRole`). */
@@ -464,6 +479,15 @@ export function toMonochromeSvg(svg: string): string {
  */
 export interface FaceHairChoice {
     face?: FaceStyle | 'auto';
+    /**
+     * Part overrides on top of the expression. Unlike the other fields, `'auto'` here
+     * CLEARS an override ("use the expression's own"); omit a part to leave it alone.
+     * Picking a new `face` clears overrides not given in the same choice.
+     */
+    eyes?: EyeStyle | 'auto';
+    brows?: BrowStyle | 'auto';
+    mouth?: MouthStyle | 'auto';
+    accent?: AccentStyle | 'auto';
     hair?: HairStyle | 'auto';
     hairColor?: string;
     headFill?: boolean;
@@ -479,7 +503,7 @@ export interface FaceHairChoice {
 }
 
 /** The face/hair a head part currently wears, as stored on the element. */
-export interface StickFaceState {
+export interface StickFaceState extends FaceParts {
     face: FaceStyle;
     hair: HairStyle;
     hairColor: string;
@@ -501,6 +525,7 @@ export const BARE_STATE: StickFaceState = {
     shoes: 'none', shoeColor: DEFAULT_SHOE_COLOR,
     top: 'none', topColor: DEFAULT_TOP_COLOR,
     neck: 'none', neckColor: DEFAULT_NECK_COLOR,
+    ...AUTO_PARTS,
 };
 
 const FACE_ATTR = 'data-sf-face', HAIR_ATTR = 'data-sf-hair', HAIR_COLOR_ATTR = 'data-sf-hair-color';
@@ -508,6 +533,7 @@ const TROUSER_ATTR = 'data-sf-trousers', TROUSER_COLOR_ATTR = 'data-sf-trouser-c
 const SHOE_ATTR = 'data-sf-shoes', SHOE_COLOR_ATTR = 'data-sf-shoe-color';
 const TOP_ATTR = 'data-sf-top', TOP_COLOR_ATTR = 'data-sf-top-color';
 const NECK_ATTR = 'data-sf-neck', NECK_COLOR_ATTR = 'data-sf-neck-color';
+const PART_ATTRS = ['eyes', 'brows', 'mouth', 'accent'] as const;
 
 /** Read the face/hair state stamped on a head `<circle>` in an asset SVG. */
 function readHeadState(el: Element): StickFaceState {
@@ -524,6 +550,7 @@ function readHeadState(el: Element): StickFaceState {
         topColor: el.getAttribute(TOP_COLOR_ATTR) || DEFAULT_TOP_COLOR,
         neck: asNeckStyle(el.getAttribute(NECK_ATTR), 'none'),
         neckColor: el.getAttribute(NECK_COLOR_ATTR) || DEFAULT_NECK_COLOR,
+        ...facePartsOf(Object.fromEntries(PART_ATTRS.map(k => [k, el.getAttribute(`data-sf-${k}`)]))),
     };
 }
 
@@ -542,6 +569,7 @@ function mergeChoice(cur: StickFaceState, c: FaceHairChoice): StickFaceState {
         topColor: c.topColor ?? cur.topColor,
         neck: !c.neck || c.neck === 'auto' ? cur.neck : asNeckStyle(c.neck),
         neckColor: c.neckColor ?? cur.neckColor,
+        ...mergeFaceParts(cur, c),
     };
 }
 
@@ -552,7 +580,8 @@ const isNoopChoice = (c: FaceHairChoice): boolean =>
     && (!c.top || c.top === 'auto') && (!c.neck || c.neck === 'auto')
     && c.hairColor === undefined && c.headFill === undefined
     && c.trouserColor === undefined && c.shoeColor === undefined
-    && c.topColor === undefined && c.neckColor === undefined;
+    && c.topColor === undefined && c.neckColor === undefined
+    && c.eyes === undefined && c.brows === undefined && c.mouth === undefined && c.accent === undefined;
 
 /**
  * The anchor points of a path `d` string — the endpoint of every command.
@@ -610,7 +639,9 @@ const _faceCache = new Map<string, string>();
  */
 export function applyFaceHair(svg: string, choice: FaceHairChoice = {}): string {
     if (isNoopChoice(choice)) return svg;
-    const key = `${svg}|${choice.face ?? 'auto'}|${choice.hair ?? 'auto'}|${choice.hairColor ?? ''}|${choice.headFill === undefined ? '-' : +choice.headFill}`;
+    // Keyed on the WHOLE choice. It used to list four fields (face, hair, hair colour,
+    // head fill), so two drops that differed only in clothing got the first one's result.
+    const key = `${svg}|${JSON.stringify(choice)}`;
     const hit = _faceCache.get(key);
     if (hit) return hit;
     try {
@@ -638,6 +669,10 @@ export function applyFaceHair(svg: string, choice: FaceHairChoice = {}): string 
             h.setAttribute(TROUSER_COLOR_ATTR, next.trouserColor);
             h.setAttribute(SHOE_ATTR, next.shoes);
             h.setAttribute(SHOE_COLOR_ATTR, next.shoeColor);
+            for (const k of PART_ATTRS) {
+                if (next[k] === 'auto') h.removeAttribute(`data-sf-${k}`);
+                else h.setAttribute(`data-sf-${k}`, next[k]);
+            }
             const nodes = svgFragment(doc, faceHairSvg(cx, cy, r, next));
             const anchor = h.nextSibling;
             for (const n of nodes) h.parentNode?.insertBefore(n, anchor);
@@ -708,6 +743,11 @@ let _rigCounter = 0;
 export interface InsertAnimatedOptions {
     x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number;
     face?: FaceStyle; hair?: HairStyle; hairColor?: string; headFill?: boolean;
+    eyes?: EyeStyle | 'auto'; brows?: BrowStyle | 'auto'; mouth?: MouthStyle | 'auto'; accent?: AccentStyle | 'auto';
+    /** Blink now and then (default true). */
+    blink?: boolean;
+    /** Talking mouth: 'auto' (default, during Talk), 'on' or 'off'. */
+    talk?: TalkMode;
     trousers?: TrouserStyle; trouserColor?: string; shoes?: ShoeStyle; shoeColor?: string;
     top?: TopStyle; topColor?: string; neck?: NeckStyle; neckColor?: string;
 }
@@ -748,6 +788,10 @@ export function insertAnimatedFigure(clip = 'walk', opts: InsertAnimatedOptions 
         seed: Math.floor(Math.random() * 2 ** 31), roundness: null,
         stickRig: {
             clip, facing: opts.facing ?? 1, speed: opts.speed ?? 1, playing: true,
+            // New figures blink; figures saved before blinking existed don't (undefined = off),
+            // so opening an old document never changes what it shows.
+            blink: opts.blink ?? true,
+            ...(opts.talk ? { talk: opts.talk } : {}),
             // An animated figure gets the same default face as a dropped one.
             face: asFaceStyle(opts.face ?? (pref.face === 'auto' ? 'neutral' : pref.face), 'neutral'),
             hair: asHairStyle(opts.hair ?? (pref.hair === 'auto' ? 'short' : pref.hair), 'short'),
@@ -761,6 +805,7 @@ export function insertAnimatedFigure(clip = 'walk', opts: InsertAnimatedOptions 
             topColor: opts.topColor ?? pref.topColor,
             neck: asNeckStyle(opts.neck ?? (pref.neck === 'auto' ? 'none' : pref.neck), 'none'),
             neckColor: opts.neckColor ?? pref.neckColor,
+            ...(opts.face !== undefined ? mergeFaceParts(AUTO_PARTS, opts) : mergeFaceParts(pref, opts)),
         },
     } as unknown as DrawingElement;
     pushToHistory();
@@ -827,6 +872,7 @@ function rigState(d: any): StickFaceState {
         topColor: d.topColor || DEFAULT_TOP_COLOR,
         neck: asNeckStyle(d.neck, 'none'),
         neckColor: d.neckColor || DEFAULT_NECK_COLOR,
+        ...facePartsOf(d),
     };
 }
 
@@ -917,6 +963,72 @@ export function getFigureSequence(id: string): { clip: string; dur: number }[] {
     return (el?.stickRig?.sequence as any) || [];
 }
 
+// ─── Faces over time (animated figures) ─────────────────────────────────────
+
+const rigById = (id: string) => store.elements.find(e => e.id === id && e.type === 'stickRig');
+
+/** Replace a figure's expression keys (an empty list clears them). One undo step. */
+export function setFigureFaceKeys(id: string, keys: FaceKey[]): void {
+    const el = rigById(id);
+    if (!el) return;
+    const clean = normalizeFaceKeys(keys);
+    updateElement(id, { stickRig: { ...(el.stickRig as any), faceKeys: clean.length ? clean : undefined } }, true);
+    bumpDirtyRevision();
+}
+
+/** A figure's expression keys, sorted by time. */
+export function getFigureFaceKeys(id: string): FaceKey[] {
+    return normalizeFaceKeys(rigById(id)?.stickRig?.faceKeys);
+}
+
+/**
+ * Key an expression at scene time `t` (seconds). A key already within 50 ms of `t` is
+ * replaced rather than stacked, so clicking a second expression at the same playhead
+ * position changes the key instead of adding an invisible one underneath.
+ */
+export function addFigureFaceKey(id: string, t: number, choice: Omit<FaceKey, 't'>): FaceKey[] {
+    if (!Number.isFinite(t)) return getFigureFaceKeys(id);
+    const at = Math.max(0, t);
+    const keys = getFigureFaceKeys(id).filter(k => Math.abs(k.t - at) > 0.05);
+    setFigureFaceKeys(id, [...keys, { ...choice, t: at }]);
+    return getFigureFaceKeys(id);
+}
+
+/** Remove the expression key at index `i` (in time order). */
+export function removeFigureFaceKey(id: string, i: number): void {
+    const keys = getFigureFaceKeys(id);
+    if (i < 0 || i >= keys.length) return;
+    setFigureFaceKeys(id, keys.filter((_, j) => j !== i));
+}
+
+/** Move the expression key at index `i` to time `t` (for dragging it on the timeline). */
+export function moveFigureFaceKey(id: string, i: number, t: number): void {
+    const keys = getFigureFaceKeys(id);
+    if (i < 0 || i >= keys.length || !Number.isFinite(t)) return;
+    setFigureFaceKeys(id, keys.map((k, j) => j === i ? { ...k, t: Math.max(0, t) } : k));
+}
+
+/** Patch blink / talk on the given animated figures. Returns how many changed. */
+function patchRigs(ids: string[], patch: (d: any) => object): number {
+    const rigs = store.elements.filter(e => ids.includes(e.id) && e.type === 'stickRig');
+    if (!rigs.length) return 0;
+    pushToHistory();
+    batch(() => { for (const e of rigs) updateElement(e.id, { stickRig: { ...(e.stickRig as any), ...patch(e.stickRig) } }); });
+    bumpDirtyRevision();
+    return rigs.length;
+}
+
+/** Turn blinking on/off (toggles if `on` is omitted) for the given animated figures. */
+export function setFigureBlink(ids: string[], on?: boolean): number {
+    return patchRigs(ids, d => ({ blink: on ?? !d?.blink }));
+}
+
+/** When the mouth moves: `auto` (while the Talk motion plays), `on` (always) or `off`. */
+export function setFigureTalk(ids: string[], mode: TalkMode): number {
+    const m: TalkMode = mode === 'on' || mode === 'off' ? mode : 'auto';
+    return patchRigs(ids, () => ({ talk: m }));
+}
+
 /** Flip the facing (left/right) of the selected/given animated figures. */
 export function flipAnimatedFigure(ids: string[]): void {
     const rigs = store.elements.filter(e => ids.includes(e.id) && e.type === 'stickRig');
@@ -951,8 +1063,14 @@ export function bakeAnimatedFigure(id: string): string[] {
     rig.facing = data.facing ?? 1;
     rig.style = { stroke: el.strokeColor || '#1f2937', strokeWidth: 6 };
     // The face/hair the rig is wearing bakes with it.
+    // The face in effect at the playhead (expression keys), without a blink or a
+    // half-open mouth: a baked frame is a still, and should look deliberate.
+    const live = liveFace(
+        { face: asFaceStyle(data.face, 'neutral'), ...facePartsOf(data as any) },
+        { t: store.storyTime ?? 0, seed: 0, keys: (data as any).faceKeys },
+    );
     const face: FaceOpts = {
-        face: asFaceStyle(data.face, 'neutral'),
+        ...live,
         hair: asHairStyle(data.hair, 'none'),
         hairColor: (data as any).hairColor,
         headFill: (data as any).headFill,

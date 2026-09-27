@@ -12,16 +12,19 @@
  * Style buttons preview the real geometry: each thumbnail is the same
  * `faceHairSvg` the canvas uses, drawn on a bare head.
  */
-import { type Component, For, Show, createMemo } from 'solid-js';
+import { type Component, For, Show, createMemo, createSignal } from 'solid-js';
 import { store } from '../store/app-store';
+import { t } from '../i18n';
 import {
     FACE_STYLES, HAIR_STYLES, faceHairSvg, DEFAULT_HAIR_COLOR,
+    EYE_STYLES, BROW_STYLES, MOUTH_STYLES, ACCENT_STYLES, type FaceOpts, type FaceParts,
     TROUSER_STYLES, SHOE_STYLES, TOP_STYLES, NECK_STYLES, garmentGeometry, primToSvg,
     DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR, DEFAULT_TOP_COLOR,
     type TrouserStyle, type ShoeStyle, type TopStyle, type NeckStyle,
     stickFacePref, setStickFacePref,
     restyleStickFace, stickFaceStateOf, selectionHasStickFigure,
     setAnimatedFigureFace, animatedFigureFaceState, selectionHasAnimatedFigure,
+    addFigureFaceKey, setFigureBlink, setFigureTalk, type TalkMode,
     type FaceHairChoice, type FaceStyle, type HairStyle,
 } from '../library/stick-figures';
 import './stick-face-controls.css';
@@ -38,6 +41,25 @@ const thumb = (face: FaceStyle, hair: HairStyle, hairColor: string): string =>
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor"`
     + ` stroke-width="5" stroke-linecap="round" stroke-linejoin="round">`
     + `<circle cx="50" cy="54" r="30"/>${faceHairSvg(50, 54, 30, { face, hair, hairColor })}</svg>`;
+
+/**
+ * A head wearing ONE face part and nothing else, so each button shows exactly the
+ * shape it sets. Brows and accents get plain dot eyes, or they float without context.
+ */
+const partThumb = (part: keyof FaceParts, id: string): string => {
+    const o: FaceOpts = { face: 'none', [part]: id };
+    if (part === 'brows' || part === 'accent') o.eyes = 'dot';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor"`
+        + ` stroke-width="5" stroke-linecap="round" stroke-linejoin="round">`
+        + `<circle cx="50" cy="54" r="30"/>${faceHairSvg(50, 54, 30, o)}</svg>`;
+};
+
+const FACE_PARTS: { key: keyof FaceParts; label: () => string; list: { id: string; name: string }[] }[] = [
+    { key: 'eyes', label: () => t('stickFace.eyes'), list: EYE_STYLES },
+    { key: 'brows', label: () => t('stickFace.brows'), list: BROW_STYLES },
+    { key: 'mouth', label: () => t('stickFace.mouth'), list: MOUTH_STYLES },
+    { key: 'accent', label: () => t('stickFace.extras'), list: ACCENT_STYLES },
+];
 
 /**
  * A legs-only thumbnail wearing one trouser/shoe combination. Garments derive from a
@@ -98,11 +120,31 @@ const StickFaceControls: Component = () => {
             topColor: p.topColor,
             neck: p.neck === 'auto' ? null : p.neck,
             neckColor: p.neckColor,
+            eyes: p.eyes, brows: p.brows, mouth: p.mouth, accent: p.accent,
         };
     });
 
+    /** The first selected animated figure's payload (blink / talk switches). */
+    const rig = createMemo(() => store.elements.find(e => store.selection.includes(e.id) && e.type === 'stickRig')?.stickRig);
+    const rigIds = () => store.selection.filter(id => store.elements.some(e => e.id === id && e.type === 'stickRig'));
+
+    /**
+     * "Set at playhead": with the Scene Timeline open, an expression or face-part click
+     * adds a KEY at the playhead to the selected animated figures instead of changing
+     * the face they wear throughout. Hair and clothing still apply as usual.
+     */
+    const [keyMode, setKeyMode] = createSignal(false);
+    const keying = () => keyMode() && hasRig() && store.showSceneTimeline;
+
     /** Apply a change to the preference AND to whatever is selected. */
     const apply = (choice: FaceHairChoice) => {
+        const { face, eyes, brows, mouth, accent, ...rest } = choice;
+        const faceChoice = Object.fromEntries(Object.entries({ face, eyes, brows, mouth, accent }).filter(([, v]) => v !== undefined));
+        if (keying() && Object.keys(faceChoice).length) {
+            for (const id of rigIds()) addFigureFaceKey(id, store.storyTime, faceChoice as any);
+            if (Object.keys(rest).length === 0) return;
+            choice = rest;
+        }
         setStickFacePref(choice as any);
         if (hasStatic()) restyleStickFace(store.selection, choice);
         if (hasRig()) setAnimatedFigureFace(store.selection, choice);
@@ -117,6 +159,31 @@ const StickFaceControls: Component = () => {
                 </span>
             </div>
 
+            <Show when={hasRig()}>
+                <div class="sf-face-row sf-face-live">
+                    <label class="sf-face-check" title={t('stickFace.blinkHint')}>
+                        <input type="checkbox" checked={!!rig()?.blink}
+                            onChange={(e) => setFigureBlink(rigIds(), e.currentTarget.checked)} />
+                        {t('stickFace.blink')}
+                    </label>
+                    <label class="sf-face-color" title={t('stickFace.talkingHint')}>
+                        {t('stickFace.talking')}
+                        <select value={rig()?.talk ?? 'auto'}
+                            onChange={(e) => setFigureTalk(rigIds(), e.currentTarget.value as TalkMode)}>
+                            <option value="auto">{t('stickFace.talkAuto')}</option>
+                            <option value="on">{t('stickFace.talkOn')}</option>
+                            <option value="off">{t('stickFace.talkOff')}</option>
+                        </select>
+                    </label>
+                </div>
+                <Show when={store.showSceneTimeline}>
+                    <label class="sf-face-check" title={t('stickFace.atPlayheadHint')}>
+                        <input type="checkbox" checked={keyMode()} onChange={(e) => setKeyMode(e.currentTarget.checked)} />
+                        {t('stickFace.atPlayhead', { time: store.storyTime.toFixed(1) })}
+                    </label>
+                </Show>
+            </Show>
+
             <div class="sf-face-label">Expression</div>
             <div class="sf-face-grid">
                 <For each={FACE_STYLES}>
@@ -129,6 +196,33 @@ const StickFaceControls: Component = () => {
                     )}
                 </For>
             </div>
+
+            {/* Per-part overrides on top of the expression. Collapsed: most people only
+                ever pick an expression, and four more grids would bury Hair. */}
+            <details class="sf-face-parts">
+                <summary>{t('stickFace.fineTune')}</summary>
+                <For each={FACE_PARTS}>
+                    {(part) => (
+                        <>
+                            <div class="sf-face-label">{part.label()}</div>
+                            <div class="sf-face-grid">
+                                <button class={`sf-face-btn sf-face-auto ${current()[part.key] === 'auto' ? 'active' : ''}`}
+                                    title={t('stickFace.partAutoHint')} onClick={() => apply({ [part.key]: 'auto' })}>
+                                    {t('stickFace.partAuto')}
+                                </button>
+                                <For each={part.list}>
+                                    {(it) => (
+                                        <button class={`sf-face-btn ${current()[part.key] === it.id ? 'active' : ''}`}
+                                            title={it.name} onClick={() => apply({ [part.key]: it.id })}>
+                                            <span class="sf-face-thumb" innerHTML={partThumb(part.key, it.id)} />
+                                        </button>
+                                    )}
+                                </For>
+                            </div>
+                        </>
+                    )}
+                </For>
+            </details>
 
             <div class="sf-face-label">Hair</div>
             <div class="sf-face-grid">

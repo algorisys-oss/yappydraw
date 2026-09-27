@@ -29,7 +29,18 @@ export function figureTrackSeconds(el: DrawingElement): number {
     if (r.sequence?.length) steps = r.sequence as any;
     else if (r.path) steps = [{ clip: 'walk', dur: r.path.dur || 4 }];
     else steps = [{ clip: r.clip, dur: getClip(r.clip).duration }];
-    return steps.reduce((s, a) => s + Math.max(0.1, a.dur), 0);
+    const motion = steps.reduce((s, a) => s + Math.max(0.1, a.dur), 0);
+    return Math.max(motion, faceKeysSeconds(el));
+}
+
+/** How long an expression hold stays on screen after the last key, so it is actually seen. */
+export const FACE_KEY_HOLD = 1;
+
+/** The end of a figure's expression keys, plus the hold. 0 when it has none. */
+export function faceKeysSeconds(el: DrawingElement): number {
+    const keys = el.stickRig?.faceKeys;
+    if (!keys?.length) return 0;
+    return Math.max(0, ...keys.map(k => (Number.isFinite(k.t) ? k.t : 0))) + FACE_KEY_HOLD;
 }
 
 /**

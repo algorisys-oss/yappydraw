@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.266', date: '2026-09-27', items: [
+        'Stick figures have 26 expressions, from laughing and crying to in love, smug and dizzy. Under Face & hair \u25b8 Fine-tune face, set the eyes, brows, mouth and extras (blush, tears, sweat, Zzz) one at a time, e.g. a happy face with angry brows.',
+        'Animated figures blink now and then, and their mouth moves while they talk.',
+        'Change a figure\u2019s expression mid-animation: open the Scene Timeline, tick Set at playhead, move the playhead and pick a face. Drag the little faces on the timeline to retime them.',
+        'Walking looks like walking: feet stay on the ground, arms swing against the legs, and figures walking left no longer bend their knees backwards.',
+    ] },
     { version: '0.8.265', date: '2026-09-27', items: [
         'Render any frame of your animation from a script, at an exact time: Yappy.renderFrame(1.5) returns a PNG, and Yappy.renderGif(5) a looping GIF. The same scene always gives the same frames, even on a slow machine. See Help \u25b8 Animation \u25b8 Frame-exact rendering.',
     ] },

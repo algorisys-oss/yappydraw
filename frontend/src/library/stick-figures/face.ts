@@ -23,7 +23,9 @@ import { r1, P, primToSvg, type Prim } from './prims';
 
 export type FaceStyle =
     | 'none' | 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised'
-    | 'tired' | 'excited' | 'proud' | 'confused' | 'scared' | 'wink';
+    | 'tired' | 'excited' | 'proud' | 'confused' | 'scared' | 'wink'
+    | 'laughing' | 'grinning' | 'crying' | 'shocked' | 'nervous' | 'embarrassed'
+    | 'love' | 'smug' | 'cheeky' | 'thinking' | 'disgusted' | 'sleepy' | 'asleep' | 'dizzy';
 
 export type HairStyle =
     | 'none' | 'short' | 'curly' | 'spiky' | 'fringe' | 'long'
@@ -43,7 +45,103 @@ export const FACE_STYLES: { id: FaceStyle; name: string }[] = [
     { id: 'confused', name: 'Confused' },
     { id: 'scared', name: 'Scared' },
     { id: 'wink', name: 'Wink' },
+    { id: 'laughing', name: 'Laughing' },
+    { id: 'grinning', name: 'Grinning' },
+    { id: 'crying', name: 'Crying' },
+    { id: 'shocked', name: 'Shocked' },
+    { id: 'nervous', name: 'Nervous' },
+    { id: 'embarrassed', name: 'Embarrassed' },
+    { id: 'love', name: 'In love' },
+    { id: 'smug', name: 'Smug' },
+    { id: 'cheeky', name: 'Cheeky' },
+    { id: 'thinking', name: 'Thinking' },
+    { id: 'disgusted', name: 'Disgusted' },
+    { id: 'sleepy', name: 'Sleepy' },
+    { id: 'asleep', name: 'Asleep' },
+    { id: 'dizzy', name: 'Dizzy' },
 ];
+
+// ─── Face parts ─────────────────────────────────────────────────────────────
+//
+// An expression is a recipe of four parts. Each part can also be set on its own on
+// top of the expression ("happy, but with angry brows"); `'auto'` means "whatever the
+// expression uses", and is what every figure wears unless someone overrides a part.
+
+export type EyeStyle = 'none' | 'dot' | 'wide' | 'smile' | 'up' | 'line' | 'wink'
+    | 'closed' | 'half' | 'squint' | 'lookLeft' | 'lookRight' | 'lookUp' | 'heart' | 'cross';
+export type BrowStyle = 'none' | 'angry' | 'raised' | 'worried' | 'oneRaised' | 'flat' | 'furrowed';
+export type MouthStyle = 'none' | 'line' | 'smile' | 'bigSmile' | 'frown' | 'smallFrown' | 'openO' | 'openWide'
+    | 'squiggle' | 'laugh' | 'grin' | 'smirk' | 'tongue' | 'grimace';
+/** Marks that sit on (or just off) the face rather than being a feature of it. */
+export type AccentStyle = 'none' | 'blush' | 'tears' | 'sweat' | 'zzz';
+
+export const EYE_STYLES: { id: EyeStyle; name: string }[] = [
+    { id: 'none', name: 'None' }, { id: 'dot', name: 'Dots' }, { id: 'wide', name: 'Wide open' },
+    { id: 'smile', name: 'Happy (closed)' }, { id: 'up', name: 'Content' }, { id: 'line', name: 'Tired' },
+    { id: 'half', name: 'Half-lidded' }, { id: 'closed', name: 'Closed' }, { id: 'wink', name: 'Wink' },
+    { id: 'squint', name: 'Squeezed shut' }, { id: 'lookLeft', name: 'Looking left' },
+    { id: 'lookRight', name: 'Looking right' }, { id: 'lookUp', name: 'Looking up' },
+    { id: 'heart', name: 'Hearts' }, { id: 'cross', name: 'Crosses' },
+];
+export const BROW_STYLES: { id: BrowStyle; name: string }[] = [
+    { id: 'none', name: 'None' }, { id: 'flat', name: 'Flat' }, { id: 'raised', name: 'Raised' },
+    { id: 'oneRaised', name: 'One raised' }, { id: 'worried', name: 'Worried' },
+    { id: 'angry', name: 'Angry' }, { id: 'furrowed', name: 'Furrowed' },
+];
+export const MOUTH_STYLES: { id: MouthStyle; name: string }[] = [
+    { id: 'none', name: 'None' }, { id: 'line', name: 'Flat' }, { id: 'smile', name: 'Smile' },
+    { id: 'bigSmile', name: 'Big smile' }, { id: 'grin', name: 'Grin (teeth)' }, { id: 'laugh', name: 'Laughing' },
+    { id: 'smirk', name: 'Smirk' }, { id: 'tongue', name: 'Tongue out' }, { id: 'frown', name: 'Frown' },
+    { id: 'smallFrown', name: 'Small frown' }, { id: 'openO', name: 'Open (O)' }, { id: 'openWide', name: 'Open wide' },
+    { id: 'squiggle', name: 'Wavy' }, { id: 'grimace', name: 'Clenched teeth' },
+];
+export const ACCENT_STYLES: { id: AccentStyle; name: string }[] = [
+    { id: 'none', name: 'None' }, { id: 'blush', name: 'Blush' }, { id: 'tears', name: 'Tears' },
+    { id: 'sweat', name: 'Sweat drop' }, { id: 'zzz', name: 'Zzz' },
+];
+
+const partCoercer = <T extends string>(list: { id: T }[]) => {
+    const ids = new Set<string>(list.map(x => x.id));
+    /** A known part name, else `'auto'` (follow the expression). */
+    return (v: unknown): T | 'auto' => typeof v === 'string' && ids.has(v) ? v as T : 'auto';
+};
+export const asEyeStyle = partCoercer(EYE_STYLES);
+export const asBrowStyle = partCoercer(BROW_STYLES);
+export const asMouthStyle = partCoercer(MOUTH_STYLES);
+export const asAccentStyle = partCoercer(ACCENT_STYLES);
+
+/** A figure's part overrides, as stored. `'auto'` = follow the expression. */
+export interface FaceParts {
+    eyes: EyeStyle | 'auto';
+    brows: BrowStyle | 'auto';
+    mouth: MouthStyle | 'auto';
+    accent: AccentStyle | 'auto';
+}
+export const AUTO_PARTS: FaceParts = { eyes: 'auto', brows: 'auto', mouth: 'auto', accent: 'auto' };
+
+/** Coerce stored (possibly missing or stale) part fields. */
+export const facePartsOf = (v: Partial<Record<keyof FaceParts, unknown>> | null | undefined): FaceParts => ({
+    eyes: asEyeStyle(v?.eyes), brows: asBrowStyle(v?.brows), mouth: asMouthStyle(v?.mouth), accent: asAccentStyle(v?.accent),
+});
+
+/**
+ * Apply a change to part overrides. Omitted parts are kept, EXCEPT when the change
+ * picks a new expression: then overrides are cleared first, because "Sad" should look
+ * sad, not sad with the angry brows someone set on the previous expression. Parts in
+ * the same change still apply, so `{ face: 'happy', brows: 'angry' }` works.
+ */
+export function mergeFaceParts(
+    cur: FaceParts,
+    c: { face?: string; eyes?: string; brows?: string; mouth?: string; accent?: string },
+): FaceParts {
+    const base = c.face && c.face !== 'auto' ? AUTO_PARTS : cur;
+    return {
+        eyes: c.eyes === undefined ? base.eyes : asEyeStyle(c.eyes),
+        brows: c.brows === undefined ? base.brows : asBrowStyle(c.brows),
+        mouth: c.mouth === undefined ? base.mouth : asMouthStyle(c.mouth),
+        accent: c.accent === undefined ? base.accent : asAccentStyle(c.accent),
+    };
+}
 
 export const HAIR_STYLES: { id: HairStyle; name: string }[] = [
     { id: 'none', name: 'None' },
@@ -88,6 +186,11 @@ export interface FaceOpts {
     headFill?: boolean;
     /** 1 = facing right, -1 = facing left. Shifts the face toward the facing side. */
     facing?: 1 | -1;
+    /** Part overrides on top of `face`. Omitted or `'auto'` = the expression's own. */
+    eyes?: EyeStyle | 'auto';
+    brows?: BrowStyle | 'auto';
+    mouth?: MouthStyle | 'auto';
+    accent?: AccentStyle | 'auto';
 }
 
 // ─── Drawing primitives ─────────────────────────────────────────────────────
@@ -109,27 +212,68 @@ const EYE_DX = 0.34, EYE_Y = -0.20, EYE_DOT = 0.10;
 const BROW_Y = -0.50;
 const MOUTH_Y = 0.32;
 
-type EyeKind = 'dot' | 'wide' | 'smile' | 'up' | 'line' | 'wink';
-type BrowKind = 'none' | 'angry' | 'raised' | 'worried' | 'oneRaised';
-type MouthKind = 'none' | 'line' | 'smile' | 'bigSmile' | 'frown' | 'smallFrown' | 'openO' | 'openWide' | 'squiggle';
+/** Fills for the coloured marks. They carry their own colour, so recolouring the outline leaves them alone. */
+const BLUSH = '#f9a8b4', TEAR = '#93c5fd', HEART = '#e11d48', TONGUE = '#f472b6', TEETH = '#ffffff';
 
-const FACE_RECIPE: Record<Exclude<FaceStyle, 'none'>, { eyes: EyeKind; brows: BrowKind; mouth: MouthKind }> = {
-    neutral: { eyes: 'dot', brows: 'none', mouth: 'line' },
-    happy: { eyes: 'smile', brows: 'none', mouth: 'smile' },
-    sad: { eyes: 'dot', brows: 'worried', mouth: 'frown' },
-    angry: { eyes: 'dot', brows: 'angry', mouth: 'frown' },
-    surprised: { eyes: 'wide', brows: 'raised', mouth: 'openO' },
-    tired: { eyes: 'line', brows: 'none', mouth: 'smallFrown' },
-    excited: { eyes: 'smile', brows: 'raised', mouth: 'openWide' },
-    proud: { eyes: 'up', brows: 'none', mouth: 'smile' },
-    confused: { eyes: 'dot', brows: 'oneRaised', mouth: 'squiggle' },
-    scared: { eyes: 'wide', brows: 'worried', mouth: 'squiggle' },
-    wink: { eyes: 'wink', brows: 'none', mouth: 'smile' },
+interface FaceRecipe { eyes: EyeStyle; brows: BrowStyle; mouth: MouthStyle; accent: AccentStyle }
+
+const FACE_RECIPE: Record<Exclude<FaceStyle, 'none'>, FaceRecipe> = {
+    neutral: { eyes: 'dot', brows: 'none', mouth: 'line', accent: 'none' },
+    happy: { eyes: 'smile', brows: 'none', mouth: 'smile', accent: 'none' },
+    sad: { eyes: 'dot', brows: 'worried', mouth: 'frown', accent: 'none' },
+    angry: { eyes: 'dot', brows: 'angry', mouth: 'frown', accent: 'none' },
+    surprised: { eyes: 'wide', brows: 'raised', mouth: 'openO', accent: 'none' },
+    tired: { eyes: 'line', brows: 'none', mouth: 'smallFrown', accent: 'none' },
+    excited: { eyes: 'smile', brows: 'raised', mouth: 'openWide', accent: 'none' },
+    proud: { eyes: 'up', brows: 'none', mouth: 'smile', accent: 'none' },
+    confused: { eyes: 'dot', brows: 'oneRaised', mouth: 'squiggle', accent: 'none' },
+    scared: { eyes: 'wide', brows: 'worried', mouth: 'squiggle', accent: 'none' },
+    wink: { eyes: 'wink', brows: 'none', mouth: 'smile', accent: 'none' },
+    laughing: { eyes: 'squint', brows: 'none', mouth: 'laugh', accent: 'none' },
+    grinning: { eyes: 'dot', brows: 'none', mouth: 'grin', accent: 'none' },
+    crying: { eyes: 'closed', brows: 'worried', mouth: 'frown', accent: 'tears' },
+    shocked: { eyes: 'wide', brows: 'raised', mouth: 'openWide', accent: 'sweat' },
+    nervous: { eyes: 'wide', brows: 'worried', mouth: 'grimace', accent: 'sweat' },
+    embarrassed: { eyes: 'dot', brows: 'worried', mouth: 'smile', accent: 'blush' },
+    love: { eyes: 'heart', brows: 'none', mouth: 'bigSmile', accent: 'blush' },
+    smug: { eyes: 'half', brows: 'oneRaised', mouth: 'smirk', accent: 'none' },
+    cheeky: { eyes: 'wink', brows: 'none', mouth: 'tongue', accent: 'none' },
+    thinking: { eyes: 'lookUp', brows: 'oneRaised', mouth: 'line', accent: 'none' },
+    disgusted: { eyes: 'dot', brows: 'furrowed', mouth: 'tongue', accent: 'none' },
+    sleepy: { eyes: 'half', brows: 'none', mouth: 'smallFrown', accent: 'none' },
+    asleep: { eyes: 'closed', brows: 'none', mouth: 'openO', accent: 'zzz' },
+    dizzy: { eyes: 'cross', brows: 'none', mouth: 'squiggle', accent: 'none' },
 };
 
-/** One eye at `(ex, ey)` in the requested form. */
-function eyePrims(kind: EyeKind, ex: number, ey: number, r: number, w: number, side: -1 | 1): Prim[] {
+const NO_FACE: FaceRecipe = { eyes: 'none', brows: 'none', mouth: 'none', accent: 'none' };
+
+/** The parts an expression is made of (`none` → all parts off). */
+export function faceRecipe(face: FaceStyle): FaceRecipe {
+    return face === 'none' ? { ...NO_FACE } : { ...(FACE_RECIPE[face] ?? FACE_RECIPE.neutral) };
+}
+
+/** A heart centred on `(x, y)`, `s` across. */
+function heartD(x: number, y: number, s: number): string {
+    const h = s / 2;
+    return `M${r1(x)} ${r1(y + h * 0.9)}`
+        + `C${r1(x - h * 1.3)} ${r1(y + h * 0.1)} ${r1(x - h * 0.9)} ${r1(y - h * 1.1)} ${r1(x)} ${r1(y - h * 0.35)}`
+        + `C${r1(x + h * 0.9)} ${r1(y - h * 1.1)} ${r1(x + h * 1.3)} ${r1(y + h * 0.1)} ${r1(x)} ${r1(y + h * 0.9)}Z`;
+}
+
+/** A drop with its point at `(x, y)` and its round end `len` below. */
+function dropD(x: number, y: number, len: number): string {
+    const rr = len * 0.34, cy = y + len - rr;
+    return `M${r1(x)} ${r1(y)}`
+        + `C${r1(x + rr * 0.4)} ${r1(y + len * 0.3)} ${r1(x + rr)} ${r1(cy - rr * 0.3)} ${r1(x + rr)} ${r1(cy)}`
+        + `A${r1(rr)} ${r1(rr)} 0 0 1 ${r1(x - rr)} ${r1(cy)}`
+        + `C${r1(x - rr)} ${r1(cy - rr * 0.3)} ${r1(x - rr * 0.4)} ${r1(y + len * 0.3)} ${r1(x)} ${r1(y)}Z`;
+}
+
+/** One eye at `(ex, ey)` in the requested form. `side` -1 = the figure's left on screen. */
+function eyePrims(kind: EyeStyle, ex: number, ey: number, r: number, w: number, side: -1 | 1): Prim[] {
     switch (kind) {
+        case 'none':
+            return [];
         case 'dot':
             return [{ k: 'dot', x: ex, y: ey, r: r * EYE_DOT }];
         case 'wide':
@@ -150,11 +294,45 @@ function eyePrims(kind: EyeKind, ex: number, ey: number, r: number, w: number, s
             return side < 0
                 ? [{ k: 'dot', x: ex, y: ey, r: r * EYE_DOT }]
                 : [{ k: 'arc', x: ex, y: ey - r * 0.04, r: r * 0.17, a0: 0.1 * P, a1: 0.9 * P, w }];
+        // A shallow lid line — calmer and flatter than the happy `‿`, so a sleeping or
+        // crying face doesn't read as smiling.
+        case 'closed':
+            return [{ k: 'arc', x: ex, y: ey - r * 0.2, r: r * 0.3, a0: 0.3 * P, a1: 0.7 * P, w }];
+        // Heavy upper lid over a pupil: sleepy, smug, unimpressed.
+        case 'half':
+            return [
+                { k: 'poly', pts: [[ex - r * 0.17, ey - r * 0.02], [ex + r * 0.17, ey - r * 0.02]], w },
+                { k: 'dot', x: ex, y: ey + r * 0.06, r: r * 0.08 },
+            ];
+        // `>` `<` — eyes screwed shut, pointing at each other.
+        case 'squint': {
+            const a = r * 0.14, tip = side < 0 ? ex + a : ex - a, back = side < 0 ? ex - a : ex + a;
+            return [{ k: 'poly', pts: [[back, ey - a], [tip, ey], [back, ey + a]], w }];
+        }
+        // An open eye with the pupil pushed to one side of it.
+        case 'lookLeft': case 'lookRight': case 'lookUp': {
+            const rr = r * 0.17, off = rr * 0.5;
+            const px = kind === 'lookLeft' ? ex - off : kind === 'lookRight' ? ex + off : ex;
+            const py = kind === 'lookUp' ? ey - off : ey;
+            return [
+                { k: 'ring', x: ex, y: ey, r: rr, w: w * 0.8 },
+                { k: 'dot', x: px, y: py, r: r * 0.08 },
+            ];
+        }
+        case 'heart':
+            return [{ k: 'path', d: heartD(ex, ey, r * 0.4), w: w * 0.6, fill: HEART }];
+        case 'cross': {
+            const a = r * 0.12;
+            return [
+                { k: 'poly', pts: [[ex - a, ey - a], [ex + a, ey + a]], w },
+                { k: 'poly', pts: [[ex + a, ey - a], [ex - a, ey + a]], w },
+            ];
+        }
     }
 }
 
 /** Both brows in the requested form. */
-function browPrims(kind: BrowKind, cx: number, cy: number, r: number, w: number): Prim[] {
+function browPrims(kind: BrowStyle, cx: number, cy: number, r: number, w: number): Prim[] {
     if (kind === 'none') return [];
     const by = cy + r * BROW_Y;
     const outer = r * 0.54, inner = r * 0.18;
@@ -176,11 +354,24 @@ function browPrims(kind: BrowKind, cx: number, cy: number, r: number, w: number)
                 { k: 'poly', pts: [[cx - outer, by + r * 0.04], [cx - inner, by + r * 0.04]], w },
                 { k: 'arc', x: cx + r * EYE_DX, y: by + r * 0.14, r: r * 0.22, a0: 1.15 * P, a1: 1.85 * P, w },
             ];
+        case 'flat':
+            return [
+                { k: 'poly', pts: [[cx - outer, by + r * 0.02], [cx - inner, by + r * 0.02]], w },
+                { k: 'poly', pts: [[cx + inner, by + r * 0.02], [cx + outer, by + r * 0.02]], w },
+            ];
+        // Lower and steeper than angry, pulled in toward the nose.
+        case 'furrowed': {
+            const inn = r * 0.1;
+            return [
+                { k: 'poly', pts: [[cx - outer * 0.9, by + r * 0.02], [cx - inn, by + r * 0.2]], w },
+                { k: 'poly', pts: [[cx + outer * 0.9, by + r * 0.02], [cx + inn, by + r * 0.2]], w },
+            ];
+        }
     }
 }
 
 /** The mouth in the requested form. */
-function mouthPrims(kind: MouthKind, cx: number, cy: number, r: number, w: number): Prim[] {
+function mouthPrims(kind: MouthStyle, cx: number, cy: number, r: number, w: number): Prim[] {
     if (kind === 'none') return [];
     const my = cy + r * MOUTH_Y;
     switch (kind) {
@@ -204,6 +395,66 @@ function mouthPrims(kind: MouthKind, cx: number, cy: number, r: number, w: numbe
             for (let i = 0; i <= 4; i++) pts.push([cx - half + (half * 2 * i) / 4, my + (i % 2 ? dy : -dy)]);
             return [{ k: 'poly', pts, w }];
         }
+        // Mouths with an inside (teeth, tongue) use a thinner outline than the other
+        // marks: at the full face weight the white fill closes up on a small head and
+        // every one of them reads as the same solid blob.
+        // `D` on its side: a flat top and a round, open bottom.
+        case 'laugh': {
+            const a = r * 0.34, top = my - r * 0.1;
+            return [{ k: 'path', d: `M${r1(cx - a)} ${r1(top)}A${r1(a)} ${r1(a)} 0 0 0 ${r1(cx + a)} ${r1(top)}Z`, w: w * 0.7, fill: TEETH }];
+        }
+        // A wide, shallow smile showing a row of teeth.
+        case 'grin': {
+            const a = r * 0.36, top = my - r * 0.1, depth = r * 0.42;
+            return [
+                { k: 'path', d: `M${r1(cx - a)} ${r1(top)}L${r1(cx + a)} ${r1(top)}Q${r1(cx)} ${r1(top + depth)} ${r1(cx - a)} ${r1(top)}Z`, w: w * 0.6, fill: TEETH },
+                { k: 'poly', pts: [[cx - a * 0.7, top + r * 0.08], [cx + a * 0.7, top + r * 0.08]], w: w * 0.45 },
+            ];
+        }
+        // Flat on one side, curling up on the other.
+        case 'smirk': {
+            const a = r * 0.24;
+            return [{ k: 'path', d: `M${r1(cx - a)} ${r1(my + r * 0.02)}Q${r1(cx + a * 0.5)} ${r1(my + r * 0.06)} ${r1(cx + a)} ${r1(my - r * 0.1)}`, w }];
+        }
+        case 'tongue': {
+            const t = r * 0.13;
+            return [
+                { k: 'path', d: `M${r1(cx - t)} ${r1(my)}L${r1(cx - t)} ${r1(my + r * 0.14)}A${r1(t)} ${r1(t)} 0 0 0 ${r1(cx + t)} ${r1(my + r * 0.14)}L${r1(cx + t)} ${r1(my)}`, w: w * 0.5, fill: TONGUE },
+                { k: 'arc', x: cx, y: my - r * 0.12, r: r * 0.26, a0: 0.2 * P, a1: 0.8 * P, w },
+            ];
+        }
+        // Clenched teeth: a flat box crossed by a line and three gaps.
+        case 'grimace': {
+            const a = r * 0.32, hh = r * 0.13;
+            const x0 = cx - a, x1 = cx + a, y0 = my - hh, y1 = my + hh;
+            return [
+                { k: 'path', d: `M${r1(x0)} ${r1(y0)}L${r1(x1)} ${r1(y0)}L${r1(x1)} ${r1(y1)}L${r1(x0)} ${r1(y1)}Z`, w: w * 0.6, fill: TEETH },
+                { k: 'poly', pts: [[x0, my], [x1, my]], w: w * 0.4 },
+                ...[-0.5, 0, 0.5].map((f): Prim => ({ k: 'poly', pts: [[cx + a * f, y0], [cx + a * f, y1]], w: w * 0.4 })),
+            ];
+        }
+    }
+}
+
+/** Blush, tears, sweat or a sleeping `Zzz`. `ey` is the eye line. */
+function accentPrims(kind: AccentStyle, cx: number, cy: number, ey: number, r: number, w: number): Prim[] {
+    switch (kind) {
+        case 'none':
+            return [];
+        case 'blush':
+            return [-1, 1].map((s): Prim => ({
+                k: 'oval', x: cx + s * r * 0.5, y: cy + r * 0.12, rx: r * 0.15, ry: r * 0.08, w: 0, fill: BLUSH, fillOnly: true,
+            }));
+        case 'tears':
+            return [-1, 1].map((s): Prim => ({ k: 'path', d: dropD(cx + s * r * EYE_DX, ey + r * 0.16, r * 0.3), w: w * 0.5, fill: TEAR }));
+        case 'sweat':
+            return [{ k: 'path', d: dropD(cx + r * 0.72, cy - r * 0.62, r * 0.34), w: w * 0.5, fill: TEAR }];
+        // Three Zs rising off the top-right of the head, each smaller than the last.
+        case 'zzz':
+            return [0, 1, 2].map((i): Prim => {
+                const s = r * (0.3 - i * 0.07), x = cx + r * (0.85 + i * 0.32), y = cy - r * (0.85 + i * 0.4);
+                return { k: 'poly', pts: [[x, y], [x + s, y], [x, y + s], [x + s, y + s]], w: w * 0.8 };
+            });
     }
 }
 
@@ -212,18 +463,24 @@ function mouthPrims(kind: MouthKind, cx: number, cy: number, r: number, w: numbe
  * Returns [] for `face: 'none'` (or an unknown style).
  */
 export function faceGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}): Prim[] {
-    const style = asFaceStyle(o.face, 'none');
-    if (style === 'none' || r <= 0) return [];
-    const recipe = FACE_RECIPE[style];
+    if (!(r > 0)) return [];
+    const recipe = faceRecipe(asFaceStyle(o.face, 'none'));
+    const pick = <T extends string>(v: T | 'auto', base: T): T => v === 'auto' ? base : v;
+    const eyes = pick(asEyeStyle(o.eyes), recipe.eyes);
+    const brows = pick(asBrowStyle(o.brows), recipe.brows);
+    const mouth = pick(asMouthStyle(o.mouth), recipe.mouth);
+    const accent = pick(asAccentStyle(o.accent), recipe.accent);
     const w = faceWidth(r);
     // Side-profile poses read better with the face nudged toward the facing side.
     const fx = cx + (o.facing ? o.facing * r * 0.14 : 0);
     const ey = cy + r * EYE_Y;
     return [
-        ...eyePrims(recipe.eyes, fx - r * EYE_DX, ey, r, w, -1),
-        ...eyePrims(recipe.eyes, fx + r * EYE_DX, ey, r, w, 1),
-        ...browPrims(recipe.brows, fx, cy, r, w),
-        ...mouthPrims(recipe.mouth, fx, cy, r, w),
+        // Under the features: a blush or tear should never cover an eye.
+        ...accentPrims(accent, fx, cy, ey, r, w),
+        ...eyePrims(eyes, fx - r * EYE_DX, ey, r, w, -1),
+        ...eyePrims(eyes, fx + r * EYE_DX, ey, r, w, 1),
+        ...browPrims(brows, fx, cy, r, w),
+        ...mouthPrims(mouth, fx, cy, r, w),
     ];
 }
 
@@ -499,6 +756,10 @@ export function faceHairSvg(cx: number, cy: number, r: number, o: FaceOpts = {})
  * the Properties panel show a dropped figure's current expression.
  */
 export function faceStateAttrs(o: FaceOpts = {}): string {
+    // Part overrides are stamped only when set, so every existing asset stays byte-identical.
+    const part = (name: string, v: string) => v === 'auto' ? '' : ` data-sf-${name}="${v}"`;
     return ` data-sf-face="${asFaceStyle(o.face, 'none')}" data-sf-hair="${asHairStyle(o.hair, 'none')}"`
-        + ` data-sf-hair-color="${o.hairColor || DEFAULT_HAIR_COLOR}"`;
+        + ` data-sf-hair-color="${o.hairColor || DEFAULT_HAIR_COLOR}"`
+        + part('eyes', asEyeStyle(o.eyes)) + part('brows', asBrowStyle(o.brows))
+        + part('mouth', asMouthStyle(o.mouth)) + part('accent', asAccentStyle(o.accent));
 }

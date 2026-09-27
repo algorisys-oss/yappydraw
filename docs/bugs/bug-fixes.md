@@ -1,5 +1,71 @@
 # Bug Fixes Log
 
+## 2026-09-27 — Stick-figure walk
+
+### 402. A figure facing left walked with its knees bent backwards
+
+**Symptom:** flip an animated walking figure, or send one along a path that runs right to
+left: every step bent the knees the wrong way.
+
+**Cause:** leg IK is solved in rig-local space, which `evaluateRig` then mirrors for `facing`.
+The bend direction was ALSO flipped by facing, so a left-facing figure was mirrored twice.
+
+**Fix:** a constant forward bend in local space. Test: `walk.test.ts` "knees bend forward… for
+BOTH facings" (every leg, every 5% of the cycle).
+
+### 403. Walking figures floated and skated; the walk read as a leg swing
+
+**Symptom:** walking looked like swinging legs rather than steps, and a figure following a path
+slid its planted foot forward on every step.
+
+**Cause:** four things in the walk clip. (1) Foot targets are pelvis-relative, and the clip
+never subtracted its own hip bob, so the planted foot bobbed with the hips and the figure
+floated. Run had the same bug. (2) The arms were 90° out of phase: straight down at foot contact
+and widest while the legs passed, the opposite of a walk. Run too. (3) The swing foot followed a
+symmetric arc that peaked under the hip, a high-stepping pendulum. (4) `WALK_STRIDE`, which
+paces a path walk, was 2·STRIDE, but a planted foot covers 2·STRIDE in only 60% of a cycle, so
+path figures moved 40% slower than their feet.
+
+**Fix:** rewritten walk (subtract the bob; arms peak at contact, elbow folds on the forward
+swing; the swing foot peels up behind and lands low; legs nearly straight at contact) and
+`WALK_STRIDE = 2·STRIDE / STANCE`. Path placement derives the foot depth from `GROUND_Y`
+instead of a hardcoded 226. Tests: `walk.test.ts` (7), each seen failing on the old clip.
+
+### 404. The path-walk and clip tests failed on every run
+
+**Symptom:** `stick-animation-speed.spec.ts:43/:92/:108` failed on a clean checkout.
+
+**Cause:** they read `document.querySelector('canvas')` twice, 1.5 s of wall clock apart, so
+they measured whichever canvas came first and how busy the machine was, not the figure.
+
+**Fix:** measure frames rendered at exact scene times with `Yappy.renderFrame`. All five pass.
+
+### 405. `getAnimationDuration` ignored animated figures
+
+**Symptom:** `npm run render` of a scene made of sequenced or path-walking figures rendered the
+5 s default instead of the scene's length.
+
+**Fix:** a figure with a sequence, a path or expression keys counts toward the duration
+(`figureTrackSeconds`). A figure looping one clip is untimed, like orbit. The scene timeline's
+length now also includes each figure's last expression key plus a 1 s hold.
+
+## 2026-09-27 — Stick-figure face parts
+
+### 401. Dropping the same figure again ignored a clothing change
+
+**Symptom:** with nothing selected, change Trousers (or shoes, top, neckwear, or any of their
+colours) in the Face & hair picker and drop a figure you had already dropped: it arrived in
+the previous clothing. `insertStickFigure(id, { trousers })` did the same from a script.
+
+**Cause:** `applyFaceHair` caches its output per (svg, choice), but its key was built from
+four fields (face, hair, hair colour, head fill). Garments were added to the choice later and
+never to the key, so two choices that differed only in clothing collided and the second got
+the first one's cached SVG.
+
+**Fix:** key on the whole choice (`JSON.stringify`), so a field added later can't be left out
+again. Test: `stick-face.spec.ts` "dropping the same figure twice with different clothing"
+(seen failing with the old key: the second figure came back in `straight`, not `shorts`).
+
 ## 2026-09-25 — Large-path render cost
 
 ### 400. Every frame re-walked big paths through store proxies (and #398's key made it worse)

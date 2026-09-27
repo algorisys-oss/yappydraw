@@ -62,7 +62,7 @@ const StickFigurePanel: Component = () => {
     /** Thumbnail markup: exactly what the figure will look like when dropped. */
     const previewSvg = (asset: StickAsset): string => {
         const p = stickFacePref();
-        const svg = applyFaceHair(asset.svg, { face: p.face, hair: p.hair, hairColor: p.hairColor, headFill: p.headFill });
+        const svg = applyFaceHair(asset.svg, { face: p.face, hair: p.hair, hairColor: p.hairColor, headFill: p.headFill, eyes: p.eyes, brows: p.brows, mouth: p.mouth, accent: p.accent });
         return stickColorMode() === 'mono' ? toMonochromeSvg(svg) : svg;
     };
 

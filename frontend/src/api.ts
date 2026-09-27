@@ -76,6 +76,8 @@ import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAll
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
     attachFigureToPath, detachFigurePath, setFigureSequence, setFigurePathDuration, setAnimatedFigureSpeed,
     FACE_STYLES, HAIR_STYLES, TROUSER_STYLES, SHOE_STYLES, TOP_STYLES, NECK_STYLES, restyleStickFace, stickFaceStateOf,
+    EYE_STYLES, BROW_STYLES, MOUTH_STYLES, ACCENT_STYLES,
+    setFigureFaceKeys, getFigureFaceKeys, addFigureFaceKey, removeFigureFaceKey, setFigureBlink, setFigureTalk,
     setAnimatedFigureFace, animatedFigureFaceState } from "./library/stick-figures";
 import { createComicPanel, createComicStrip } from "./library/comic";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
@@ -87,6 +89,7 @@ import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types"
 import type { PropertyTrack, TimedKeyframe, TinyflyClip } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
 import { SceneScript, type PlayTargets, type PlayOptions, type PlaySpec } from "./utils/animation/scene-script";
+import { figureTrackSeconds } from "./utils/animation/scene-clock";
 import { renderTex, type TexPart } from "./utils/tex";
 import { svgToElements } from "./utils/svg-import";
 import { batch } from "solid-js";
@@ -3715,7 +3718,7 @@ export const YappyAPI = {
     // Stick-figure library (drawify-style editable figures)
     /** Insert a stick figure by id (e.g. "daily-waving") as one editable, recolourable
      *  group. Omit x/y to drop it in the middle of the visible drawing area. Returns the new element ids. */
-    insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
+    insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number; face?: string; eyes?: string; brows?: string; mouth?: string; accent?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
         return insertStickFigure(assetId, opts as any);
     },
     /** List stick-figure assets (id/name/category/tags), optionally filtered by category. */
@@ -3739,8 +3742,17 @@ export const YappyAPI = {
     toggleStickFigurePanel(visible?: boolean) { toggleStickFigurePanel(visible); },
 
     // Faces & hair
-    /** List the available expressions (id + name), e.g. happy / sad / angry / surprised. */
+    /** List the available expressions (id + name), e.g. happy / sad / laughing / crying / love. */
     listStickFaces() { return FACE_STYLES.map(f => ({ id: f.id, name: f.name })); },
+    /**
+     * The parts an expression is built from, for setting one on its own with
+     * `setStickFace({ brows: 'angry' })`. Each list is id + name; `accent` holds marks
+     * that sit on the face (blush, tears, sweat, Zzz).
+     */
+    listStickFaceParts() {
+        const ls = (l: { id: string; name: string }[]) => l.map(x => ({ id: x.id, name: x.name }));
+        return { eyes: ls(EYE_STYLES), brows: ls(BROW_STYLES), mouth: ls(MOUTH_STYLES), accent: ls(ACCENT_STYLES) };
+    },
     /** List the available hair styles (id + name), e.g. short / bun / pigtails. */
     listStickHairStyles() { return HAIR_STYLES.map(h => ({ id: h.id, name: h.name })); },
     /** List the available trouser styles (id + name), e.g. straight / baggy / skirt. */
@@ -3763,10 +3775,16 @@ export const YappyAPI = {
      * polylines, so they follow whatever pose it is in.
      *
      * `setStickFace({ face: 'happy', hair: 'bun', trousers: 'baggy', shoes: 'sneakers' })`
+     *
+     * Face parts override one feature of the expression: `eyes`, `brows`, `mouth`,
+     * `accent` (see `listStickFaceParts`). `'auto'` clears an override. Choosing a new
+     * `face` clears the overrides not given in the same call:
+     * `setStickFace({ face: 'happy', brows: 'angry' })`.
      */
     setStickFace(
         opts: {
-            face?: string; hair?: string; hairColor?: string; headFill?: boolean;
+            face?: string; eyes?: string; brows?: string; mouth?: string; accent?: string;
+            hair?: string; hairColor?: string; headFill?: boolean;
             trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string;
             top?: string; topColor?: string; neck?: string; neckColor?: string;
         },
@@ -3786,7 +3804,7 @@ export const YappyAPI = {
     listStickFigureClips() { return CLIP_LIST.map(c => ({ id: c.id, name: c.name })); },
     /** Insert an animated stick figure playing `clip`. Omit x/y to drop it in the middle of
      *  the visible drawing area. */
-    insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
+    insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number; blink?: boolean; talk?: 'auto' | 'on' | 'off'; face?: string; eyes?: string; brows?: string; mouth?: string; accent?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
         return insertAnimatedFigure(clip, opts as any);
     },
     /** Change the motion clip of the given (or selected) animated figures. */
@@ -3812,6 +3830,39 @@ export const YappyAPI = {
     detachFigurePath(id?: string) { detachFigurePath(id ?? store.selection[0]); },
     /** Set a timed action sequence on a figure, e.g. [{clip:'walk',dur:3},{clip:'wave',dur:2}] (loops). Empty clears it. */
     setFigureSequence(steps: { clip: string; dur: number }[], id?: string) { setFigureSequence(id ?? store.selection[0], steps); },
+
+    // Faces over time (animated figures)
+    /** Blink now and then while playing. Toggles when `on` is omitted. New figures blink. */
+    setFigureBlink(on?: boolean, ids?: string[]) { return setFigureBlink(ids ?? [...store.selection], on); },
+    /** Talking mouth: `'auto'` (while the Talk motion plays, the default), `'on'` or `'off'`. */
+    setFigureTalking(mode: 'auto' | 'on' | 'off', ids?: string[]) { return setFigureTalk(ids ?? [...store.selection], mode); },
+    /**
+     * Change a figure's expression at scene time `t` (seconds), on the Scene Timeline.
+     * The face switches at `t` and holds until the next key; before the first key the
+     * figure wears its own face. A key within 50 ms of `t` is replaced. Takes an
+     * expression and/or parts, like `setStickFace`. Returns the figure's keys.
+     *
+     * @example Yappy.addFigureExpression(2, { face: 'surprised' }, id)
+     */
+    addFigureExpression(t: number, choice: { face?: string; eyes?: string; brows?: string; mouth?: string; accent?: string }, id?: string) {
+        const fid = id ?? store.selection.find(s => store.elements.some(e => e.id === s && e.type === 'stickRig'));
+        return fid ? addFigureFaceKey(fid, t, choice as any) : [];
+    },
+    /** Replace all of a figure's expression keys (`[]` clears them). */
+    setFigureExpressions(keys: { t: number; face?: string; eyes?: string; brows?: string; mouth?: string; accent?: string }[], id?: string) {
+        const fid = id ?? store.selection.find(s => store.elements.some(e => e.id === s && e.type === 'stickRig'));
+        if (fid) setFigureFaceKeys(fid, keys as any);
+    },
+    /** A figure's expression keys, in time order. */
+    getFigureExpressions(id?: string) {
+        const fid = id ?? store.selection.find(s => store.elements.some(e => e.id === s && e.type === 'stickRig'));
+        return fid ? getFigureFaceKeys(fid) : [];
+    },
+    /** Remove the expression key at `index` (time order). */
+    removeFigureExpression(index: number, id?: string) {
+        const fid = id ?? store.selection.find(s => store.elements.some(e => e.id === s && e.type === 'stickRig'));
+        if (fid) removeFigureFaceKey(fid, index);
+    },
     /** Record the live canvas (animations included) to a video that auto-downloads.
      *  Pass `seconds` to auto-stop; otherwise call stopRecording(). */
     recordAnimation(seconds?: number, format: 'webm' | 'mp4' = 'webm') {
@@ -3858,6 +3909,12 @@ export const YappyAPI = {
         let end = 0;
         for (const track of store.compositionTracks) {
             for (const key of track.keys ?? []) if (Number.isFinite(key.t)) end = Math.max(end, key.t);
+        }
+        // Figures are timed when they run a sequence, walk a path or change expression.
+        // A figure that only loops one clip is not, like orbit or spin.
+        for (const el of store.elements) {
+            const r = el.type === 'stickRig' ? el.stickRig : null;
+            if (r && (r.sequence?.length || r.path || r.faceKeys?.length)) end = Math.max(end, figureTrackSeconds(el));
         }
         return end;
     },

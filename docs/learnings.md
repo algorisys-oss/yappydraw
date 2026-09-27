@@ -2,6 +2,52 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Stick-figure walk, and faces over time (Sep 27 2026)
+
+- **A walk is an inverted pendulum.** The body vaults over a nearly straight planted leg, highest
+  as the legs pass and lowest at each strike. Three details decide whether it reads as walking or
+  as swinging legs: the planted foot must not move, the arms must be widest AT contact (opposite
+  the legs), and the swing foot must lift behind the body and land low. Ours got all three wrong,
+  and each was a single line.
+- **Mirroring is applied once.** IK solved in local space and then mirrored for `facing` must not
+  also flip its bend with facing. A test that sweeps both facings over the whole cycle catches it.
+  A single rendered frame facing right never would.
+- **Pelvis-relative targets need the pelvis motion taken back out.** The daily clips documented
+  and followed this ("`GROUND_Y - D` throughout"); the two oldest clips predated the note.
+- **Derive a pacing constant from the motion it paces.** `WALK_STRIDE` was a hand-written number
+  describing the clip. It drifted from the clip on day one and made path walks skate. Now it is
+  computed from the stride and stance fraction, and a test compares it to a planted foot.
+- **Time-varying looks as pure functions of time.** Blink, chatter and expression keys are
+  `f(t, seed)`, like the poses, so exports and scrubbing need no state. Seeding per figure is
+  what stops a crowd blinking in unison.
+- **A new default must not change old documents.** New figures blink (`blink: true` at insert);
+  a saved figure has no field and reads it as off.
+- **Tests that sleep and read the screen measure the machine.** Three path-walk tests failed on
+  every run for weeks, so they caught nothing. Rendering at exact times with `renderFrame` made
+  them deterministic and useful for this change.
+
+## Stick-figure face parts (Sep 27 2026)
+
+- **A preset is a recipe; expose the ingredients.** The 11 expressions were already built from
+  eye, brow and mouth shapes in a private table. Making those shapes public as overrides
+  (`'auto'` = the expression's own) gave free mixing without changing how existing figures
+  look: overrides are stamped on the head only when set, so every library SVG is byte-identical.
+- **Decide what a new preset does to old overrides, and write it down once.** Picking "Sad"
+  after setting angry brows should look sad, so a new expression clears the overrides not given
+  in the same call. The rule is needed in three places (element state, rig payload, drop
+  preference), so it lives in one function (`mergeFaceParts`).
+- **Verify small marks at their real size.** Grin, laugh and clenched teeth looked right in
+  100 px thumbnails and closed into solid blobs on a real 20 px head: at the full face stroke
+  the white fill had no room. Mouths with an inside now use a thinner outline. The
+  `npm run render` CLI made the check a one-liner: a script lays out every expression in both
+  styles and one PNG shows them all.
+- **Coloured marks must not have a stroke if an outline recolour exists.** Recolour rewrites
+  every stroked part, so a stroked blush turns dark blue. A fill-only prim (SVG `stroke="none"`,
+  imported as a transparent stroke) survives it.
+- **A cache key that lists fields rots.** `applyFaceHair` keyed on four of the choice's fields.
+  Every later field (all the clothing) was silently shared across drops (bug #401). Key on the
+  whole object.
+
 ## Headless frame-exact render — `Yappy.renderFrame` + `npm run render` (Sep 27 2026)
 
 - **A recorder cannot give an offline renderer what it needs.** The existing exports run the

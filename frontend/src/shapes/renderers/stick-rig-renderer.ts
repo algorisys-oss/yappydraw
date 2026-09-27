@@ -11,12 +11,13 @@ import type { IRenderer } from '../../rendering/IRenderer';
 import { store } from '../../store/app-store';
 import { effectiveTime } from '../../utils/animation/animation-engine';
 import { sceneTime, playheadDriven, exportClockSeconds } from '../../utils/animation/scene-clock';
-import { getClip, poseAt, WALK_STRIDE } from '../../library/stick-figures/anim/clips';
+import { getClip, poseAt, WALK_STRIDE, GROUND_Y } from '../../library/stick-figures/anim/clips';
 import { elementPathSample, sampleAt } from '../../library/stick-figures/anim/path-follow';
 import { RIG_W, RIG_H, RIG_LEG_UNIT, headAttach, legPolylines, upperPolylines, lerpRigPose, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
 import { garmentGeometry } from '../../library/stick-figures/garments';
+import { liveFace } from '../../library/stick-figures/anim/face-motion';
 import {
-    faceGeometry, hairGeometry, asFaceStyle, asHairStyle,
+    faceGeometry, hairGeometry, asFaceStyle, asHairStyle, facePartsOf,
     type FacePrim,
 } from '../../library/stick-figures/face';
 
@@ -78,9 +79,9 @@ export class StickRigRenderer extends ShapeRenderer {
                 const cycles = Math.max(1, s.len / strideWorld);
                 phase = (prog * cycles) % 1;
                 clipId = 'walk';
-                // Place the figure so its feet (rig y≈226) sit on the path point.
+                // Place the figure so its feet (pelvis y 150 + ground depth) sit on the path point.
                 originX = at.x - 70 * sx;
-                originY = at.y - 226 * sy;
+                originY = at.y - (150 + GROUND_Y) * sy;
             }
         }
 
@@ -125,8 +126,23 @@ export class StickRigRenderer extends ShapeRenderer {
         // Face/hair are generated for a circular head; a non-uniformly scaled box
         // uses the mean radius so the marks stay centred and proportional.
         const hr = (head.rx + head.ry) / 2;
+        // The face at this moment: stored expression, then any expression key, a talking
+        // mouth and a blink (face-motion.ts). All pure functions of time, like the pose.
+        const playing = data.playing !== false;
+        const talkMode = data.talk ?? 'auto';
+        const live = liveFace(
+            { face: asFaceStyle(data.face, 'neutral'), ...facePartsOf(data) },
+            {
+                t, seed: el.seed ?? 0,
+                keys: data.faceKeys,
+                // Keys sit on the scene timeline, which a single looping clip doesn't follow.
+                keyT: data.faceKeys?.length ? (exportClockSeconds() ?? sceneTime(effectiveTime())) : t,
+                blink: playing && !!data.blink,
+                talking: playing && (talkMode === 'on' || (talkMode === 'auto' && clipId === 'talk')),
+            },
+        );
         const faceOpts = {
-            face: asFaceStyle(data.face, 'neutral'),
+            ...live,
             hair: asHairStyle(data.hair, 'none'),
             hairColor: data.hairColor,
             headFill: !!data.headFill,
@@ -178,7 +194,7 @@ export class StickRigRenderer extends ShapeRenderer {
                     renderer.beginPath();
                     renderer.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, Math.PI * 2);
                     if (p.fill) { renderer.fillStyle = p.fill; renderer.fill(); }
-                    renderer.stroke();
+                    if (!p.fillOnly) renderer.stroke();
                     break;
                 case 'arc':
                     renderer.beginPath();
@@ -195,7 +211,7 @@ export class StickRigRenderer extends ShapeRenderer {
                 // AND stroked through fillPath/strokePath, not beginPath()+fill().
                 case 'path':
                     if (p.fill) { renderer.fillStyle = p.fill; renderer.fillPath(p.d); }
-                    renderer.strokePath(p.d);
+                    if (!p.fillOnly) renderer.strokePath(p.d);
                     break;
             }
         }
@@ -213,7 +229,7 @@ export class StickRigRenderer extends ShapeRenderer {
                     rc.circle(p.x, p.y, p.r * 2, p.fill ? { ...o, fill: p.fill } : o);
                     break;
                 case 'oval':
-                    rc.ellipse(p.x, p.y, p.rx * 2, p.ry * 2, p.fill ? { ...o, fill: p.fill } : o);
+                    rc.ellipse(p.x, p.y, p.rx * 2, p.ry * 2, p.fill ? { ...o, fill: p.fill, ...(p.fillOnly ? { stroke: 'none' } : {}) } : o);
                     break;
                 case 'arc':
                     rc.arc(p.x, p.y, p.r * 2, p.r * 2, p.a0, p.a1, false, o);
@@ -222,7 +238,7 @@ export class StickRigRenderer extends ShapeRenderer {
                     rc.linearPath(p.pts, o);
                     break;
                 case 'path':
-                    rc.path(p.d, p.fill ? { ...o, fill: p.fill } : o);
+                    rc.path(p.d, p.fill ? { ...o, fill: p.fill, ...(p.fillOnly ? { stroke: 'none' } : {}) } : o);
                     break;
             }
         }

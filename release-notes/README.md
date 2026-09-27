@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.266](0.8.266.md) — Stick figures: 26 expressions and face parts, blinking, talking mouths and expression changes on the Scene Timeline; a walk that looks like walking
 - [0.8.265](0.8.265.md) — Frame-exact rendering: `Yappy.renderFrame`/`renderGif` and the `npm run render` CLI (document or scene script → PNG, GIF, MP4, WebM)
 - [0.8.264](0.8.264.md) — `Yappy.draw`: Canvas 2D / Cairo-style pen drawing (`moveTo`, `arc`, `fill`, `stroke`) from a script, where every paint becomes an editable path
 - [0.8.263](0.8.263.md) — Big drawings pan smoothly

@@ -39,7 +39,8 @@ Either way it arrives selected and grouped as one editable object.
 
 Every figure wears an **expression** and a **hair style**. The **Face & hair** section sits at the bottom of the Stick Figures panel — and also appears in the **Properties** panel whenever a figure is selected, so you never have to go looking for it.
 
-- **Expression** — 12 styles: Neutral, Happy, Sad, Angry, Surprised, Tired, Excited, Proud, Confused, Scared, Wink, and None (a blank head).
+- **Expression** — 26 styles: Neutral, Happy, Sad, Angry, Surprised, Tired, Excited, Proud, Confused, Scared, Wink, Laughing, Grinning, Crying, Shocked, Nervous, Embarrassed, In love, Smug, Cheeky, Thinking, Disgusted, Sleepy, Asleep, Dizzy, and None (a blank head).
+- **Fine-tune face** — under the expressions, this section sets one feature at a time on top of the expression: **Eyes** (dots, wide open, closed, half-lidded, squeezed shut, looking left/right/up, hearts, crosses…), **Brows** (flat, raised, one raised, worried, angry, furrowed), **Mouth** (smile, big smile, grin, laughing, smirk, tongue out, frown, open, wavy, clenched teeth…) and **Extras** (blush, tears, sweat drop, Zzz). Pick **Auto** to go back to the expression's own. For example, choose Happy and then Angry brows for a menacing grin. Picking a different expression clears the fine-tuning, so Sad always looks sad.
 - **Hair** — 18 styles: Short, Curly, Spiky, Fringe, Long, Bun, Ponytail, Pigtails, Side swept, Swoosh, Mohawk, Afro, Bob, Braids, Top knot, Balding, Cap, and None.
 - **Hair colour** — applies to the solid styles (Short, Curly, Bun, Pigtails, Side swept, Swoosh, Mohawk, Afro, Bob, Braids, Top knot, Cap). The outline styles (Fringe, Long, Spiky, Balding) follow the figure's stroke colour instead.
 - **Solid head** — fills the head white so eyes and mouth stay readable over busy artwork or a coloured background. Off by default, which keeps heads see-through.
@@ -66,7 +67,7 @@ Clothing is generated from the figure's own **limbs** — trousers and shoes fro
 Figures arrive dressed exactly as they always have: the Woman and Girl variants wear a skirt, everyone else is bare-legged. Trousers are opt-in, so nothing you already made has changed.
 
 :::tip
-**Known limitations.** Faces are drawn front-on, so a strongly side-on pose still shows two eyes (animated figures nudge the face toward the direction they face). Expressions are picked from the list — there is no free-hand face editor — but because every mark is a real vector path you can ungroup a figure and nudge an eyebrow by hand. Trousers on a pose that draws only one visible leg (Cycling) clothe that leg only, which is usually what you want.
+**Known limitations.** Faces are drawn front-on, so a strongly side-on pose still shows two eyes (animated figures nudge the face toward the direction they face). "Looking left/right" is on screen, so it does not flip when a figure turns around. An expression holds for the whole animation: it changes when you (or a script) change it, not on the timeline yet. There is no free-hand face editor, but every mark is a real vector path, so you can ungroup a figure and nudge an eyebrow by hand. At small sizes in **sketch** style the rough strokes blur fine detail such as teeth, so use a larger figure or architectural style for close-ups. Trousers on a pose that draws only one visible leg (Cycling) clothe that leg only, which is usually what you want.
 :::
 
 ## Recolour by part (one click)
@@ -105,8 +106,9 @@ Y.insertStickFigure('service-delivery', { x: 400, y: 200, targetWidth: 160 });
 Y.recolorStickFigure({ outline: '#7c3aed', accent: '#ec4899', hair: '#2b2118' }, ids);
 
 // Faces & hair
-Y.listStickFaces();                     // [{id:'happy', name:'Happy'}, …] — 12 expressions
-Y.listStickHairStyles();                // [{id:'bun', name:'Bun'}, …] — 10 styles
+Y.listStickFaces();                     // [{id:'happy', name:'Happy'}, …] — 26 expressions
+Y.listStickFaceParts();                 // { eyes: […], brows: […], mouth: […], accent: […] }
+Y.listStickHairStyles();                // [{id:'bun', name:'Bun'}, …] — 18 styles
 Y.setStickFace({ face: 'happy', hair: 'bun', hairColor: '#2b2118' }, ids);
 Y.listStickTrousers();                  // 8 trouser styles
 Y.listStickShoes();                     // 6 shoe styles
@@ -115,7 +117,10 @@ Y.listStickTops();                      // 6 tops
 Y.listStickNeckwear();                  // tie / bowtie / scarf
 Y.setStickFace({ top: 'jacket', neck: 'tie', topColor: '#0f766e' }, ids);
 Y.setStickFace({ face: 'angry' });      // omitted fields are left alone; defaults to the selection
-Y.getStickFace(ids);                    // {face, hair, hairColor, headFill}
+Y.setStickFace({ face: 'happy', brows: 'angry' }, ids);   // one part on top of an expression
+Y.setStickFace({ accent: 'blush' }, ids);                 // add a blush, keep everything else
+Y.setStickFace({ brows: 'auto' }, ids);                   // back to the expression's own brows
+Y.getStickFace(ids);                    // {face, eyes, brows, mouth, accent, hair, …}
 // …or set it at drop time:
 Y.insertStickFigure('daily-waving', { face: 'wink', hair: 'ponytail', headFill: true });
 
@@ -123,7 +128,7 @@ Y.toggleStickFigurePanel(true);         // open the panel
 ```
 
 :::tip
-API: `insertStickFigure(id, opts?)`, `recolorStickFigure(colors, ids?)`, ` setStickFace(opts, ids?)`, `getStickFace(ids?)`, ` listStickFaces()`, `listStickHairStyles()`, ` listStickTrousers()`, `listStickShoes()`, ` listStickTops()`, `listStickNeckwear()`, ` listStickFigures(category?)`, `listStickFigureCategories()`, ` toggleStickFigurePanel(visible?)`.
+API: `insertStickFigure(id, opts?)`, `recolorStickFigure(colors, ids?)`, ` setStickFace(opts, ids?)`, `getStickFace(ids?)`, ` listStickFaces()`, `listStickFaceParts()`, `listStickHairStyles()`, ` listStickTrousers()`, `listStickShoes()`, ` listStickTops()`, `listStickNeckwear()`, ` listStickFigures(category?)`, `listStickFigureCategories()`, ` toggleStickFigurePanel(visible?)`.
 :::
 
 :::tip
