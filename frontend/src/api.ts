@@ -71,7 +71,7 @@ import { fontsReady as awaitFontsReady, fontsAreLoaded } from "./utils/font-load
 // api.ts graph. `searchElements` below loads it on demand (same lazy chunk the
 // Elements panel uses), keeping it off the app's startup path.
 import type { AssetHit, SearchElementsOptions } from "./library/elements/search";
-import { setRequestRecording, gifCapturing as gifCapturingSignal } from "./utils/recording-manager";
+import { setRequestRecording, gifCapturing as gifCapturingSignal, animatedContentBounds, renderRegionFrame, renderRegionGif, type FrameRegion as FrameRegionInfo } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
     attachFigureToPath, detachFigurePath, setFigureSequence, setFigurePathDuration, setAnimatedFigureSpeed,
@@ -3826,6 +3826,73 @@ export const YappyAPI = {
     async exportVideo(seconds = 5, format: 'webm' | 'mp4' = 'mp4') {
         const m = await import('./utils/recording-manager');
         return m.exportPageVideo({ seconds, format });
+    },
+    /**
+     * The world-space box `renderFrame` draws by default: the active page in a paged
+     * document (slides, design, animation), otherwise the content plus `padding`. With
+     * `seconds`, the content box is the union over that much animation, so something
+     * that moves stays in frame. Null when there is nothing to draw.
+     */
+    getFrameRegion(options: { seconds?: number; padding?: number; background?: string } = {}): FrameRegionInfo | null {
+        const slide = isPagedDocType(store.docType) ? store.slides[store.activeSlideIndex] : undefined;
+        if (slide && slide.dimensions.width && slide.dimensions.height) {
+            return { x: slide.spatialPosition.x, y: slide.spatialPosition.y, width: slide.dimensions.width, height: slide.dimensions.height, page: store.activeSlideIndex };
+        }
+        const b = animatedContentBounds(Math.max(0, options.seconds ?? 0));
+        if (!b) return null;
+        const pad = Math.max(0, options.padding ?? 20);
+        return { x: b.x - pad, y: b.y - pad, width: b.width + pad * 2, height: b.height + pad * 2, background: options.background ?? '#ffffff' };
+    },
+    /**
+     * How long the document's animation runs, in seconds: the marked in/out range of an
+     * animation document, otherwise the last keyframe of the composition (which is what
+     * `Yappy.scene` writes). 0 when nothing is timed — looping motion such as orbit, spin
+     * or an expression track has no end, so pass a length for those.
+     */
+    getAnimationDuration(): number {
+        const tl = store.animTimeline;
+        if (store.docType === 'animation' && tl && tl.fps > 0) {
+            const [lo, hi] = playbackRange(tl);
+            return (hi - lo + 1) / tl.fps;
+        }
+        let end = 0;
+        for (const track of store.compositionTracks) {
+            for (const key of track.keys ?? []) if (Number.isFinite(key.t)) end = Math.max(end, key.t);
+        }
+        return end;
+    },
+    /**
+     * Render one frame at `seconds` into the animation and return it as a PNG (or JPEG)
+     * data URL. Deterministic: the time is absolute, so frames can be rendered in any
+     * order at any speed — this is what the `npm run render` CLI assembles into GIF/MP4.
+     * `region` defaults to `getFrameRegion()`; `scale` is pixels per canvas unit
+     * (default 1, capped at a 16384 px edge). Never downloads anything.
+     *
+     * @example const png = await Yappy.renderFrame(1.5, { scale: 2 })
+     */
+    async renderFrame(seconds = 0, options: { region?: FrameRegionInfo; scale?: number; background?: string; format?: 'png' | 'jpeg'; quality?: number } = {}): Promise<string | null> {
+        const region = options.region ?? YappyAPI.getFrameRegion({ background: options.background });
+        if (!region || !(region.width > 0) || !(region.height > 0)) return null;
+        const slide = region.page != null ? store.slides[region.page] ?? null : null;
+        const k = Math.max(0.01, Math.min(options.scale ?? 1, 16384 / Math.max(region.width, region.height)));
+        const bg = options.background ?? region.background;
+        return renderRegionFrame({ ...region, background: bg }, k, Math.max(0, seconds) * 1000, {
+            slide, mime: options.format === 'jpeg' ? 'image/jpeg' : 'image/png', quality: options.quality,
+        });
+    },
+    /**
+     * Render `seconds` of animation to a looping GIF, frame by frame at exact times, and
+     * return its bytes (nothing is downloaded). Same `region`/`scale`/`background` as
+     * `renderFrame`; the default scale keeps the long side at most 960 px. `fps` 1–50,
+     * default 15 (GIF timing is in 10 ms steps, so it is rounded to that grid).
+     */
+    async renderGif(seconds = 5, options: { region?: FrameRegionInfo; scale?: number; fps?: number; background?: string } = {}): Promise<Uint8Array | null> {
+        const region = options.region ?? YappyAPI.getFrameRegion({ seconds, background: options.background });
+        if (!region || !(region.width > 0) || !(region.height > 0)) return null;
+        const slide = region.page != null ? store.slides[region.page] ?? null : null;
+        const longSide = Math.max(region.width, region.height);
+        const k = Math.max(0.01, Math.min(options.scale ?? Math.min(1, 960 / longSide), 16384 / longSide));
+        return renderRegionGif({ ...region, background: options.background ?? region.background }, k, seconds, options.fps ?? 15, slide);
     },
     /** Export the ACTIVE page as an infinitely-looping animated GIF (offline render,
      *  framed to the page, long side capped at 960). `fps` defaults to 12. */

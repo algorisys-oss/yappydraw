@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.265', date: '2026-09-27', items: [
+        'Render any frame of your animation from a script, at an exact time: Yappy.renderFrame(1.5) returns a PNG, and Yappy.renderGif(5) a looping GIF. The same scene always gives the same frames, even on a slow machine. See Help \u25b8 Animation \u25b8 Frame-exact rendering.',
+    ] },
     { version: '0.8.264', date: '2026-09-27', items: [
         'Draw from code the way you would on an HTML canvas or with Cairo: Yappy.draw(ctx => { ctx.moveTo(…); ctx.arc(…); ctx.fill(); }). Everything you draw becomes a normal shape you can select, edit, animate and export. See Help \u25b8 Canvas-style Drawing.',
     ] },

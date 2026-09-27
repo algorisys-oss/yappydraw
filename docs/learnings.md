@@ -2,6 +2,24 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Headless frame-exact render — `Yappy.renderFrame` + `npm run render` (Sep 27 2026)
+
+- **A recorder cannot give an offline renderer what it needs.** The existing exports run the
+  animation on the wall clock and grab what the canvas shows, so a loaded machine or a headless
+  CI browser drops frames. The fix is an absolute clock: `drawAt(exportMs)` poses the scene at
+  that time and draws it. The page exporter keeps its old `draw(tMs)` signature as a thin
+  wrapper (first call = t 0), so the live exports did not change behaviour.
+- **Frame the video from the posed scene, not the saved one.** On an infinite canvas there is
+  no page to crop to, and the start-pose bounds cut off anything that moves out of them. The
+  region is the union of bounds sampled across the run. The posing step (`poseAt`) is shared by
+  the bounds and by the drawing, so the frame is computed from exactly what gets painted.
+- **A cached offscreen canvas has to be keyed by everything that sizes or fills it:** region,
+  scale, background and page. Reusing it across frames avoids reallocating a large canvas
+  per frame, which would be wasteful at 30 fps.
+- **Playwright's `webServer` reuse is by port, not by app.** Another project's Vite on 5173
+  made every spec time out waiting for `window.Yappy`. That was an environment problem, not a
+  regression. Run a Yappy Vite on a free port and set `YAPPY_URL` to it.
+
 ## Canvas/Cairo-style drawing API — `Yappy.draw` (Sep 27 2026)
 
 - **Immediate mode maps onto retained mode at the paint call.** A pen API has no objects;

@@ -642,6 +642,32 @@ await Yappy.exportVideo(8, 'webm');
 await Yappy.exportGif(5, 24);        // 5s GIF at 24 fps
 ```
 
+### Frame-exact rendering (no recording)
+
+The exports above run the animation in real time, so a busy machine can drop frames. These render each frame at an exact time instead, in any order and at any speed. The same scene always gives the same frames. None of them download anything; they return the image.
+
+```
+Yappy.getAnimationDuration();                  // seconds: in/out range, or the last keyframe (0 = untimed)
+Yappy.getFrameRegion({ seconds: 5 });          // the box that gets drawn: the page, or content + padding
+await Yappy.renderFrame(1.5, { scale: 2 });    // PNG data URL of the frame at t = 1.5s
+await Yappy.renderGif(5, { fps: 20 });         // Uint8Array: a looping GIF
+```
+
+On an infinite canvas, the region is the content plus `padding` (default 20). With `seconds`, it is the union of the content's positions over that time, so anything that moves stays in frame. On paged documents it is the active page. `background` accepts any CSS colour, or `'transparent'` for PNG output.
+
+Looping motion such as orbit, spin or expression tracks has no end, so `getAnimationDuration()` returns 0 for it. Pass a length yourself.
+
+**From the command line**, the `render` script drives these in a headless browser. It turns a saved `.yappy` document, or a `.js` scene script, into a file:
+
+```
+npm run render -- scene.yappy -o clip.mp4                 # length = the animation's own
+npm run render -- examples/manim-gradient-descent.js -o gd.gif
+npm run render -- scene.yappy -o still.png --at 1.5 --scale 2
+npm run render -- scene.yappy -o frames/ --fps 24         # PNG sequence
+```
+
+The output's extension picks the format. MP4 and WebM need `ffmpeg` on your PATH. Run `npm run render -- --help` for every option (`--seconds`, `--fps`, `--background`, `--eval`, and `--url` to use an already-running dev server).
+
 ### Formats & limits
 
 | Format | Use it for | Limits |

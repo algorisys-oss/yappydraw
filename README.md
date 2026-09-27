@@ -217,12 +217,40 @@ Yappy.updateSlideTransition(0, { type: 'fade', duration: 500 })
 Yappy.addChildNode(parentId)
 Yappy.reorderMindmap(rootId, 'horizontal')
 
+// Canvas 2D / Cairo-style drawing — every fill()/stroke() becomes an editable path
+Yappy.draw(ctx => {
+  ctx.arc(200, 200, 80, 0, Math.PI * 2)
+  ctx.fillStyle = '#fde68a'; ctx.fill(); ctx.stroke()
+})
+Yappy.draw(cr => { cr.setSourceRgb(0.2, 0.4, 1); cr.rectangle(10, 10, 80, 40); cr.fill() }, { mode: 'cairo' })
+
+// Maths & plotting, manim-style scenes
+const ax = Yappy.plot.axes({ xMin: -3, xMax: 3, yMin: 0, yMax: 9 })
+Yappy.plot.graph(ax, x => x * x)
+Yappy.scene.play(dotId, { x: 600 }, { duration: 2 })
+
 // 3D Shapes
 Yappy.createOpenBox(100, 100, 200, 150, { depth: 50, openAmount: 0, lidPosition: 'back' })
 Yappy.createSolidBlock(100, 100, 200, 150, { depth: 50, viewAngle: 45 })
 
 // And 100+ more functions for elements, layers, view, themes, clipboard, history...
 ```
+
+### Render animations from the command line
+
+`npm run render` opens a document or a scene script in a headless browser and renders it
+frame by frame at exact times, so the output does not depend on how fast the machine is. The
+output's extension picks the format; MP4 and WebM need `ffmpeg` on your PATH.
+
+```bash
+npm run render -- examples/manim-gradient-descent.js -o gd.gif
+npm run render -- scene.yappy -o clip.mp4               # length = the animation's own
+npm run render -- scene.yappy -o still.png --at 1.5 --scale 2
+npm run render -- scene.yappy -o frames/ --fps 24       # PNG sequence
+```
+
+In the browser, the same thing is `await Yappy.renderFrame(1.5)` (a PNG data URL) or
+`await Yappy.renderGif(5)` (GIF bytes). Run `npm run render -- --help` for all options.
 
 ### Use the API from a CDN (no editor)
 
@@ -482,6 +510,17 @@ Example with a custom message:
 OSS_MESSAGE="feat: color palettes + standalone palette/theme buttons" \
   ./scripts/publish-oss.sh --push
 ```
+
+**Then publish the SDK to npm** (`@algorisys/yappydraw`), after the OSS push, because it
+packages the `cdn/` folder from the version tag that push created:
+
+```bash
+npm run publish:npm                            # dry run: stage, smoke-test, npm publish --dry-run
+npm run publish:npm -- --publish               # real publish; npm prompts for the 2FA code
+NPM_OTP=123456 npm run publish:npm -- --publish   # no terminal: pass the one-time code
+```
+
+npm versions are immutable: a version that is already on npm is refused, never overwritten.
 
 ## Sample Data
 

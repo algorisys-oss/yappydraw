@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.264",
+  "version": "0.8.265",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -8,7 +8,8 @@
     "build": "tsc -b && node --max-old-space-size=1536 node_modules/vite/bin/vite.js build && npm run prerender",
     "prerender": "tsx scripts/prerender.ts",
     "preview": "vite preview",
-    "build:sdk": "node --max-old-space-size=1536 node_modules/vite/bin/vite.js build -c vite.sdk.config.ts"
+    "build:sdk": "node --max-old-space-size=1536 node_modules/vite/bin/vite.js build -c vite.sdk.config.ts",
+    "render": "node scripts/render.mjs"
   },
   "dependencies": {
     "@solid-primitives/i18n": "^2.2.1",

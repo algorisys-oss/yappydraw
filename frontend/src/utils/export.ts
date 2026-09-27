@@ -149,7 +149,7 @@ function elementAABB(el: DrawingElement): Bounds {
  * absurdly large. Falls back to an empty box if nothing survives, which callers already
  * treat as "nothing to export".
  */
-function elementsBounds(elements: DrawingElement[]): Bounds {
+export function elementsBounds(elements: DrawingElement[]): Bounds {
     let b: Bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
     const acc = (o: Bounds) => {
         if (!isFinite(o.minX) || !isFinite(o.minY) || !isFinite(o.maxX) || !isFinite(o.maxY)) return;

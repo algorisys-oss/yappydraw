@@ -1667,7 +1667,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 5785 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 HarmonyType:84 PlayOptions:89 PlaySpec:89 PlayTargets:89 TexPart:90 AxesOptions:97 AxesSpec:97 PlotFn:97 VectorFieldOptions:97 VectorFn:97 DrawOp:99 TinyflyShape:103 DimensionMeasure:111 ElementOptions:185 normalizeElementType:425 plotRuns:456 addTinyflyClip:472 createTinyflyShape:495 DoodleOptions:522 normalizeDoodleSubpaths:533 doodleLayers:548 doodleRoleStyle:561 doodleKeyOf:582 doodleMembers:588 ElementType:832 as:832 Window:5774
+frontend/src/api.ts | typescript | 5852 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 FrameRegion:74 FrameRegionInfo:74 as:74 HarmonyType:84 PlayOptions:89 PlaySpec:89 PlayTargets:89 TexPart:90 AxesOptions:97 AxesSpec:97 PlotFn:97 VectorFieldOptions:97 VectorFn:97 DrawOp:99 TinyflyShape:103 DimensionMeasure:111 ElementOptions:185 normalizeElementType:425 plotRuns:456 addTinyflyClip:472 createTinyflyShape:495 DoodleOptions:522 normalizeDoodleSubpaths:533 doodleLayers:548 doodleRoleStyle:561 doodleKeyOf:582 doodleMembers:588 ElementType:832 Window:5841
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1668 | Component:1 App:105 moves:130 onPenMove:131 hidePen:135 handleKeyUp:174 handleKeyDown:184 as:873 the:924 handleFullscreenChange:1043 handleBeforeUnload:1049 handlePaste:1053 of:1167 isInternalPanelDrag:1170 handleGlobalDragEnter:1173 handleGlobalDragOver:1187 showDropFallbackPrompt:1205 cleanup:1235 outsideClick:1263 isImageFile:1275 first:1276 must:1289 extractDropData:1291 processExtractedDrop:1346 handleGlobalDrop:1467 handleDocumentDrop:1513
 frontend/src/assets/solid.svg | - | 1 |
@@ -1945,7 +1945,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 899 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 902 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2016,7 +2016,7 @@ frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22
 frontend/src/game/sound-engine.ts | typescript | 137 | ac:14 Route:33 tone:41 sweep:57 noise:74 Sfx:91 playSfx:93 sfxInto:97 startMusic:116 stopMusic:128 setMuted:132
 frontend/src/gifenc.d.ts | typescript | 25 | quantize:3 GIFEncoder:24
 frontend/src/help-docs/features/animate.md | - | 212 |
-frontend/src/help-docs/features/animation.md | - | 775 |
+frontend/src/help-docs/features/animation.md | - | 801 |
 frontend/src/help-docs/features/arcade.md | - | 149 |
 frontend/src/help-docs/features/artboards.md | - | 104 |
 frontend/src/help-docs/features/bulk-editing.md | - | 103 |
@@ -2419,7 +2419,7 @@ frontend/src/utils/pwa.ts | typescript | 150 | isBusy:52 initPWA:60 armAutoApply
 frontend/src/utils/qr-code.test.ts | typescript | 299 | QrPathSink:6 recorder:128 matrix:138
 frontend/src/utils/qr-code.ts | typescript | 364 | QrErrorCorrection:7 QrMatrix:33 QrMatrixResult:34 buildQrMatrix:43 qrRuns:65 qrLayout:86 QrModuleStyle:106 QrFinderStyle:107 QrPathSink:110{moveTo:111 lineTo:112 bezierCurveTo:113 arc:114 rect:115 closePath:116} isFinderModule:128 qrAlignmentCentres:138 isAlignmentModule:155 qrLogoBox:164 qrLogoCoverage:176 traceRoundedSquare:191 traceCircle:205 traceQrModules:216 traceQrAlignment:261 traceQrFinders:290 luminance:313 contrastRatio:325 qrWarnings:333
 frontend/src/utils/rasterize.ts | typescript | 96 | RasterizeOptions:14
-frontend/src/utils/recording-manager.ts | typescript | 616 | VideoFormat:10 stopCanvasGif:73 liveCaptureRect:87 startCanvasGif:114 recordCanvasGif:227 makePageFrameRenderer:239 exportPageVideo:349 exportPageGif:410 setupRecording:466
+frontend/src/utils/recording-manager.ts | typescript | 744 | VideoFormat:10 Slide:31 stopCanvasGif:74 liveCaptureRect:88 startCanvasGif:115 recordCanvasGif:228 FrameRegion:236 poseAt:250 animatedContentBounds:304 makeRegionFrameRenderer:325 renderRegionFrame:379 renderRegionGif:405 makePageFrameRenderer:433 exportPageVideo:477 exportPageGif:538 setupRecording:594
 frontend/src/utils/render-element.ts | typescript | 236 | cubicBezier:16 cubicBezierAngle:22 renderNullGizmo:95 renderVariableWidthStroke:201 adjustColor:232
 frontend/src/utils/reparent.ts | typescript | 186 | confirmAndReparent:17
 frontend/src/utils/resize-box.test.ts | typescript | 122 | ResizeBox:2
@@ -2605,11 +2605,12 @@ scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 la
 scripts/npm/yappy.d.ts | typescript | 34 | ToSvgOptions:6 toSVG:25
 scripts/prerender.ts | typescript | 80 | lastmodFor:48 main:61
 scripts/publish-npm.sh | shell | 144 | info:25 error:26 OTP_ARGS=:136
-scripts/publish-oss.sh | shell | 378 | info:43 warn:44 error:45 REQUIRED_PATHS=:180 MISSING_PATHS=:193
+scripts/publish-oss.sh | shell | 381 | info:43 warn:44 error:45 REQUIRED_PATHS=:183 MISSING_PATHS=:196
 scripts/record-gifs.mjs | javascript | 173 | clip:48 toGif:64 run:75
 scripts/record-inflate-demo.mjs | javascript | 435 | performer:33 run:137
 scripts/record-showcase.mjs | javascript | 336 | run:80
 scripts/render-dsl.mjs | javascript | 279 | parseArgs:50 opts:51 parseWidths:83 readManifest:93 fail:108 isUp:137 waitUntilUp:144 main:153
+scripts/render.mjs | javascript | 321 | parseArgs:55 opts:56 fail:90 outputKind:124 readInput:135 isUp:150 waitUntilUp:157 hasFfmpeg:166 startFfmpeg:172 main:201
 scripts/repograph-refresh.sh | shell | 26 |
 scripts/test_relative_path.ts | typescript | 58 |
 scripts/vendor-tinyfly.sh | shell | 44 |
@@ -2798,6 +2799,7 @@ tests/quick-wins-video2.spec.ts | typescript | 111 | countRed:93
 tests/recolor-live.spec.ts | typescript | 18 |
 tests/recolor.spec.ts | typescript | 36 | S:10
 tests/recording-capture.spec.ts | typescript | 326 | Page:1 GifInfo:24 parseGif:26 expectValidLoopingGif:38 boot:48 drawSomething:59 present:65 dismissToasts:73
+tests/render-frame.spec.ts | typescript | 74 | redX:28
 tests/repeat-symmetry.spec.ts | typescript | 75 |
 tests/reshape.spec.ts | typescript | 36 |
 tests/review-fixes.spec.ts | typescript | 79 | st:3

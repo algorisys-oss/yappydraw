@@ -6,7 +6,7 @@
 
 import { createSignal, createEffect, untrack } from "solid-js";
 import { store, setStore, isLayerVisible, updateSlideThumbnail } from "../store/app-store";
-import { isExportable } from "./export";
+import { isExportable, elementsBounds, ensureExportImages } from "./export";
 import { VideoRecorder, type VideoFormat } from "./video-recorder";
 import { showToast } from "../components/toast";
 import rough from 'roughjs';
@@ -28,7 +28,8 @@ const animPassSeconds = (tl: AnimTimeline): number => {
 import { effectiveTime } from "./animation/animation-engine";
 import { withExportTime } from "./animation/scene-clock";
 import { worldToScreen } from "./viewport-transforms";
-import { isPagedDocType } from "../types/slide-types";
+import { isPagedDocType, type Slide } from "../types/slide-types";
+import type { DrawingElement } from "../types";
 
 // Export controls for Menu/Dialog access
 export const [requestRecording, setRequestRecording] = createSignal<{ start: boolean, format?: 'webm' | 'mp4' } | null>(null);
@@ -231,6 +232,199 @@ export async function recordCanvasGif(opts: { seconds?: number; fps?: number; na
     return done;
 }
 
+/** A world-space rectangle to render frames of. `background` null/'transparent' = none. */
+export interface FrameRegion {
+    x: number; y: number; width: number; height: number;
+    background?: string | null;
+    /** Set when the region IS a page: its index in `store.slides` (page background + master layers). */
+    page?: number;
+}
+
+/**
+ * The scene posed at export time `exportMs` (ms since the export's t = 0): every
+ * exportable element, in layer order, with animation, composition, tinyfly and
+ * frame-timeline overrides applied. Also returns the layer opacity each is drawn
+ * with. Shared by frame drawing and by `animatedContentBounds`, so the box an
+ * export is framed to is computed from exactly what gets drawn.
+ */
+function poseAt(exportMs: number, slide: Slide | null): { el: DrawingElement; layerOpacity: number }[] {
+    const sceneT = exportMs / 1000;
+    const anim = calculateAllAnimatedStates(store.elements, exportMs, true);
+    if (store.compositionTracks.length > 0 || store.tinyflyClips.length > 0 || store.elements.some(e => e.transformParentId)) {
+        const clipOverrides = store.tinyflyClips.length > 0 ? evaluateTinyflyClips(sceneT, store.tinyflyClips, store.elements) : undefined;
+        applyCompositionOverrides(anim, store.elements, sceneT, store.compositionTracks, clipOverrides);
+    }
+
+    // Animation mode: quantize elapsed export time to the timeline's fps and
+    // resolve that frame's cel + tween poses. Driving the store playhead too
+    // keeps nested movie-clip rendering (which reads it) frame-exact.
+    let animVisible: Set<string> | null = null;
+    if (store.docType === 'animation' && store.animTimeline) {
+        const tl = store.animTimeline;
+        // Export covers the marked in/out range (the whole ruler when none).
+        const [lo, hi] = playbackRange(tl);
+        const f = lo + (Math.floor(sceneT * tl.fps) % (hi - lo + 1));
+        if (store.animCurrentFrame !== f) setStore('animCurrentFrame', f);
+        const ev = evaluateTimelineAt(f, tl, store.elements);
+        animVisible = ev.visible;
+        for (const id in ev.overrides) {
+            const existing = anim.get(id);
+            if (existing) Object.assign(existing, ev.overrides[id]);
+            else anim.set(id, { ...ev.overrides[id] } as any);
+        }
+    }
+
+    const out: { el: DrawingElement; layerOpacity: number }[] = [];
+    const sortedLayers = [...store.layers].sort((a, b) => a.order - b.order);
+    for (const layer of sortedLayers) {
+        if (!isLayerVisible(layer.id)) continue;
+        const layerOpacity = layer?.opacity ?? 1;
+        // isExportable: hidden elements and null objects (authoring gizmos) never reach a frame.
+        for (const el of store.elements) {
+            if (el.layerId !== layer.id || !isExportable(el)) continue;
+            if (animVisible && !animVisible.has(el.id)) continue;
+            let renderEl = el;
+            if (layer.isMaster && slide) {
+                const projected = projectMasterPosition(el, slide, store.slides);
+                renderEl = { ...el, x: projected.x, y: projected.y };
+            }
+            const ov = anim.get(el.id);
+            if (ov) renderEl = { ...renderEl, ...ov };
+            out.push({ el: renderEl, layerOpacity });
+        }
+    }
+    return out;
+}
+
+/**
+ * Union of the posed scene's bounds over `seconds` (sampled `samples` times), so a
+ * video of something that moves is framed to where it GOES, not only where it starts.
+ * Null when there is nothing to draw.
+ */
+export function animatedContentBounds(seconds: number, samples = 24): { x: number; y: number; width: number; height: number } | null {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const n = seconds > 0 ? Math.max(1, Math.floor(samples)) : 0;
+    for (let i = 0; i <= n; i++) {
+        const posed = poseAt(n ? (seconds * 1000 * i) / n : 0, null).map(p => p.el);
+        if (!posed.length) continue;
+        const b = elementsBounds(posed);
+        if (b.maxX - b.minX <= 0 && b.maxY - b.minY <= 0) continue;
+        minX = Math.min(minX, b.minX); minY = Math.min(minY, b.minY);
+        maxX = Math.max(maxX, b.maxX); maxY = Math.max(maxY, b.maxY);
+    }
+    if (!isFinite(minX)) return null;
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/**
+ * Offscreen renderer for one world-space region: a hidden canvas at `k` pixels per
+ * unit plus `drawAt(exportMs)`, which renders the region exactly as the live canvas
+ * would at that export time. `slide` is the page being exported, when there is one:
+ * it supplies the page background and master-layer projection.
+ */
+export function makeRegionFrameRenderer(region: FrameRegion, k: number, forGif = false, slide: Slide | null = null) {
+    const { x: spatialX, y: spatialY, width: sW, height: sH } = region;
+    if (!(sW > 0) || !(sH > 0) || !(k > 0)) return null;
+    const off = document.createElement('canvas');
+    off.width = Math.max(1, Math.round(sW * k));
+    off.height = Math.max(1, Math.round(sH * k));
+    const ctx = off.getContext('2d', forGif ? { willReadFrequently: true } : undefined);
+    if (!ctx) return null;
+    const rc = rough.canvas(off);
+    const isDark = store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus';
+    const bg = region.background && region.background !== 'transparent' ? region.background : null;
+
+    const drawAt = (exportMs: number) => {
+        const sceneT = exportMs / 1000;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, off.width, off.height);
+        if (!slide && bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, off.width, off.height); }
+        ctx.save();
+        ctx.scale(k, k);
+        ctx.translate(-spatialX, -spatialY);
+        if (slide) renderSlideBackground(ctx, rc, slide, spatialX, spatialY, sW, sH, store.theme);
+
+        const posed = poseAt(exportMs, slide);
+
+        // Camera layer: zoom/pan the stage content in the exported frames too.
+        if (store.docType === 'animation' && store.animTimeline?.camera?.length) {
+            const cam = evaluateCameraAt(store.animCurrentFrame, store.animTimeline);
+            if (cam) {
+                ctx.translate(spatialX + sW / 2, spatialY + sH / 2);
+                ctx.scale(cam.zoom, cam.zoom);
+                ctx.translate(-(spatialX + cam.x), -(spatialY + cam.y));
+            }
+        }
+
+        const margin = 200; // cheap region-overlap cull (post-override AABB)
+        for (const { el, layerOpacity } of posed) {
+            if (el.x + el.width < spatialX - margin || el.x > spatialX + sW + margin ||
+                el.y + el.height < spatialY - margin || el.y > spatialY + sH + margin) continue;
+            withExportTime(sceneT, () => renderElement(rc, ctx, el, isDark, layerOpacity));
+        }
+        ctx.restore();
+    };
+
+    return { off, ctx, drawAt };
+}
+
+let frameCache: { key: string; r: NonNullable<ReturnType<typeof makeRegionFrameRenderer>> } | null = null;
+
+/**
+ * One frame of `region` at export time `exportMs`, as a data URL. Deterministic: the
+ * time is absolute, so frames can be rendered in any order, at any pace, which is what
+ * an offline renderer (the `render` CLI) needs and a real-time recorder can't give.
+ * The offscreen canvas is reused while region and scale stay the same.
+ */
+export async function renderRegionFrame(
+    region: FrameRegion, k: number, exportMs: number,
+    opts: { slide?: Slide | null; mime?: 'image/png' | 'image/jpeg'; quality?: number } = {},
+): Promise<string | null> {
+    if (store.tinyflyClips.length > 0) await ensureTinyflyEngine(); // clips render nothing until it has loaded
+    await ensureExportImages();
+    const mime = opts.mime ?? 'image/png';
+    // JPEG has no alpha: a transparent frame would come out black.
+    const background = mime === 'image/jpeg' && (!region.background || region.background === 'transparent') ? '#ffffff' : region.background;
+    const slide = opts.slide ?? null;
+    const key = JSON.stringify([region.x, region.y, region.width, region.height, background, k, slide?.id ?? null]);
+    if (!frameCache || frameCache.key !== key) {
+        const r = makeRegionFrameRenderer({ ...region, background }, k, false, slide);
+        if (!r) return null;
+        frameCache = { key, r };
+    }
+    frameCache.r.drawAt(Math.max(0, exportMs));
+    try { return frameCache.r.off.toDataURL(mime, opts.quality); } catch { return null; }
+}
+
+/**
+ * A looping GIF of `region` over `seconds`, rendered frame by frame at exact times
+ * (not recorded in real time), so a slow machine or a headless browser produces the
+ * same file as a fast one. Frames sit on the GIF's 10 ms delay grid, which is what a
+ * viewer plays them at. Returns the file's bytes; downloads nothing.
+ */
+export async function renderRegionGif(
+    region: FrameRegion, k: number, seconds: number, fps: number, slide: Slide | null = null,
+): Promise<Uint8Array | null> {
+    if (store.tinyflyClips.length > 0) await ensureTinyflyEngine();
+    await ensureExportImages();
+    const background = region.background && region.background !== 'transparent' ? region.background : '#ffffff';
+    const r = makeRegionFrameRenderer({ ...region, background }, k, true, slide);
+    if (!r) return null;
+    const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
+    const gif = GIFEncoder();
+    const delay = gifFrameDelayMs(Math.max(1, Math.min(50, fps)));
+    const count = Math.max(1, Math.ceil((Math.max(0, seconds) * 1000) / delay));
+    for (let i = 0; i < count; i++) {
+        r.drawAt(i * delay);
+        const { data } = r.ctx.getImageData(0, 0, r.off.width, r.off.height);
+        const palette = quantize(data, 256);
+        // repeat: 0 on the first frame writes the loop block → loops forever.
+        gif.writeFrame(applyPalette(data, palette), r.off.width, r.off.height, { palette, delay, repeat: i === 0 ? 0 : undefined });
+    }
+    gif.finish();
+    return gif.bytes();
+}
+
 /** Offscreen page renderer shared by the video and GIF exports: a hidden
  *  canvas sized to the active page (long side capped at `maxSide`) plus a
  *  `draw(tMs)` that renders the page exactly as the live canvas would at
@@ -244,87 +438,21 @@ export function makePageFrameRenderer(maxSide: number, forGif = false) {
     if (!sW || !sH) return null;
 
     const k = Math.min(1, maxSide / Math.max(sW, sH));
-    const off = document.createElement('canvas');
-    off.width = Math.round(sW * k);
-    off.height = Math.round(sH * k);
-    const ctx = off.getContext('2d', forGif ? { willReadFrequently: true } : undefined);
-    if (!ctx) return null;
-    const rc = rough.canvas(off);
-    const isDark = store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus';
+    const r = makeRegionFrameRenderer({ x: spatialX, y: spatialY, width: sW, height: sH }, k, forGif, slide);
+    if (!r) return null;
 
     let baseT: number | null = null; // first draw() call = export time zero
+    // Everything clock-driven is export time: the export starts at t = 0. `tMs` is the
+    // app's animation clock, which keeps whatever the session has accumulated, so using it
+    // directly started the export part-way through the scene (or on its last frame).
+    // Orbit/spin read `exportMs`; keyframes and tinyfly clips read `sceneT`; stick figures
+    // and flow dashes read it through `withExportTime`.
     const draw = (tMs: number) => {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, off.width, off.height);
-        ctx.save();
-        ctx.scale(k, k);
-        ctx.translate(-spatialX, -spatialY);
-        renderSlideBackground(ctx, rc, slide, spatialX, spatialY, sW, sH, store.theme);
-
         if (baseT === null) baseT = tMs;
-        // Everything clock-driven is export time: the export starts at t = 0. `tMs` is the
-        // app's animation clock, which keeps whatever the session has accumulated, so using it
-        // directly started the export part-way through the scene (or on its last frame).
-        // Orbit/spin read `exportMs`; keyframes and tinyfly clips read `sceneT`; stick figures
-        // and flow dashes read it through `withExportTime` below.
-        const exportMs = tMs - baseT;
-        const sceneT = exportMs / 1000;
-        const anim = calculateAllAnimatedStates(store.elements, exportMs, true);
-        if (store.compositionTracks.length > 0 || store.tinyflyClips.length > 0 || store.elements.some(e => e.transformParentId)) {
-            const clipOverrides = store.tinyflyClips.length > 0 ? evaluateTinyflyClips(sceneT, store.tinyflyClips, store.elements) : undefined;
-            applyCompositionOverrides(anim, store.elements, sceneT, store.compositionTracks, clipOverrides);
-        }
-
-        // Animation mode: quantize elapsed export time to the timeline's fps and
-        // resolve that frame's cel + tween poses. Driving the store playhead too
-        // keeps nested movie-clip rendering (which reads it) frame-exact.
-        let animVisible: Set<string> | null = null;
-        if (store.docType === 'animation' && store.animTimeline) {
-            const tl = store.animTimeline;
-            // Export covers the marked in/out range (the whole ruler when none).
-            const [lo, hi] = playbackRange(tl);
-            const f = lo + (Math.floor(sceneT * tl.fps) % (hi - lo + 1));
-            if (store.animCurrentFrame !== f) setStore('animCurrentFrame', f);
-            const ev = evaluateTimelineAt(f, tl, store.elements);
-            animVisible = ev.visible;
-            for (const id in ev.overrides) {
-                const existing = anim.get(id);
-                if (existing) Object.assign(existing, ev.overrides[id]);
-                else anim.set(id, { ...ev.overrides[id] } as any);
-            }
-            // Camera layer: zoom/pan the stage content in the exported frames too.
-            const cam = tl.camera?.length ? evaluateCameraAt(f, tl) : null;
-            if (cam) {
-                ctx.translate(spatialX + sW / 2, spatialY + sH / 2);
-                ctx.scale(cam.zoom, cam.zoom);
-                ctx.translate(-(spatialX + cam.x), -(spatialY + cam.y));
-            }
-        }
-
-        const sortedLayers = [...store.layers].sort((a, b) => a.order - b.order);
-        const margin = 200; // cheap page-overlap cull (post-override AABB)
-        sortedLayers.forEach(layer => {
-            if (!isLayerVisible(layer.id)) return;
-            const layerOpacity = layer?.opacity ?? 1;
-            // isExportable: hidden elements and null objects (authoring gizmos) never reach a frame.
-            store.elements.filter(el => el.layerId === layer.id && isExportable(el)).forEach(el => {
-                if (animVisible && !animVisible.has(el.id)) return;
-                let renderEl = el;
-                if (layer.isMaster) {
-                    const projected = projectMasterPosition(el, slide, store.slides);
-                    renderEl = { ...el, x: projected.x, y: projected.y };
-                }
-                const ov = anim.get(el.id);
-                if (ov) renderEl = { ...renderEl, ...ov };
-                if (renderEl.x + renderEl.width < spatialX - margin || renderEl.x > spatialX + sW + margin ||
-                    renderEl.y + renderEl.height < spatialY - margin || renderEl.y > spatialY + sH + margin) return;
-                withExportTime(sceneT, () => renderElement(rc, ctx, renderEl, isDark, layerOpacity));
-            });
-        });
-        ctx.restore();
+        r.drawAt(tMs - baseT);
     };
 
-    return { off, ctx, draw };
+    return { off: r.off, ctx: r.ctx, draw };
 }
 
 const downloadBlob = (blob: Blob, filename: string) => {

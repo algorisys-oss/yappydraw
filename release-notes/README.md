@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.265](0.8.265.md) — Frame-exact rendering: `Yappy.renderFrame`/`renderGif` and the `npm run render` CLI (document or scene script → PNG, GIF, MP4, WebM)
 - [0.8.264](0.8.264.md) — `Yappy.draw`: Canvas 2D / Cairo-style pen drawing (`moveTo`, `arc`, `fill`, `stroke`) from a script, where every paint becomes an editable path
 - [0.8.263](0.8.263.md) — Big drawings pan smoothly
 - [0.8.262](0.8.262.md) — CDN SDK loads again
