@@ -12,7 +12,7 @@ import { WARP_PRESETS } from './envelope-warp';
 import { replaceImageOn } from './image-actions';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard, openArtboardDialog, duplicateArtboard,
     blendShapes, blendAlongPath, blendShapesMorph,
     toggleRecolorPanel, toggleBehaviorsPanel, isDevMode,
     toggleShapeBuilder,
@@ -1715,6 +1715,8 @@ function buildContextMenuItems(
             {
                 label: 'Artboards', icon: '▭',
                 submenu: [
+                    { label: 'New Artboard…', shortcut: 'Shift+O', onClick: () => openArtboardDialog() },
+                    { separator: true } as MenuItem,
                     { label: 'Add — Square 1080', onClick: () => addArtboard('Square 1080') },
                     { label: 'Add — A4 Portrait', onClick: () => addArtboard('A4 Portrait') },
                     { label: 'Add — Instagram Story', onClick: () => addArtboard('Instagram Story') },
@@ -1723,6 +1725,9 @@ function buildContextMenuItems(
                         { separator: true } as MenuItem,
                         ...store.artboards.map(ab => ({
                             label: ab.name, submenu: [
+                                { label: 'Duplicate as Variations…', onClick: () => openArtboardDialog({ sourceId: ab.id }) },
+                                { label: 'Duplicate', onClick: () => duplicateArtboard(ab.id) },
+                                { separator: true } as MenuItem,
                                 { label: 'Export PNG (2×)', onClick: () => exportArtboard(ab.id, 2) },
                                 { label: 'Export PNG (1×)', onClick: () => exportArtboard(ab.id, 1) },
                                 { separator: true } as MenuItem,

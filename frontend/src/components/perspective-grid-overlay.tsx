@@ -1,7 +1,7 @@
 import { Show, For, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane } from '../store/app-store';
 import { perspectiveVPs, type PerspectiveMode, type PerspectivePlane } from '../utils/perspective-snap';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import './perspective-grid-overlay.css';
 
 const PLANES: { id: PerspectivePlane; label: string; title: string }[] = [
@@ -27,8 +27,8 @@ export const PerspectiveGridOverlay = () => {
     const [showConfig, setShowConfig] = createSignal(false);
     const active = () => store.perspectiveGridActive && !!store.perspectiveGrid;
     const g = () => store.perspectiveGrid!;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
-    const w2s = (x: number, y: number) => worldToScreen(x, y, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
+    const w2s = (x: number, y: number) => worldToWindow(x, y);
 
     const grab = (which: 'left' | 'right' | 'vertical' | 'horizon') => (e: PointerEvent) => { e.preventDefault(); e.stopPropagation(); setDrag(which); };
     const onMove = (e: PointerEvent) => {

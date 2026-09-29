@@ -128,6 +128,7 @@ E or 7 | Eraser tool
 Shift+P | Laser pointer
 [ / ] | Decrease/increase brush size
 Shift+Q | Toggle Smart Shapes
+Alt+T | Type on Path (click a path, type, Enter)
 :::
 
 ## Smart Shapes (hold to correct)
@@ -197,13 +198,51 @@ Once you've finished typing, **drag a corner handle to scale the text itself**, 
 
 ## Text on Path (Curved Text)
 
-Any path-like element can carry a text label that follows its shape. Double-click the element to type, then toggle **Curved Text** in the quick toolbar to make the text flow along the path.
+Text can follow any path: a curve you drew with the **Pen tool**, a line or connector, a freehand stroke, or the outline of a closed shape. It is the tool for a logo's circular type, an arched headline, or a label that bends along a road.
 
-- **Pen strokes** (Fineliner, Ink Brush, Marker) — text follows the stroke you drew.
-- **Connectors** — lines, arrows, bezier curves, elbows, and polylines.
-- **Closed shapes** — rectangle, circle, diamond, triangle, polygons, etc.; the text wraps around the outline.
+**Type on Path tool.** Press **Alt+T**, or open the Text tool's flyout in the toolbar and choose **Type on Path**. Hover a path (it highlights), click it, type, and press **Enter**. Esc closes the field, and a second Esc leaves the tool. The first time, the text is **centred**: at the top of a circle or other closed shape, and mid-way along an open path.
 
-With Curved Text off, the label stays a normal centered caption. On closed shapes you can nudge where the text starts and whether it sits on or just outside the outline.
+Works on:
+
+- **Pen paths** (P): any curve or shape you draw, open or closed. On a compound path, the text follows its first subpath.
+- **Connectors**: lines, arrows, bezier curves, elbows and polylines.
+- **Pen strokes** (Fineliner, Ink Brush, Marker).
+- **Closed shapes**: rectangle, circle, diamond, triangle and polygons; the text wraps around the outline.
+
+You can also double-click a shape or connector to type a label and switch on **Text on Path** in the quick toolbar or Properties panel.
+
+**Layout** (Properties panel → Text, once Text on Path is on):
+
+| Setting | What it does |
+| --- | --- |
+| **Start Position** | Where the text sits along the path, 0–1 (0 = the start, or the top of a loop). |
+| **Text Align** | *Start at position* puts the first letter there; *Center on position* puts the middle of the text there. |
+| **Flip to Other Side** | Moves the text to the other side of the path, still reading left to right. On a loop it runs the other way round, which gives the bottom half of a badge. |
+| **Text Position** | On the line, or just outside it. |
+| **Letter Spacing** | Extra space between letters (negative tightens). |
+
+**Logo badge recipe.** Draw a circle (O) and give it the top text: Alt+T, click, type. For the bottom line, draw a second circle the same size, give it its text, then set **Flip to Other Side** on and **Start Position** to **0.5**. To hide a ring and keep only its text, set its stroke to none. The text stays visible and uses its own text colour (black by default).
+
+```
+const Y = window.Yappy;
+const ring = Y.createCircle(0, 0, 300, 300);
+Y.attachTextToPath(ring, 'YAPPY DRAW STUDIO');                          // centred on top
+const low = Y.createCircle(0, 0, 300, 300, { strokeColor: 'transparent' });
+Y.attachTextToPath(low, 'EST 2026', { flip: true, align: 'center', offset: 0.5 });
+const arch = Y.createPath([
+  { x: 400, y: 200, kind: 'smooth', outX: 80, outY: -150 },
+  { x: 700, y: 200, kind: 'smooth', inX: -80, inY: -150 },
+]);
+Y.attachTextToPath(arch, 'along a pen path');                            // mid-way, centred
+```
+
+`attachTextToPath(id, text, { align, offset, flip, side, spacing })` returns `false` when the element has no path to follow. The same settings are element properties: `curvedText`, `textPathOffset`, `textPathAlign`, `textPathFlip`, `textPathSide` and `textPathSpacing`.
+
+Curved text renders in both the sketch and architectural styles and is exported to PNG and SVG as it appears.
+
+Text follows the outline each shape actually draws, including rounded rectangle corners and a capsule's round ends.
+
+**Known limitations:** A compound path carries text on its first subpath only, since text jumping between separate contours would be unreadable. The text is laid out along the path; it does not warp the letter shapes. For bent letterforms use a warp preset (Arc, Arch, Flag, Wave…).
 
 ## Scripting (API)
 

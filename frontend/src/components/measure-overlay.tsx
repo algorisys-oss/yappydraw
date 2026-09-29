@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleMeasure } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import { measureLine, shapeMetrics } from '../utils/measure-readout';
 import { constrainToAngle } from '../utils/angle-constrain';
 import { formatValue, formatLength, formatArea, pxToUnit, unitDecimals } from '../utils/units';
@@ -18,7 +18,7 @@ export const MeasureOverlay = () => {
     const [m, setM] = createSignal<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
     let dragging = false;
 
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const onDown = (e: PointerEvent) => {
         if (!store.measureActive) return;
@@ -53,10 +53,10 @@ export const MeasureOverlay = () => {
 
     const seg = () => {
         const v = m(); if (!v) return null;
-        const a = worldToScreen(v.x1, v.y1, store.viewState as any);
-        const b = worldToScreen(v.x2, v.y2, store.viewState as any);
+        const a = worldToWindow(v.x1, v.y1);
+        const b = worldToWindow(v.x2, v.y2);
         // Right-angle corner of the Δx/Δy triangle (screen space).
-        const c = worldToScreen(v.x2, v.y1, store.viewState as any);
+        const c = worldToWindow(v.x2, v.y1);
         const r = measureLine(v.x1, v.y1, v.x2, v.y2);
         return {
             a, b, c,
@@ -70,7 +70,7 @@ export const MeasureOverlay = () => {
         if (store.selection.length !== 1) return null;
         const el = store.elements.find(e => e.id === store.selection[0]);
         if (!el) return null;
-        const p = worldToScreen(el.x, el.y, store.viewState as any);
+        const p = worldToWindow(el.x, el.y);
         return { m: shapeMetrics(el), sx: p.x, sy: p.y };
     };
 

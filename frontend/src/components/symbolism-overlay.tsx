@@ -1,6 +1,6 @@
 import { Show, For, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleSymbolism, setSymbolismMode, applySymbolism, pushToHistory } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import './symbolism-overlay.css';
 
 const MODES: { id: any; label: string }[] = [
@@ -21,7 +21,7 @@ export const SymbolismOverlay = () => {
     let prev: { x: number; y: number } | null = null;
 
     const active = () => store.symbolismActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const onDown = (e: PointerEvent) => {
         if (!active() || e.button !== 0) return;
@@ -54,7 +54,7 @@ export const SymbolismOverlay = () => {
         onCleanup(() => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('keydown', onKey); });
     });
 
-    const cur = () => { const c = cursor(); return c ? worldToScreen(c.x, c.y, store.viewState as any) : null; };
+    const cur = () => { const c = cursor(); return c ? worldToWindow(c.x, c.y) : null; };
     const scale = () => store.viewState?.scale ?? 1;
 
     return (

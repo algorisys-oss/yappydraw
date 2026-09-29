@@ -47,7 +47,7 @@ import { DEFAULT_INFLATE, clearInflateCache } from "../utils/inflate";
 import { captureElementsToDataURL } from "../utils/pattern-capture";
 import { saveAsset, downscaleDataUrl, type AssetMeta } from "../storage/asset-library";
 import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } from "../utils/color-adjust";
-import { getStyleSnapshot } from "../utils/object-context-actions";
+import { getStyleSnapshot, remapElementBindings } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { mirrorGeometry } from "../utils/geometry-mirror";
@@ -68,6 +68,7 @@ import { refreshBoundLine } from "../utils/binding-logic";
 import { abortDsAlgorithm } from "../utils/ds-operations";
 import { getImage } from "../utils/image-cache";
 import { defaultPaletteId } from "../config/color-palettes";
+import { getElementTextPath } from "../utils/text-on-path";
 
 export type Theme = 'light' | 'dark' | 'focus' | 'system';
 export type ResolvedTheme = 'light' | 'dark' | 'focus';
@@ -356,6 +357,12 @@ interface AppState {
     touchTypeActive: boolean;
     /** Type on Path mode: click a line/curve to flow text along it (transient). */
     typeOnPathActive: boolean;
+    /** Artboard tool (Shift+O): drag on the canvas to draw an artboard, click for the dialog (transient). */
+    artboardToolActive: boolean;
+    /** New Artboard dialog; `x`/`y` place the first frame (world), absent = right of existing ones.
+     *  `sourceId` = the artboard to make variations of, captured at open time — the live selection
+     *  can't be used, since any click outside the artboard overlay (the dialog included) clears it. */
+    artboardDialog: { open: boolean; x?: number; y?: number; sourceId?: string };
     /** Curvature tool mode: click points to draw a smooth curve through them (transient). */
     curveToolActive: boolean;
     /** Reshape tool mode: drag a path/segment to bend it while pinning endpoints (transient). */
@@ -750,6 +757,8 @@ const initialState: AppState = {
     widthToolActive: false,
     touchTypeActive: false,
     typeOnPathActive: false,
+    artboardToolActive: false,
+    artboardDialog: { open: false },
     curveToolActive: false,
     reshapeToolActive: false,
     nodeToolActive: false,
@@ -3495,6 +3504,58 @@ export const addArtboard = (preset?: string, x?: number, y?: number): string => 
     return ab.id;
 };
 
+/**
+ * Where a new frame of `height` should go when the caller didn't say: to the right of every
+ * artboard sharing its row band (y overlap), so a new or duplicated frame never lands on top
+ * of one that's already there. `fromX` is the frame being copied, if any.
+ */
+const nextArtboardSlot = (y: number, height: number, gap: number, fromRight?: number): number => {
+    let right = fromRight ?? -Infinity;
+    for (const a of store.artboards) {
+        if (a.y < y + height && a.y + a.height > y) right = Math.max(right, a.x + a.width);
+    }
+    return Number.isFinite(right) ? right + gap : 0;
+};
+
+const clampArtboardSize = (n: number) => Math.max(1, Math.min(100000, Math.round(Number.isFinite(n) ? n : 1080)));
+
+/**
+ * Create one or more blank artboards of a custom size in a row (the New Artboard dialog and the
+ * Artboard tool). `count` copies are laid out left-to-right with `gap` between them — side-by-
+ * side variations of one design. Without x/y they go to the right of existing frames in the top
+ * row. One undo step. Returns the new ids, the first one selected.
+ */
+export const createArtboards = (opts: { width: number; height: number; name?: string; count?: number; gap?: number; x?: number; y?: number; background?: string }): string[] => {
+    const width = clampArtboardSize(opts.width), height = clampArtboardSize(opts.height);
+    const count = Math.max(1, Math.min(50, Math.floor(opts.count ?? 1)));
+    const gap = Math.max(0, opts.gap ?? 40);
+    const y = opts.y ?? 0;
+    let x = opts.x ?? nextArtboardSlot(y, height, gap);
+    const base = (opts.name ?? '').trim();
+    const created: Artboard[] = [];
+    for (let i = 0; i < count; i++) {
+        const n = store.artboards.length + created.length + 1;
+        const name = base ? (count > 1 ? `${base} ${i + 1}` : base) : `Artboard ${n}`;
+        created.push({ id: generateId('ab' as any), name, x, y, width, height, background: opts.background ?? '#ffffff' });
+        x += width + gap;
+    }
+    pushToHistory();
+    setStore('artboards', list => [...list, ...created]);
+    setStore('activeArtboardId', created[0].id);
+    bumpDirtyRevision();
+    showToast(count > 1 ? `${count} artboards added (${width}×${height})` : `Artboard added (${width}×${height})`, 'success');
+    return created.map(a => a.id);
+};
+
+export const openArtboardDialog = (opts?: { x?: number; y?: number; sourceId?: string }) =>
+    setStore('artboardDialog', { open: true, x: opts?.x, y: opts?.y, sourceId: opts?.sourceId });
+export const closeArtboardDialog = () => setStore('artboardDialog', { open: false });
+export const toggleArtboardTool = (active?: boolean) => {
+    const next = active ?? !store.artboardToolActive;
+    if (next) exitAllToolModes();
+    setStore('artboardToolActive', next);
+};
+
 export const setActiveArtboard = (id: string | null) => setStore('activeArtboardId', id);
 export const deleteArtboard = (id: string) => { pushToHistory(); setStore('artboards', list => list.filter(a => a.id !== id)); if (store.activeArtboardId === id) setStore('activeArtboardId', null); bumpDirtyRevision(); };
 export const renameArtboard = (id: string, name: string) => { setStore('artboards', (a: Artboard) => a.id === id, 'name', () => name); bumpDirtyRevision(); };
@@ -3534,28 +3595,53 @@ export const rearrangeArtboards = (columns = 0, gap = 40) => {
  * Duplicate an artboard and the artwork sitting on it, placed to the right
  * (Illustrator's Alt-drag with the artboard tool). Returns the new artboard id.
  */
-export const duplicateArtboard = (id?: string, gap = 40): string | null => {
+export const duplicateArtboard = (id?: string, gap = 40, count = 1): string | null => {
     const src = store.artboards.find(a => a.id === (id ?? store.activeArtboardId ?? store.artboards[0]?.id));
     if (!src) { showToast('No artboard to duplicate', 'error'); return null; }
-    const dx = src.width + gap, dy = 0;
-    const newAb: Artboard = { ...src, id: generateId('ab' as any), name: `${src.name} copy`, x: src.x + dx, y: src.y + dy };
+    const n = Math.max(1, Math.min(50, Math.floor(count)));
     // Clone the elements whose centre lies within the source artboard.
     const inside = store.elements.filter(e => {
         const cx = e.x + e.width / 2, cy = e.y + e.height / 2;
         return cx >= src.x && cx <= src.x + src.width && cy >= src.y && cy <= src.y + src.height;
     });
+    // Copies go past every frame already in this row — a second "Duplicate" used to land
+    // exactly on top of the first copy, since both measured from the source.
+    const firstX = nextArtboardSlot(src.y, src.height, gap, src.x + src.width);
     const batchIds = new Set<string>(store.elements.map(e => e.id));
-    const clones = inside.map(e => {
-        const nid = generateId(e.type, batchIds); batchIds.add(nid);
-        return { ...JSON.parse(JSON.stringify(e)), id: nid, x: e.x + dx, y: e.y + dy } as DrawingElement;
-    });
+    const newAbs: Artboard[] = [];
+    const clones: DrawingElement[] = [];
+    for (let i = 0; i < n; i++) {
+        const dx = firstX + i * (src.width + gap) - src.x, dy = 0;
+        newAbs.push({ ...src, id: generateId('ab' as any), name: n > 1 ? `${src.name} ${i + 2}` : `${src.name} copy`, x: src.x + dx, y: src.y + dy });
+        // Each copy is its own design: fresh element AND group ids (a copy used to stay grouped
+        // with the original, so selecting one variation selected both), connector bindings
+        // remapped within the copy, and absolute bezier control points moved with it — the
+        // same treatment paste gives (pasteYappyElements).
+        const idMap = new Map<string, string>();
+        for (const e of inside) {
+            const nid = generateId(e.type, batchIds); batchIds.add(nid); idMap.set(e.id, nid);
+            for (const gid of e.groupIds ?? []) if (!idMap.has(gid)) { const g = generateId('group' as any, batchIds); batchIds.add(g); idMap.set(gid, g); }
+        }
+        const copy = inside.map(e => {
+            const c = JSON.parse(JSON.stringify(e)) as DrawingElement;
+            c.id = idMap.get(e.id)!;
+            c.x = e.x + dx; c.y = e.y + dy;
+            if (c.controlPoints) c.controlPoints = c.controlPoints.map(cp => ({ x: cp.x + dx, y: cp.y + dy }));
+            if (c.groupIds) c.groupIds = c.groupIds.map(g => idMap.get(g) ?? g);
+            return c;
+        });
+        clones.push(...remapElementBindings(copy, idMap));
+    }
     pushToHistory();
-    setStore('artboards', list => [...list, newAb]);
+    setStore('artboards', list => [...list, ...newAbs]);
     if (clones.length) setStore('elements', list => [...list, ...clones]);
-    setStore('activeArtboardId', newAb.id);
+    setStore('activeArtboardId', newAbs[0].id);
     bumpDirtyRevision();
-    showToast(`Duplicated artboard (+${clones.length} object${clones.length === 1 ? '' : 's'})`, 'success');
-    return newAb.id;
+    const per = inside.length;
+    showToast(n > 1
+        ? `${n} copies of “${src.name}” (+${per} object${per === 1 ? '' : 's'} each)`
+        : `Duplicated artboard (+${per} object${per === 1 ? '' : 's'})`, 'success');
+    return newAbs[0].id;
 };
 
 /**
@@ -6789,7 +6875,7 @@ export const toggleTypeOnPath = (active?: boolean) => setStore('typeOnPathActive
  *  non-blocking Perspective Grid aid alone. */
 export const exitAllToolModes = () => {
     const flags = ['cutToolActive', 'shapeBuilderActive', 'livePaintActive', 'widthToolActive', 'curveToolActive',
-        'touchTypeActive', 'typeOnPathActive', 'sliceToolActive', 'symbolismActive', 'reshapeToolActive',
+        'touchTypeActive', 'typeOnPathActive', 'artboardToolActive', 'sliceToolActive', 'symbolismActive', 'reshapeToolActive',
         'nodeToolActive',
         'blobBrushActive', 'pathEraserActive', 'puppetWarpActive', 'measureActive'] as const;
     for (const f of flags) if ((store as any)[f]) setStore(f as any, false);
@@ -6801,13 +6887,35 @@ export const exitAllToolModes = () => {
 };
 
 /** Type on Path — flow `text` along a line/curve/freehand element (sets curvedText + containerText). */
-export const attachTextToPath = (id: string, text: string) => {
+/**
+ * Flow `text` along a path-like element. The first time an element gets curved text, the text is
+ * centred on the path — at the top of a closed loop, mid-way along an open one — since that is
+ * what a badge or an arc label wants and "starts at the first anchor" rarely is. An element that
+ * already carries curved text keeps its layout; explicit `opts` always win.
+ */
+export const attachTextToPath = (
+    id: string, text: string,
+    opts?: { align?: 'start' | 'center'; offset?: number; flip?: boolean; side?: 'on' | 'outside'; spacing?: number },
+): boolean => {
     const el = store.elements.find(e => e.id === id);
-    if (!el) return;
+    // Whatever the layout engine can walk is what can carry text — one definition, not a list.
+    const tp = el ? getElementTextPath(el) : null;
+    if (!el || !tp) return false;
+    const patch: Partial<DrawingElement> = { containerText: text, curvedText: true, isEditing: false };
+    if (!el.curvedText) {
+        patch.textPathAlign = 'center';
+        patch.textPathOffset = tp.closed ? 0 : 0.5;
+    }
+    if (opts?.align !== undefined) patch.textPathAlign = opts.align;
+    if (opts?.offset !== undefined) patch.textPathOffset = Math.max(0, Math.min(1, opts.offset));
+    if (opts?.flip !== undefined) patch.textPathFlip = opts.flip;
+    if (opts?.side !== undefined) patch.textPathSide = opts.side;
+    if (opts?.spacing !== undefined) patch.textPathSpacing = opts.spacing;
     pushToHistory();
-    setStore('elements', e => e.id === id, { containerText: text, curvedText: true, isEditing: false } as any);
+    setStore('elements', e => e.id === id, patch as any);
     bumpDirtyRevision();
     showToast('Text attached to path', 'success');
+    return true;
 };
 export const toggleSliceTool = (active?: boolean) => setStore('sliceToolActive', v => active ?? !v);
 export const toggleSymbolism = (active?: boolean) => setStore('symbolismActive', v => active ?? !v);

@@ -1,9 +1,10 @@
 import { type Component, createSignal, Show, For, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
 import { createFlyoutPlacement } from "../utils/tool-flyout";
-import { store, setSelectedTool, setStore, setToolLocked, showPropertiesPanel } from "../store/app-store";
+import { store, setSelectedTool, setStore, setToolLocked, showPropertiesPanel, toggleTypeOnPath, exitAllToolModes } from "../store/app-store";
+import { t } from "../i18n";
 import type { ElementType } from "../types";
-import { Type, FileText, ChevronDown } from "lucide-solid";
+import { Type, FileText, ChevronDown, Spline } from "lucide-solid";
 import "./pen-tool-group.css";
 
 export type TextType = 'text' | 'richtext';
@@ -115,6 +116,16 @@ const TextToolGroup: Component = () => {
                                 </button>
                             )}
                         </For>
+                        {/* Type on Path is a mode overlay, not a ToolType — it attaches text to an
+                            existing path rather than drawing a text element. */}
+                        <button
+                            class={`dropdown-item ${store.typeOnPathActive ? 'active' : ''}`}
+                            data-testid="tool-type-on-path"
+                            on:click={() => { exitAllToolModes(); toggleTypeOnPath(true); setIsOpen(false); }}
+                            title={`${t('toolbarTool.typeOnPath')} (Alt+T)`}
+                        >
+                            <Spline size={16} />
+                        </button>
                     </div>
                 </Portal>
             </Show>

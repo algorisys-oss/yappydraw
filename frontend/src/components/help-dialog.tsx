@@ -57,6 +57,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'tools-panMode', keys: 'H' },
             { key: 'tools-laserPointer', keys: 'Shift+P' },
             { key: 'tools-inkOverlay', keys: 'Alt+I' },
+            { key: 'tools-artboard', keys: 'Shift+O' },
+            { key: 'tools-typeOnPath', keys: 'Alt+T' },
             { key: 'tools-lockTool', keys: 'Double-click' },
         ]
     },

@@ -6,7 +6,7 @@ import { normalizePoints, cubicBezier } from "../../utils/render-element";
 import { connectorGeometry } from "../../utils/connector-geometry";
 import { resolveFontFamily } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
-import { drawTextAlongPath, getElementTextPath } from "../../utils/text-on-path";
+import { drawTextAlongPath, getElementTextPath, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
 import { exportClockSeconds } from '../../utils/animation/scene-clock';
 
 export class ConnectorRenderer extends ShapeRenderer {
@@ -62,13 +62,8 @@ export class ConnectorRenderer extends ShapeRenderer {
                 const fontFamily = resolveFontFamily(el.fontFamily);
                 renderer.save();
                 renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
-                renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
-                drawTextAlongPath(renderer, text, path.points, fontSize, {
-                    closed: path.closed,
-                    startOffset: el.textPathOffset,
-                    letterSpacing: el.textPathSpacing,
-                    sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
-                });
+                renderer.fillStyle = RenderPipeline.adjustColor(curvedTextColor(el), isDarkMode);
+                drawTextAlongPath(renderer, text, path.points, fontSize, textPathOptionsFor(el, fontSize, path.closed));
                 renderer.restore();
                 return;
             }

@@ -7,7 +7,7 @@ import { getFontString, measureContainerText, containerTextAvailableWidth } from
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
-import { drawTextAlongPath, getOutlinePath, isClosedShapeForText } from "../../utils/text-on-path";
+import { drawTextAlongPath, getElementTextPath, isClosedShapeForText, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
 import { buildFilterString } from "../../utils/image-filter-utils";
 import { getImage } from "../../utils/image-cache";
 import { rasterizeMesh } from "../../utils/mesh-gradient";
@@ -857,22 +857,18 @@ export class RenderPipeline {
             return;
         }
 
-        // Curved Text: wrap the label around the shape's outline instead of
-        // centering it inside. Single branch covers every closed shape since
-        // all shape renderers route text through here.
-        if (el.curvedText && isClosedShapeForText(el.type)) {
-            const outline = getOutlinePath(el);
-            if (outline.length >= 2) {
+        // Curved Text: wrap the label around the shape's outline (or along a Pen-tool
+        // path) instead of centering it inside. Single branch covers every closed shape
+        // and `path` element, since all their renderers route text through here — in both
+        // sketch and architectural styles.
+        if (el.curvedText && (isClosedShapeForText(el.type) || el.type === 'path')) {
+            const tp = getElementTextPath(el);
+            if (tp && tp.points.length >= 2) {
                 const fontSize = el.fontSize || 16;
                 renderer.save();
                 renderer.font = getFontString(el);
-                renderer.fillStyle = this.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
-                drawTextAlongPath(renderer, textStr, outline, fontSize, {
-                    closed: true,
-                    startOffset: el.textPathOffset,
-                    letterSpacing: el.textPathSpacing,
-                    sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
-                });
+                renderer.fillStyle = this.adjustColor(curvedTextColor(el), isDarkMode);
+                drawTextAlongPath(renderer, textStr, tp.points, fontSize, textPathOptionsFor(el, fontSize, tp.closed));
                 renderer.restore();
                 return;
             }

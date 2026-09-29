@@ -21,3 +21,10 @@
     color: #6366f1; background: transparent; border: 1px solid #6366f1; border-radius: 6px; padding: 2px 8px;
 }
 .top-done:hover { background: rgba(99, 102, 241, 0.1); }
+.top-input {
+    position: absolute; transform: translateX(-50%);
+    min-width: 220px; padding: 6px 10px; font-size: 13px;
+    color: var(--text-primary, #111); background: var(--bg-panel, #fff);
+    border: 1.5px solid #6366f1; border-radius: 8px; outline: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); cursor: text;
+}

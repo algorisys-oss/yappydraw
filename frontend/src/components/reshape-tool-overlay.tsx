@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleReshapeTool, updateElement, normalizePathElement, pushToHistory, convertToPath } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import type { PathAnchor, DrawingElement } from '../types';
 import './reshape-tool-overlay.css';
 
@@ -17,7 +17,7 @@ export const ReshapeToolOverlay = () => {
     const GRAB_TOL = 24;    // screen px
 
     const active = () => store.reshapeToolActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const candidatePaths = (): DrawingElement[] => {
         const sel = store.selection.map(id => store.elements.find(e => e.id === id)).filter(Boolean) as DrawingElement[];
@@ -51,7 +51,7 @@ export const ReshapeToolOverlay = () => {
         pushToHistory();
         drag = { id: el.id, idx: bestIdx, base: JSON.parse(JSON.stringify(el.pathAnchors)), closed: !!el.pathClosed, startW: w };
         const a = (el.pathAnchors as PathAnchor[])[bestIdx];
-        setHl(worldToScreen(el.x + a.x, el.y + a.y, store.viewState as any));
+        setHl(worldToWindow(el.x + a.x, el.y + a.y));
     };
 
     const onMove = (e: PointerEvent) => {
@@ -69,7 +69,7 @@ export const ReshapeToolOverlay = () => {
         updateElement(drag.id, { pathAnchors: newAnchors } as any);
         const moved = newAnchors[drag.idx];
         const el = store.elements.find(el => el.id === drag!.id)!;
-        setHl(worldToScreen(el.x + moved.x, el.y + moved.y, store.viewState as any));
+        setHl(worldToWindow(el.x + moved.x, el.y + moved.y));
     };
 
     const onUp = () => {

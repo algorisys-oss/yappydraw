@@ -12,7 +12,7 @@ import { type Component, Show, createSignal, onMount, onCleanup } from "solid-js
 import { Portal } from "solid-js/web";
 import { Square, RotateCcw } from "lucide-solid";
 import { store } from "../store/app-store";
-import { screenToWorld } from "../utils/viewport-transforms";
+import { windowToWorld } from "../utils/overlay-transform";
 import {
     stopGame, restartGame, padPress, padRelease, onGameUiSignal,
     padVisibleOverride, gameEnded,
@@ -31,7 +31,7 @@ const GameOverlay: Component = () => {
     };
     const ended = () => { uiBump(); return gameEnded; };
 
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const onDown = (e: PointerEvent) => {
         (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);

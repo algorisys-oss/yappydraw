@@ -16,7 +16,7 @@ import {
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection, addTextureOverlay,
     addPatternSwatchFromSelection, savePatternSwatchFromElement, applyPatternSwatch, updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
-    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, setPaintColor, currentPaintColor, resetPaintToDefaults, setActivePaint, type PaintChannel, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
+    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, createArtboards, openArtboardDialog, toggleArtboardTool, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, setPaintColor, currentPaintColor, resetPaintToDefaults, setActivePaint, type PaintChannel, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     setSymmetryMode, toggleSymmetry, toggleSymmetryAxis, setRadialCount,
     setSymmetryRings, setSymmetryRingSpacing,
@@ -234,6 +234,8 @@ interface ElementOptions {
     textPathOffset?: number;          // 0..1 start position for curved text along the path
     textPathSpacing?: number;         // extra px between glyphs for curved text
     textPathSide?: 'on' | 'outside';  // baseline placement for curved text
+    textPathAlign?: 'start' | 'center'; // 'center' = textPathOffset marks the middle of the text
+    textPathFlip?: boolean;           // run the text the other way, on the other side (bottom of a badge)
     locked?: boolean;
     link?: string | null;
     tag?: string | null;
@@ -656,6 +658,8 @@ export const YappyAPI = {
             textPathOffset: options?.textPathOffset,
             textPathSpacing: options?.textPathSpacing,
             textPathSide: options?.textPathSide,
+            textPathAlign: options?.textPathAlign,
+            textPathFlip: options?.textPathFlip,
 
             // New Properties Defaults
             parentId: options?.parentId ?? null,
@@ -2683,8 +2687,16 @@ export const YappyAPI = {
     updateArtboard(id: string, patch: any) { updateArtboard(id, patch); },
     /** Rearrange All Artboards into a grid (auto columns ≈ √n when omitted). */
     rearrangeArtboards(columns = 0, gap = 40) { rearrangeArtboards(columns, gap); },
-    /** Duplicate an artboard and the artwork on it (to the right). Returns the new id. */
-    duplicateArtboard(id?: string, gap = 40) { return duplicateArtboard(id, gap); },
+    /** Copy a frame and the artwork on it, `count` copies side by side (variations). Each copy
+     *  gets fresh element and group ids. Returns the first new artboard's id. */
+    duplicateArtboard(id?: string, gap = 40, count = 1) { return duplicateArtboard(id, gap, count); },
+    /** Custom-size artboards, `count` of them in a row with `gap` between. Without x/y they go to
+     *  the right of existing frames. Returns the new ids. */
+    createArtboards(opts: { width: number; height: number; count?: number; gap?: number; name?: string; x?: number; y?: number; background?: string }) { return createArtboards(opts); },
+    /** Open the New Artboard dialog; `sourceId` opens it on "copies of" that artboard. */
+    openArtboardDialog(opts?: { x?: number; y?: number; sourceId?: string }) { openArtboardDialog(opts); },
+    /** Artboard tool (Shift+O): drag to draw a frame, click for the dialog. */
+    toggleArtboardTool(active?: boolean) { toggleArtboardTool(active); },
     /** Resize an artboard to fit the artwork on it, plus padding. */
     fitArtboardToArtwork(id?: string, pad = 20) { return fitArtboardToArtwork(id, pad); },
     /** Toggle Outline (wireframe) view — path outlines only, no fills. */
@@ -5104,8 +5116,16 @@ export const YappyAPI = {
     toggleTouchType(active?: boolean) { toggleTouchType(active); },
     /** Type on Path — click a line/curve to flow text along it. */
     toggleTypeOnPath(active?: boolean) { toggleTypeOnPath(active); },
-    /** Flow text along a path element (sets curvedText + containerText). */
-    attachTextToPath(id: string, text: string) { attachTextToPath(id, text); },
+    /**
+     * Flow text along a path-like element — a Pen path, line/arrow/curve, freehand stroke, or a
+     * closed shape's outline (sets curvedText + containerText). `opts` sets the layout in the
+     * same call: `{ align: 'center', offset: 0 }` centres it at the top of a circle;
+     * `{ flip: true, align: 'center', offset: 0.5 }` puts it across the bottom, reading
+     * left-to-right. Returns false when the id is unknown or the element can't carry text.
+     */
+    attachTextToPath(id: string, text: string, opts?: { align?: 'start' | 'center'; offset?: number; flip?: boolean; side?: 'on' | 'outside'; spacing?: number }): boolean {
+        return attachTextToPath(id, text, opts);
+    },
     /** Exit all blocking tool-mode overlays. */
     exitAllToolModes() { exitAllToolModes(); },
     /** Set a per-glyph transform (dx, dy, scale, rot) and/or colour on a text element. */

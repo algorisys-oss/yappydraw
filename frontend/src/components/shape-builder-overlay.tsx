@@ -1,6 +1,6 @@
 import { Show, For, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleShapeBuilder, applyPathfinder, deleteElements, getShapeFaces, commitShapeBuilderFaces } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import { hitTestElement } from '../utils/hit-testing';
 import { pointInMultiPoly, type ShapeFace } from '../utils/path-boolean';
 import type { DrawingElement } from '../types';
@@ -32,7 +32,7 @@ export const ShapeBuilderOverlay = () => {
     let faceLevel = false;
 
     const active = () => store.shapeBuilderActive && store.selection.length >= 2;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     // Faces (or selected shapes in fallback) the stroke passes through.
     const computeTouched = (pts: { x: number; y: number }[]) => {
@@ -185,7 +185,7 @@ export const ShapeBuilderOverlay = () => {
     });
 
     // Screen-space polyline for the drag stroke.
-    const strokeScreen = () => stroke().map(p => { const s = worldToScreen(p.x, p.y, store.viewState as any); return `${s.x},${s.y}`; }).join(' ');
+    const strokeScreen = () => stroke().map(p => { const s = worldToWindow(p.x, p.y); return `${s.x},${s.y}`; }).join(' ');
 
     // SVG path `d` (screen space) for the highlighted faces — even-odd so holes show through.
     const touchedPath = () => {
@@ -197,7 +197,7 @@ export const ShapeBuilderOverlay = () => {
             for (const poly of f.region) {
                 for (const ring of poly) {
                     ring.forEach((pt, i) => {
-                        const s = worldToScreen(pt[0], pt[1], store.viewState as any);
+                        const s = worldToWindow(pt[0], pt[1]);
                         d += `${i === 0 ? 'M' : 'L'}${s.x},${s.y} `;
                     });
                     d += 'Z ';
@@ -210,8 +210,8 @@ export const ShapeBuilderOverlay = () => {
     // Screen-space rect for the Shift marquee.
     const marqueeScreen = () => {
         const m = marquee(); if (!m) return null;
-        const a = worldToScreen(m.x0, m.y0, store.viewState as any);
-        const b = worldToScreen(m.x1, m.y1, store.viewState as any);
+        const a = worldToWindow(m.x0, m.y0);
+        const b = worldToWindow(m.x1, m.y1);
         return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
     };
 
@@ -220,8 +220,8 @@ export const ShapeBuilderOverlay = () => {
         if (faceLevel) return [];
         return touched().map(id => {
             const el = store.elements.find(e => e.id === id); if (!el) return null;
-            const a = worldToScreen(el.x, el.y, store.viewState as any);
-            const b = worldToScreen(el.x + el.width, el.y + el.height, store.viewState as any);
+            const a = worldToWindow(el.x, el.y);
+            const b = worldToWindow(el.x + el.width, el.y + el.height);
             return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
         }).filter(Boolean) as { x: number; y: number; w: number; h: number }[];
     };

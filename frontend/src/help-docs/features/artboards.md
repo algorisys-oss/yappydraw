@@ -3,7 +3,7 @@ id: artboards
 name: Artboards
 icon: "▭"
 category: Design
-description: "Named export-region frames: presets, on-canvas move/resize/delete, and per-region PNG export"
+description: "Named export-region frames: Artboard tool (Shift+O), custom sizes, side-by-side variations, move/resize/delete, and per-region PNG export"
 ---
 
 # Artboards
@@ -20,13 +20,38 @@ Artboards are a layout/export aid, not containers — objects aren’t “inside
 
 ## Add an artboard
 
-Right-click empty canvas → **Artboards** → pick a preset (Square 1080, A4 Portrait / Landscape, Instagram Story, Web 1280, Slide 16:9), or **Artboard from Selection** to fit a frame around what you’ve selected. New artboards are placed to the right of any existing ones.
+**Artboard tool** — press **Shift+O** (or the frame button **#** in the toolbar, next to Crop):
+
+- **Drag** on the canvas to draw an artboard of exactly that size. Hold **Shift** for a square. The live size shows next to the pointer.
+- **Click** empty canvas to open the **New Artboard** dialog, with the frame placed where you clicked.
+
+**New Artboard dialog** — pick a preset (Logo square / horizontal, App icon, Favicon, Web 1280, plus every social, video, presentation and print size) or type your own **width × height** in px (the ⇄ button swaps them for portrait/landscape). Set a **Count** to create several identical frames in a row, with a **Gap** between them — ready for side-by-side variations. Also on right-click empty canvas → **Artboards** → **New Artboard…**, and in the command palette.
+
+Right-click empty canvas → **Artboards** also has one-click presets (Square 1080, A4 Portrait, Instagram Story, Web 1280), and right-click a selection → **Create** → **Artboard from Selection** fits a frame around it. New artboards without a position go to the right of existing ones in the same row, never on top of them.
+
+:::shortcuts
+Shift+O | Artboard tool — drag a frame, click for the New Artboard dialog
+Shift+drag | Square artboard (with the Artboard tool)
+Esc | Leave the Artboard tool
+:::
+
+## Variations side by side
+
+Design a logo once, then compare versions next to each other:
+
+1. With the **Artboard tool** (Shift+O), **click inside** the artboard holding your design — or right-click empty canvas → **Artboards** → *its name* → **Duplicate as Variations…**.
+2. The dialog opens on **Copies of “…”**. Set how many copies and the gap, then **Duplicate**.
+3. Each copy is a full, independent copy of the artwork: its own groups (selecting one variation never selects another), connectors re-bound inside the copy, curves moved with it.
+
+Change colours, type or layout on each copy and judge them side by side; export each one on its own (below).
 
 ```
 const Y = window.Yappy;
 Y.addArtboard('Square 1080');      // 1080×1080 preset
 Y.addArtboard('A4 Portrait', 1200, 0);
 Y.addArtboard('selection');        // fit around the current selection
+Y.createArtboards({ width: 1000, height: 1000, count: 4, gap: 60, name: 'Logo' }); // 4 in a row
+Y.duplicateArtboard(id, 40, 3);    // 3 variations of a frame, artwork included
 ```
 
 ## Move, resize & delete
@@ -94,11 +119,12 @@ Y.deleteArtboard(id);            // remove one frame
 | Method | What it does |
 | --- | --- |
 | `addArtboard(preset?, x?, y?)` | Add a frame from a preset (or `'selection'`); returns its id. |
+| `createArtboards({ width, height, count?, gap?, name?, x?, y? })` | Add custom-size frames, `count` of them in a row; returns their ids. |
 | `renameArtboard(id, name)` | Rename a frame. |
 | `updateArtboard(id, patch)` | Patch position/size (`x,y,width,height`). |
 | `deleteArtboard(id)` | Remove a frame. |
 | `rearrangeArtboards(cols?, gap?)` | Lay every frame out in a grid. |
-| `duplicateArtboard(id?, gap?)` | Copy a frame and its artwork. |
+| `duplicateArtboard(id?, gap?, count?)` | Copy a frame and its artwork — `count` copies side by side. |
 | `fitArtboardToArtwork(id?, pad?)` | Shrink-wrap a frame to its content. |
 | `listArtboards()` | Return all frames as plain objects. |
 | `exportArtboard(id, scale?)` | Download a PNG of just that region. |

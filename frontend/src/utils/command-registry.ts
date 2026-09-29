@@ -17,7 +17,7 @@ import {
     toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
     toggleNodeTool, exitAllToolModes,
     applyFeather, applyGlow, applyScribble, setExtrude, toggleRevolve, setTransformEffect,
-    isDevMode
+    isDevMode, toggleArtboardTool, openArtboardDialog, toggleTypeOnPath
 } from "../store/app-store";
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
 import { flipSelected, lockSelected, unlockAllElements } from "./object-context-actions";
@@ -267,6 +267,9 @@ export const getCommands = (): Command[] => {
         { id: 'tool-eraser', label: t('commands.tool-eraser'), category: 'Tools', action: () => setSelectedTool('eraser'), shortcut: 'E' },
         { id: 'tool-pan', label: t('commands.tool-pan'), category: 'Tools', action: () => setSelectedTool('pan'), shortcut: 'H' },
         { id: 'tool-lasso', label: t('commands.tool-lasso'), category: 'Tools', action: () => setSelectedTool('lasso'), shortcut: 'Shift+L' },
+        { id: 'tool-artboard', label: t('commands.tool-artboard'), category: 'Tools', action: () => toggleArtboardTool(true), shortcut: 'Shift+O' },
+        { id: 'action-new-artboard', label: t('commands.action-new-artboard'), category: 'Actions', action: () => openArtboardDialog() },
+        { id: 'tool-type-on-path', label: t('commands.tool-type-on-path'), category: 'Tools', action: () => { exitAllToolModes(); toggleTypeOnPath(true); }, shortcut: 'Alt+T' },
 
         // Actions
         { id: 'action-undo', label: t('commands.action-undo'), category: 'Actions', action: () => undo(), shortcut: 'Ctrl+Z' },

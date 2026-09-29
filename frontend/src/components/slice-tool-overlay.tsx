@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleSliceTool } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import { exportRegion } from '../utils/export';
 import './slice-tool-overlay.css';
 
@@ -15,7 +15,7 @@ export const SliceToolOverlay = () => {
     let n = 0;
 
     const active = () => store.sliceToolActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const onDown = (e: PointerEvent) => { if (!active() || e.button !== 0) return; e.preventDefault(); const w = toWorld(e); setA(w); setB(w); };
     const onMove = (e: PointerEvent) => { if (a()) setB(toWorld(e)); };
@@ -39,8 +39,8 @@ export const SliceToolOverlay = () => {
 
     const rect = () => {
         const p0 = a(), p1 = b(); if (!p0 || !p1) return null;
-        const s0 = worldToScreen(Math.min(p0.x, p1.x), Math.min(p0.y, p1.y), store.viewState as any);
-        const s1 = worldToScreen(Math.max(p0.x, p1.x), Math.max(p0.y, p1.y), store.viewState as any);
+        const s0 = worldToWindow(Math.min(p0.x, p1.x), Math.min(p0.y, p1.y));
+        const s1 = worldToWindow(Math.max(p0.x, p1.x), Math.max(p0.y, p1.y));
         return { x: s0.x, y: s0.y, w: s1.x - s0.x, h: s1.y - s0.y };
     };
 

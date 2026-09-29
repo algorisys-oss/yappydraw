@@ -951,6 +951,8 @@ export interface DrawingElement {
     textPathOffset?: number;          // 0..1 start position along the path (default 0 = start / top of a loop)
     textPathSpacing?: number;         // extra px between glyphs for curved text (default 0)
     textPathSide?: 'on' | 'outside';  // baseline placement relative to the path (default 'on')
+    textPathAlign?: 'start' | 'center'; // 'center' = textPathOffset marks the MIDDLE of the text (default 'start')
+    textPathFlip?: boolean;           // run the text the other way round the path, on the other side (bottom-of-a-badge text)
 
     // Motion Graphics
     flowAnimation?: boolean;

@@ -1,9 +1,9 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleStickFigurePanel, showPropertiesPanel } from "../store/app-store";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleStickFigurePanel, showPropertiesPanel, toggleArtboardTool } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, PersonStanding, Brush, PanelLeft, PanelTop, PanelRight, PanelBottom, Move } from "lucide-solid";
+import { MousePointer2, Eraser, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, PersonStanding, Brush, PanelLeft, PanelTop, PanelRight, PanelBottom, Move, Frame } from "lucide-solid";
 import { isPanelOpen } from "../store/dock-layout";
 import { isPhoneWidth } from "../utils/dock-layout";
 import { t, type ToolbarToolKey, type DockPositionKey, type DockActionKey } from "../i18n";
@@ -618,6 +618,17 @@ const Toolbar: Component = () => {
                             </button>
                         )}
                     </For>
+
+                    {/* Artboard tool — a mode overlay (like Type on Path), not a drawing ToolType */}
+                    <button
+                        class={`toolbar-btn ${store.artboardToolActive ? 'active' : ''}`}
+                        data-testid="toolbar-artboard"
+                        onClick={() => toggleArtboardTool()}
+                        onContextMenu={handleRightClick}
+                        title={`${t('toolbarTool.artboard')} (Shift+O)`}
+                    >
+                        <Frame size={16} />
+                    </button>
 
                     {/* Image, Eraser, Laser, Ink */}
                     <For each={utilityTools}>

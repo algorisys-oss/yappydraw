@@ -1,6 +1,6 @@
 import { Show, createSignal, createEffect, onMount, onCleanup } from 'solid-js';
 import { store, toggleLivePaint, livePaintFillAt, regenerateAllLivePaint, livePaintFaceAt, deleteLivePaintFaceAt } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import './live-paint-overlay.css';
 
 /**
@@ -23,7 +23,7 @@ export const LivePaintOverlay = () => {
     });
 
     const active = () => store.livePaintActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const onDown = (e: PointerEvent) => {
         if (!active()) return;
@@ -40,7 +40,7 @@ export const LivePaintOverlay = () => {
         if (!face) { setHover(''); return; }
         let d = '';
         for (const poly of face.region) for (const ring of poly) {
-            ring.forEach((pt, i) => { const s = worldToScreen(pt[0], pt[1], store.viewState as any); d += `${i === 0 ? 'M' : 'L'}${s.x},${s.y} `; });
+            ring.forEach((pt, i) => { const s = worldToWindow(pt[0], pt[1]); d += `${i === 0 ? 'M' : 'L'}${s.x},${s.y} `; });
             d += 'Z ';
         }
         setHover(d);

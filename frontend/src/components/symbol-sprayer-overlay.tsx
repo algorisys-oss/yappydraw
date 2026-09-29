@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleSymbolSprayer, spraySymbolInstances } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import './symbol-sprayer-overlay.css';
 
 /**
@@ -15,7 +15,7 @@ export const SymbolSprayerOverlay = () => {
     const radius = 26; // world-units spacing between sprayed instances
 
     const active = () => store.sprayerActive && !!store.sprayerSymbolId;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const addPoint = (w: { x: number; y: number }) => {
         setPts(cur => {
@@ -58,8 +58,8 @@ export const SymbolSprayerOverlay = () => {
         });
     });
 
-    const dots = () => pts().map(p => worldToScreen(p.x, p.y, store.viewState as any));
-    const cur = () => { const c = cursor(); return c ? worldToScreen(c.x, c.y, store.viewState as any) : null; };
+    const dots = () => pts().map(p => worldToWindow(p.x, p.y));
+    const cur = () => { const c = cursor(); return c ? worldToWindow(c.x, c.y) : null; };
     const rScreen = () => radius * (store.viewState?.scale ?? 1);
 
     return (

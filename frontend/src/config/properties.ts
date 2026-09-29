@@ -69,7 +69,7 @@ export const CURVED_TEXT_SHAPES: ElementType[] = [
 
 /** Every element type that can flow text along its path / outline (Curved Text). */
 export const TEXT_PATH_TARGETS: ElementType[] = [
-    'organicBranch', 'line', 'arrow', 'fineliner', 'inkbrush', 'marker',
+    'organicBranch', 'line', 'arrow', 'fineliner', 'inkbrush', 'marker', 'path',
     ...CURVED_TEXT_SHAPES,
 ];
 
@@ -1321,6 +1321,28 @@ export const properties: PropertyConfig[] = [
         group: 'text',
         applicableTo: TEXT_PATH_TARGETS, // slide the text along the path / around the loop
         defaultValue: 0,
+        dependsOn: { key: 'curvedText', value: true },
+    },
+    {
+        key: 'textPathAlign',
+        label: 'Text Align',
+        type: 'select',
+        options: [
+            { label: 'Start at position', value: 'start' },
+            { label: 'Center on position', value: 'center' },
+        ],
+        group: 'text',
+        applicableTo: TEXT_PATH_TARGETS,
+        defaultValue: 'start',
+        dependsOn: { key: 'curvedText', value: true },
+    },
+    {
+        key: 'textPathFlip',
+        label: 'Flip to Other Side',
+        type: 'toggle',
+        group: 'text',
+        applicableTo: TEXT_PATH_TARGETS, // bottom arc of a badge: reads left-to-right, inside the ring
+        defaultValue: false,
         dependsOn: { key: 'curvedText', value: true },
     },
     {

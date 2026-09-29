@@ -2,8 +2,8 @@
  * Text on Path — lay text out along an arbitrary path.
  *
  * One arc-length layout engine for every path-like element: connectors
- * (line/arrow/bezier/elbow), polylines, freehand pen strokes, and closed
- * shape outlines. Callers convert their geometry to an absolute-coordinate
+ * (line/arrow/bezier/elbow), polylines, freehand pen strokes, closed shape
+ * outlines, and Pen-tool vector paths (`path` elements). Callers convert their geometry to an absolute-coordinate
  * polyline (via `getElementTextPath`) and hand it to `drawTextAlongPath`;
  * beziers are pre-sampled into points so the engine only ever walks segments.
  *
@@ -12,8 +12,18 @@
  */
 
 import type { IRenderer } from "../rendering/IRenderer";
-import type { DrawingElement } from "../types";
-import { normalizePoints, cubicBezier } from "./render-element";
+import type { DrawingElement, PathAnchor } from "../types";
+import { normalizePoints } from "./points";
+import { getPathSubpaths } from "./math/path-utils";
+import { hasLiveCorners, filletAnchors } from "./path-corners";
+import { cornerRadiiPx, type CornerRadii } from "./corner-radius";
+
+// Local copy rather than an import from ./render-element: that module pulls in the shape
+// registry, and the store needs this file (attachTextToPath) without the render graph.
+const cubicBezier = (p0: number, p1: number, p2: number, p3: number, t: number) => {
+    const k = 1 - t;
+    return k * k * k * p0 + 3 * k * k * t * p1 + 3 * k * t * t * p2 + t * t * t * p3;
+};
 
 export interface PathPoint { x: number; y: number; }
 
@@ -26,8 +36,57 @@ export interface TextPathOptions {
     letterSpacing?: number;
     /** Perpendicular baseline offset off the path. Default -fontSize*0.8 (just above). */
     sideOffset?: number;
-    /** Keep glyphs upright (flip 180° when they'd be upside-down). Default = `closed`. */
+    /** Keep glyphs upright (flip 180° when they'd be upside-down). Default = `closed`,
+     *  forced off by `flip`. */
     upright?: boolean;
+    /** 'center' = `startOffset` marks the middle of the text rather than its first glyph. */
+    align?: 'start' | 'center';
+    /**
+     * Put the text on the other side of the path, still reading left-to-right.
+     *
+     * Closed loop: run the text the other way round. This is how the bottom arc of a badge
+     * reads: on a clockwise loop the per-glyph `upright` flip alone turns each glyph over but
+     * leaves the RUN right-to-left ("CBA"), so flip reverses the loop instead and turns
+     * `upright` off. The loop keeps its start point, so `startOffset` measures from the same place.
+     *
+     * Open path: mirror the baseline offset. Reversing an open path (Illustrator's literal flip)
+     * only hangs the text upside-down under the curve; the auto-readable direction already
+     * handles which way it runs, so "other side" here just means below instead of above.
+     */
+    flip?: boolean;
+}
+
+/** The TextPathOptions an element's curved-text props ask for — shared by every renderer so a
+ *  new option can't reach one element type and not another. */
+export function textPathOptionsFor(el: DrawingElement, fontSize: number, closed: boolean): TextPathOptions {
+    return {
+        closed,
+        startOffset: el.textPathOffset,
+        letterSpacing: el.textPathSpacing,
+        sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
+        align: el.textPathAlign,
+        flip: !!el.textPathFlip,
+    };
+}
+
+const noPaint = (c?: string | null) => !c || c === 'transparent' || c === 'none';
+
+/**
+ * Colour for curved text: its own textColor, else the stroke, else black. The stroke fallback
+ * alone made the text vanish exactly when a designer hid the carrying path — a transparent
+ * ring under badge text, the Illustrator "path disappears, text stays" look.
+ */
+export function curvedTextColor(el: DrawingElement): string {
+    if (!noPaint(el.textColor)) return el.textColor as string;
+    if (!noPaint(el.strokeColor)) return el.strokeColor;
+    return '#000000';
+}
+
+/** Reverse a polyline's direction; a closed loop keeps its first point (so offsets still
+ *  measure from the same place) and runs round the other way. */
+export function reversePath(points: PathPoint[], closed: boolean): PathPoint[] {
+    if (!closed) return points.slice().reverse();
+    return points.length ? [points[0], ...points.slice(1).reverse()] : [];
 }
 
 interface ArcTable { pts: PathPoint[]; cum: number[]; total: number; }
@@ -76,14 +135,16 @@ export function drawTextAlongPath(
 ): void {
     if (!text || !points || points.length < 2) return;
     const closed = !!opts.closed;
-    const table = buildArcTable(points, closed);
+    const reverseLoop = !!opts.flip && closed;
+    const table = buildArcTable(reverseLoop ? reversePath(points, closed) : points, closed);
     if (table.total < 1) return;
 
     const chars = [...text];
     const widths = chars.map(c => renderer.measureText(c).width);
-    const sideOffset = opts.sideOffset ?? -fontSize * 0.8;
+    const baseSide = opts.sideOffset ?? -fontSize * 0.8;
+    const sideOffset = opts.flip && !closed ? -baseSide : baseSide;
     const letterSpacing = opts.letterSpacing ?? 0;
-    const upright = opts.upright ?? closed;
+    const upright = reverseLoop ? false : (opts.upright ?? closed);
 
     // Open paths: flip the whole run so text reads left-to-right when the path
     // runs right-to-left (matches the original curved-text behaviour).
@@ -98,6 +159,10 @@ export function drawTextAlongPath(
     // Start at the requested fraction of the path (default 0 = path start / top
     // of a loop). The caller centers by passing startOffset accordingly.
     let curDist = (opts.startOffset ?? 0) * table.total;
+    if (opts.align === 'center') {
+        const runLength = w.reduce((a, b) => a + b, 0) + letterSpacing * Math.max(0, w.length - 1);
+        curDist -= runLength / 2;
+    }
 
     renderer.textAlign = 'center';
     renderer.textBaseline = 'middle';
@@ -124,6 +189,7 @@ export function drawTextAlongPath(
 // ─── Path extraction ────────────────────────────────────────────────────────
 
 const BEZIER_SAMPLES = 64;
+const PATH_SEGMENT_SAMPLES = 24;
 const ELLIPSE_SAMPLES = 72;
 
 // Closed primitives we build an explicit outline for. Anything else closed
@@ -156,6 +222,33 @@ function regularPolygonOutline(cx: number, cy: number, rx: number, ry: number, n
     return out;
 }
 
+const CORNER_SAMPLES = 12;
+
+/**
+ * Rounded-rect outline from the top-middle, clockwise. Corners are the same QUADRATIC curves the
+ * renderer draws (roundedRectPath / getRoundedRectPath), so the text follows the drawn edge.
+ * Radii are [tl, tr, br, bl], each clamped to half the shorter side as the renderer does.
+ */
+function roundedRectOutline(x: number, y: number, w: number, h: number, radii: CornerRadii): PathPoint[] {
+    const cap = Math.min(Math.abs(w), Math.abs(h)) / 2;
+    const [tl, tr, br, bl] = radii.map(r => Math.max(0, Math.min(cap, r)));
+    const out: PathPoint[] = [{ x: x + w / 2, y }];
+    // Quadratic corner from p0 via control c to p2, excluding p0 (already emitted).
+    const corner = (p0: PathPoint, c: PathPoint, p2: PathPoint, r: number) => {
+        if (r <= 0) { out.push(c); return; }
+        out.push(p0);
+        for (let i = 1; i <= CORNER_SAMPLES; i++) {
+            const t = i / CORNER_SAMPLES, k = 1 - t;
+            out.push({ x: k * k * p0.x + 2 * k * t * c.x + t * t * p2.x, y: k * k * p0.y + 2 * k * t * c.y + t * t * p2.y });
+        }
+    };
+    corner({ x: x + w - tr, y }, { x: x + w, y }, { x: x + w, y: y + tr }, tr);
+    corner({ x: x + w, y: y + h - br }, { x: x + w, y: y + h }, { x: x + w - br, y: y + h }, br);
+    corner({ x: x + bl, y: y + h }, { x, y: y + h }, { x, y: y + h - bl }, bl);
+    corner({ x, y: y + tl }, { x, y }, { x: x + tl, y }, tl);
+    return out;
+}
+
 /** Outline polyline (absolute coords, starting at top, clockwise) for a closed shape. */
 export function getOutlinePath(el: DrawingElement): PathPoint[] {
     const x = el.x, y = el.y, w = el.width, h = el.height;
@@ -164,10 +257,18 @@ export function getOutlinePath(el: DrawingElement): PathPoint[] {
     const TR = { x: x + w, y }, BR = { x: x + w, y: y + h }, BL = { x, y: y + h }, TL = { x, y };
 
     switch (el.type) {
-        case 'rectangle':
-        case 'parallelogram': // approximate with bbox rectangle
-        case 'capsule':       // approximate with bbox rectangle
-            return [topMid, TR, BR, BL, TL];
+        case 'rectangle': {
+            const radii = cornerRadiiPx(el as any);
+            return radii.some(r => r > 0) ? roundedRectOutline(x, y, w, h, radii) : [topMid, TR, BR, BL, TL];
+        }
+        case 'capsule': {
+            const r = Math.min(Math.abs(w), Math.abs(h)) / 2;       // shape-geometry: getRoundedRectPath(…, min/2)
+            return roundedRectOutline(x, y, w, h, [r, r, r, r]);
+        }
+        case 'parallelogram': {
+            const off = w * 0.2;                                     // shape-geometry's skew
+            return [{ x: x + (w + off) / 2, y }, { x: x + w, y }, { x: x + w - off, y: y + h }, { x, y: y + h }, { x: x + off, y }];
+        }
         case 'diamond':
             return [topMid, { x: x + w, y: cy }, { x: cx, y: y + h }, { x, y: cy }];
         case 'triangle':
@@ -193,6 +294,41 @@ function sampleBezier(start: PathPoint, cp1: PathPoint, cp2: PathPoint, end: Pat
         });
     }
     return out;
+}
+
+/**
+ * A Pen-tool `path` element's first subpath as an absolute polyline. Anchors are
+ * origin-relative with handles relative to their anchor (see PathAnchor); Live Corners are
+ * filleted first so the text follows the rounded outline that is actually drawn. A closed
+ * subpath's closing segment is sampled too, minus the repeated start point (buildArcTable
+ * closes the loop itself). Only the first subpath carries text — the others are holes or
+ * islands, and text hopping between contours would be unreadable.
+ */
+export function pathElementPolyline(el: DrawingElement): { points: PathPoint[]; closed: boolean } | null {
+    const sub = getPathSubpaths(el)[0];
+    if (!sub) return null;
+    const anchors: PathAnchor[] = hasLiveCorners(sub.anchors) ? filletAnchors(sub.anchors, sub.closed) : sub.anchors;
+    if (anchors.length < 2) return null;
+    const ox = el.x, oy = el.y;
+    const out: PathPoint[] = [{ x: ox + anchors[0].x, y: oy + anchors[0].y }];
+    const seg = (a: PathAnchor, b: PathAnchor, includeEnd: boolean) => {
+        const curved = a.outX !== undefined || a.outY !== undefined || b.inX !== undefined || b.inY !== undefined;
+        const p0 = { x: ox + a.x, y: oy + a.y };
+        const p3 = { x: ox + b.x, y: oy + b.y };
+        if (curved) {
+            const p1 = { x: p0.x + (a.outX ?? 0), y: p0.y + (a.outY ?? 0) };
+            const p2 = { x: p3.x + (b.inX ?? 0), y: p3.y + (b.inY ?? 0) };
+            for (let i = 1; i < PATH_SEGMENT_SAMPLES; i++) {
+                const t = i / PATH_SEGMENT_SAMPLES;
+                out.push({ x: cubicBezier(p0.x, p1.x, p2.x, p3.x, t), y: cubicBezier(p0.y, p1.y, p2.y, p3.y, t) });
+            }
+        }
+        if (includeEnd) out.push(p3);
+    };
+    for (let i = 1; i < anchors.length; i++) seg(anchors[i - 1], anchors[i], true);
+    const closed = sub.closed && anchors.length > 2;
+    if (closed) seg(anchors[anchors.length - 1], anchors[0], false);
+    return out.length >= 2 ? { points: out, closed } : null;
 }
 
 /**
@@ -241,6 +377,8 @@ export function getElementTextPath(el: DrawingElement): { points: PathPoint[]; c
         // straight
         return { points: [start, end], closed: false };
     }
+
+    if (type === 'path') return pathElementPolyline(el);
 
     if (isClosedShapeForText(type)) {
         const outline = getOutlinePath(el);

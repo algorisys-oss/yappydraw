@@ -1,6 +1,6 @@
 import { Show, For, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import type { DrawingElement } from '../types';
 import './puppet-warp-overlay.css';
 
@@ -21,7 +21,7 @@ export const PuppetWarpOverlay = () => {
     const active = () => store.puppetWarpActive && warpable();
     // The tool is on but the selected element can't be warped — show a hint instead.
     const notice = () => store.puppetWarpActive && !!target() && !warpable();
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     // Pin world position = element centre + pin (centred-local) rotated by el.angle.
     const pinWorld = (el: DrawingElement, p: { x: number; y: number }) => {
@@ -33,7 +33,7 @@ export const PuppetWarpOverlay = () => {
     const hitPin = (el: DrawingElement, e: PointerEvent): number => {
         for (let i = (el.puppetPins?.length || 0) - 1; i >= 0; i--) {
             const w = pinWorld(el, el.puppetPins![i]);
-            const s = worldToScreen(w.x, w.y, store.viewState as any);
+            const s = worldToWindow(w.x, w.y);
             if (Math.hypot(e.clientX - s.x, e.clientY - s.y) < 12) return i;
         }
         return -1;
@@ -80,7 +80,7 @@ export const PuppetWarpOverlay = () => {
 
     const pinDots = () => {
         const el = target(); if (!el?.puppetPins) return [];
-        return el.puppetPins.map((p, i) => { const w = pinWorld(el, p); const s = worldToScreen(w.x, w.y, store.viewState as any); return { ...s, i }; });
+        return el.puppetPins.map((p, i) => { const w = pinWorld(el, p); const s = worldToWindow(w.x, w.y); return { ...s, i }; });
     };
 
     return (

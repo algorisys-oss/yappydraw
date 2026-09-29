@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleWidthTool, setWidthPoint } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import { nearestTOnPath } from '../utils/variable-width';
 import type { DrawingElement } from '../types';
 import './width-tool-overlay.css';
@@ -17,7 +17,7 @@ export const WidthToolOverlay = () => {
     let dragging = false;
 
     const active = () => store.widthToolActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const candidatePaths = (): DrawingElement[] => {
         const sel = store.selection.map(id => store.elements.find(e => e.id === id)).filter((e): e is DrawingElement => !!e && !e.pathClosed);
@@ -70,7 +70,7 @@ export const WidthToolOverlay = () => {
 
     const guide = () => {
         const a = anchor(), c = cursor(); if (!a || !c) return null;
-        const s = worldToScreen(c.x, c.y, store.viewState as any);
+        const s = worldToWindow(c.x, c.y);
         return { ax: a.sx, ay: a.sy, cx: s.x, cy: s.y };
     };
 

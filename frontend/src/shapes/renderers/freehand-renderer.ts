@@ -3,7 +3,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints } from "../../utils/render-element";
-import { drawTextAlongPath } from "../../utils/text-on-path";
+import { drawTextAlongPath, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
 import { getFontString } from "../../utils/text-utils";
 
 export class FreehandRenderer extends ShapeRenderer {
@@ -98,13 +98,9 @@ export class FreehandRenderer extends ShapeRenderer {
         const fontSize = el.fontSize || 16;
         renderer.save();
         renderer.font = getFontString(el);
-        renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
+        renderer.fillStyle = RenderPipeline.adjustColor(curvedTextColor(el), isDarkMode);
         if (el.curvedText) {
-            drawTextAlongPath(renderer, el.containerText, absPoints, fontSize, {
-                startOffset: el.textPathOffset,
-                letterSpacing: el.textPathSpacing,
-                sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
-            });
+            drawTextAlongPath(renderer, el.containerText, absPoints, fontSize, textPathOptionsFor(el, fontSize, false));
         } else {
             // Centered horizontal label at the stroke's bounding-box center.
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

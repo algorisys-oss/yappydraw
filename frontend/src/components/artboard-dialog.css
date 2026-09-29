@@ -1,0 +1,39 @@
+/* New Artboard dialog — builds on design-size-dialog.css (overlay, modal, header, create button). */
+.abd-modal { width: min(460px, 94vw); }
+.abd-body { display: flex; flex-direction: column; gap: 10px; }
+.abd-tabs { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--border-color); border-radius: 8px; }
+.abd-tab {
+    flex: 1; padding: 6px 8px; font-size: 12.5px; border: none; border-radius: 6px;
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.abd-tab.active { background: var(--accent-color, #6366f1); color: #fff; }
+.abd-row { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 10px; font-size: 13px; }
+.abd-row > span { color: var(--text-secondary); }
+.abd-row select, .abd-row input[type="text"], .abd-size input {
+    padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px;
+    background: var(--bg-panel); color: var(--text-primary); font-size: 13px; min-width: 0;
+}
+.abd-size { display: flex; align-items: center; gap: 6px; }
+.abd-size input { width: 84px; }
+.abd-swap {
+    display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+    padding: 0; flex-shrink: 0; /* a global button padding otherwise squeezes the icon to nothing */
+    border: 1px solid var(--border-color); border-radius: 6px; background: transparent;
+    color: var(--text-secondary); cursor: pointer;
+}
+.abd-swap svg { flex-shrink: 0; }
+.abd-swap:hover { color: var(--text-primary); border-color: var(--accent-color, #6366f1); }
+.abd-label-inline { color: var(--text-secondary); font-size: 13px; margin-left: 8px; }
+.abd-note { margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
+.abd-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.abd-actions .dsd-create { margin-left: 0; }
+.abd-actions .dsd-create:disabled { opacity: 0.5; cursor: not-allowed; }
+.abd-cancel {
+    padding: 6px 14px; border: 1px solid var(--border-color); border-radius: 6px;
+    background: transparent; color: var(--text-primary); font-size: 13px; cursor: pointer;
+}
+@media (max-width: 420px) {
+    .abd-row { grid-template-columns: 1fr; gap: 4px; }
+    .abd-size input { width: 70px; }
+}

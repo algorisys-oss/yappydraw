@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleBlobBrush, commitBlobStroke } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import './blob-brush-overlay.css';
 
 /**
@@ -15,7 +15,7 @@ export const BlobBrushOverlay = () => {
     let dragging = false;
 
     const active = () => store.blobBrushActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const onDown = (e: PointerEvent) => {
         if (!active() || e.button !== 0) return;
@@ -51,8 +51,8 @@ export const BlobBrushOverlay = () => {
     });
 
     const scale = () => store.viewState?.scale ?? 1;
-    const strokeScreen = () => pts().map(p => { const s = worldToScreen(p.x, p.y, store.viewState as any); return `${s.x},${s.y}`; }).join(' ');
-    const cur = () => { const c = cursor(); return c ? worldToScreen(c.x, c.y, store.viewState as any) : null; };
+    const strokeScreen = () => pts().map(p => { const s = worldToWindow(p.x, p.y); return `${s.x},${s.y}`; }).join(' ');
+    const cur = () => { const c = cursor(); return c ? worldToWindow(c.x, c.y) : null; };
 
     return (
         <Show when={active()}>

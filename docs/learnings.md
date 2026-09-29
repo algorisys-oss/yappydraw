@@ -10308,3 +10308,27 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   app for Playwright,** and `ERR_NETWORK_CHANGED` breaks module loads the same way. Restart Vite,
   load the page once, and wait for `canvas`, not just `window.Yappy`, before trusting a failure.
 
+
+## Artboard tool, variations, and text on any path (logo-designer feedback)
+
+- **Check what exists before building.** Both requested features existed: artboards via a right-click
+  submenu, and curved text via a toggle and a Type on Path mode inside Vector Tools. The real gaps were
+  discoverability (no toolbar tool, no hotkey), missing controls (custom size, count, flip, align)
+  and Pen paths being silently unsupported. Missing entry points look exactly like missing features
+  to a user.
+- **"Can carry text" should have one definition.** Three lists disagreed (`TEXT_PATH_TARGETS`,
+  the overlay's `PATHY`, and `getElementTextPath`), and none included `path`. The overlay and
+  `attachTextToPath` now ask `getElementTextPath(el) !== null`, the function the renderer uses.
+- **Bottom-of-a-badge text needs the path reversed, not the glyphs.** The per-glyph `upright` flip
+  turns each letter over but leaves the run right-to-left ("CBA"). Reversing the loop (keeping its
+  start point) gives the Illustrator look. On an OPEN path the same reversal only hangs the text
+  upside-down, so there "flip" means mirroring the baseline offset.
+- **A dialog can't read a selection that a click into it clears.** The artboard overlay deselects on
+  any pointerdown outside itself, including the dialog's own inputs. Capture intent when the dialog
+  opens (`artboardDialog.sourceId`) instead of reading the live selection.
+- **Fixed overlays speak window px.** Any `screenToWorld(e.clientX, …)` in a `position: fixed`
+  overlay is a bug once the canvas is inset. Grep for the pattern rather than fixing the overlay
+  that got reported; the sweep found 17.
+- **Keep `text-on-path` out of the render graph.** The store needs `getElementTextPath`, and
+  `render-element` pulls in the shape registry. Importing the tiny `cubicBezier` from there would
+  have dragged the renderer into the store. Leaf modules stay leaves.

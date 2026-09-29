@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleCurveTool, commitCurvature } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import { catmullRomAnchors } from '../utils/curve-fit';
 import { anchorsToPathData } from '../utils/math/path-utils';
 import './curve-tool-overlay.css';
@@ -16,7 +16,7 @@ export const CurveToolOverlay = () => {
     const [cursor, setCursor] = createSignal<{ x: number; y: number } | null>(null);
 
     const active = () => store.curveToolActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
     const CLOSE_TOL = 10; // screen px to snap-close onto the first point
 
     const finish = (closed: boolean) => {
@@ -31,7 +31,7 @@ export const CurveToolOverlay = () => {
         const w = toWorld(e);
         const p = pts();
         if (p.length >= 2) {
-            const s0 = worldToScreen(p[0].x, p[0].y, store.viewState as any);
+            const s0 = worldToWindow(p[0].x, p[0].y);
             if (Math.hypot(e.clientX - s0.x, e.clientY - s0.y) < CLOSE_TOL) { finish(true); return; }
         }
         setPts([...p, w]);
@@ -56,10 +56,10 @@ export const CurveToolOverlay = () => {
         const c = cursor();
         if (c && p.length >= 1) p.push(c);
         if (p.length < 2) return '';
-        const screen = p.map(w => worldToScreen(w.x, w.y, store.viewState as any));
+        const screen = p.map(w => worldToWindow(w.x, w.y));
         return anchorsToPathData(catmullRomAnchors(screen, false), false);
     };
-    const dots = () => pts().map(w => worldToScreen(w.x, w.y, store.viewState as any));
+    const dots = () => pts().map(w => worldToWindow(w.x, w.y));
 
     return (
         <Show when={active()}>

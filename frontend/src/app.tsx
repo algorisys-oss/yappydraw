@@ -13,7 +13,7 @@ import {
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
   transformAgain, recordTransform, convertTextToOutlines, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
-  toggleNodeTool, exitAllToolModes
+  toggleNodeTool, exitAllToolModes, toggleTypeOnPath, toggleArtboardTool
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { initPWA } from './utils/pwa';
@@ -49,6 +49,8 @@ import GameOverlay from './components/game-overlay';
 import { SliceToolOverlay } from './components/slice-tool-overlay';
 import { SymbolismOverlay } from './components/symbolism-overlay';
 import { TypeOnPathOverlay } from './components/type-on-path-overlay';
+import { ArtboardToolOverlay } from './components/artboard-tool-overlay';
+import ArtboardDialog from './components/artboard-dialog';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import { GroupIsolationBanner } from './components/group-isolation-banner';
 import Toolbar from './components/toolbar';
@@ -589,6 +591,11 @@ const App: Component = () => {
         } else if (code === 'KeyE' || key === 'e') {
           e.preventDefault();
           toggleElementsPanel();
+        } else if ((code === 'KeyT' || key === 't') && !e.shiftKey) {
+          // Type on Path — click a path / curve / shape outline and type along it.
+          e.preventDefault();
+          if (store.typeOnPathActive) toggleTypeOnPath(false);
+          else { exitAllToolModes(); toggleTypeOnPath(true); }
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
           const anyVisible = isPanelOpen('properties') || isPanelOpen('layers');
@@ -980,6 +987,11 @@ const App: Component = () => {
         } else if (e.shiftKey && key === 't') {
           e.preventDefault();
           setSelectedTool('richtext');
+        } else if (e.shiftKey && key === 'o') {
+          // Artboard tool (Illustrator Shift+O): drag a frame, or click for the size dialog.
+          // Shift+O used to fall through to plain O (ellipse), so nothing is displaced.
+          e.preventDefault();
+          toggleArtboardTool();
         } else if (e.shiftKey && key === 'h') {
           e.preventDefault();
           if (store.selection.length > 0) flipSelected('horizontal');
@@ -1624,6 +1636,8 @@ const App: Component = () => {
         <SliceToolOverlay />
         <SymbolismOverlay />
         <TypeOnPathOverlay />
+        <ArtboardToolOverlay />
+        <ArtboardDialog />
         <SymbolEditBanner />
         <GroupIsolationBanner />
         <Show when={isMultiPageDocType(store.docType)}>

@@ -20,7 +20,8 @@ import rough from 'roughjs/bin/rough';
 // and others for plain PNG/SVG export — so importing them at module level put the whole
 // vendor-export chunk on the cold-load critical path. Loaded inside the two functions
 // that need them instead; the other exports are unaffected.
-import { resolveFontFamily, wrapText, getMeasurementRenderer, measureContainerText } from "./text-utils";
+import { resolveFontFamily, wrapText, getMeasurementRenderer, measureContainerText, getFontString } from "./text-utils";
+import { drawTextAlongPath, getElementTextPath, textPathOptionsFor, curvedTextColor } from "./text-on-path";
 import { fontShorthand, normalizeFontWeight, normalizeFontStyle } from "./font-variants";
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from "./uml-layout-utils";
 import type { DrawingElement, Swatch } from "../types";
@@ -1477,7 +1478,22 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
             const cy = connGeom ? connGeom.mid.y : el.y + el.height / 2;
             const maxWidth = connGeom ? Infinity : el.width - 20;
 
-            if (el.richContainerText && el.richContainerText.length > 0) {
+            // Curved text: the canvas lays glyphs along the path (text-on-path.ts); this block
+            // used to write the label as one centred <text>, so SVG lost every curve and badge.
+            // Same engine, drawn into an SvgRenderer, but MEASURED with the real canvas —
+            // SvgRenderer's measureText is a 0.55em estimate, which would space the glyphs
+            // differently from the PNG. Rich text still wins, as it does in renderText.
+            const curvedPath = el.curvedText && el.containerText && !(el.richContainerText && el.richContainerText.length > 0)
+                ? getElementTextPath(el) : null;
+            if (curvedPath) {
+                const svgText = new SvgRenderer(defs);
+                const measure = getMeasurementRenderer();
+                svgText.measureText = (t: string) => { measure.font = svgText.font; return measure.measureText(t); };
+                svgText.font = getFontString(el);
+                svgText.fillStyle = curvedTextColor(el);
+                drawTextAlongPath(svgText, el.containerText!, curvedPath.points, fontSize, textPathOptionsFor(el, fontSize, curvedPath.closed));
+                wrapper.appendChild(svgText.root);
+            } else if (el.richContainerText && el.richContainerText.length > 0) {
                 // Rich text path
                 const measureRenderer = getMeasurementRenderer();
                 const defaults = { fontSize, fontFamily: el.fontFamily || 'hand-drawn', lineHeight: el.lineHeight };

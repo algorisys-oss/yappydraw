@@ -8,7 +8,8 @@
 import { type Component, createMemo, Show, For } from 'solid-js';
 import { store, updateAnimation, pushToHistory, setPathEditing } from '../store/app-store';
 import { PathUtils } from '../utils/math/path-utils';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld } from '../utils/overlay-transform';
 
 const PathEditorOverlay: Component<{
     elementId: string | null;
@@ -210,7 +211,7 @@ const PathEditorOverlay: Component<{
                         const isRelative = (anim as any).isRelative ?? true;
 
                         // Calculate World Coordinates
-                        const { x: clickX, y: clickY } = screenToWorld(e.clientX, e.clientY, { scale: props.scale, panX: props.panX, panY: props.panY });
+                        const { x: clickX, y: clickY } = windowToWorld(e.clientX, e.clientY);
 
                         let newPointX = clickX;
                         let newPointY = clickY;

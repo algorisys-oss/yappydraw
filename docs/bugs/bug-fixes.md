@@ -10198,3 +10198,57 @@ keyframes alone (the Keyframes panel, `Yappy.scene`, or the Ganesh Chaturthi exa
 **Menu → Panels → Scene Timeline** item added in v0.8.251 opened a panel that could not play the
 scenes it was added for. The body now shows when there are figures, keyframe tracks or tinyfly
 clips. Covered by a test in `tests/scene-timeline-menu.spec.ts` that failed before the change.
+
+## Seventeen tool overlays hit-tested 46px left and 52px above the pointer
+
+Type on Path, Knife, Shape Builder, Measure, Width, Live Paint, Curvature, Reshape, Puppet Warp,
+Blob Brush, Path Eraser, Slice, Symbol Sprayer, Symbolism, Touch Type, Perspective Grid, the game
+overlay and the motion-path editor all converted `e.clientX/Y` with `screenToWorld(…, store.viewState)`.
+That function speaks CANVAS-LOCAL px, and these overlays are `position: fixed; inset: 0` layers in
+WINDOW px. Since the toolbar and top bar docked, the canvas starts at (`--dock-left`, `--dock-top`),
+so every click landed the dock insets away from the pointer, and every highlight was drawn that far
+off. Passing `store.viewState` also dropped the view rotation centre, so with the canvas rotated
+(Shift+, / Shift+.) they were wrong by more than that. Same class as #262 and the transform HUD, fixed
+one overlay at a time before; this sweep converts every remaining caller to `overlay-transform`'s
+`windowToWorld` / `worldToWindow`. The motion-path editor keeps `worldToScreen` for drawing, since it
+is positioned inside the canvas container, and uses `windowToWorld` for its clicks.
+`tests/artboard-tool-type-on-path.spec.ts` clicks a Pen path's anchor with Type on Path, and drags
+an artboard from world (0,0), both of which need window-correct coordinates.
+
+## Duplicated artboards stayed grouped with the original
+
+`duplicateArtboard` deep-copied the artwork but kept its `groupIds`, so selecting a variation also
+selected the original. Absolute bezier `controlPoints` weren't moved, so copied curves kept their
+bend at the old position. Connector bindings still pointed at the originals. A second Duplicate also
+landed exactly on top of the first copy, because both measured from the source. Copies now get
+fresh element and group ids, shifted control points and bindings remapped inside the copy (the
+treatment paste already gave). New frames go past every artboard in the row. Covered in
+`frontend/src/store/artboard-variations.test.ts`.
+
+## Curved text vanished when its path was hidden
+
+Curved text took its colour from `textColor || strokeColor`. Setting a ring's stroke to none (to keep
+only the badge text) made the text transparent too. The colour now falls back to the stroke only
+when the stroke is visible, then to black (`curvedTextColor`, shared by the shape, connector and
+freehand renderers).
+
+## SVG export flattened curved text into one straight label
+
+Shapes and paths exported as native SVG nodes had their label written by export's generic
+`containerText` block, which ignored `curvedText`, so a badge or an arched title came out as one
+centred horizontal `<text>`. Only architectural shapes routed through `SvgRenderer` kept their
+curves. The generic block now lays curved text out with the same `drawTextAlongPath` into an
+`SvgRenderer`, measuring glyphs with the real canvas (SvgRenderer's own `measureText` is a 0.55em
+estimate), so SVG glyph positions match the PNG. Covered by the SVG test in
+`tests/artboard-tool-type-on-path.spec.ts` (a Pen path, and a flipped sketch-style circle).
+
+## Curved text on capsules, parallelograms and rounded rectangles followed the bounding box
+
+`getOutlinePath` returned the bounding rectangle for a capsule and a parallelogram, and ignored a
+rectangle's corner radius, so text on a capsule badge ran across the square corners the shape
+doesn't have. The outlines now follow what the renderer draws: rounded corners as the same
+quadratic curves `roundedRectPath` / `getRoundedRectPath` use (radii from `cornerRadiiPx`), a
+capsule as a fully rounded rect, and a parallelogram with its 20% skew. Unit tests in
+`frontend/src/utils/text-on-path.test.ts`. One gotcha found writing them: those quadratic corners
+bow OUTWARD of a true arc (about 1.06r at mid-corner), so an "on the circle" assertion needs a
+tolerance on the outside, not the inside.

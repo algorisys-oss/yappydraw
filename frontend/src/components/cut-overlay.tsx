@@ -1,6 +1,6 @@
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleCutTool, knifeCut, splitPathAt } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import { hitTestElement } from '../utils/hit-testing';
 import type { DrawingElement } from '../types';
 import './cut-overlay.css';
@@ -18,7 +18,7 @@ export const CutOverlay = () => {
     let downScreen = { x: 0, y: 0 };
 
     const active = () => store.cutToolActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
 
     const onDown = (e: PointerEvent) => {
         if (!active()) return;
@@ -63,8 +63,8 @@ export const CutOverlay = () => {
 
     const lineScreen = () => {
         const p0 = a(), p1 = b(); if (!p0 || !p1) return null;
-        const s0 = worldToScreen(p0.x, p0.y, store.viewState as any);
-        const s1 = worldToScreen(p1.x, p1.y, store.viewState as any);
+        const s0 = worldToWindow(p0.x, p0.y);
+        const s1 = worldToWindow(p1.x, p1.y);
         return { x1: s0.x, y1: s0.y, x2: s1.x, y2: s1.y };
     };
 

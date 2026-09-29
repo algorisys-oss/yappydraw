@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.267', date: '2026-09-29', items: [
+        'Artboard tool (Shift+O, or # in the toolbar): drag to draw a frame of any size, or click for the New Artboard dialog with logo, social and print sizes, your own width \u00d7 height, and how many to make side by side.',
+        'Compare versions of a design: with the Artboard tool, click inside an artboard to make several copies of it, artwork included, in a row.',
+        'Put text on any curve, including ones you draw with the Pen tool: press Alt+T (or Text \u25b8 Type on Path), click the path and type.',
+        'Badge text: turn on Flip to Other Side to run text along the bottom of a circle, reading left to right. Center on position keeps it centred.',
+        'Knife, Shape Builder, Measure and other Vector Tools now act exactly where you click.',
+    ] },
     { version: '0.8.266', date: '2026-09-27', items: [
         'Stick figures have 26 expressions, from laughing and crying to in love, smug and dizzy. Under Face & hair \u25b8 Fine-tune face, set the eyes, brows, mouth and extras (blush, tears, sweat, Zzz) one at a time, e.g. a happy face with angry brows.',
         'Animated figures blink now and then, and their mouth moves while they talk.',

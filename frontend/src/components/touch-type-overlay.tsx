@@ -1,6 +1,6 @@
 import { Show, For, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleTouchType, setCharTransforms, touchTypeText } from '../store/app-store';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { windowToWorld, worldToWindow } from '../utils/overlay-transform';
 import { getMeasurementContext, getFontString } from '../utils/text-utils';
 import { customFonts, addCustomFontFromFile } from '../utils/custom-fonts';
 import FontPicker from './font-picker';
@@ -47,7 +47,7 @@ export const TouchTypeOverlay = () => {
         return el;
     };
     const active = () => store.touchTypeActive && !!target();
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
     const selArr = () => [...selSet()].sort((a, b) => a - b);
     const curT = (i: number) => target()?.charTransforms?.[i] || { dx: 0, dy: 0, scale: 1, rot: 0 };
     const stop = (e: Event) => { e.stopPropagation(); e.preventDefault(); };
@@ -135,7 +135,7 @@ export const TouchTypeOverlay = () => {
     const startGesture = () => {
         const p = twoPts(); const el = target(); if (!p || !el) return;
         if (selSet().size === 0) {
-            const wc = screenToWorld((p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2, store.viewState as any);
+            const wc = windowToWorld((p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2);
             const i = hitGlyph(wc); if (i >= 0) { setSelSet(new Set([i])); anchor = i; }
         }
         const ids = selArr(); if (!ids.length) return;
@@ -217,7 +217,7 @@ export const TouchTypeOverlay = () => {
                 // A plain click (no drag) on empty space: outside the element → exit
                 // Touch Type; inside but between letters → just deselect.
                 const el = target();
-                const w = screenToWorld(m.x0, m.y0, store.viewState as any);
+                const w = windowToWorld(m.x0, m.y0);
                 const outside = !el || w.x < el.x || w.x > el.x + el.width || w.y < el.y || w.y > el.y + el.height;
                 setMarquee(null);
                 if (outside && !marqueeAdd) { toggleTouchType(false); return; }
@@ -225,7 +225,7 @@ export const TouchTypeOverlay = () => {
             } else {
                 const next = marqueeAdd ? new Set(selSet()) : new Set<number>();
                 for (const b of glyphBoxes()) {
-                    const s = worldToScreen(b.cx, b.cy, store.viewState as any);
+                    const s = worldToWindow(b.cx, b.cy);
                     if (s.x >= minX && s.x <= maxX && s.y >= minY && s.y <= maxY) next.add(b.i);
                 }
                 setSelSet(next);
@@ -259,7 +259,7 @@ export const TouchTypeOverlay = () => {
         onCleanup(() => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp); window.removeEventListener('keydown', onKey); });
     });
 
-    const selScreens = () => glyphBoxes().filter(b => selSet().has(b.i)).map(b => worldToScreen(b.cx, b.cy, store.viewState as any));
+    const selScreens = () => glyphBoxes().filter(b => selSet().has(b.i)).map(b => worldToWindow(b.cx, b.cy));
     const controlPos = () => { const ss = selScreens(); if (!ss.length) return null; const cx = ss.reduce((a, s) => a + s.x, 0) / ss.length; const minY = Math.min(...ss.map(s => s.y)); return { x: cx, y: minY }; };
     const marqueeRect = () => { const m = marquee(); if (!m) return null; return { left: Math.min(m.x0, m.x1), top: Math.min(m.y0, m.y1), w: Math.abs(m.x1 - m.x0), h: Math.abs(m.y1 - m.y0) }; };
 
