@@ -1,4 +1,4 @@
-import { s as o, b as m, d as b, f as a, z as W, w as z, x as U, y as B } from "./index-BML9nyo0.js";
+import { s as o, b as m, d as b, z as W, w as z, g as a, x as U, y as B } from "./index-N8KIsBvL.js";
 const h = /* @__PURE__ */ new Set(), x = [], G = {
   ArrowLeft: "left",
   a: "left",
@@ -19,9 +19,9 @@ const h = /* @__PURE__ */ new Set(), x = [], G = {
   x: "b",
   X: "b",
   Shift: "b"
-}, Q = (e) => {
+}, j = (e) => {
   h.has(e) || (h.add(e), I(e));
-}, q = (e) => {
+}, Q = (e) => {
   h.delete(e);
 }, I = (e) => {
   for (const i of x) i.button === e && L(i.fn);
@@ -113,7 +113,7 @@ let $ = null, V = !1, E = () => {
 };
 const ie = (e) => {
   E = e;
-}, J = (e) => {
+}, q = (e) => {
   $ = e, E();
 }, P = (e) => {
   T = e, V = e, E();
@@ -134,13 +134,13 @@ const ie = (e) => {
   const i = G[e.key];
   i && h.delete(i);
 };
-let X = 0;
-function Y() {
+let J = 0;
+function X() {
   const e = o.slides[o.activeSlideIndex] || o.slides[0];
   return e ? { x: e.spatialPosition.x, y: e.spatialPosition.y, width: e.dimensions.width, height: e.dimensions.height } : { x: 0, y: 0, width: 800, height: 600 };
 }
-function Z() {
-  const e = Y(), i = {
+function Y() {
+  const e = X(), i = {
     strokeColor: "transparent",
     strokeWidth: 0,
     strokeStyle: "solid",
@@ -154,7 +154,7 @@ function Z() {
     roundness: null
   }, s = (n, t, r, d, l, S) => {
     const D = {
-      id: `game-${Date.now()}-${++X}`,
+      id: `game-${Date.now()}-${++J}`,
       type: n,
       x: t,
       y: r,
@@ -240,17 +240,17 @@ function Z() {
       t && B(t.id);
     },
     playAnim: (n, t) => {
-      n?.alive && import("./index-BML9nyo0.js").then((r) => r.ao).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
+      n?.alive && import("./index-N8KIsBvL.js").then((r) => r.ap).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
       }));
     },
     goToPage: (n) => {
       n >= 0 && n < o.slides.length && U(n);
     },
     sound: (n) => {
-      import("./index-BML9nyo0.js").then((t) => t.ap).then((t) => t.playSfx(n));
+      import("./index-N8KIsBvL.js").then((t) => t.aq).then((t) => t.playSfx(n));
     },
     music: (n) => {
-      import("./index-BML9nyo0.js").then((t) => t.ap).then((t) => n ? t.startMusic() : t.stopMusic());
+      import("./index-N8KIsBvL.js").then((t) => t.aq).then((t) => n ? t.startMusic() : t.stopMusic());
     },
     end: (n) => {
       if (P(!0), n) {
@@ -266,13 +266,13 @@ function Z() {
         });
       }
     },
-    pad: (n) => J(n),
+    pad: (n) => q(n),
     random: (n, t) => n + Math.random() * (t - n),
     clamp: (n, t, r) => Math.max(t, Math.min(r, n))
   };
 }
 const re = () => o.gameActive;
-function _(e) {
+function Z(e) {
   o.gameActive && p();
   const i = e ?? o.gameScript;
   if (!i?.trim())
@@ -295,7 +295,7 @@ ${i}`);
     a("selection", []), a("gameActive", !0), a("appMode", "presentation");
   }), W();
   try {
-    s(Z());
+    s(Y());
   } catch (t) {
     return m(`Game error: ${t?.message || t}`, "error"), p(), !1;
   }
@@ -316,7 +316,7 @@ ${i}`);
   return y = requestAnimationFrame(n), !0;
 }
 function p() {
-  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-BML9nyo0.js").then((e) => e.ap).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
+  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-N8KIsBvL.js").then((e) => e.aq).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
     const e = g;
     g = null, b(() => {
       a("elements", JSON.parse(e.elements)), a("selection", e.selection), a("activeSlideIndex", e.activeSlideIndex), a("appMode", e.appMode), a("gameActive", !1);
@@ -327,7 +327,7 @@ function p() {
 }
 function se() {
   const e = F;
-  p(), e && _(e);
+  p(), e && Z(e);
 }
 export {
   A as Sprite,
@@ -337,10 +337,10 @@ export {
   ne as gamePointerUp,
   re as isGameRunning,
   ie as onGameUiSignal,
-  Q as padPress,
-  q as padRelease,
+  j as padPress,
+  Q as padRelease,
   $ as padVisibleOverride,
   se as restartGame,
-  _ as startGame,
+  Z as startGame,
   p as stopGame
 };

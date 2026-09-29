@@ -535,6 +535,8 @@ export interface DrawingElement {
      * truthy, so `el.fontWeight ? …` reports a plain Regular as bold.
      */
     fontWeight?: number | boolean | string;
+    /** CSS font-stretch keyword ('condensed' … 'expanded'): a variable font's width (`wdth`). */
+    fontStretch?: string;
     /** 'normal' | 'italic'. `boolean` is the legacy encoding; read via `normalizeFontStyle`. */
     fontStyle?: boolean | string;
     textAlign?: TextAlign;

@@ -10296,3 +10296,46 @@ every move (`penDragLast`).
   back with the fill gone. It now replaces those elements with copies.
 
 Tests: `path-distort.test.ts` (11), `store/effect-preview.test.ts` (5), `tests/effect-dialog.spec.ts`.
+
+## Eyedropper, colour picker and Save (Anshika's review, Phase 5)
+
+- **The eyedropper switched off after every pick**, so matching colours from a reference meant
+  re-arming it for each sample. Canvas picks now keep it armed (style and colour modes); Esc,
+  Enter, a right-click or (style mode) a click on empty canvas ends it. Scripted
+  `applyEyedropperFrom` / `pickColorFromCanvas` stay one-shot. The right-click that ends it no
+  longer opens the context menu (the pointerdown runs before `contextmenu` and had already
+  disarmed it).
+- **No preview of what it would pick.** A chip beside the cursor shows the exact colour and hex
+  (colour mode) or the fill and stroke it would copy (style mode), using the same rules as the click.
+- **The picker's pipette and screen-pick buttons were blank.** A global button padding made the
+  26px buttons 40px wide and squeezed their icons to zero width, so the eyedropper's own button in
+  the colour picker showed nothing. `.cpp-mode` now sets its own padding.
+- **Square / Wheel were unlabelled icons** (the wheel shown as a triangle). They are now text.
+- **Save to disk never asked where.** It tried the share sheet, then downloaded under a fixed name,
+  and revoked the object URL synchronously, which can cancel the download. It now uses the system
+  Save dialog where available (`saveBlob`), keeps the share sheet for phones, and falls back to a
+  download that outlives the click.
+
+Tests: `tests/eyedropper-repeat-save.spec.ts` (repeat + hover + Enter/right-click, style repeat,
+Save dialog via a stubbed `showSaveFilePicker`); `tests/eyedropper.spec.ts` updated.
+
+## Text weights and scaling (Anshika's review, Phase 4)
+
+- **The built-in fonts could only be Regular or Bold.** Their stylesheet requested weights 400 and
+  700, so the Style menu had nothing else and any other weight clamped. One URL in
+  `config/builtin-fonts.ts` now requests every family's full range (variable ranges where Google
+  has them, Poppins listed), and `index.html`, SVG export, HTML export and the SDK all use it
+  (`builtin-fonts.test.ts` keeps `index.html` identical). The Style menu lists Thin … Black.
+- **Google fonts added by name loaded 400/700 only.** The loader now fetches the stylesheet for all
+  nine weights plus italics — Google returns faces only for the styles a family has, while a range
+  wider than its axis is a hard 400 — reads which came back, and lists exactly those.
+- **SVG export flattened weights.** `SvgRenderer.parseFont` turned every weight into bold/normal,
+  and the shape-label export wrote no weight, style or width at all; Light came out Regular, a Bold
+  label came out Regular. Both now write the real values.
+- **No width control for variable fonts.** Files with a `wdth` axis register it as the FontFace
+  `stretch` range and get a Width control (`fontStretch`, carried in the font shorthand, which the
+  canvas honours).
+- **Side handles could not scale text on one axis.** Shift + left/right now sets horizontal scale;
+  Shift + top/bottom scales vertically holding the width. Plain side-drag still sets wrap width.
+- **Create Outlines would silently outline a Light built-in with the Regular file.** It now refuses
+  weights other than the bundled 400/700 with a message saying how to add the static file.

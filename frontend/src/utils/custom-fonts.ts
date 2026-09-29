@@ -15,7 +15,7 @@
 import { createSignal } from "solid-js";
 import { registerFontFamily } from "./text-utils";
 import { parseFontVariant } from "./font-variants";
-import { dataUrlToBuffer, detectWeightRange, stripVariableMarkers } from "./font-axes";
+import { dataUrlToBuffer, detectWeightRange, detectWidthRange, stripVariableMarkers } from "./font-axes";
 
 export interface CustomFont {
     key: string;       // stable id stored on elements, e.g. "custom-1" / "google-Roboto"
@@ -28,6 +28,13 @@ export interface CustomFont {
      * means "not checked yet": fonts added before variable support are checked on load.
      */
     weightRange?: [number, number] | null;
+    /** A variable font's width range in % (`wdth` axis), e.g. [75, 125]; null for none. Drives the
+     *  Width control and the FontFace `stretch` descriptor. */
+    widthRange?: [number, number] | null;
+    /** Google fonts: the weights the family actually has (read from the stylesheet Google
+     *  returns), and whether it has italics. Undefined = not discovered yet. */
+    weights?: number[];
+    italic?: boolean;
 }
 
 const STORAGE_KEY = "yappy.customFonts.v1";
@@ -37,36 +44,85 @@ export { customFonts };
 
 let counter = 0;
 
-/** Inject the Google Fonts CSS <link> for a family (deduped). */
-function loadGoogleLink(family: string): void {
-    if (typeof document === "undefined") return;
-    const id = `gf-${family.replace(/\s+/g, '+')}`;
-    if (document.getElementById(id)) return;
-    const link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    // Request common weights; display=swap avoids invisible text while loading.
-    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}:ital,wght@0,400;0,700;1,400&display=swap`;
-    document.head.appendChild(link);
+const ALL_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+
+/** Every weight, upright and italic. Google answers a LIST request with faces for only the
+ *  styles the family has (Lobster: just 400; Open Sans: 300–800 + italics), whereas a RANGE
+ *  wider than the family's axis is a hard 400 for the whole request. */
+export const googleFontCssUrl = (family: string) =>
+    `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}:ital,wght@`
+    + [...ALL_WEIGHTS.map(w => `0,${w}`), ...ALL_WEIGHTS.map(w => `1,${w}`)].join(';') + '&display=swap';
+
+/** The weights and italic availability declared by a Google Fonts stylesheet. */
+export function parseGoogleFontFaces(css: string): { weights: number[]; italic: boolean } {
+    const weights = new Set<number>();
+    let italic = false;
+    for (const block of css.split('@font-face').slice(1)) {
+        const w = block.match(/font-weight:\s*(\d+)(?:\s+(\d+))?/);
+        const st = block.match(/font-style:\s*(\w+)/)?.[1];
+        if (st === 'italic') { italic = true; continue; }
+        if (!w) continue;
+        const lo = +w[1], hi = w[2] ? +w[2] : lo;             // a variable face declares a range
+        for (const x of ALL_WEIGHTS) if (x >= lo && x <= hi) weights.add(x);
+    }
+    return { weights: [...weights].sort((a, b) => a - b), italic };
 }
 
-/** Register a font's CSS family with the canvas + the shared font map. */
-async function activate(font: CustomFont): Promise<void> {
+/**
+ * Load a Google family at every weight it has, and report which those are. It used to request
+ * 400 and 700 only, so a Google font's Style menu could never offer Light or Black (Anshika's
+ * review, Phase 4). The stylesheet is fetched (Google sends CORS headers) so the weights can be
+ * read from it, then injected; offline, it falls back to a plain <link> for 400/700.
+ */
+async function loadGoogleCss(family: string): Promise<{ weights: number[]; italic: boolean } | null> {
+    if (typeof document === "undefined") return null;
+    const id = `gf-${family.replace(/\s+/g, '+')}`;
+    const existing = document.getElementById(id);
+    if (existing?.dataset.faces) return JSON.parse(existing.dataset.faces);
+    try {
+        const res = await fetch(googleFontCssUrl(family));
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const css = await res.text();
+        const faces = parseGoogleFontFaces(css);
+        const style = document.createElement('style');
+        style.id = id;
+        style.dataset.faces = JSON.stringify(faces);
+        style.textContent = css;
+        existing?.remove();
+        document.head.appendChild(style);
+        return faces.weights.length ? faces : null;
+    } catch {
+        if (existing) return null;
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}:ital,wght@0,400;0,700;1,400&display=swap`;
+        document.head.appendChild(link);
+        return null;
+    }
+}
+
+/** Register a font's CSS family with the canvas + the shared font map. For a Google font,
+ *  returns the weights/italics it turned out to have (null when they couldn't be read). */
+async function activate(font: CustomFont): Promise<{ weights: number[]; italic: boolean } | null> {
     registerFontFamily(font.key, `"${font.family}", sans-serif`);
-    if (typeof document === "undefined") return;
+    if (typeof document === "undefined") return null;
 
     if (font.kind === 'google') {
-        loadGoogleLink(font.family);
+        const faces = await loadGoogleCss(font.family);
         // Best-effort: wait for the face so the first paint uses it.
         try { await (document as any).fonts?.load(`16px "${font.family}"`); } catch { /* ignore */ }
-        return;
+        return faces;
     }
-    if (!(document as any).fonts || !font.dataUrl) return;
+    if (!(document as any).fonts || !font.dataUrl) return null;
     try {
         // A variable file must declare its weight RANGE. With no descriptor the face is
         // registered as weight 400 only, and every weight asked of it clamps to Regular.
         const descriptors: FontFaceDescriptors = {};
         if (font.weightRange) descriptors.weight = `${font.weightRange[0]} ${font.weightRange[1]}`;
+        // Same for width: without a stretch range the face is "normal" only, and every
+        // font-stretch asked of it clamps back to normal.
+        if (font.widthRange) descriptors.stretch = `${font.widthRange[0]}% ${font.widthRange[1]}%`;
         if (parseFontVariant(font.label).italic) descriptors.style = 'italic';
         const face = new FontFace(font.family, `url(${font.dataUrl})`, descriptors);
         await face.load();
@@ -74,6 +130,7 @@ async function activate(font: CustomFont): Promise<void> {
     } catch (e) {
         console.warn(`[customFonts] failed to load "${font.label}":`, e);
     }
+    return null;
 }
 
 function persist(fonts: CustomFont[]): void {
@@ -103,17 +160,28 @@ export function initCustomFonts(): void {
     setCustomFonts(stored);
     stored.forEach(async (f) => {
         // Fonts added before variable-font support: check once, then remember the answer.
-        if (f.kind !== 'google' && f.dataUrl && f.weightRange === undefined) {
-            const weightRange = await detectWeightRange(dataUrlToBuffer(f.dataUrl), f.label);
+        if (f.kind !== 'google' && f.dataUrl && (f.weightRange === undefined || f.widthRange === undefined)) {
+            const buf = dataUrlToBuffer(f.dataUrl);
+            const weightRange = f.weightRange !== undefined ? f.weightRange : await detectWeightRange(buf, f.label);
+            const widthRange = f.widthRange !== undefined ? f.widthRange : await detectWidthRange(buf, f.label);
             const label = weightRange ? stripVariableMarkers(f.label) : f.label;
-            const upgraded: CustomFont = { ...f, weightRange, label };
-            const next = customFonts().map(x => x.key === f.key ? upgraded : x);
-            setCustomFonts(next);
-            persist(next);
-            f = upgraded;
+            f = updateFont(f.key, { weightRange, widthRange, label }) ?? f;
         }
-        await activate(f);
+        const faces = await activate(f);
+        // Google fonts added before weight discovery (or whose weights changed): remember them.
+        if (f.kind === 'google' && faces && JSON.stringify(faces.weights) !== JSON.stringify(f.weights)) {
+            updateFont(f.key, { weights: faces.weights, italic: faces.italic });
+        }
     });
+}
+
+/** Patch one stored font (and persist). Returns the updated record. */
+function updateFont(key: string, patch: Partial<CustomFont>): CustomFont | undefined {
+    let out: CustomFont | undefined;
+    const next = customFonts().map(x => x.key === key ? (out = { ...x, ...patch }) : x);
+    setCustomFonts(next);
+    persist(next);
+    return out;
 }
 
 const readFileAsDataURL = (file: File): Promise<string> =>
@@ -128,13 +196,15 @@ const readFileAsDataURL = (file: File): Promise<string> =>
 export async function addCustomFontFromFile(file: File): Promise<CustomFont> {
     const dataUrl = await readFileAsDataURL(file);
     const fileLabel = file.name.replace(/\.(ttf|otf|woff2?|eot)$/i, "").trim() || `Font ${counter + 1}`;
-    const weightRange = await detectWeightRange(await file.arrayBuffer().catch(() => null), fileLabel);
+    const buf = await file.arrayBuffer().catch(() => null);
+    const weightRange = await detectWeightRange(buf, fileLabel);
+    const widthRange = await detectWidthRange(buf, fileLabel);
     // `Roboto-VariableFont_wght` → `Roboto`, so the picker groups it as the family it is.
     const label = weightRange ? stripVariableMarkers(fileLabel) : fileLabel;
     counter += 1;
     const key = `custom-${counter}`;
     const family = `YappyFont_${counter}`;
-    const font: CustomFont = { key, label, family, kind: 'file', dataUrl, weightRange };
+    const font: CustomFont = { key, label, family, kind: 'file', dataUrl, weightRange, widthRange };
     await activate(font);
     const next = [...customFonts(), font];
     setCustomFonts(next);
@@ -148,7 +218,8 @@ export async function addGoogleFont(family: string): Promise<CustomFont> {
     const existing = customFonts().find(f => f.key === key);
     if (existing) return existing;
     const font: CustomFont = { key, label: family, family, kind: 'google' };
-    await activate(font);
+    const faces = await activate(font);
+    if (faces) { font.weights = faces.weights; font.italic = faces.italic; }
     const next = [...customFonts(), font];
     setCustomFonts(next);
     persist(next);
@@ -163,8 +234,18 @@ export function removeCustomFont(key: string): void {
 }
 
 /** Built-in + custom font options for pickers (`{ value, label }`). */
-export function customFontOptions(): { value: string; label: string; weightRange?: [number, number] }[] {
-    return customFonts().map(f => ({ value: f.key, label: f.label, ...(f.weightRange ? { weightRange: f.weightRange } : {}) }));
+export function customFontOptions(): { value: string; label: string; weightRange?: [number, number]; weights?: number[]; italic?: boolean }[] {
+    return customFonts().map(f => ({
+        value: f.key, label: f.label,
+        ...(f.weightRange ? { weightRange: f.weightRange } : {}),
+        ...(f.kind === 'google' && f.weights?.length ? { weights: f.weights, italic: !!f.italic } : {}),
+    }));
+}
+
+/** Width range (%) of the font behind a `fontFamily` key, or null when it has no width axis. */
+export function fontWidthRange(fontKey: string | undefined): [number, number] | null {
+    if (!fontKey) return null;
+    return customFonts().find(f => f.key === fontKey)?.widthRange ?? null;
 }
 
 /**

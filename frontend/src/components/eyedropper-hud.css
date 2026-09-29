@@ -1,0 +1,13 @@
+.edh {
+    position: fixed; z-index: 2150; pointer-events: none;
+    padding: 6px 8px; border-radius: 8px; max-width: 180px;
+    background: var(--bg-panel, #fff); color: var(--text-primary, #111);
+    border: 1px solid var(--border-color, #ddd); box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+    font-size: 11.5px;
+}
+.edh-row { display: flex; align-items: center; gap: 6px; }
+.edh-swatch { width: 22px; height: 22px; border-radius: 5px; border: 1px solid rgba(0, 0, 0, .25); flex-shrink: 0; }
+.edh-stroke { background: transparent; border-width: 4px; }
+.edh-hex { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.edh-none { color: var(--text-secondary, #666); }
+.edh-hint { margin-top: 4px; color: var(--text-secondary, #666); font-size: 10.5px; line-height: 1.3; }

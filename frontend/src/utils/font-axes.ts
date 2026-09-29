@@ -26,8 +26,8 @@ const fixed = (v: DataView, o: number) => v.getInt32(o) / 65536;
 
 interface WeightAxis { min: number; max: number; default: number }
 
-/** The `wght` axis of an `fvar` table, or null when it has none. */
-function readWeightAxis(fvar: DataView): WeightAxis | null {
+/** One axis (`wght`, `wdth`, …) of an `fvar` table, or null when it has none. */
+function readAxis(fvar: DataView, axisTag: string): WeightAxis | null {
     if (fvar.byteLength < 16) return null;
     const axesOffset = fvar.getUint16(4);
     const axisCount = fvar.getUint16(8);
@@ -36,7 +36,7 @@ function readWeightAxis(fvar: DataView): WeightAxis | null {
     for (let i = 0; i < axisCount; i++) {
         const o = axesOffset + i * axisSize;
         if (o + 20 > fvar.byteLength) return null;
-        if (tag(fvar, o) !== 'wght') continue;
+        if (tag(fvar, o) !== axisTag) continue;
         const min = fixed(fvar, o + 4), def = fixed(fvar, o + 8), max = fixed(fvar, o + 12);
         if (![min, def, max].every(Number.isFinite) || min <= 0 || max < min) return null;
         return { min: Math.round(min), max: Math.round(max), default: Math.round(def) };
@@ -59,7 +59,7 @@ async function inflate(bytes: Uint8Array): Promise<ArrayBuffer | null> {
  * or a format that can't be read here (WOFF2, a damaged file).
  */
 export async function readFontWeightRange(buf: ArrayBuffer): Promise<[number, number] | null> {
-    const axis = await readFontWeightAxis(buf);
+    const axis = await readFontAxis(buf, 'wght');
     return axis ? [axis.min, axis.max] : null;
 }
 
@@ -68,10 +68,29 @@ export async function readFontWeightRange(buf: ArrayBuffer): Promise<[number, nu
  * variations (opentype.js, for Create Outlines) gets. Usually 400, not always.
  */
 export async function readFontDefaultWeight(buf: ArrayBuffer): Promise<number | null> {
-    return (await readFontWeightAxis(buf))?.default ?? null;
+    return (await readFontAxis(buf, 'wght'))?.default ?? null;
 }
 
-async function readFontWeightAxis(buf: ArrayBuffer): Promise<WeightAxis | null> {
+/**
+ * A variable font's WIDTH range (`wdth` axis, in percent of normal: 75 = condensed, 125 =
+ * expanded), or null. Registered as the FontFace `stretch` range so the canvas's
+ * `font-stretch` selects a real width instance.
+ */
+export async function readFontWidthRange(buf: ArrayBuffer): Promise<[number, number] | null> {
+    const axis = await readFontAxis(buf, 'wdth');
+    return axis ? [axis.min, axis.max] : null;
+}
+
+/** Width range to register: from `fvar` when readable, else 75–125 % when the file name says
+ *  it varies width (WOFF2 can't be read here), else null. */
+export async function detectWidthRange(buf: ArrayBuffer | null, fileName: string): Promise<[number, number] | null> {
+    const fromTable = buf ? await readFontWidthRange(buf) : null;
+    if (fromTable) return fromTable;
+    const m = fileName.match(/VariableFont_([A-Za-z,]+)/i) ?? fileName.match(/\[([A-Za-z,]+)\]/);
+    return m && m[1].toLowerCase().split(',').includes('wdth') ? [75, 125] : null;
+}
+
+async function readFontAxis(buf: ArrayBuffer, axisTag: string): Promise<WeightAxis | null> {
     try {
         const v = new DataView(buf);
         if (buf.byteLength < 12) return null;
@@ -87,7 +106,7 @@ async function readFontWeightAxis(buf: ArrayBuffer): Promise<WeightAxis | null> 
                 if (offset + compLength > buf.byteLength) return null;
                 const raw = new Uint8Array(buf, offset, compLength);
                 const table = compLength < origLength ? await inflate(raw) : raw.slice().buffer;
-                return table ? readWeightAxis(new DataView(table)) : null;
+                return table ? readAxis(new DataView(table), axisTag) : null;
             }
             return null;
         }
@@ -101,7 +120,7 @@ async function readFontWeightAxis(buf: ArrayBuffer): Promise<WeightAxis | null> 
             if (tag(v, r) !== 'fvar') continue;
             const offset = v.getUint32(r + 8), length = v.getUint32(r + 12);
             if (offset + length > buf.byteLength) return null;
-            return readWeightAxis(new DataView(buf, offset, length));
+            return readAxis(new DataView(buf, offset, length), axisTag);
         }
         return null;
     } catch {

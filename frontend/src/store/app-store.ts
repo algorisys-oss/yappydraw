@@ -418,6 +418,9 @@ interface AppState {
      * ('style'), or reports the exact colour under the pointer to whoever armed it ('color').
      */
     eyedropper: { active: boolean; targets: string[]; mode: 'style' | 'color' };
+    /** What the armed eyedropper would pick under the pointer, for the hover preview. `x`/`y`
+     *  are WINDOW px (the preview is a fixed overlay). Null when disarmed or off-canvas. */
+    eyedropperHover: { x: number; y: number; fill: string | null; stroke: string | null } | null;
 
     /**
      * While the Pen is building a path and the cursor is within the close tolerance of the FIRST
@@ -788,6 +791,7 @@ const initialState: AppState = {
     alignToKeyObject: false,
     isolatedGroupIds: [],
     eyedropper: { active: false, targets: [], mode: 'style' as const },
+    eyedropperHover: null,
     penCloseHint: null as { x: number; y: number } | null,
     penEditHint: null as 'add' | 'delete' | null,
     activePaint: 'fill' as PaintChannel,
@@ -6252,8 +6256,10 @@ export const startEyedropper = (targetIds?: string[]) => {
     const targets = targetIds ?? [...store.selection];
     if (targets.length === 0) { showToast('Eyedropper: select an object first', 'info'); return; }
     setStore('eyedropper', { active: true, targets, mode: 'style' });
-    showToast('Eyedropper: click an object to copy its style', 'info');
+    showToast('Eyedropper: click objects to copy their style · Esc when done', 'info');
 };
+
+export const setEyedropperHover = (h: AppState['eyedropperHover']) => setStore('eyedropperHover', h);
 
 /**
  * The colour picker's own eyedropper. Held outside the reactive store on purpose — a Solid store
@@ -6274,13 +6280,20 @@ let _colorPickCb: ((hex: string) => void) | null = null;
 export const startColorEyedropper = (cb: (hex: string) => void) => {
     _colorPickCb = cb;
     setStore('eyedropper', { active: true, targets: [], mode: 'color' });
-    showToast('Eyedropper: click to pick a colour (Alt = outline colour)', 'info');
+    showToast('Eyedropper: click to pick a colour (Alt = outline) · Esc when done', 'info');
 };
 
-/** Report a picked colour back to whoever armed `startColorEyedropper`, then disarm. */
-export const resolveColorEyedropper = (hex: string | null) => {
+/**
+ * Report a picked colour back to whoever armed `startColorEyedropper`.
+ *
+ * `keepArmed` = a canvas click: the eyedropper stays on so you can try colour after colour while
+ * matching a reference (Anshika, Sep 2026 — one-shot meant re-arming it for every sample). Esc,
+ * Enter or a right-click ends it. Scripted picks leave it false: a script picking once doesn't
+ * expect a mode to linger.
+ */
+export const resolveColorEyedropper = (hex: string | null, keepArmed = false) => {
     const cb = _colorPickCb;
-    cancelEyedropper();
+    if (!keepArmed) cancelEyedropper();
     if (cb && hex) { cb(hex); showToast(`Picked ${hex.toUpperCase()}`, 'success'); }
 };
 
@@ -6324,6 +6337,7 @@ export const elementPickColor = (el: DrawingElement, wantStroke: boolean, render
 export const cancelEyedropper = () => {
     _colorPickCb = null;
     setStore('eyedropper', { active: false, targets: [], mode: 'style' });
+    setStore('eyedropperHover', null);
 };
 
 // ── Graphic styles (named reusable appearances) ──────────────────────────────
@@ -8158,7 +8172,10 @@ export const applyPaletteToSelection = (palette: string[], ids?: string[]): numb
 };
 
 /** Apply the source object's style to the armed targets, then disarm. */
-export const applyEyedropperFrom = (sourceId: string, colorOnly = false) => {
+/** Copy `sourceId`'s style (or just its fill with `colorOnly`) onto the armed targets. Each pick
+ *  is its own undo step. `keepArmed`: stay on for the next pick (canvas clicks; see
+ *  resolveColorEyedropper). */
+export const applyEyedropperFrom = (sourceId: string, colorOnly = false, keepArmed = false) => {
     const ed = store.eyedropper;
     if (!ed.active) return;
     const src = store.elements.find(e => e.id === sourceId);
@@ -8174,7 +8191,7 @@ export const applyEyedropperFrom = (sourceId: string, colorOnly = false) => {
         bumpDirtyRevision();
         showToast(colorOnly ? 'Colour applied' : 'Style applied', 'success');
     }
-    cancelEyedropper();
+    if (!keepArmed) cancelEyedropper();
 };
 
 export const alignSelectedElements = (type: AlignmentType, keyId?: string) => {

@@ -61,17 +61,18 @@ At the **foot of the tool column** sits the Illustrator swatch pair: a solid squ
 - **Swap** and **Reset** — swap fill ⇄ stroke, or go back to a black stroke with no fill.
 - A full **colour picker** with a hex field and recents. It **follows the swatch you pick** — choose a colour from any palette and the saturation square, the hue slider and the hex field all move to it, so the picker is always a live readout of the current channel rather than a separate control. That includes the wide-gamut **P3** palette: those swatches are stored as `color(display-p3 …)`, and the picker shows the closest sRGB equivalent while the object keeps the true P3 colour.
 
-**Two picker styles.** The small **segmented toggle** above the picker switches between them:
+**Two picker styles.** The **Square | Wheel** toggle above the picker switches between them:
 the **square** (a saturation/value box with a hue slider below) and the **wheel** (a hue ring with
 a shade triangle inside it). Your choice is remembered. The wheel's corners are pure white, pure
 black and the full-strength hue, and they sit clear of the ring — so dragging into a corner for a
 true black or white sets exactly that, without the ring catching the gesture and spinning the hue.
 
 :::tip
-**Trying lots of colours quickly?** The eyedropper is a one-shot pick, so it is the slow way round
-if you are experimenting. Click swatches in the palette instead — each one applies to the
-selection immediately — and the picker's **recents** strip keeps the last dozen you used, so
-going back to one you had two tries ago is a single click.
+**Trying lots of colours quickly?** Click swatches in the palette: each one applies to the
+selection immediately, and the picker's **recents** strip keeps the last dozen you used, so going
+back to one you had two tries ago is a single click. To sample from a reference, the **Pick**
+eyedropper stays on after each click, with the colour previewed beside the cursor, so you can try
+colour after colour; press Esc when you're done.
 :::
 
 | Key | Does |
@@ -618,6 +619,10 @@ Each drawing keeps its own entry. **File → New** starts a fresh document, so t
 :::tip
 My Drawings lives in this browser's storage — convenient, but not a backup. For anything you care about keeping, also use **Export / Save…** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) to write a ` .yappy` file, or save to the cloud.
 :::
+
+## Saving a file to your computer
+
+**Export / Save…** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) → **Save to disk** writes the drawing as a `.yappy` file (or **JSON** for the plain-text version). In Chrome, Edge and the desktop app the browser's own **Save** dialog opens, so you pick the file name and the folder, the same as for image exports; **Cancel** there saves nothing. Browsers without that dialog (Safari, Firefox) download the file under the name you typed, and on a phone the share sheet opens so you can save it to Files. Open it again with **Export / Save… → Load**.
 
 ## Settings — Pen & Input
 

@@ -1362,4 +1362,17 @@ export const fr: Dictionary = {
         cancel: 'Annuler',
         ok: 'OK',
     },
+    eyedropperHud: {
+        nothing: 'Rien ici',
+        fill: 'Fond',
+        stroke: 'Contour',
+        hintColor: 'Cliquez pour prélever · Alt : contour · Échap pour finir',
+        hintStyle: 'Cliquez pour copier ce style · Échap pour finir',
+    },
+    colorPicker: {
+        square: 'Carré',
+        wheel: 'Roue',
+        squareHint: 'Carré saturation/luminosité avec curseur de teinte',
+        wheelHint: 'Anneau de teinte avec triangle de nuances',
+    },
 };

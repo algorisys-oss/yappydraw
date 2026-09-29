@@ -14,7 +14,7 @@ import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition, ownerSlideIndex } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint, toggleNodeTool, exitAllToolModes } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, setEyedropperHover, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint, toggleNodeTool, exitAllToolModes } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { canvasViewport, publishDockVars, dockInsets } from "../utils/dock-layout";
@@ -410,6 +410,21 @@ const Canvas: Component = () => {
                 { separator: true },
                 { label: 'Constrain Handles (90°/45°)', icon: '⊾', checked: store.penConstrain, onClick: () => { setPenConstrain(); } },
             ];
+        }
+        return null;
+    };
+
+    let eyedropperEndedByRightClickAt = -Infinity;
+
+    /** Topmost element under a window point, for the eyedropper's click and hover. */
+    const eyedropperHitAt = (clientX: number, clientY: number): DrawingElement | null => {
+        const { x: wx, y: wy } = getWorldCoordinates(clientX, clientY);
+        const threshold = 6 / store.viewState.scale;
+        const emap = new Map<string, DrawingElement>();
+        for (const el of store.elements) emap.set(el.id, el);
+        for (let i = store.elements.length - 1; i >= 0; i--) {
+            const el = store.elements[i];
+            if (hitTestElement(el, wx, wy, threshold, store.elements, emap)) return el;
         }
         return null;
     };
@@ -1774,19 +1789,13 @@ const Canvas: Component = () => {
             return;
         }
 
-        // Eyedropper armed: the next click copies the clicked object's style to
-        // the armed targets (then disarms). Consumes the click.
+        // Eyedropper armed: each click copies the clicked object's style to the armed targets
+        // (or reports a colour), and it STAYS armed for the next sample — Esc, Enter or a
+        // right-click ends it, as does clicking empty canvas in style mode. Consumes the click.
         if (store.eyedropper.active) {
             e.preventDefault();
-            const { x: wx, y: wy } = getWorldCoordinates(e.clientX, e.clientY);
-            const threshold = 6 / store.viewState.scale;
-            const emap = new Map<string, DrawingElement>();
-            for (const el of store.elements) emap.set(el.id, el);
-            let hit: DrawingElement | null = null;
-            for (let i = store.elements.length - 1; i >= 0; i--) {
-                const el = store.elements[i];
-                if (hitTestElement(el, wx, wy, threshold, store.elements, emap)) { hit = el; break; }
-            }
+            if (e.button === 2) { eyedropperEndedByRightClickAt = performance.now(); cancelEyedropper(); requestAnimationFrame(draw); return; }
+            const hit = eyedropperHitAt(e.clientX, e.clientY);
             if (store.eyedropper.mode === 'color') {
                 // Colour pick: read the value off the DOCUMENT, not the screen. The exact
                 // authored colour of the shape under the pointer, so what you pick is bit-for-bit
@@ -1800,11 +1809,11 @@ const Canvas: Component = () => {
                 // colour-managed correctly, unlike sampling the composited screen.
                 const rendered = samplePixelHex(e.clientX, e.clientY);
                 const hex = (hit ? elementPickColor(hit, e.altKey, rendered) : null) ?? rendered;
-                resolveColorEyedropper(hex);
+                resolveColorEyedropper(hex, true);
                 requestAnimationFrame(draw);
                 return;
             }
-            if (hit) applyEyedropperFrom(hit.id, e.shiftKey); else cancelEyedropper();
+            if (hit) applyEyedropperFrom(hit.id, e.shiftKey, true); else cancelEyedropper();
             requestAnimationFrame(draw);
             return;
         }
@@ -2029,6 +2038,20 @@ const Canvas: Component = () => {
         if (presentationOnMove(e, pState)) return;
         let { x, y } = getWorldCoordinates(e.clientX, e.clientY);
         setCursorPosition({ x: Math.round(x), y: Math.round(y) });
+
+        // Armed eyedropper: preview what a click here would pick — the exact colour in colour
+        // mode (same rules as the click), the fill + stroke it would copy in style mode.
+        if (store.eyedropper.active) {
+            const hit = eyedropperHitAt(e.clientX, e.clientY);
+            if (store.eyedropper.mode === 'color') {
+                const rendered = samplePixelHex(e.clientX, e.clientY);
+                const hex = (hit ? elementPickColor(hit, e.altKey, rendered) : null) ?? rendered;
+                setEyedropperHover({ x: e.clientX, y: e.clientY, fill: hex, stroke: null });
+            } else {
+                setEyedropperHover({ x: e.clientX, y: e.clientY, fill: hit ? elementPickColor(hit, false) : null, stroke: hit ? elementPickColor(hit, true) : null });
+            }
+            return;
+        }
 
         // Crop mode drag
         if (store.cropModeElementId && store.cropRect) {
@@ -2796,14 +2819,16 @@ const Canvas: Component = () => {
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerCancel={handlePointerUp}
-                    onPointerLeave={() => { if (measureGuides().length) setMeasureGuides([]); }}
+                    onPointerLeave={() => { if (measureGuides().length) setMeasureGuides([]); if (store.eyedropperHover) setEyedropperHover(null); }}
                     onDblClick={handleDoubleClick}
                     onContextMenu={(e) => {
                         e.preventDefault();
                         // The eyedropper owns the next click on the canvas. Popping the context
                         // menu underneath the picking gesture put a menu over the very colour
                         // being aimed at (reported by Anshika, Sep 2026).
-                        if (store.eyedropper.active) return;
+                        // A right-click that just ENDED the eyedropper (pointerdown runs first) is
+                        // part of the same gesture, so it doesn't open the menu either.
+                        if (store.eyedropper.active || performance.now() - eyedropperEndedByRightClickAt < 500) return;
                         // Suppress context menu when triggered by touch/pen long-press
                         // (e.g. iPad palm rest). Only show on real mouse right-click.
                         // contextmenu MouseEvents from a real right-click report button=2;

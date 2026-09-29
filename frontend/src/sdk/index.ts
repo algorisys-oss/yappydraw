@@ -21,6 +21,7 @@
  * features are separate chunks fetched from the same folder the first time they are
  * used, which a single IIFE script could not do.
  */
+import { BUILTIN_FONTS_CSS_URL } from '../config/builtin-fonts';
 import { YappyAPI } from '../api';
 import { renderSvgString, type SvgExportOptions } from '../utils/export';
 import { version as pkgVersion } from '../../../package.json';
@@ -61,10 +62,10 @@ export function mount(target: string | Element, options: ToSvgOptions = {}): SVG
     return svg;
 }
 
-// The same stylesheet frontend/index.html links. The editor gets its webfonts from
+// The same stylesheet frontend/index.html links (config/builtin-fonts.ts). The editor gets its webfonts from
 // that link; a page using the SDK has no such link, so without it `document.fonts.load`
 // finds no @font-face to load and every text box is sized from fallback metrics.
-const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Handlee&family=Inter:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Permanent+Marker&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap';
+const FONTS_CSS = BUILTIN_FONTS_CSS_URL;
 
 /**
  * Load YappyDraw's built-in fonts, then resolve once they can be measured. Await it

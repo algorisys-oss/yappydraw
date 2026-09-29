@@ -207,6 +207,18 @@ const loadFont = async (familyKey: string, weight: number, italic: boolean): Pro
             `The font “${familyKey}” isn't available to outline. Add it with “＋ Add font…” (.ttf or .otf).`,
         );
     }
+    // Only Regular and Bold of the built-ins are bundled. Thin…Black render on the canvas from
+    // the webfont stylesheet (config/builtin-fonts.ts), but outlining them from the 400/700 file
+    // would hand back the wrong letterforms while looking like it worked — refuse instead, the
+    // same as for a variable file's non-default weight above. (Google serves static per-weight
+    // TTFs only to non-browser user agents, so they can't be fetched from here.)
+    const w100 = Math.round(weight / 100) * 100;
+    if (w100 !== 400 && w100 !== 700) {
+        throw new FontOutlineUnavailableError(
+            `Create Outlines can convert the built-in fonts in Regular and Bold. For ${styleLabel(w100, italic)}, ` +
+            `download the static font file and add it with “＋ Add font…” (.ttf or .otf).`,
+        );
+    }
     const face = resolveFace(entry, weight, italic);
     if (!face) {
         throw new FontOutlineUnavailableError(`The font “${familyKey}” has no outline data bundled.`);

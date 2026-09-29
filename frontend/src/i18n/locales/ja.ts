@@ -1340,4 +1340,17 @@ export const ja: Dictionary = {
         cancel: 'キャンセル',
         ok: 'OK',
     },
+    eyedropperHud: {
+        nothing: 'ここには何もありません',
+        fill: '塗り',
+        stroke: '線',
+        hintColor: 'クリックで取得 · Alt: 線 · Esc で終了',
+        hintStyle: 'クリックでこのスタイルをコピー · Esc で終了',
+    },
+    colorPicker: {
+        square: '四角',
+        wheel: 'ホイール',
+        squareHint: '彩度・明度の四角と色相スライダー',
+        wheelHint: '色相リングと明暗の三角形',
+    },
 };

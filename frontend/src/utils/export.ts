@@ -1,3 +1,4 @@
+import { BUILTIN_FONTS_CSS_URL } from "../config/builtin-fonts";
 import { lineHeightPx } from './text-line-height';
 import { store, isLayerVisible, elementsInRenderOrder } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
@@ -1021,7 +1022,7 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
     // Embed Google Fonts for accurate text rendering in standalone SVG
     const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
     const fontStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-    fontStyle.textContent = `@import url('https://fonts.googleapis.com/css2?family=Handlee&family=Inter:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Caveat:wght@400;700&family=Poppins:wght@400;700&family=Merriweather:wght@400;700&family=Permanent+Marker&family=JetBrains+Mono:wght@400;700&display=swap');`;
+    fontStyle.textContent = `@import url('${BUILTIN_FONTS_CSS_URL}');`; // raw &: the serializer escapes it
     defs.appendChild(fontStyle);
     svg.appendChild(defs);
 
@@ -1206,7 +1207,7 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
                 const fontStyleStr = normalizeFontStyle(el.fontStyle);
                 const lineHeight = lineHeightPx(fontSize, el);
                 const measureRenderer = getMeasurementRenderer();
-                measureRenderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
+                measureRenderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily, el.fontStretch);
                 const availableWidth = Math.max(lw - padding * 2, 20);
                 const paragraphs = el.text!.split('\n');
                 const lines: string[] = [];
@@ -1233,6 +1234,7 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
                     textEl.setAttribute('font-size', `${fontSize}px`);
                     textEl.setAttribute('font-weight', fontWeight);
                     textEl.setAttribute('font-style', fontStyleStr);
+                    if (el.fontStretch && el.fontStretch !== 'normal') textEl.setAttribute('font-stretch', el.fontStretch);
                     textEl.setAttribute('text-anchor', textAnchor);
                     textGroup.appendChild(textEl);
                 });
@@ -1572,6 +1574,12 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
                     textEl.setAttribute('fill', textColor);
                     textEl.setAttribute('font-family', fontFamily);
                     textEl.setAttribute('font-size', `${fontSize}px`);
+                    // Shape labels never carried their weight/slant into SVG: a Bold or Light
+                    // label exported as Regular.
+                    const labelWeight = normalizeFontWeight(el.fontWeight);
+                    if (labelWeight !== 400) textEl.setAttribute('font-weight', String(labelWeight));
+                    if (normalizeFontStyle(el.fontStyle) === 'italic') textEl.setAttribute('font-style', 'italic');
+                    if (el.fontStretch && el.fontStretch !== 'normal') textEl.setAttribute('font-stretch', el.fontStretch);
                     textEl.setAttribute('text-anchor', textAnchor);
                     textEl.setAttribute('dominant-baseline', 'central');
                     wrapper.appendChild(textEl);

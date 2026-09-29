@@ -25,7 +25,7 @@ export class TextRenderer extends ShapeRenderer {
         const fontFamily = resolveFontFamily(el.fontFamily);
         // Built via fontShorthand rather than an inline `=== 'bold'` test, which missed every
         // weight on the axis except 700 — Light, Medium and Black all rendered as Regular.
-        const fontSpec = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
+        const fontSpec = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily, el.fontStretch);
 
         renderer.save();
 

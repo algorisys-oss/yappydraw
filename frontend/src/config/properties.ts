@@ -2,17 +2,21 @@ import type { ElementType, DrawingElement } from "../types";
 import { COLOR_PALETTES } from "./color-palettes";
 import { PAGE_SIZE_PRESETS } from "./page-size-presets";
 import { TEXT_EFFECT_PRESETS } from "./text-effect-presets";
+import { BUILTIN_FONT_WEIGHTS } from "./builtin-fonts";
+import { fontWidthRange } from "../utils/custom-fonts";
 
-/** Which style variants each font supports (based on Google Fonts availability) */
-export const fontCapabilities: Record<string, { bold: boolean; italic: boolean }> = {
-    'hand-drawn':  { bold: false, italic: false },  // Handlee — regular only
-    'marker':      { bold: false, italic: false },  // Permanent Marker — regular only
-    'caveat':      { bold: true,  italic: false },  // Caveat — weights 400-700, no italic
-    'sans-serif':  { bold: true,  italic: true },
-    'poppins':     { bold: true,  italic: true },
-    'serif':       { bold: true,  italic: true },
-    'monospace':   { bold: true,  italic: true },
-    'code':        { bold: true,  italic: true },
+/** Which style variants each font supports (based on Google Fonts availability). `weights` is
+ *  every weight the built-in stylesheet loads (config/builtin-fonts.ts) — the Style menu lists
+ *  one entry per weight instead of just Regular/Bold. */
+export const fontCapabilities: Record<string, { bold: boolean; italic: boolean; weights?: number[] }> = {
+    'hand-drawn':  { bold: false, italic: false, weights: BUILTIN_FONT_WEIGHTS['hand-drawn'] },  // Handlee — regular only
+    'marker':      { bold: false, italic: false, weights: BUILTIN_FONT_WEIGHTS['marker'] },      // Permanent Marker — regular only
+    'caveat':      { bold: true,  italic: false, weights: BUILTIN_FONT_WEIGHTS['caveat'] },      // Caveat — 400-700, no italic
+    'sans-serif':  { bold: true,  italic: true,  weights: BUILTIN_FONT_WEIGHTS['sans-serif'] },
+    'poppins':     { bold: true,  italic: true,  weights: BUILTIN_FONT_WEIGHTS['poppins'] },
+    'serif':       { bold: true,  italic: true,  weights: BUILTIN_FONT_WEIGHTS['serif'] },
+    'monospace':   { bold: true,  italic: true,  weights: BUILTIN_FONT_WEIGHTS['monospace'] },
+    'code':        { bold: true,  italic: true,  weights: BUILTIN_FONT_WEIGHTS['code'] },
 };
 
 export interface PropertyConfig {
@@ -72,6 +76,9 @@ export const TEXT_PATH_TARGETS: ElementType[] = [
     'organicBranch', 'line', 'arrow', 'fineliner', 'inkbrush', 'marker', 'path',
     ...CURVED_TEXT_SHAPES,
 ];
+
+/** Everything that carries a font (text, and shapes with a text label) — the Bold/Italic/Width targets. */
+export const FONT_TEXT_TARGETS: ElementType[] = ['text', 'richtext', 'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'star', 'cloud', 'heart', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'line', 'arrow', 'organicBranch', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlObject', 'umlPort', 'umlHistory', 'umlAction', 'umlNode', 'umlArtifact', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnDataStore', 'bpmnAnnotation', 'bpmnGroup', 'bpmnPool', 'path'];
 
 export const properties: PropertyConfig[] = [
     {
@@ -1145,6 +1152,28 @@ export const properties: PropertyConfig[] = [
         group: 'text',
         applicableTo: ['text', 'richtext', 'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'star', 'cloud', 'heart', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'line', 'arrow', 'organicBranch', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlObject', 'umlPort', 'umlHistory', 'umlAction', 'umlNode', 'umlArtifact', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnDataStore', 'bpmnAnnotation', 'bpmnGroup', 'bpmnPool', 'path'],
         defaultValue: false
+    },
+    {
+        // Width of a variable font with a `wdth` axis (Illustrator's variable-font Width).
+        // Only offered when the element's font has one; elsewhere it would do nothing.
+        key: 'fontStretch',
+        label: 'Width',
+        type: 'select',
+        options: [
+            { label: 'Ultra-condensed', value: 'ultra-condensed' },
+            { label: 'Extra-condensed', value: 'extra-condensed' },
+            { label: 'Condensed', value: 'condensed' },
+            { label: 'Semi-condensed', value: 'semi-condensed' },
+            { label: 'Normal', value: 'normal' },
+            { label: 'Semi-expanded', value: 'semi-expanded' },
+            { label: 'Expanded', value: 'expanded' },
+            { label: 'Extra-expanded', value: 'extra-expanded' },
+            { label: 'Ultra-expanded', value: 'ultra-expanded' },
+        ],
+        group: 'text',
+        applicableTo: FONT_TEXT_TARGETS,
+        defaultValue: 'normal',
+        visibleWhen: (el) => !!fontWidthRange(el.fontFamily),
     },
     {
         key: 'textAlign',

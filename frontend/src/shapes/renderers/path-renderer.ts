@@ -208,7 +208,7 @@ export class PathRenderer extends ShapeRenderer {
             renderer.save();
             const fontSize = el.fontSize || 16;
             const fontFamily = el.fontFamily || 'sans-serif';
-            renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
+            renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily, el.fontStretch);
             renderer.fillStyle = el.textColor || color;
 
             if (el.curvedText) {

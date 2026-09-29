@@ -103,11 +103,24 @@ export function fontShorthand(
     style: boolean | string | undefined,
     sizePx: number,
     cssFamily: string,
+    stretch?: string,
 ): string {
     const w = normalizeFontWeight(weight);
     const s = normalizeFontStyle(style);
-    return `${s === 'italic' ? 'italic ' : ''}${w !== 400 ? `${w} ` : ''}${sizePx}px ${cssFamily}`;
+    // Width (`font-stretch`) rides in the shorthand, which the canvas honours (it selects a
+    // variable font's `wdth` instance). Keywords only: the canvas shorthand rejects percentages.
+    const st = stretch && stretch !== 'normal' && FONT_STRETCH_KEYWORDS.includes(stretch as FontStretch) ? `${stretch} ` : '';
+    return `${s === 'italic' ? 'italic ' : ''}${w !== 400 ? `${w} ` : ''}${st}${sizePx}px ${cssFamily}`;
 }
+
+/** CSS `font-stretch` keywords, narrowest first, with the width each one asks for. */
+export const FONT_STRETCH_KEYWORDS = ['ultra-condensed', 'extra-condensed', 'condensed', 'semi-condensed', 'normal',
+    'semi-expanded', 'expanded', 'extra-expanded', 'ultra-expanded'] as const;
+export type FontStretch = typeof FONT_STRETCH_KEYWORDS[number];
+export const FONT_STRETCH_PERCENT: Record<FontStretch, number> = {
+    'ultra-condensed': 50, 'extra-condensed': 62.5, 'condensed': 75, 'semi-condensed': 87.5, 'normal': 100,
+    'semi-expanded': 112.5, 'expanded': 125, 'extra-expanded': 150, 'ultra-expanded': 200,
+};
 
 // ─── Working out a family + style from a font file's name ────────────────────
 
@@ -206,10 +219,15 @@ export interface RawFontOption {
     label: string;
     /** A variable font file's weight range: ONE file that offers every named weight inside it. */
     weightRange?: [number, number];
+    /** A web font's actual weights (a Google font, read from its stylesheet), and whether it has
+     *  italics. One key serves them all; the style rides on `fontWeight`/`fontStyle`. */
+    weights?: number[];
+    italic?: boolean;
 }
 
-/** What a built-in family can be asked to synthesise. */
-export interface FontCaps { bold: boolean; italic: boolean }
+/** What a built-in family can render: real weights when `weights` lists them, else a
+ *  synthesised Bold per `bold`. */
+export interface FontCaps { bold: boolean; italic: boolean; weights?: number[] }
 
 /**
  * Group a flat `{ value, label }` option list into families with styles.
@@ -250,10 +268,22 @@ export function groupFontFamilies(
             // One entry, up to four synthesisable styles. The stored value is the same for
             // all of them — which style you get rides on `fontWeight`/`fontStyle`.
             const caps = capsOf(opt.value) ?? { bold: true, italic: true };
+            if (caps.weights?.length) {
+                // The stylesheet loads these weights for real (config/builtin-fonts.ts), so every
+                // one is a style: Thin … Black, and each italic where the family has italics.
+                for (const w of caps.weights) add(opt.label, { value: opt.value, weight: w, italic: false, styleLabel: styleLabel(w, false) });
+                if (caps.italic) for (const w of caps.weights) add(opt.label, { value: opt.value, weight: w, italic: true, styleLabel: styleLabel(w, true) });
+                continue;
+            }
             add(opt.label, { value: opt.value, weight: 400, italic: false, styleLabel: 'Regular' });
             if (caps.bold) add(opt.label, { value: opt.value, weight: 700, italic: false, styleLabel: 'Bold' });
             if (caps.italic) add(opt.label, { value: opt.value, weight: 400, italic: true, styleLabel: 'Italic' });
             if (caps.bold && caps.italic) add(opt.label, { value: opt.value, weight: 700, italic: true, styleLabel: 'Bold Italic' });
+            continue;
+        }
+        if (opt.weights?.length) {
+            for (const w of opt.weights) add(opt.label, { value: opt.value, weight: w, italic: false, styleLabel: styleLabel(w, false) });
+            if (opt.italic) for (const w of opt.weights) add(opt.label, { value: opt.value, weight: w, italic: true, styleLabel: styleLabel(w, true) });
             continue;
         }
         const { family, weight, italic } = parseFontVariant(opt.label);

@@ -31,6 +31,9 @@ export interface PointerState {
     /** Free Transform distort (Ctrl/Cmd + drag a CORNER handle): which corner is being
      *  pulled on its own, leaving the other three where they are. Null when not distorting. */
     distortCorner: 'tl' | 'tr' | 'bl' | 'br' | null;
+    /** Shift + side handle on a single text element: scale the letters along that one axis
+     *  (horizontal or vertical scale) instead of re-wrapping / resizing the box. */
+    textAxisScale: boolean;
     lastSnappingTime: number;
     /** Cached path-intersection snap targets for the current drag (static elements
         don't move mid-drag, so compute once). Undefined = not yet computed. */
@@ -176,6 +179,7 @@ export function createPointerState(): PointerState {
         shearInitialX: 0,
         shearInitialY: 0,
         distortCorner: null,
+        textAxisScale: false,
         lastSnappingTime: 0,
         laserTrailData: [],
         laserRafPending: false,

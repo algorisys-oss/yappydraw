@@ -61,7 +61,7 @@ export const reverseFontFamily = (cssFont: string): string | undefined => {
 export const getFontString = (el: Partial<DrawingElement>) => {
     // Weight is a number on the 100–900 axis now, so the old truthiness test would report a
     // plain Regular (400) as bold. `fontShorthand` handles every encoding the field has had.
-    return fontShorthand(el.fontWeight, el.fontStyle, el.fontSize || 28, resolveFontFamily(el.fontFamily));
+    return fontShorthand(el.fontWeight, el.fontStyle, el.fontSize || 28, resolveFontFamily(el.fontFamily), el.fontStretch);
 };
 
 // Singleton context for text measurements to avoid DOM overhead in render loops

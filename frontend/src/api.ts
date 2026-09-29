@@ -208,6 +208,9 @@ interface ElementOptions {
     fontWeight?: number | boolean | string;
     /** `'italic'` or `'normal'`. `true` is the older encoding for italic. */
     fontStyle?: boolean | string;
+    /** Width of a variable font with a `wdth` axis: a CSS font-stretch keyword, 'ultra-condensed'
+     *  … 'normal' … 'ultra-expanded'. No effect on fonts without a width axis. */
+    fontStretch?: string;
     /** Per-corner roundness for rectangles (percent of the shorter side, 0-50). A corner
      *  left undefined follows `borderRadius`. */
     radiusTL?: number;

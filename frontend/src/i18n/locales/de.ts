@@ -1341,4 +1341,17 @@ export const de: Dictionary = {
         cancel: 'Abbrechen',
         ok: 'OK',
     },
+    eyedropperHud: {
+        nothing: 'Hier ist nichts',
+        fill: 'Füllung',
+        stroke: 'Kontur',
+        hintColor: 'Klicken zum Aufnehmen · Alt: Kontur · Esc zum Beenden',
+        hintStyle: 'Klicken, um diesen Stil zu übernehmen · Esc zum Beenden',
+    },
+    colorPicker: {
+        square: 'Quadrat',
+        wheel: 'Rad',
+        squareHint: 'Sättigung/Helligkeit-Quadrat mit Farbton-Regler',
+        wheelHint: 'Farbtonring mit Schattierungsdreieck',
+    },
 };

@@ -61,7 +61,7 @@ export class ConnectorRenderer extends ShapeRenderer {
                 const fontSize = el.fontSize || 14;
                 const fontFamily = resolveFontFamily(el.fontFamily);
                 renderer.save();
-                renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
+                renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily, el.fontStretch);
                 renderer.fillStyle = RenderPipeline.adjustColor(curvedTextColor(el), isDarkMode);
                 drawTextAlongPath(renderer, text, path.points, fontSize, textPathOptionsFor(el, fontSize, path.closed));
                 renderer.restore();
@@ -78,7 +78,7 @@ export class ConnectorRenderer extends ShapeRenderer {
         const fontSize = el.fontSize || 14;
         const fontFamily = resolveFontFamily(el.fontFamily);
         renderer.save();
-        renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
+        renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily, el.fontStretch);
         renderer.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
         renderer.textAlign = 'center';
         renderer.textBaseline = 'middle';

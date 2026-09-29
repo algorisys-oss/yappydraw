@@ -210,9 +210,10 @@ export class SvgRenderer implements IRenderer {
         const t = document.createElementNS(NS, 'text');
         t.setAttribute('x', `${r3(x)}`); t.setAttribute('y', `${r3(y)}`);
         t.setAttribute('transform', this.matrixAttr());
-        const { size, family, weight, style } = this.parseFont();
+        const { size, family, weight, style, stretch } = this.parseFont();
         t.setAttribute('font-size', `${size}`); t.setAttribute('font-family', family);
-        if (weight && weight !== 'normal') t.setAttribute('font-weight', weight);
+        if (weight && weight !== 'normal' && weight !== '400') t.setAttribute('font-weight', weight);
+        if (stretch !== 'normal') t.setAttribute('font-stretch', stretch);
         if (style && style !== 'normal') t.setAttribute('font-style', style);
         t.setAttribute('text-anchor', this.textAlign === 'center' ? 'middle' : this.textAlign === 'right' || this.textAlign === 'end' ? 'end' : 'start');
         if (this.textBaseline === 'middle') t.setAttribute('dominant-baseline', 'central');
@@ -229,9 +230,10 @@ export class SvgRenderer implements IRenderer {
         const t = document.createElementNS(NS, 'text');
         t.setAttribute('x', `${r3(x)}`); t.setAttribute('y', `${r3(y)}`);
         t.setAttribute('transform', this.matrixAttr());
-        const { size, family, weight, style } = this.parseFont();
+        const { size, family, weight, style, stretch } = this.parseFont();
         t.setAttribute('font-size', `${size}`); t.setAttribute('font-family', family);
-        if (weight && weight !== 'normal') t.setAttribute('font-weight', weight);
+        if (weight && weight !== 'normal' && weight !== '400') t.setAttribute('font-weight', weight);
+        if (stretch !== 'normal') t.setAttribute('font-stretch', stretch);
         if (style && style !== 'normal') t.setAttribute('font-style', style);
         t.setAttribute('text-anchor', this.textAlign === 'center' ? 'middle' : this.textAlign === 'right' || this.textAlign === 'end' ? 'end' : 'start');
         if (this.textBaseline === 'middle') t.setAttribute('dominant-baseline', 'central');
@@ -246,14 +248,19 @@ export class SvgRenderer implements IRenderer {
         t.textContent = text;
         this.group.appendChild(t);
     }
-    private parseFont(): { size: number; family: string; weight: string; style: string } {
-        // e.g. "italic bold 14px Inter, sans-serif"
+    private parseFont(): { size: number; family: string; weight: string; style: string; stretch: string } {
+        // e.g. "italic 300 condensed 14px Inter, sans-serif" (see fontShorthand)
         const f = this.fontVal;
         const size = parseFloat((f.match(/(\d+(?:\.\d+)?)px/) || [])[1] || '10');
         const family = (f.split('px')[1] || 'sans-serif').trim() || 'sans-serif';
-        const weight = /\bbold\b|[5-9]00/.test(f) ? 'bold' : 'normal';
-        const style = /\bitalic\b/.test(f) ? 'italic' : 'normal';
-        return { size, family, weight, style };
+        const head = f.split(/\d+(?:\.\d+)?px/)[0] ?? '';
+        // Keep the NUMERIC weight: collapsing to bold/normal exported Light as Regular and
+        // SemiBold as Bold, once the built-ins could draw every weight.
+        const num = head.match(/\b([1-9]00)\b/)?.[1];
+        const weight = num ?? (/\bbold\b/.test(head) ? 'bold' : 'normal');
+        const style = /\bitalic\b/.test(head) ? 'italic' : 'normal';
+        const stretch = head.match(/\b((?:ultra-|extra-|semi-)?(?:condensed|expanded))\b/)?.[1] ?? 'normal';
+        return { size, family, weight, style, stretch };
     }
     measureText(text: string): TextMetrics { const { size } = this.parseFont(); const ls = parseFloat(this.letterSpacingVal) || 0; return { width: text.length * size * 0.55 + Math.max(0, text.length) * ls }; }
 

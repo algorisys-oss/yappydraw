@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.269', date: '2026-09-29', items: [
+        'Every font weight: Inter, Poppins and the code fonts now go from Thin to Black, Merriweather from Light to Black. Pick one from Style under the font. Google fonts show every weight they have.',
+        'Hold Shift and drag a text box\u2019s left or right handle to stretch the letters, or its top or bottom handle to make them taller.',
+        'The eyedropper stays on after each pick, so you can sample colour after colour; a preview next to the cursor shows what you\u2019ll get. Press Esc when you\u2019re done.',
+        'Save to disk now asks where to save your drawing and what to call it (Chrome, Edge and the desktop app).',
+        'Variable fonts with a width axis get a Width setting, from condensed to expanded.',
+    ] },
     { version: '0.8.268', date: '2026-09-29', items: [
         'The Pen works the way Illustrator\u2019s does: Shift snaps to 45\u00b0, Ctrl-drag a point you already placed to fix it, and hold Space while dragging to move the point you\u2019re placing.',
         'Add or delete points without switching tools: with a path selected and the Pen active, click its outline to add a point, or click a point to remove it. The cursor shows + or \u2212.',

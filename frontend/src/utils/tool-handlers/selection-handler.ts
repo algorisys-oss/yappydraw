@@ -1623,6 +1623,12 @@ function handleResize(
         // this only claims Alt over the in/out handles themselves — no collision).
         handlePathNodeDrag(x, y, id, pState, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey);
     } else {
+        // Shift on a text element's SIDE handle scales the letters along that axis (Illustrator's
+        // horizontal / vertical scale). Without Shift the side handles keep their meaning — set
+        // the wrap width, resize the box — and Shift was otherwise unused there (see above).
+        const h = pState.draggingHandle;
+        pState.textAxisScale = !isMulti && e.shiftKey && (el.type === 'text' || el.type === 'richtext')
+            && (h === 'lm' || h === 'rm' || h === 'tm' || h === 'bm');
         // APPLY RESIZE (Single or Group)
         applyResize(id, el, isMulti, newX, newY, newWidth, newHeight, pState, helpers);
     }
@@ -2203,6 +2209,14 @@ function applyResize(
             if ((singleEl.type === 'text' || singleEl.type === 'richtext') && isTextCornerHandle(pState.draggingHandle) && init
                 && pState.initialElementWidth > 0 && pState.initialElementHeight > 0) {
                 Object.assign(updates, textCornerScaleUpdates(init, newWidth / pState.initialElementWidth, newHeight / pState.initialElementHeight));
+            } else if (pState.textAxisScale && init && pState.initialElementWidth > 0 && pState.initialElementHeight > 0) {
+                // One axis only: left/right → horizontal scale (font size unchanged); top/bottom →
+                // vertical scale (font size follows the height, horizontal scale compensates so
+                // the width holds). Same arithmetic as a corner drag with the other axis fixed.
+                const sideways = pState.draggingHandle === 'lm' || pState.draggingHandle === 'rm';
+                const kx = sideways ? newWidth / pState.initialElementWidth : 1;
+                const ky = sideways ? 1 : newHeight / pState.initialElementHeight;
+                Object.assign(updates, textCornerScaleUpdates(init, kx, ky));
             } else if ((singleEl.type === 'text' || singleEl.type === 'richtext') && singleEl.text) {
                 const fontSize = singleEl.fontSize || 28;
                 const isHorizontalOnly = pState.draggingHandle === 'lm' || pState.draggingHandle === 'rm';

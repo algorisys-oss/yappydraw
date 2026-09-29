@@ -190,11 +190,25 @@ Once you've finished typing, **drag a corner handle to scale the text itself**, 
 
 - **Drag a corner** to stretch freely. The font size follows the height, and any extra width (or lost width) becomes **Horizontal Scale**, so letters can be widened or condensed, as in Illustrator.
 - **<kbd>Shift</kbd>-drag a corner** to scale proportionally. Only the font size changes, and the letters keep their shape. Add <kbd>Alt</kbd> to scale about the centre.
-- **Left/right handles** still set the wrap width (see the tip above), and top/bottom handles still resize the box.
+- **<kbd>Shift</kbd>-drag a left or right handle** to stretch the letters **horizontally** only: the font size stays, and the **Horizontal Scale** changes. **<kbd>Shift</kbd>-drag the top or bottom handle** to scale them **vertically**: the font size follows the height while the width holds, so the letters get taller and narrower-looking rather than wider.
+- **Left/right handles** without Shift still set the wrap width (see the tip above), and top/bottom handles still resize the box.
 
 **Horizontal Scale** appears in the Properties panel (Text group); type **1** to remove a stretch. Letter spacing and rich-text span sizes scale along with the font size. Stretched text exports to PNG, JPG and SVG as it looks, and **Create Outlines** produces the stretched shapes. `Yappy.updateElement(id, { textScaleX: 1.5 })` sets it from a script.
 
 **Known limitations:** vertical text ignores Horizontal Scale, and a multi-selection resize still scales font size only (no stretch).
+
+## Font weights and width
+
+The **Style** menu under Font lists every weight a family really has. The built-in **Inter**, **Poppins**, **JetBrains Mono** and **Source Code Pro** go from **Thin** (or ExtraLight) to **Black**, with italics; **Merriweather** from Light to Black; **Caveat** Regular to Bold; **Hand-drawn** and **Marker** have one weight. A **Google font** you add by name lists exactly the weights Google has for it, and a **variable font file** lists every weight on its axis. The **B** button is still a quick Regular ↔ Bold toggle.
+
+**Width.** A variable font file with a **width axis** (for example Roboto Flex, or any file whose name ends in `wdth`) adds a **Width** control, from *Ultra-condensed* to *Ultra-expanded*. It uses the font's real condensed and expanded shapes, unlike **Horizontal Scale**, which stretches the letters. It only appears for fonts that have the axis.
+
+```
+Y.updateElement(id, { fontFamily: 'sans-serif', fontWeight: 300 });   // Inter Light
+Y.updateElement(id, { fontStretch: 'condensed' });                     // needs a width axis
+```
+
+Weights and width export to SVG as `font-weight` / `font-stretch`. **Create Outlines** converts the built-in fonts in Regular and Bold; for other weights, add the static font file with *＋ Add font…*.
 
 ## Text on Path (Curved Text)
 

@@ -1340,4 +1340,17 @@ export const es: Dictionary = {
         cancel: 'Cancelar',
         ok: 'Aceptar',
     },
+    eyedropperHud: {
+        nothing: 'Aquí no hay nada',
+        fill: 'Relleno',
+        stroke: 'Contorno',
+        hintColor: 'Clic para tomar · Alt: contorno · Esc para terminar',
+        hintStyle: 'Clic para copiar este estilo · Esc para terminar',
+    },
+    colorPicker: {
+        square: 'Cuadro',
+        wheel: 'Rueda',
+        squareHint: 'Cuadro de saturación y brillo con barra de tono',
+        wheelHint: 'Anillo de tono con triángulo de matices',
+    },
 };

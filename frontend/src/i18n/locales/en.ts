@@ -1367,6 +1367,19 @@ export const en = {
         cancel: 'Cancel',
         ok: 'OK',
     },
+    eyedropperHud: {
+        nothing: 'Nothing here',
+        fill: 'Fill',
+        stroke: 'Stroke',
+        hintColor: 'Click to pick · Alt: outline · Esc when done',
+        hintStyle: 'Click to copy this style · Esc when done',
+    },
+    colorPicker: {
+        square: 'Square',
+        wheel: 'Wheel',
+        squareHint: 'Saturation/brightness square with a hue slider',
+        wheelHint: 'Hue ring with a shade triangle',
+    },
 };
 
 /**

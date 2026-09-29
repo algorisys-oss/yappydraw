@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.269](0.8.269.md) — Every weight of the built-in fonts (Thin to Black) and of Google fonts, a Width control for variable fonts, Shift + side handle to scale text on one axis, a repeating eyedropper with hover preview, and Save that asks where
 - [0.8.268](0.8.268.md) — The Pen works like Illustrator's (45° Shift, Ctrl-drag, Space-move, add/delete anchors, badge cursors); Distort & Scribble get an Effect dialog with live preview, and Twirl works on rectangles
 - [0.8.267](0.8.267.md) — Artboard tool (Shift+O) with a size dialog and side-by-side variations; text on any path, Pen curves included, from a Type on Path tool (Alt+T) with Flip for badge bottoms; 17 tool overlays that clicked beside the pointer
 - [0.8.266](0.8.266.md) — Stick figures: 26 expressions and face parts, blinking, talking mouths and expression changes on the Scene Timeline; a walk that looks like walking

@@ -161,7 +161,7 @@ Select several objects, then right-click → **Recolor Artwork…**. The panel s
 
 ### Eyedropper
 
-Select the object(s) you want to restyle, press <kbd>Shift</kbd>+<kbd>I</kbd> (or right-click → **Eyedropper — pick style from…**) and click any other object: its full look (fill, stroke, gradient/mesh, appearance, shadow) is copied onto your selection. **Esc** cancels, and <kbd>Shift</kbd>+<kbd>I</kbd> again toggles it off. It's a quick one-shot copy — for a look you'll reuse repeatedly, save a **graphic style** instead.
+Select the object(s) you want to restyle, press <kbd>Shift</kbd>+<kbd>I</kbd> (or right-click → **Eyedropper — pick style from…**) and click any other object: its full look (fill, stroke, gradient/mesh, appearance, shadow) is copied onto your selection. The eyedropper **stays on**, so you can click one object after another to try each look (every click is its own undo step). A small preview beside the cursor shows the fill and stroke you would copy. Finish with **Esc**, **Enter**, a **right-click**, or a click on empty canvas; <kbd>Shift</kbd>+<kbd>I</kbd> again also toggles it off. For a look you'll reuse repeatedly, save a **graphic style** instead.
 
 :::note
 Illustrator puts the eyedropper on plain <kbd>I</kbd>; here that key already inserts an image, so it joins the <kbd>Shift</kbd>+letter block with the other Illustrator-class tools (Shape Builder <kbd>Shift</kbd>+<kbd>M</kbd>, Width <kbd>Shift</kbd>+<kbd>W</kbd>, Blob Brush <kbd>Shift</kbd>+<kbd>B</kbd>).
@@ -169,7 +169,7 @@ Illustrator puts the eyedropper on plain <kbd>I</kbd>; here that key already ins
 
 ### Picking a single colour
 
-To copy just a *colour* rather than a whole style, open any colour control's **Custom Color** picker and click the **pipette**. Then click anywhere on the canvas: the colour lands in whichever control you opened the picker from (Stroke, Background, Text). Hold <kbd>Alt</kbd> as you click to take the shape's **outline** colour instead of its fill.
+To copy just a *colour* rather than a whole style, open any colour control's **Custom Color** picker and click the **pipette**. Then click anywhere on the canvas: the colour lands in whichever control you opened the picker from (Stroke, Background, Text). Hold <kbd>Alt</kbd> as you click to take the shape's **outline** colour instead of its fill. The preview beside the cursor shows the exact colour and its hex before you click, and the eyedropper stays on after each pick. Press **Esc**, **Enter** or right-click when you're done.
 
 The pick is **exact**. It reads the colour the shape is actually set to, rather than measuring the pixel on your screen, so what you get back is identical to the source — no drift. That holds even when the drawing doesn't look flat: a shape filled with a sketch **hachure** pattern is mostly white gaps up close, and you still get its fill colour, not the gap.
 

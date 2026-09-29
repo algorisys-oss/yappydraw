@@ -317,7 +317,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 // `el.fontWeight || 'normal'` produced "true normal 16px …" from the old
                 // boolean — an invalid shorthand, so the editing textarea silently fell back
                 // to the browser default and didn't match the canvas behind it.
-                const fontSpec = (px: number) => fontShorthand(el.fontWeight, el.fontStyle, px, fontFamily);
+                const fontSpec = (px: number) => fontShorthand(el.fontWeight, el.fontStyle, px, fontFamily, el.fontStretch);
 
                 // For text elements and shapes, use element height for vertical centering
                 const isConnectorType = el.type === 'organicBranch' || el.type === 'line' || el.type === 'arrow';

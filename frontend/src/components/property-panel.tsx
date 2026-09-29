@@ -2084,7 +2084,7 @@ const PropertyPanel: Component = () => {
                 // that family's styles.
                 const familyGroups = createMemo(() =>
                     groupFontFamilies(
-                        filteredOptions().map(o => ({ value: String(o.value), label: String(o.label), weightRange: (o as { weightRange?: [number, number] }).weightRange })),
+                        filteredOptions().map(o => ({ value: String(o.value), label: String(o.label), weightRange: (o as { weightRange?: [number, number] }).weightRange, weights: (o as { weights?: number[] }).weights, italic: (o as { italic?: boolean }).italic })),
                         new Map(Object.entries(fontCapabilities)),
                     ));
 
@@ -2239,7 +2239,7 @@ const PropertyPanel: Component = () => {
                     const builtinOptions = properties.find(p => p.key === 'fontFamily')?.options ?? [];
                     return groupFontFamilies(
                         [...builtinOptions.map(o => ({ value: String(o.value), label: String(o.label) })),
-                         ...customFontOptions().map(o => ({ value: String(o.value), label: String(o.label), weightRange: o.weightRange }))],
+                         ...customFontOptions().map(o => ({ value: String(o.value), label: String(o.label), weightRange: o.weightRange, weights: o.weights, italic: o.italic }))],
                         new Map(Object.entries(fontCapabilities)),
                     );
                 });

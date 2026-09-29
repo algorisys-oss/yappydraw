@@ -1,5 +1,6 @@
 import { type Component, createSignal, createEffect, onMount, Show, For } from 'solid-js';
-import { Pipette, Monitor, Square as SquareIcon, Triangle as TriangleIcon } from 'lucide-solid';
+import { Pipette, Monitor } from 'lucide-solid';
+import { t } from '../i18n';
 import { readJsonArray } from '../utils/safe-storage';
 import { startColorEyedropper } from '../store/app-store';
 import { cssColorToRgb255 } from '../utils/color-utils';
@@ -261,10 +262,12 @@ export const ColorPickerPro: Component<Props> = (props) => {
                     swatches, so the hue-wheel picker went unfound ("it may look like the above
                     swatches are the only color options available" — Anshika, Sep 2026). */}
                 <div class="cpp-seg" role="group" aria-label="Colour picker style">
-                    <button class={`cpp-mode ${mode() === 'square' ? 'active' : ''}`} title="Square picker — saturation/value box with a hue slider"
-                        aria-label="Square picker" aria-pressed={mode() === 'square'} onClick={() => setMode2('square')}><SquareIcon size={14} /></button>
-                    <button class={`cpp-mode ${mode() === 'triangle' ? 'active' : ''}`} title="Wheel picker — hue ring with a shade triangle"
-                        aria-label="Wheel picker" aria-pressed={mode() === 'triangle'} onClick={() => setMode2('triangle')}><TriangleIcon size={14} /></button>
+                    {/* Labelled, not icon-only: even as a joined pill the two icons did not say what
+                        they switched between (Anshika's review, Phase 5). */}
+                    <button class={`cpp-mode ${mode() === 'square' ? 'active' : ''}`} title={t('colorPicker.squareHint')}
+                        aria-pressed={mode() === 'square'} onClick={() => setMode2('square')}>{t('colorPicker.square')}</button>
+                    <button class={`cpp-mode ${mode() === 'triangle' ? 'active' : ''}`} title={t('colorPicker.wheelHint')}
+                        aria-pressed={mode() === 'triangle'} onClick={() => setMode2('triangle')}>{t('colorPicker.wheel')}</button>
                 </div>
                 <div class="cpp-swatch" style={{ background: hsvToHex(h(), s(), v()) }} />
                 <button

@@ -24,6 +24,9 @@ type SaveOpts = {
 const canPick = (): boolean =>
     typeof window !== 'undefined' && typeof (window as any).showSaveFilePicker === 'function';
 
+/** True where `saveBlob` will show a real Save dialog (name + folder) rather than download. */
+export const canPickSaveLocation = canPick;
+
 /** The anchor-download path — the only option on Firefox/Safari, and the fallback everywhere. */
 const anchorDownload = (blob: Blob, suggestedName: string): void => {
     const url = URL.createObjectURL(blob);

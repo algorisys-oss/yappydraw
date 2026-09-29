@@ -1,3 +1,4 @@
+import { BUILTIN_FONTS_CSS_URL } from "../config/builtin-fonts";
 import type { SlideDocument } from "../types/slide-types";
 import { PLAYER_JS, PLAYER_CSS } from "../assets/player-assets";
 
@@ -73,7 +74,7 @@ export const exportToHtml = async (doc: SlideDocument, filename: string) => {
     <title>${processedDoc.metadata.name || 'Presentation'} - Yappy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Handlee&family=Inter:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Permanent+Marker&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="${BUILTIN_FONTS_CSS_URL}" rel="stylesheet">
     <style>
         /* Reset and Base Styles */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }

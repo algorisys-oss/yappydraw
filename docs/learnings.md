@@ -10368,3 +10368,37 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Get the outward normal from the winding, and test it with both windings.** The first version
   had the sign backwards; a test asserting "bloat moves edges out" on a CW and a CCW square caught
   it at once.
+
+## Eyedropper, picker labels, Save (Anshika's review, Phase 5)
+
+- **A mode that stays on needs a visible way off, and a visible state.** Making the eyedropper
+  repeat was only safe together with the cursor chip saying "Esc when done". Keep scripted entry
+  points one-shot; a script doesn't expect a mode to outlive the call.
+- **Ending a gesture on pointerdown can hand the rest of it to another handler.** The right-click
+  that disarmed the eyedropper went on to open the context menu, because `contextmenu` fires after
+  pointerdown and checked "is the eyedropper active?". Remember that the gesture was consumed.
+- **Icon buttons need their own padding.** The same global button padding that blanked the artboard
+  dialog's swap button had blanked the colour picker's pipette, the eyedropper's own entry point, and
+  nobody reported it because a blank button just looks like decoration. When an icon button looks
+  empty, measure the svg's width before anything else.
+- **A test that checks for words finds layout overflow too.** Adding labels to a 220px row pushed the
+  swatch to a sliver; only the screenshot showed it. Look at the component after changing its width.
+
+## Font weights and axes (Anshika's review, Phase 4)
+
+- **Google Fonts answers a weight LIST and a weight RANGE differently.** `wght@100;…;900` returns
+  faces for only the weights the family has (a free capability probe); `wght@100..900` on a family
+  that doesn't span it is a 400 for the whole request. Probe with a list, request variable ranges
+  only when you know them.
+- **The same stylesheet URL was copied into four places** (index.html, SVG export, HTML export,
+  SDK), all pinned to 400/700. One constant plus a test that reads index.html stops the copies
+  drifting again.
+- **A second renderer can quietly re-encode what the first gets right.** The canvas got numeric
+  weights from `fontShorthand`, but SvgRenderer parsed the string back into bold/normal. When a
+  value grows beyond two states, grep every place that parses it, not just every place that sets it.
+- **Refuse rather than approximate when the output is permanent.** Create Outlines on a weight
+  with no bundled file used to snap to the nearest file and look like it worked; outlines are
+  hard to spot and impossible to fix later, so it now says what to do instead.
+- **Browsers can't choose the font format they are served.** Google gives static per-weight TTFs to
+  a bare user agent and WOFF2 variable files to real browsers, and `User-Agent` is a forbidden
+  header for fetch. What works from curl is not evidence of what works in the app.

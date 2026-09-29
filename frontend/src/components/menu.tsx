@@ -1,4 +1,5 @@
 import { type Component, createSignal, onMount, onCleanup, Show, lazy, Suspense, createEffect } from "solid-js";
+import { saveBlob, canPickSaveLocation } from '../utils/save-file';
 import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
@@ -314,7 +315,23 @@ const Menu: Component = () => {
                 // Note: .yappy mime type is technically application/octet-stream or application/gzip
                 // but let's stick to generic binary for now or custom
                 const file = new File([blob], fileNameWithExt, { type: mimeType });
+                const saveOpts: { description: string; accept: Record<string, string[]> } = saveIntent() === 'disk-json'
+                    ? { description: 'Yappy drawing (JSON)', accept: { 'application/json': ['.json'] } }
+                    : { description: 'Yappy drawing', accept: { 'application/octet-stream': ['.yappy'] } };
 
+                // Where the browser has a real Save dialog (Chrome, Edge, the desktop build), use it:
+                // you choose the name and the folder, as every export already does (save-file.ts).
+                // Saving a drawing used to skip it and land in Downloads under a fixed name
+                // (Anshika's review, Phase 5). Cancel in the dialog saves nothing.
+                if (canPickSaveLocation()) {
+                    const saved = await saveBlob(blob, fileNameWithExt, saveOpts);
+                    if (saved) { clearAutoSave(); showToast(`Saved as ${fileNameWithExt}`, 'success'); }
+                    else showToast('Save cancelled', 'info');
+                    return;
+                }
+
+                // No Save dialog (Safari, Firefox, most phones): the share sheet is how a phone
+                // saves to Files, so offer that first.
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
@@ -330,14 +347,9 @@ const Menu: Component = () => {
                     }
                 }
 
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileNameWithExt;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                // Plain download. Through saveBlob so the object URL outlives the click: revoking it
+                // synchronously, as this used to, can cancel the download before it starts.
+                await saveBlob(blob, fileNameWithExt, saveOpts);
                 clearAutoSave();
                 showToast(`Saved as ${fileNameWithExt}`, 'success');
             }

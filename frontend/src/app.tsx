@@ -51,6 +51,7 @@ import { SymbolismOverlay } from './components/symbolism-overlay';
 import { TypeOnPathOverlay } from './components/type-on-path-overlay';
 import { ArtboardToolOverlay } from './components/artboard-tool-overlay';
 import EffectDialog from './components/effect-dialog';
+import { EyedropperHud } from './components/eyedropper-hud';
 import ArtboardDialog from './components/artboard-dialog';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import { GroupIsolationBanner } from './components/group-isolation-banner';
@@ -245,7 +246,10 @@ const App: Component = () => {
         }
         return;
       }
-      if (e.key === 'Escape' && store.eyedropper.active) {
+      // The eyedropper stays armed between picks; Esc or Enter puts it down (right-click too, on
+      // the canvas). Enter only when not typing, so a hex field keeps its Enter.
+      const typing = (e.target as HTMLElement | null)?.closest?.('input, textarea, [contenteditable="true"]');
+      if (store.eyedropper.active && (e.key === 'Escape' || (e.key === 'Enter' && !typing))) {
         e.preventDefault();
         cancelEyedropper();
         return;
@@ -1643,6 +1647,7 @@ const App: Component = () => {
         <ArtboardToolOverlay />
         <ArtboardDialog />
         <EffectDialog />
+        <EyedropperHud />
         <SymbolEditBanner />
         <GroupIsolationBanner />
         <Show when={isMultiPageDocType(store.docType)}>
