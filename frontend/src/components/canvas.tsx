@@ -43,6 +43,8 @@ import { drawOnDown, drawOnMove, drawOnUp, acceptsDragLabel } from "../utils/too
 import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
 import { setPointUndoHandler } from "../utils/point-undo";
+import { findPenEditTarget, applyPenEditTarget } from "../utils/tool-handlers/pen-edit-target";
+import { penCursor } from "../utils/pen-cursor";
 import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo, findPenResumeTarget } from "../utils/tool-handlers/pen-path-handler";
 import { selectionOnDown, selectionOnMove, selectionOnUp, convertPathAnchor, deletePathAnchor, insertPathAnchorAt, canInsertPathAnchor } from "../utils/tool-handlers/selection-handler";
 import { getSelectionBoundingBox, getPathHandleAtPosition } from "../utils/handle-detection";
@@ -344,11 +346,21 @@ const Canvas: Component = () => {
     // tool, so it deliberately doesn't touch these.
     const POINTER_STYLE_EXEMPT = ['selection', 'lasso', 'pan'];
 
+    // Space held while the Pen is placing an anchor → move that anchor (Illustrator). The global
+    // shortcut chain already ignores Space mid-drag (no Hand tool can take over one pointer), so
+    // the canvas can own the key for the duration of the drag.
+    let penSpaceHeld = false;
+
     const canvasCursor = () => {
         const c = cursor();
         // Only ever replace the idle cursor. Anything else was set deliberately
         // by a handler (resize, move, grab, crop) and outranks a global default.
         if (c !== 'default') return c;
+        if (store.selectedTool === 'path') {
+            if (store.penCloseHint) return penCursor('close');
+            if (store.penResumeHint) return penCursor('continue');
+            if (store.penEditHint) return penCursor(store.penEditHint);
+        }
         if (POINTER_STYLE_EXEMPT.includes(store.selectedTool)) return c;
         const style = store.globalSettings.pointerStyle ?? 'crosshair';
         return style === 'circle' ? CIRCLE_CURSOR : style === 'arrow' ? 'default' : 'crosshair';
@@ -1940,6 +1952,14 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'ink') { inkOnDown(x, y, pState); return; }
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
         if (store.selectedTool === 'polyline' || pState.isPolylineBuilding) { polylineOnDown(x, y, pState, pHelpers); return; }
+        // Idle Pen over the selected path: add an anchor on a segment / delete the one under the
+        // pointer. Resuming from an END anchor still wins, so it is checked first; any modifier
+        // leaves the click to the Pen (Alt converts, Ctrl finishes/edits, Shift constrains).
+        if (store.selectedTool === 'path' && !pState.isPenBuilding && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
+            && !findPenResumeTarget(x, y, 12 / store.viewState.scale)) {
+            const edit = findPenEditTarget(x, y, store.viewState.scale);
+            if (edit) { applyPenEditTarget(edit, x, y, store.viewState.scale); setStore('penEditHint', null); requestAnimationFrame(draw); return; }
+        }
         if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.ctrlKey || e.metaKey, e.altKey); requestAnimationFrame(draw); return; }
 
         drawOnDown(x, y, pState, pHelpers);
@@ -2081,13 +2101,20 @@ const Canvas: Component = () => {
             const had = !!store.penResumeHint;
             setPenResumeHint(t ? { x: t.x, y: t.y } : null);
             if (t || had) requestAnimationFrame(draw);
+            // Pen+ / Pen− cursor over the selected path (same precedence as the click).
+            const edit = t ? null : findPenEditTarget(x, y, store.viewState.scale);
+            const hint = edit ? edit.kind : null;
+            if (hint !== store.penEditHint) setStore('penEditHint', hint);
+        } else if (store.penEditHint) {
+            setStore('penEditHint', null);
         }
 
         if (pState.isPenBuilding) {
             // Clock-Method constrain: Shift, the Procreate second-finger contact, or
             // the on-screen toggle snaps the dragged handle to 45°/90°. Alt breaks the
             // handle pair so the anchor becomes a cusp mid-draw.
-            penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.altKey);
+            // Space held mid-drag moves the anchor being placed (see penSpaceHeld below).
+            penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.altKey, penSpaceHeld && pState.penDragging);
             requestAnimationFrame(draw);
             return;
         }
@@ -2366,6 +2393,22 @@ const Canvas: Component = () => {
 
         handleDoubleClickHandler(e, textEditCtx);
     };
+
+    onMount(() => {
+        const onPenSpace = (e: KeyboardEvent) => {
+            if (e.key !== ' ') return;
+            const down = e.type === 'keydown';
+            if (down && !pState.penDragging) return;   // only mid-placement; otherwise Space is pan
+            penSpaceHeld = down;
+            if (down) e.preventDefault();
+        };
+        window.addEventListener('keydown', onPenSpace, true);
+        window.addEventListener('keyup', onPenSpace, true);
+        onCleanup(() => {
+            window.removeEventListener('keydown', onPenSpace, true);
+            window.removeEventListener('keyup', onPenSpace, true);
+        });
+    });
 
     onMount(() => {
         // Register callback to trigger redraw when images load

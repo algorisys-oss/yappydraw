@@ -10332,3 +10332,39 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Keep `text-on-path` out of the render graph.** The store needs `getElementTextPath`, and
   `render-element` pulls in the shape registry. Importing the tiny `cubicBezier` from there would
   have dragged the renderer into the store. Leaf modules stay leaves.
+
+## Pen parity (Anshika's review, Phase 2)
+
+- **A constant chosen for consistency can be wrong for the tool.** 15° made Pen segments match the
+  Line tool, but people reach for Shift on the Pen to get true diagonals, and at 15° a small wobble
+  gives 30°. Compare against the tool the user already knows (Illustrator's Pen: 45°), not only
+  against the neighbouring tool.
+- **Split a modifier by what's under the pointer instead of taking it away.** Ctrl+click already
+  finished the path; Illustrator's Ctrl is a temporary Direct Selection. On an anchor or handle Ctrl
+  drags it, on empty canvas it finishes, and both gestures survive.
+- **Once a feature makes something movable, check what assumed it was fixed.** The close test used
+  `startX/startY` as "the first anchor"; that was only true until Space and Ctrl-drag could move it.
+- **A tool that edits "the selected X" needs the selection to survive picking the tool.**
+  `setSelectedTool` cleared it, which would have made the Pen's add/delete dead on arrival.
+- **Deltas need a previous sample from before the modifier.** Arming the Space-move on its first
+  event lost that event's movement; recording the pointer on every drag move fixes it. Only the
+  real-key e2e test caught it, because the unit test was written to match the arming behaviour.
+
+## Effect dialog with live preview (Anshika's review, Phase 3)
+
+- **"No-op" reports are worth measuring before theorising.** Running Twirl on a 100×100 square
+  showed 5 points and a skewed quad, which explained the report (twirl fades to 0 at the rim, where
+  all four corners sit) and exposed a second bug (the centroid counted the closing point twice).
+- **Preview on the real elements, restore by snapshot.** Snapshot the raw element array (no deep
+  copy needed, since nothing mutates the objects), restore before each preview, apply with
+  `preview: true` (no history, no toast), and on OK restore once more and apply for real. The
+  result is identical to what the preview showed, in both render styles, and OK is one undo step.
+- **Snapshots of references only work if nothing writes into those objects.** A Solid path update
+  (`setStore('elements', pred, patch)`) mutates the underlying object, so it silently edits the
+  snapshot too. Anything that runs inside a preview must replace elements, never patch them.
+- **A preview needs the rest of the editor to hold still.** The dialog blocks the canvas with a
+  transparent backdrop and the global shortcuts stand down while it is open; otherwise a Delete or
+  Ctrl+Z during preview would be undone by the next restore.
+- **Get the outward normal from the winding, and test it with both windings.** The first version
+  had the sign backwards; a test asserting "bloat moves edges out" on a CW and a CCW square caught
+  it at once.

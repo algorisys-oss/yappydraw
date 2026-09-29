@@ -24,12 +24,16 @@ Pick the **Pen / Vector Path** tool (the pen-nib icon) from the toolbar, then bu
 | **Click the first anchor** | Close the path into a shape filled with your current fill colour. The Pen stays selected for the next shape (unless *Settings → Input → Keep tool active* is off) and the shape you closed is selected |
 | <kbd>Alt</kbd> + click the anchor you just placed | Retract its **outgoing** handle only, so the next segment leaves straight while the curve you drew into it keeps its shape. Keep holding and drag to pull a new outgoing handle on its own |
 | <kbd>Alt</kbd> + click an earlier anchor | Convert it *corner ↔ smooth* without leaving the Pen |
-| <kbd>Shift</kbd> + click (between points) | Constrain the **segment** to 15° increments — perfectly horizontal, vertical or 45° lines |
+| <kbd>Shift</kbd> + click (between points) | Constrain the **segment** to 45° increments: perfectly horizontal, vertical or diagonal lines |
 | <kbd>Shift</kbd> + drag (while curving) | **Clock Method** — constrain the Bézier handles to 90°/45° for clean, easily-edited curves |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> / **double-click** | Finish the path open (not closed) — you can pick it up again later |
-| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click anywhere | Finish the path open **and stay on the Pen**, ready for the next curve |
+| <kbd>Space</kbd> (while dragging out an anchor) | **Move the anchor** you are placing; its handles come with it. Let go of Space to go back to shaping the curve |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + drag an anchor or handle of the path | Fix an **earlier** point or handle without ending the path (Illustrator's temporary Direct Selection) |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click empty canvas | Finish the path open **and stay on the Pen**, ready for the next curve |
 | <kbd>Backspace</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> | Step back one anchor while still drawing |
 | **Click an end anchor of an open path** | **Continue that path** from where you stopped |
+| **Click a segment of the selected path** (Pen idle) | **Add an anchor** there. The cursor shows **+** |
+| **Click an anchor of the selected path** (Pen idle) | **Delete** it. The cursor shows **−** (a path keeps at least two anchors) |
 
 **You always see what you are drawing.** While a path is under construction the Pen draws a
 thin **blue guide** through the anchors, with a square on each one and a rubber-band segment
@@ -66,11 +70,13 @@ Either end works. Click the *start* anchor and the path is continued backwards �
 :::
 
 :::tip
-**Shift does two jobs**, and which one you get depends on whether you are dragging. **Between clicks** it aims the next *segment*: the point snaps to the nearest **15°** from the previous anchor, so straight horizontals, verticals and 45° diagonals come out exact (the same increment the Line and Arrow tools use, and it overrides Snap to Grid for that click). **Mid-drag** it shapes the *handles* instead — see the Clock Method below. Clicking the first anchor still closes the path with <kbd>Shift</kbd> held.
+**Shift does two jobs**, and which one you get depends on whether you are dragging. **Between clicks** it aims the next *segment*: the point snaps to the nearest **45°** from the previous anchor, as in Illustrator, so horizontals, verticals and diagonals come out exact (it overrides Snap to Grid for that click). The Line and Arrow tools keep their finer 15° steps. **Mid-drag** it shapes the *handles* instead — see the Clock Method below. Clicking the first anchor still closes the path with <kbd>Shift</kbd> held.
 :::
 
 :::tip
 **The Clock Method (90°/45°).** Holding <kbd>Shift</kbd> while you drag a handle snaps it straight to 12/3/6/9 o'clock (or the diagonals) — the trick pro illustrators use to keep curves smooth and predictable. No keyboard? Switch on the **90°/45°** button in the floating **Pen options bar**, or rest a **second finger** on the canvas while dragging with the stylus (the same Procreate-style constrain modifier used for proportional resize). The **90°/45°** toggle and the second finger constrain segments too, so tablet users get the straight-line behaviour without a keyboard.
+
+**The cursor tells you what a click will do.** Next to the Pen's crosshair: **+** adds an anchor to the selected path, **−** deletes the anchor under it, **○** closes the path you are drawing, and **/** continues an open path from its end. With no badge, a click starts or extends a path as usual. Add and delete work on the **selected** path only, so the Pen can still start a new path over any other shape. Picking the Pen with a single path selected keeps it selected, and starting a new path deselects it. Rotated paths are left to the Node tool (<kbd>N</kbd>).
 :::
 
 :::tip

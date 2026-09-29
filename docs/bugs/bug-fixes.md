@@ -10252,3 +10252,47 @@ capsule as a fully rounded rect, and a parallelogram with its 20% skew. Unit tes
 `frontend/src/utils/text-on-path.test.ts`. One gotcha found writing them: those quadratic corners
 bow OUTWARD of a true arc (about 1.06r at mid-corner), so an "on the circle" assertion needs a
 tolerance on the outside, not the inside.
+
+## Pen parity with Illustrator (Anshika's review, Phase 2)
+
+- **Shift snapped Pen segments to 15°**, borrowed from the line tools, so a diagonal drawn with a
+  slight wobble landed on 30° or 60°. The Pen now uses Illustrator's 45° (`PEN_SEGMENT_STEP_DEG`);
+  Line and Arrow keep 15°.
+- **No way to fix an earlier anchor without ending the path.** Ctrl/⌘+drag on an anchor or handle
+  of the path being built now moves it (Illustrator's temporary Direct Selection). Ctrl+click on
+  empty canvas still finishes the path open, so the old gesture is unchanged.
+- **No way to reposition an anchor while placing it.** Holding Space mid-drag now moves it. The
+  global key chain was already inert during drags (#360), so the canvas owns Space for the drag
+  and the Hand tool never takes over.
+- **Closing followed where the first anchor WAS.** The close test and ring measured from
+  `startX/startY`; now that anchor 0 can move, both read its current position.
+- **Add/delete anchor needed the Node tool.** An idle Pen over the selected path now adds an
+  anchor on a segment (+ cursor) or deletes one (− cursor), with ○ for close and / for continue.
+  `setSelectedTool('path')` used to clear the selection, so there was never a selected path to
+  edit; it now keeps a single selected path.
+
+Tests: `pen-parity.test.ts` (10), `pen-angle-constrain.test.ts` updated to 45°, and
+`tests/pen-illustrator-parity.spec.ts` with real Shift/Space/Ctrl keys and cursor checks. The
+spec caught one bug the unit tests had built around: Space only armed the delta on its first
+move, so an anchor lagged the pointer by one step. The last drag position is now tracked on
+every move (`penDragLast`).
+
+## Distort effects: Twirl did nothing on rectangles, Roughen/Zig-Zag were fuzz (Anshika's review, Phase 3)
+
+- **Twirl on a rectangle was a no-op.** It rotated only the shape's vertices, with the twist fading
+  to zero at the rim, and a rectangle's four corners are all AT the rim. The outline is now
+  densified first, so the edges bend.
+- **Every radial effect was off-centre.** The centroid averaged the stored ring including its
+  repeated closing point, which counts the first corner twice: a square's centre came out at
+  (40,40), not (50,50). `ringCentroid` counts each vertex once.
+- **Roughen and Zig-Zag were fuzz.** Amplitude was a fraction of the diagonal (10–12%) applied to a
+  point every ~4 px, so large shapes got a band of spikes. Both now take Illustrator's parameters in
+  absolute px (size, ridges per segment, detail per 100 px) and displace along each edge's normal,
+  not radially, so ridges stand straight on straight edges.
+- **No parameters at all.** Each effect was one click at a fixed strength. They now open an Effect
+  dialog with live preview (OK = one undo step, Cancel restores). Scribble joins the same dialog.
+- **Scribble mutated the originals in place.** Clearing the scribbled shape's fill was a store path
+  update, which writes into the original objects; a preview snapshot holding them would have come
+  back with the fill gone. It now replaces those elements with copies.
+
+Tests: `path-distort.test.ts` (11), `store/effect-preview.test.ts` (5), `tests/effect-dialog.spec.ts`.

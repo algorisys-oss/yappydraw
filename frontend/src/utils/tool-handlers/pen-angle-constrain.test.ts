@@ -4,7 +4,8 @@
  * Shift was already plumbed into the pen handler, but only the handle-drag branch read
  * it — so holding Shift shaped the Bézier handles (the 45° Clock Method) and did nothing
  * at all to the segment being drawn. Drawing a straight horizontal line with the pen was
- * therefore a matter of aim. These tests pin the constrained SEGMENT: 15° increments
+ * therefore a matter of aim. These tests pin the constrained SEGMENT: 45° increments
+ * (Illustrator's Pen; it was 15°, borrowed from the line tool, until Anshika's review),
  * measured from the previous anchor, on the committed click as well as the preview.
  *
  * The handler talks to the real store, so the harness mirrors selection-marquee.test.ts.
@@ -96,13 +97,13 @@ describe("pen segment constraint", () => {
         expect(lastSegmentAngle(pState)).toBe(45);
     });
 
-    it("lands on a multiple of 15° for arbitrary angles", () => {
+    it("lands on a multiple of 45° for arbitrary angles", () => {
         penOnDown(0, 0, pState, helpers, true);
         for (const [x, y] of [[100, 37], [220, -80], [-140, 60], [40, 190]]) {
             penOnUpish();
             penOnDown(x, y, pState, helpers, true);
             const deg = lastSegmentAngle(pState);
-            expect(Math.abs(deg % 15)).toBeLessThan(1e-6);
+            expect(Math.abs(deg % 45)).toBeLessThan(1e-6);
         }
     });
 
@@ -151,12 +152,12 @@ describe("pen segment constraint", () => {
         const p2 = createPointerState();
         penOnDown(0, 0, p2, helpers, true);
         p2.penDragging = false; p2.penActiveIdx = -1;
-        penOnDown(100, 60, p2, helpers, true);        // 30.96° → snaps to 30°
+        penOnDown(100, 60, p2, helpers, true);        // 30.96° → snaps to 45° (not 30°: that was the old 15° step)
         const pts = (store.elements.find(e => e.id === p2.currentId)!.pathAnchors ?? []) as any[];
         const el = store.elements.find(e => e.id === p2.currentId)!;
         const b = { x: el.x + pts[1].x, y: el.y + pts[1].y };
         expect(Math.round(b.x % 20) === 0 && Math.round(b.y % 20) === 0).toBe(false);  // off-grid
-        expect(Math.abs(Math.atan2(-b.y, b.x) * 180 / Math.PI)).toBeCloseTo(30, 6);
+        expect(Math.abs(Math.atan2(-b.y, b.x) * 180 / Math.PI)).toBeCloseTo(45, 6);
     });
 });
 

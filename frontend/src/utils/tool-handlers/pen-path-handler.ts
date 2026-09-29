@@ -3,12 +3,16 @@
  * Multi-click tool that builds an editable vector `path` element:
  *   • click              → add a corner anchor
  *   • click-drag         → add a smooth anchor (drag sets symmetric Bézier handles)
- *   • Shift between clicks → constrain the SEGMENT to 15° increments (straight lines)
+ *   • Shift between clicks → constrain the SEGMENT to 45° increments (straight lines)
  *   • Shift while dragging → constrain the HANDLES to 45° (the Clock Method, below)
  *   • Alt while dragging → break the pair: the out handle moves alone, leaving a cusp
+ *   • Space while dragging → move the anchor being placed (handles ride along)
+ *   • Ctrl/Cmd + drag an anchor or handle of the path → reshape it without leaving the Pen
  *   • click first anchor → close the path
  *   • Enter / Esc / double-click → finish an open path
- *   • Ctrl/Cmd + click anywhere  → finish an open path AND stay on the Pen
+ *   • Ctrl/Cmd + click empty canvas → finish an open path AND stay on the Pen
+ *   • idle Pen over a selected path: click a segment → add an anchor, an anchor → delete it
+ *     (see pen-edit-target.ts)
  *   • Backspace / Ctrl+Z → remove the last anchor (see `penUndo`)
  *   • click either END of an existing open path → RESUME it (see below)
  *
@@ -62,20 +66,24 @@ export function constrainHandleVec(dx: number, dy: number): { x: number; y: numb
 /**
  * Where the next anchor goes, in world coords.
  *
- * With the constraint on, the point snaps to the nearest 15° increment from the
- * PREVIOUS anchor — the same increment, and the same precedence over grid snap, that
- * the line/arrow tools use (`drawOnMove`), so a Shift-drawn pen segment lines up with a
- * Shift-drawn line. 15° includes 0/45/90, so horizontal and vertical come out exact.
+ * With the constraint on, the point snaps to the nearest 45° increment from the PREVIOUS
+ * anchor: Illustrator's Pen, and what someone drawing with it reaches Shift for — straight
+ * horizontals, verticals and true diagonals. It used to be 15°, borrowed from the line/arrow
+ * tools (`drawOnMove`, which keep 15°); at 15° a stroke meant to be diagonal lands on 30° or
+ * 60° with the slightest wobble (Anshika, Sep 2026). Same precedence over grid snap as the
+ * line tools.
  *
  * Grid snap and a fixed angle can't both be honoured — snapping the constrained point
  * to the grid is what would bend it back off the angle — so the angle wins, matching
  * the line tool. Without a previous anchor there is no angle to hold, so the very first
  * anchor still grid-snaps.
  */
+export const PEN_SEGMENT_STEP_DEG = 45;
+
 function placeAnchor(x: number, y: number, pState: PointerState, constrain: boolean, suppressPerspective = false): { x: number; y: number } {
     const prev = pState.penAnchors[pState.penAnchors.length - 1];
     if (constrain && prev) {
-        const c = constrainToAngle(pState.startX + prev.x, pState.startY + prev.y, x, y, 15);
+        const c = constrainToAngle(pState.startX + prev.x, pState.startY + prev.y, x, y, PEN_SEGMENT_STEP_DEG);
         return { x: c.x, y: c.y };
     }
     // Perspective soft-snap: same precedence as the 15° constraint (it beats grid snap),
@@ -159,7 +167,38 @@ function resetPen(pState: PointerState): void {
     pState.penActiveIdx = -1;
     pState.penDragging = false;
     pState.penHandleBroken = false;
+    pState.penEdit = null;
+    pState.penDragLast = null;
     pState.currentId = null;
+}
+
+/** World position of the path's first anchor. Not always (startX, startY): Space and Ctrl-drag
+ *  can move anchor 0 after it was placed, and "click the start to close" must follow it. */
+function firstAnchorWorld(pState: PointerState): { x: number; y: number } {
+    const a = pState.penAnchors[0];
+    return { x: pState.startX + (a?.x ?? 0), y: pState.startY + (a?.y ?? 0) };
+}
+
+/**
+ * The anchor or handle of the path being built under (x, y), for Ctrl-drag. Handles win over
+ * anchors (a handle sitting on its own anchor would otherwise be unreachable), and handles are
+ * only offered where they exist. Tolerance is in world units.
+ */
+export function penConstructionHit(pState: PointerState, x: number, y: number, tol: number): { idx: number; part: 'anchor' | 'in' | 'out' } | null {
+    let best: { idx: number; part: 'anchor' | 'in' | 'out'; d: number } | null = null;
+    const consider = (idx: number, part: 'anchor' | 'in' | 'out', wx: number, wy: number, bias: number) => {
+        const d = Math.hypot(x - wx, y - wy) - bias;
+        if (d <= tol && (!best || d < best.d)) best = { idx, part, d };
+    };
+    pState.penAnchors.forEach((a, i) => {
+        const ax = pState.startX + a.x, ay = pState.startY + a.y;
+        consider(i, 'anchor', ax, ay, 0);
+        if (a.outX !== undefined) consider(i, 'out', ax + a.outX, ay + (a.outY ?? 0), 0.5);
+        if (a.inX !== undefined) consider(i, 'in', ax + a.inX, ay + (a.inY ?? 0), 0.5);
+    });
+    if (!best) return null;
+    const { idx, part } = best as { idx: number; part: 'anchor' | 'in' | 'out' };
+    return { idx, part };
 }
 
 // ─── Resume an existing open path ────────────────────────────────────
@@ -321,6 +360,16 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
     // Unlike the other three this keeps the Pen selected, so a run of separate open curves
     // is one continuous gesture instead of re-picking the tool between each.
     if (finishOpen && pState.isPenBuilding) {
+        // Ctrl on an anchor or handle of this path = Illustrator's temporary Direct Selection:
+        // drag it to fix an earlier point without leaving the Pen or ending the path. Only a
+        // Ctrl-press on empty canvas finishes the path, so both gestures keep working.
+        const hit = penConstructionHit(pState, px, py, 10 / store.viewState.scale);
+        if (hit) {
+            pState.penEdit = hit;
+            pState.penDragging = false;
+            pState.penActiveIdx = -1;
+            return;
+        }
         penFinalize(pState, { keepTool: true });
         return;
     }
@@ -337,6 +386,10 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
         }
 
         pushToHistory();
+        // A new path is a new target: drop the path the Pen was editing (Illustrator deselects
+        // it too), so its outline and add/delete cursors don't linger while this one is drawn.
+        if (store.selection.length) setStore('selection', []);
+        setStore('penEditHint', null);
         pState.isPenBuilding = true;
         pState.isDrawing = true;
         pState.startX = px;
@@ -346,6 +399,7 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
         pState.penActiveIdx = 0;
         pState.penDragging = true;
         pState.penHandleBroken = false;
+        pState.penDragLast = { x: 0, y: 0 };
 
         const newElement = {
             ...store.defaultElementStyles,
@@ -371,8 +425,9 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
     // candidate anchor away from the first one, and "click the start to close" must not
     // become unreachable just because the segment is being constrained.
     const closeThreshold = 12 / store.viewState.scale;
+    const first = firstAnchorWorld(pState);
     if (pState.penAnchors.length >= 2 &&
-        Math.hypot(px - pState.startX, py - pState.startY) < closeThreshold) {
+        Math.hypot(px - first.x, py - first.y) < closeThreshold) {
         const id = pState.currentId;
         writePenElement(pState, null, true);
         // A closed shape takes the current fill. While open the path is built unfilled (a fill
@@ -397,21 +452,23 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
     pState.penAnchors.push({ x: relX, y: relY, kind: 'corner' });
     pState.penActiveIdx = pState.penAnchors.length - 1;
     pState.penDragging = true;
+    pState.penDragLast = { x: px - pState.startX, y: py - pState.startY };   // the pointer, not the (maybe constrained) anchor
     pState.penHandleBroken = false; // each anchor starts its own drag un-broken
     writePenElement(pState);
 }
 
 // ─── Pointer Move ────────────────────────────────────────────────────
 
-export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false, breakHandle = false, suppressPerspective = false): void {
+export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false, breakHandle = false, suppressPerspective = false, moveAnchor = false): void {
     penDropIfOrphaned(pState);
     // Hovering near the first anchor with 2+ anchors down means the next click CLOSES the path.
     // Say so: the 12px close tolerance existed but nothing was drawn for it, so whether a click
     // would close the shape or add another anchor was pure guesswork (Anshika, Sep 2026).
     // Illustrator shows a small circle on the pen cursor for exactly this.
-    if (pState.isPenBuilding && pState.penAnchors.length >= 2 && !pState.penDragging) {
-        const near = Math.hypot(x - pState.startX, y - pState.startY) < 12 / store.viewState.scale;
-        const hint = near ? { x: pState.startX, y: pState.startY } : null;
+    if (pState.isPenBuilding && pState.penAnchors.length >= 2 && !pState.penDragging && !pState.penEdit) {
+        const first = firstAnchorWorld(pState);
+        const near = Math.hypot(x - first.x, y - first.y) < 12 / store.viewState.scale;
+        const hint = near ? first : null;
         const cur = store.penCloseHint;
         if ((hint === null) !== (cur === null)) setStore('penCloseHint', hint);
     } else if (store.penCloseHint) {
@@ -422,6 +479,40 @@ export function penOnMove(x: number, y: number, pState: PointerState, _helpers: 
     const { x: px, y: py } = snap(x, y);
     const relX = px - pState.startX;
     const relY = py - pState.startY;
+
+    // Ctrl-drag of an existing anchor or handle (see penOnDown). An anchor carries its handles
+    // with it; a handle follows the pairing rule of its anchor — own-length, as when editing
+    // with the Node tool, since the far side belongs to a segment already shaped.
+    if (pState.penEdit) {
+        const { idx, part } = pState.penEdit;
+        const a = pState.penAnchors[idx];
+        if (!a) { pState.penEdit = null; return; }
+        const next = { ...a };
+        if (part === 'anchor') { next.x = relX; next.y = relY; }
+        else {
+            let hx = relX - a.x, hy = relY - a.y;
+            if (constrain) { const c = constrainHandleVec(hx, hy); hx = c.x; hy = c.y; }
+            if (breakHandle && next.kind === 'smooth') next.kind = 'corner';
+            setAnchorHandle(next, part, hx, hy);
+        }
+        pState.penAnchors[idx] = next;
+        writePenElement(pState);
+        return;
+    }
+
+    // Space held mid-drag: move the anchor being placed instead of pulling its handle —
+    // Illustrator's reposition-while-placing. Handles are relative to the anchor, so they ride
+    // along; letting go of Space goes back to shaping the handle from the new position.
+    const last = pState.penDragLast;
+    if (pState.penDragging) pState.penDragLast = { x: relX, y: relY };
+    if (pState.penDragging && pState.penActiveIdx >= 0 && moveAnchor) {
+        if (last) {
+            const a = pState.penAnchors[pState.penActiveIdx];
+            pState.penAnchors[pState.penActiveIdx] = { ...a, x: a.x + (relX - last.x), y: a.y + (relY - last.y) };
+            writePenElement(pState);
+        }
+        return;
+    }
 
     if (pState.penDragging && pState.penActiveIdx >= 0) {
         // Curving the active anchor: out-handle follows the cursor, in-handle mirrors.
@@ -471,6 +562,8 @@ export function penOnUp(pState: PointerState): void {
     pState.penDragging = false;
     pState.penActiveIdx = -1;
     pState.penHandleBroken = false;
+    pState.penEdit = null;
+    pState.penDragLast = null;
     writePenElement(pState); // drop the drag preview; keep committed anchors
 }
 

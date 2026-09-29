@@ -5,7 +5,7 @@
  * per-effect sections.
  */
 import { type Component, Show } from "solid-js";
-import { store, setTransformEffect, setExtrude, toggleRevolve, applyGlow, applyFeather, applyScribble } from "../../store/app-store";
+import { store, setTransformEffect, setExtrude, toggleRevolve, applyGlow, applyFeather, openDistortDialog } from "../../store/app-store";
 
 const DockEffectsPanel: Component = () => {
     const sel = () => [...store.selection];
@@ -24,7 +24,7 @@ const DockEffectsPanel: Component = () => {
                 <button style={btn} onClick={() => toggleRevolve(sel(), true)}>◉ 3D Revolve (lathe)</button>
                 <button style={btn} onClick={() => applyGlow(sel(), { blur: 14 })}>☀ Outer Glow</button>
                 <button style={btn} onClick={() => applyFeather(sel(), 12)}>☁ Feather (soft edge)</button>
-                <button style={btn} onClick={() => applyScribble(sel(), {})}>✎ Scribble fill</button>
+                <button style={btn} onClick={() => openDistortDialog('scribble', sel())}>✎ Scribble fill…</button>
                 <div style={{ opacity: '0.6', 'font-size': '10px', 'margin-top': '6px' }}>Fine-tune in the Properties panel (each effect has its own sliders).</div>
             </Show>
         </div>

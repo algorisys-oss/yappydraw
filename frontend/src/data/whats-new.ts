@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.268', date: '2026-09-29', items: [
+        'The Pen works the way Illustrator\u2019s does: Shift snaps to 45\u00b0, Ctrl-drag a point you already placed to fix it, and hold Space while dragging to move the point you\u2019re placing.',
+        'Add or delete points without switching tools: with a path selected and the Pen active, click its outline to add a point, or click a point to remove it. The cursor shows + or \u2212.',
+        'Distort effects (Pucker & Bloat, Twirl, Zig-Zag, Roughen, Crystallize) and Scribble now open a dialog with sliders and a live preview. OK keeps it, Cancel puts things back.',
+        'Twirl now bends rectangles and other straight-sided shapes, and Roughen and Zig-Zag look right on large shapes.',
+    ] },
     { version: '0.8.267', date: '2026-09-29', items: [
         'Artboard tool (Shift+O, or # in the toolbar): drag to draw a frame of any size, or click for the New Artboard dialog with logo, social and print sizes, your own width \u00d7 height, and how many to make side by side.',
         'Compare versions of a design: with the Artboard tool, click inside an artboard to make several copies of it, artwork included, in a row.',

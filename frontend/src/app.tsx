@@ -50,6 +50,7 @@ import { SliceToolOverlay } from './components/slice-tool-overlay';
 import { SymbolismOverlay } from './components/symbolism-overlay';
 import { TypeOnPathOverlay } from './components/type-on-path-overlay';
 import { ArtboardToolOverlay } from './components/artboard-tool-overlay';
+import EffectDialog from './components/effect-dialog';
 import ArtboardDialog from './components/artboard-dialog';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import { GroupIsolationBanner } from './components/group-isolation-banner';
@@ -191,7 +192,10 @@ const App: Component = () => {
         isLoadExportOpen() ||
         showHelp() ||
         store.showExportDialog ||
-        isAIPromptOpen()
+        isAIPromptOpen() ||
+        // Effect dialog: its preview restores a snapshot, so Delete / Ctrl+Z / tool keys acting
+        // on the canvas meanwhile would be silently undone. It handles its own Esc / Enter.
+        store.effectDialog
       ) {
         return;
       }
@@ -1638,6 +1642,7 @@ const App: Component = () => {
         <TypeOnPathOverlay />
         <ArtboardToolOverlay />
         <ArtboardDialog />
+        <EffectDialog />
         <SymbolEditBanner />
         <GroupIsolationBanner />
         <Show when={isMultiPageDocType(store.docType)}>

@@ -20,6 +20,14 @@ import fixture from "./__fixtures__/pre-i18n-hotkeys.json";
 const hotkeys = en.hotkeys as Record<string, string>;
 const categories = en.hotkeyCategory as Record<string, string>;
 
+/** Descriptions changed after extraction because the shortcut itself changed. Keep it short. */
+const INTENTIONAL_EDITS: Record<string, { now: string; why: string }> = {
+    'editor-penStraightSegmentConstrainTo15Steps': {
+        now: 'Pen: straight segment — constrain to 45° steps',
+        why: 'v0.8.268: Pen Shift-constrain moved from 15° to 45° (Illustrator parity, Anshika review Phase 2)',
+    },
+};
+
 describe("shortcut descriptions survived extraction", () => {
     it("extracted all 188", () => {
         // The fixture is frozen — it is the pre-extraction table, and it never grows.
@@ -35,6 +43,12 @@ describe("shortcut descriptions survived extraction", () => {
     it("reproduces every description character for character", () => {
         const changed: string[] = [];
         for (const [key, label] of Object.entries(fixture.hotkeys)) {
+            // A shortcut whose BEHAVIOUR changed after extraction gets new words on purpose. The
+            // fixture stays frozen; the edit is listed here with its reason, and must match exactly.
+            if (key in INTENTIONAL_EDITS) {
+                if (hotkeys[key] !== INTENTIONAL_EDITS[key].now) changed.push(`${key}: expected the listed edit ${JSON.stringify(INTENTIONAL_EDITS[key].now)}, got ${JSON.stringify(hotkeys[key])}`);
+                continue;
+            }
             if (hotkeys[key] !== label) changed.push(`${key}: ${JSON.stringify(label)} → ${JSON.stringify(hotkeys[key])}`);
         }
         expect(changed).toEqual([]);

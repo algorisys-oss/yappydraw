@@ -1,0 +1,46 @@
+/* Effect dialog (Distort & Transform, Scribble). A floating panel, not a centred modal: the live
+   preview happens on the canvas, which must stay visible. The backdrop is transparent but blocks
+   pointer input, because edits made during a preview would be restored away. */
+.efd-backdrop { position: fixed; inset: 0; z-index: 2190; background: transparent; }
+.efd-panel {
+    position: fixed; top: 72px; right: 16px; z-index: 2200;
+    width: min(340px, calc(100vw - 32px));
+    background: var(--bg-panel); color: var(--text-primary);
+    border: 1px solid var(--border-color); border-radius: 12px;
+    box-shadow: var(--shadow-lg, 0 10px 30px rgba(0, 0, 0, .2));
+}
+.efd-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 8px 14px; border-bottom: 1px solid var(--border-color); }
+.efd-header h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.efd-close { border: none; background: transparent; padding: 2px; color: var(--text-secondary); cursor: pointer; }
+.efd-close:hover { color: var(--text-primary); }
+.efd-body { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; font-size: 12.5px; }
+.efd-row { display: grid; grid-template-columns: 78px 1fr; align-items: center; gap: 8px; }
+.efd-row > span { color: var(--text-secondary); }
+.efd-row select {
+    padding: 5px 7px; border: 1px solid var(--border-color); border-radius: 6px;
+    background: var(--bg-panel); color: var(--text-primary); font-size: 12.5px;
+}
+.efd-slider { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.efd-slider input[type="range"] { flex: 1; min-width: 0; accent-color: var(--accent-color, #6366f1); }
+.efd-slider input[type="number"] {
+    width: 58px; padding: 3px 5px; border: 1px solid var(--border-color); border-radius: 5px;
+    background: var(--bg-panel); color: var(--text-primary); font-size: 12px;
+}
+.efd-unit { color: var(--text-secondary); font-size: 11px; min-width: 18px; }
+.efd-seg { display: inline-flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; justify-self: start; }
+.efd-seg button { padding: 4px 12px; border: none; background: transparent; color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+.efd-seg button.active { background: var(--accent-color, #6366f1); color: #fff; }
+.efd-note { margin: -4px 0 0 86px; font-size: 11.5px; color: var(--text-secondary); }
+.efd-check { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); cursor: pointer; }
+.efd-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+.efd-primary, .efd-secondary {
+    display: inline-flex; align-items: center; gap: 5px; justify-self: start;
+    padding: 5px 14px; border-radius: 6px; font-size: 12.5px; cursor: pointer;
+}
+.efd-primary { border: none; background: var(--accent-color, #6366f1); color: #fff; }
+.efd-primary:hover { filter: brightness(1.08); }
+.efd-secondary { border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); }
+@media (max-width: 480px) {
+    .efd-panel { top: auto; bottom: 16px; right: 16px; left: 16px; width: auto; }
+    .efd-note { margin-left: 0; }
+}

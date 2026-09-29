@@ -4,7 +4,7 @@ import {
     toggleShapeBuilder, toggleLivePaint, toggleCutTool, toggleWidthTool, toggleCurveTool,
     toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid,
     toggleSymbolSprayer, toggleSymbolism, toggleSliceTool, selectSimilar,
-    setTextVertical, toggleTouchType, toggleTypeOnPath, applyDistort, exitAllToolModes, toggleNodeTool,
+    setTextVertical, toggleTouchType, toggleTypeOnPath, openDistortDialog, exitAllToolModes, toggleNodeTool,
     setPathCornerRadius, getPathCornerRadius, pushToHistory,} from '../store/app-store';
 import { shapeToPath } from '../utils/shape-to-path';
 import { YappyAPI } from '../api';
@@ -121,10 +121,10 @@ const VectorToolsPanel: Component = () => {
         },
     ];
 
-    const distorts: { label: string; kind: any; amt: number }[] = [
-        { label: 'Pucker', kind: 'pucker', amt: 0.25 }, { label: 'Bloat', kind: 'bloat', amt: 0.25 },
-        { label: 'Twirl', kind: 'twirl', amt: 0.25 }, { label: 'Zig-Zag', kind: 'zigzag', amt: 0.12 },
-        { label: 'Crystallize', kind: 'crystallize', amt: 0.18 }, { label: 'Roughen', kind: 'roughen', amt: 0.1 },
+    const distorts: { label: string; kind: any }[] = [
+        { label: 'Pucker', kind: 'pucker' }, { label: 'Bloat', kind: 'bloat' },
+        { label: 'Twirl', kind: 'twirl' }, { label: 'Zig-Zag', kind: 'zigzag' },
+        { label: 'Crystallize', kind: 'crystallize' }, { label: 'Roughen', kind: 'roughen' },
     ];
 
     return (
@@ -184,7 +184,7 @@ const VectorToolsPanel: Component = () => {
                     <div class="vt-flyout">
                         <For each={distorts}>
                             {(d) => (
-                                <button class="vt-sub" onClick={() => applyDistort([...store.selection], d.kind, d.amt)}>{d.label}</button>
+                                <button class="vt-sub" onClick={() => openDistortDialog(d.kind)}>{d.label}…</button>
                             )}
                         </For>
                     </div>

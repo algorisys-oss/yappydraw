@@ -27,7 +27,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, setShowPathfinderBar, togglePathfinderBar, toggleTeachingMode, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, openDistortDialog, setShowPathfinderBar, togglePathfinderBar, toggleTeachingMode, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -70,6 +70,7 @@ import { fontsReady as awaitFontsReady, fontsAreLoaded } from "./utils/font-load
 // illustration search index (~120 KB) + template data, so it must stay OUT of the eager
 // api.ts graph. `searchElements` below loads it on demand (same lazy chunk the
 // Elements panel uses), keeping it off the app's startup path.
+import type { DistortParams } from "./utils/path-distort";
 import type { AssetHit, SearchElementsOptions } from "./library/elements/search";
 import { setRequestRecording, gifCapturing as gifCapturingSignal, animatedContentBounds, renderRegionFrame, renderRegionGif, type FrameRegion as FrameRegionInfo } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
@@ -5067,7 +5068,15 @@ export const YappyAPI = {
     /** Select › Same: match by fill/stroke/both, or fontFamily/fontSize/opacity/strokeWidth/type. */
     selectSimilar(refId?: string, match: 'fill' | 'stroke' | 'both' | 'fontFamily' | 'fontSize' | 'opacity' | 'strokeWidth' | 'type' = 'fill') { return selectSimilar(refId, match); },
     /** Distort & Transform — 'pucker'|'bloat'|'twirl'|'zigzag'|'crystallize'|'roughen' on the selection (amount 0..1). */
-    distort(kind: 'pucker' | 'bloat' | 'twirl' | 'zigzag' | 'crystallize' | 'roughen', amount = 0.25, ids?: string[]) { return applyDistort(ids ?? [...store.selection], kind, amount); },
+    /**
+     * Distort & Transform. `params` are the dialog's parameters — pucker/bloat `{ amount: −100…100 }`
+     * (%), twirl `{ angle }` (°), zig-zag `{ size, ridges }`, roughen `{ size, detail, seed }`,
+     * crystallize `{ size, detail }` (size in px), plus `points: 'smooth' | 'corner'`. Missing values
+     * use defaults sized to the shape. A bare number is the older 0–1 strength and still works.
+     */
+    distort(kind: 'pucker' | 'bloat' | 'twirl' | 'zigzag' | 'crystallize' | 'roughen', params: number | DistortParams = {}, ids?: string[]) { return applyDistort(ids ?? [...store.selection], kind, params); },
+    /** Open the effect dialog (live preview, OK/Cancel) for a distort effect or 'scribble'. */
+    openEffectDialog(kind: 'pucker' | 'bloat' | 'twirl' | 'zigzag' | 'crystallize' | 'roughen' | 'scribble', ids?: string[]) { openDistortDialog(kind, ids ?? [...store.selection]); },
     /** Toggle the Knife/Scissors cut tool (drag a line to slice, click a path to split). */
     toggleCutTool(active?: boolean) { toggleCutTool(active); },
     /** Knife — slice shapes along the line p0→p1 into pieces (targets default to selection / all crossed). */

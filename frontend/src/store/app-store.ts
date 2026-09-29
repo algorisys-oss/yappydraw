@@ -1,5 +1,5 @@
 import { batch, createSignal } from "solid-js";
-import { createStore, reconcile } from "solid-js/store";
+import { createStore, reconcile, unwrap } from "solid-js/store";
 // Dockable-panel system (Phase D): migrated panels are toggled through the dock store so the
 // existing toolbar/menu/hotkey/API entry points keep working. dock-layout has no app-store import,
 // so this one-way edge introduces no cycle.
@@ -23,7 +23,7 @@ import { segmentIntersection } from "../utils/path-intersection";
 import { WIDTH_PROFILES, profileToWidthPoints, detectWidthProfile } from "../utils/width-profiles";
 import { scribbleStrokes } from "../utils/scribble";
 import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
-import { distortPoly, type DistortKind } from "../utils/path-distort";
+import { distortPoly, legacyDistortParams, ringDiagonal, type DistortKind, type DistortParams } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
 import { shapeToPath, shapeDecorationSubpaths } from "../utils/shape-to-path";
@@ -363,6 +363,9 @@ interface AppState {
      *  `sourceId` = the artboard to make variations of, captured at open time — the live selection
      *  can't be used, since any click outside the artboard overlay (the dialog included) clears it. */
     artboardDialog: { open: boolean; x?: number; y?: number; sourceId?: string };
+    /** Effect dialog (Distort & Transform, Scribble) with live preview: which effect, on which
+     *  elements. Null when closed. Transient. */
+    effectDialog: { kind: DistortKind | 'scribble'; ids: string[] } | null;
     /** Curvature tool mode: click points to draw a smooth curve through them (transient). */
     curveToolActive: boolean;
     /** Reshape tool mode: drag a path/segment to bend it while pinning endpoints (transient). */
@@ -422,6 +425,9 @@ interface AppState {
      * The tolerance always existed; nothing drew it, so closing a shape was guesswork.
      */
     penCloseHint: { x: number; y: number } | null;
+    /** Idle Pen over the selected path: the next click would add an anchor on the segment or
+     *  delete the anchor under it. Drives the Pen+ / Pen− cursor. Null otherwise. */
+    penEditHint: 'add' | 'delete' | null;
     /**
      * Which of the two paint channels the Fill & Stroke control is aimed at (Illustrator's
      * X). A swatch click, the palette's eyedropper and the None button all act on this one.
@@ -759,6 +765,7 @@ const initialState: AppState = {
     typeOnPathActive: false,
     artboardToolActive: false,
     artboardDialog: { open: false },
+    effectDialog: null,
     curveToolActive: false,
     reshapeToolActive: false,
     nodeToolActive: false,
@@ -782,6 +789,7 @@ const initialState: AppState = {
     isolatedGroupIds: [],
     eyedropper: { active: false, targets: [], mode: 'style' as const },
     penCloseHint: null as { x: number; y: number } | null,
+    penEditHint: null as 'add' | 'delete' | null,
     activePaint: 'fill' as PaintChannel,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -1951,8 +1959,13 @@ export const setSelectedTool = (tool: ToolType) => {
     setStore('toolLocked', false);
     // The Pen's "continue from here" ring belongs to the Pen only — leaving the tool must
     // take it with it, or it hangs on the canvas over whatever the next tool is doing.
-    if (tool !== 'path') { setStore('penResumeHint', null); setStore('penCloseHint', null); }
-    if (tool !== 'selection' && tool !== 'lasso' && tool !== 'pan' && tool !== 'eraser') {
+    if (tool !== 'path') { setStore('penResumeHint', null); setStore('penCloseHint', null); setStore('penEditHint', null); }
+    // Picking the Pen with ONE path selected keeps it selected, as Illustrator does: that is how
+    // the Pen's add/delete-anchor clicks know which path they edit (pen-edit-target.ts). Any
+    // other selection is still cleared; starting a new path clears this one too.
+    const keepPenTarget = tool === 'path' && store.selection.length === 1
+        && store.elements.find(e => e.id === store.selection[0])?.type === 'path';
+    if (tool !== 'selection' && tool !== 'lasso' && tool !== 'pan' && tool !== 'eraser' && !keepPenTarget) {
         setStore('selection', []);
     }
 
@@ -9311,14 +9324,17 @@ export const selectSimilar = (refId?: string, match: SelectSimilarMatch = 'fill'
 };
 
 /**
- * Distort & Transform — apply Pucker/Bloat, Twirl, Zig-Zag (Scallop), Crystallize, or
- * Roughen (Wrinkle) to the selected shapes' outlines, replacing each with a distorted
- * `path` (Illustrator's Effect → Distort & Transform; also covers the Liquify intent as
- * deterministic filters). `amount` is a 0..1 strength relative to each shape's size.
+ * Distort & Transform — apply Pucker/Bloat, Twirl, Zig-Zag, Crystallize or Roughen to the
+ * selected shapes' outlines, replacing each with a distorted `path` (Illustrator's Effect →
+ * Distort & Transform). `params` are Illustrator's dialog parameters (see DistortParams); a bare
+ * number is the pre-dialog API's 0..1 strength and is mapped per shape (legacyDistortParams).
+ *
+ * `opts.preview` = the Distort dialog's live preview: no undo step, no toast. The dialog restores
+ * its snapshot before each preview and before the final apply, so the commit is ONE undo step.
  */
-export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): string[] => {
+export const applyDistort = (ids: string[], kind: DistortKind, params: number | DistortParams = {}, opts: { preview?: boolean } = {}): string[] => {
     const els = store.elements.filter(e => ids.includes(e.id));
-    if (!els.length) { showToast('Distort: select a shape', 'info'); return []; }
+    if (!els.length) { if (!opts.preview) showToast('Distort: select a shape', 'info'); return []; }
     const created: DrawingElement[] = [];
     const consumed: string[] = [];
     const batchIds = new Set<string>();
@@ -9332,16 +9348,62 @@ export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): s
             opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
         };
         for (const poly of mp) {
-            const path = buildPathFromPoly(distortPoly(poly, kind, amount), style, undefined, batchIds);
+            const prm = typeof params === 'number' ? legacyDistortParams(kind, params, ringDiagonal(poly[0] ?? [])) : params;
+            // 'smooth' points: Catmull-Rom through the distorted outline (any eps > 0 selects it;
+            // this one is small enough to simplify nothing).
+            const smooth = prm.points === 'smooth' || (prm.points === undefined && (kind === 'bloat' || kind === 'roughen'));
+            const path = buildPathFromPoly(distortPoly(poly, kind, prm), style, smooth ? 0.01 : undefined, batchIds);
             if (path) created.push(path);
         }
     }
-    if (!created.length) { showToast('Distort: nothing to distort', 'info'); return []; }
-    pushToHistory();
+    if (!created.length) { if (!opts.preview) showToast('Distort: nothing to distort', 'info'); return []; }
+    if (!opts.preview) pushToHistory();
     replaceElementsPreservingOrder(consumed, created, created.map(c => c.id));
-    showToast(`Distort: ${kind}`, 'success');
+    if (!opts.preview) showToast(`Distort: ${kind}`, 'success');
     return created.map(c => c.id);
 };
+
+// ── Effect dialog preview session ────────────────────────────────────────────
+//
+// The Distort and Scribble dialogs preview on the REAL elements, so what you see is exactly what
+// OK produces, in whichever render style the shape uses. A session snapshots the element array
+// (the raw objects, not copies: they are not mutated, only replaced) and the selection; every
+// preview restores that snapshot first and applies with `preview: true` (no undo step). OK
+// restores once more and applies for real, so it is a single undo step; Cancel just restores.
+
+let effectPreview: { elements: DrawingElement[]; selection: string[] } | null = null;
+
+export const beginEffectPreview = () => {
+    effectPreview = { elements: unwrap(store.elements).slice(), selection: [...store.selection] };
+};
+const restoreEffectPreview = () => {
+    if (!effectPreview) return;
+    const snap = effectPreview;
+    batch(() => {
+        setStore('elements', snap.elements.slice());
+        setStore('selection', snap.selection.slice());
+    });
+};
+/** Show `run` applied to the snapshot (restoring any previous preview first). */
+export const previewEffect = (run: () => void) => {
+    if (!effectPreview) beginEffectPreview();
+    restoreEffectPreview();
+    run();
+};
+/** End the session: restore, then (on commit) apply for real as one undo step. */
+export const endEffectPreview = (commit?: () => void) => {
+    restoreEffectPreview();
+    effectPreview = null;
+    commit?.();
+};
+export const isEffectPreviewActive = () => effectPreview !== null;
+
+/** Distort dialog target: which effect, on what. Null when closed. */
+export const openDistortDialog = (kind: DistortKind | 'scribble', ids = [...store.selection]) => {
+    if (!ids.length) { showToast(kind === 'scribble' ? 'Scribble: select an object' : 'Distort: select a shape', 'info'); return; }
+    setStore('effectDialog', { kind, ids });
+};
+export const closeDistortDialog = () => setStore('effectDialog', null);
 
 /**
  * Convert shapes to editable vector `path` elements in place (same id, z-order, style,
@@ -9889,8 +9951,8 @@ export const applyGlow = (ids: string[], opts: { color?: string; blur?: number; 
 
 /** Scribble (Illustrator effect) — replace each shape's fill with a back-and-forth scribble
  *  path in the fill colour. Returns the new path ids. */
-export const applyScribble = (ids: string[], opts: { spacing?: number; angle?: number; strokeWidth?: number } = {}): string[] => {
-    if (!ids.length) { showToast('Scribble: select an object', 'info'); return []; }
+export const applyScribble = (ids: string[], opts: { spacing?: number; angle?: number; strokeWidth?: number; preview?: boolean } = {}): string[] => {
+    if (!ids.length) { if (!opts.preview) showToast('Scribble: select an object', 'info'); return []; }
     const spacing = Math.max(2, opts.spacing ?? 8);
     const strokeWidth = opts.strokeWidth ?? 2;
     const a = (opts.angle ?? 0) * Math.PI / 180;
@@ -9922,12 +9984,14 @@ export const applyScribble = (ids: string[], opts: { spacing?: number; angle?: n
         } as DrawingElement);
     }
     if (!created.length) return [];
-    pushToHistory();
-    setStore('elements', list => [...list, ...created]);
-    setStore('elements', (e: DrawingElement) => scribbled.includes(e.id), () => ({ backgroundColor: 'transparent' }));
+    if (!opts.preview) pushToHistory();
+    // Clear the scribbled shapes' fill by REPLACING them, not with a path update: a path update
+    // mutates the original objects, which the effect dialog's preview snapshot still holds, so
+    // Cancel would have brought back shapes that had silently lost their fill.
+    setStore('elements', list => [...list.map(e => scribbled.includes(e.id) ? { ...e, backgroundColor: 'transparent' } : e), ...created]);
     setStore('selection', created.map(c => c.id));
     bumpDirtyRevision();
-    showToast('Scribble applied', 'success');
+    if (!opts.preview) showToast('Scribble applied', 'success');
     return created.map(c => c.id);
 };
 

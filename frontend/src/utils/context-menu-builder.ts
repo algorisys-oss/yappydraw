@@ -22,9 +22,9 @@ import {
     toggleWidthTool,
     clearWidthProfile,
     selectSimilar,
-    applyDistort,
+    openDistortDialog,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
-    mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble,
+    mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow,
     bringToFront, sendToBack, moveSelectionZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements, moveElementsToLayer,
@@ -500,12 +500,12 @@ function buildContextMenuItems(
                 },
                 {
                     label: 'Distort & Transform', icon: '〰️', submenu: [
-                        { label: 'Pucker', onClick: () => applyDistort([...store.selection], 'pucker', 0.25) },
-                        { label: 'Bloat', onClick: () => applyDistort([...store.selection], 'bloat', 0.25) },
-                        { label: 'Twirl', onClick: () => applyDistort([...store.selection], 'twirl', 0.25) },
-                        { label: 'Zig-Zag', onClick: () => applyDistort([...store.selection], 'zigzag', 0.12) },
-                        { label: 'Crystallize', onClick: () => applyDistort([...store.selection], 'crystallize', 0.18) },
-                        { label: 'Roughen', onClick: () => applyDistort([...store.selection], 'roughen', 0.1) },
+                        { label: 'Pucker…', onClick: () => openDistortDialog('pucker') },
+                        { label: 'Bloat…', onClick: () => openDistortDialog('bloat') },
+                        { label: 'Twirl…', onClick: () => openDistortDialog('twirl') },
+                        { label: 'Zig-Zag…', onClick: () => openDistortDialog('zigzag') },
+                        { label: 'Crystallize…', onClick: () => openDistortDialog('crystallize') },
+                        { label: 'Roughen…', onClick: () => openDistortDialog('roughen') },
                     ],
                 },
                 {
@@ -525,7 +525,7 @@ function buildContextMenuItems(
                         { label: 'Remove', icon: '✕', onClick: () => applyGlow([...store.selection], { enabled: false }) },
                     ],
                 },
-                { label: 'Scribble fill', icon: '✎', onClick: () => applyScribble([...store.selection], {}) },
+                { label: 'Scribble fill…', icon: '✎', onClick: () => openDistortDialog('scribble') },
             ]
         }, { separator: true });
 

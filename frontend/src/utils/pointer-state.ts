@@ -88,6 +88,13 @@ export interface PointerState {
      * re-mirror and undo the cusp you were shaping (Illustrator behaves the same way).
      */
     penHandleBroken: boolean;
+    /** Ctrl-drag of an anchor or handle of the path being built (Illustrator's temporary
+     *  Direct Selection while the Pen is active). null when no such drag is in progress. */
+    penEdit: { idx: number; part: 'anchor' | 'in' | 'out' } | null;
+    /** Last pointer position (relative to startX/startY) during an anchor drag. Holding Space
+     *  moves the anchor by the pointer's delta from here, so it must be current on EVERY drag
+     *  move — arming it only once Space is down loses the first step. null between drags. */
+    penDragLast: { x: number; y: number } | null;
     // Touch/pen tap-to-toggle: an anchor pressed (no modifier) by finger/stylus.
     // A pure tap (lift without dragging past slop) toggles smooth↔corner; a real
     // drag clears this and moves the node. History is deferred until the first
@@ -189,6 +196,8 @@ export function createPointerState(): PointerState {
         penActiveIdx: -1,
         penDragging: false,
         penHandleBroken: false,
+        penEdit: null,
+        penDragLast: null,
         isPolylineBuilding: false,
         polylinePoints: [],
         lassoPoints: [],

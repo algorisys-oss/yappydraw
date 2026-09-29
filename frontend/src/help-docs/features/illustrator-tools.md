@@ -121,35 +121,37 @@ Yappy.unlockAll();               // → 1          (frees them and selects them)
 
 ## 〰️ Distort & Transform (Liquify)
 
-Select one or more shapes, then right-click → **Distort & Transform** and pick an effect. Each one replaces the shape with a distorted, editable **path**, so you can keep stacking effects or node-edit the result. These cover Illustrator's Effect → Distort & Transform menu and the intent of the Liquify brushes as predictable, one-click filters.
+Select one or more shapes, then right-click → **Distort & Transform** and pick an effect (also in the Vector Tools panel and the command palette). A small **Effect** dialog opens beside the canvas with the effect's settings, and the shape **previews live** as you move the sliders, in whichever style (sketch or architectural) it uses. **OK** applies it (one <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes it); **Cancel** or <kbd>Esc</kbd> leaves the shape untouched. Switch effects from the dialog's **Effect** list without closing it. While the dialog is open the canvas is locked, so nothing you click can be lost when the preview updates.
 
-| Effect | What it does | Good for |
+Each effect replaces the shape with an editable **path**, so you can keep stacking effects or node-edit the result.
+
+| Effect | Settings | Good for |
 | --- | --- | --- |
-| **Pucker** | Pulls edge midpoints inward (spiky star). | Stars, sparkles, sea-urchins. |
-| **Bloat** | Pushes edge midpoints outward (balloon). | Blobs, petals, puffy badges. |
-| **Twirl** | Rotates points around the centre, stronger near it. | Swirls, spiral motifs. |
-| **Zig-Zag** | Ridges the outline in/out (a.k.a. Scallop). | Stamps, tickets, gears. |
-| **Crystallize** | Pushes alternating points outward into spikes. | Bursts, shattered looks. |
-| **Roughen** | Randomly jitters the outline (a.k.a. Wrinkle). | Hand-torn paper, grunge. |
+| **Pucker & Bloat** | *Amount* −100…100 %: left pulls the edges in (spiky star), right pushes them out (balloon). | Stars, sparkles, blobs, puffy badges. |
+| **Twirl** | *Angle* in degrees, strongest at the centre and fading to nothing at the edge. Works on straight-sided shapes too. | Swirls, spiral motifs. |
+| **Zig-Zag** | *Size* in px and *Ridges* per edge. | Stamps, tickets, gears. |
+| **Roughen** | *Size* in px, *Detail* (points per 100 px), and **New variation** for a different random pattern. | Hand-torn paper, grunge. |
+| **Crystallize** | *Size* and *Detail*; spikes point outward only. | Bursts, shattered looks. |
+
+Every distort effect also has **Points: Smooth / Corner**. Smooth runs curves through the new points (soft, organic); Corner keeps them sharp (crisp, technical). Sizes are in pixels, so a small icon and a large banner get the same ridge size; the first values the dialog shows are scaled to the selected shape.
 
 ```
-// turn a circle into a spiky star
+// turn a circle into a spiky star, and a rectangle into a puffy badge
 const c = Yappy.createCircle(200, 200, 160, 160, { backgroundColor: '#f59e0b' });
-Yappy.setSelected([c]);
-Yappy.distort('pucker', 0.4);
-
-// a puffy badge from a rectangle
+Yappy.distort('pucker', { amount: -60 }, [c]);
 const r = Yappy.createRectangle(120, 120, 160, 120, { backgroundColor: '#10b981' });
-Yappy.setSelected([r]);
-Yappy.distort('bloat', 0.3);
+Yappy.distort('bloat', { amount: 40, points: 'smooth' }, [r]);
 
-// amount is 0..1 relative to the shape's size
-Yappy.distort('zigzag', 0.12);   // subtle ridges
-Yappy.distort('roughen', 0.08);  // light grunge
+Yappy.distort('twirl', { angle: 120 });                 // the selection
+Yappy.distort('zigzag', { size: 6, ridges: 5 });
+Yappy.distort('roughen', { size: 3, detail: 12, seed: 7 });
+Yappy.openEffectDialog('roughen');                       // the dialog, with preview
 ```
+
+A number instead of settings (`Yappy.distort('twirl', 0.25)`) is the older 0–1 strength and still works.
 
 :::tip
-Effects are *deterministic* — the same shape + amount always gives the same result, so they're safe to script and reproduce. Distort is destructive (it bakes a new path); duplicate first (<kbd>Ctrl</kbd>+<kbd>D</kbd>) if you want to keep the original.
+Effects are *deterministic*: the same shape and settings always give the same result (Roughen's pattern comes from its *seed*), so they're safe to script and reproduce. Distort bakes a new path; duplicate first (<kbd>Ctrl</kbd>+<kbd>D</kbd>) if you want to keep the original.
 :::
 
 ## 〜 Warp Presets — Make with Warp
