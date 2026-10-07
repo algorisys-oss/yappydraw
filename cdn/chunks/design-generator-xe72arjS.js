@@ -1,7 +1,7 @@
 import { b as x, c as S } from "./ai-providers-CycU8sO1.js";
-import { b as u, $ as A, s as C, g as y, z as M, f as D } from "./index-N8KIsBvL.js";
-const $ = 'You are a senior graphic designer. Reply with ONLY a JSON object, no markdown fences, matching exactly: {"headline": string (max 6 words), "subhead": string (max 12 words), "bullets": string[] (0-4 short items), "cta": string (max 5 words, optional), "palette": {"background": hex, "primary": hex, "accent": hex, "text": hex}}. The palette must be harmonious with strong text/background contrast.';
-function P(r) {
+import { b as u, a0 as A, s as C, g as y, z as M, f as D } from "./index-D8TAEo6E.js";
+const P = 'You are a senior graphic designer. Reply with ONLY a JSON object, no markdown fences, matching exactly: {"headline": string (max 6 words), "subhead": string (max 12 words), "bullets": string[] (0-4 short items), "cta": string (max 5 words, optional), "palette": {"background": hex, "primary": hex, "accent": hex, "text": hex}}. The palette must be harmonious with strong text/background contrast.';
+function $(r) {
   try {
     const e = r.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""), n = JSON.parse(e);
     return !n?.headline || !n?.palette?.background ? null : n;
@@ -128,7 +128,7 @@ async function Y(r, e = { width: 1080, height: 1080 }) {
     provider: n,
     model: t,
     apiKey: o,
-    systemPrompt: $,
+    systemPrompt: P,
     userPrompt: `Design brief: ${r.trim()}
 Format: ${e.width}×${e.height}px.`,
     temperature: 0.8,
@@ -136,7 +136,7 @@ Format: ${e.width}×${e.height}px.`,
   });
   if (!s.success)
     return u(s.error || "Design generation failed", "error"), !1;
-  const i = P(s.content);
+  const i = $(s.content);
   if (!i)
     return u("The AI returned an unusable design — try again", "error"), !1;
   A("design", e);

@@ -8,11 +8,30 @@ import { BUILTIN_FONTS_CSS_URL, BUILTIN_FONT_WEIGHTS } from './builtin-fonts';
 import { groupFontFamilies, fontShorthand } from '../utils/font-variants';
 import { parseGoogleFontFaces, googleFontCssUrl } from '../utils/custom-fonts';
 import { detectWidthRange } from '../utils/font-axes';
+import { resolveFontFamily } from '../utils/text-utils';
 
 describe('built-in font stylesheet', () => {
     it('index.html links exactly BUILTIN_FONTS_CSS_URL', () => {
         const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
         expect(html).toContain(`href="${BUILTIN_FONTS_CSS_URL}"`);
+    });
+    it('each key lists exactly the weights its family is requested at (keys are not family names)', () => {
+        // The stored key → CSS family → that family's wght spec in the URL → expanded weights.
+        // monospace/code once had each other's ranges: `monospace` is Source Code Pro.
+        const url = decodeURIComponent(BUILTIN_FONTS_CSS_URL).replace(/\+/g, ' ');
+        for (const [key, weights] of Object.entries(BUILTIN_FONT_WEIGHTS)) {
+            const family = resolveFontFamily(key).split(',')[0].trim();
+            const spec = url.match(new RegExp(`family=${family}(?::([^&]*))?(?:&|$)`));
+            expect(spec, `${key} → ${family} is in the URL`).not.toBeNull();
+            const axis = spec![1] ?? '';                                   // '' = one weight (400)
+            const upright = axis ? axis.split('@')[1].split(';').filter(p => !p.startsWith('1,')).map(p => p.replace(/^0,/, '')) : ['400'];
+            const expected = new Set<number>();
+            for (const p of upright) {
+                const [lo, hi] = p.split('..').map(Number);
+                for (let w = 100; w <= 900; w += 100) if (w >= lo && w <= (hi ?? lo)) expected.add(w);
+            }
+            expect(weights, `${key} (${family})`).toEqual([...expected].sort((a, b) => a - b));
+        }
     });
     it('requests the full ranges, not just 400;700', () => {
         expect(BUILTIN_FONTS_CSS_URL).toContain('Inter:ital,wght@0,100..900;1,100..900');

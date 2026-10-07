@@ -14,13 +14,14 @@
 
 import { createEffect, on } from 'solid-js';
 import { isPagedDocType } from '../types/slide-types';
-import { store, setStore, saveActiveSlide, loadDocument, setViewState, setActiveSlide } from '../store/app-store';
+import { store, setStore, loadDocument, setViewState, setActiveSlide } from '../store/app-store';
 import { drawingId, setDrawingId } from '../components/menu';
 import { showToast } from '../components/toast';
 import type { SlideDocument } from '../types/slide-types';
+import { buildSlideDocument } from '../utils/document-io';
+import { DocumentTooNewError } from '../utils/migration';
 import { idbGet, idbSet, idbDelete } from './idb-kv';
 import { maybeSnapshotVersion } from './version-history';
-import { effectiveGameScript } from '../game/behaviors-to-script';
 
 const AUTOSAVE_KEY = 'yappy:autosave';
 const META_KEY = 'yappy:autosave:meta';
@@ -31,6 +32,10 @@ const LOCAL_COPY_LIMIT = 3 * 1024 * 1024; // 3MB
 
 let debounceTimer: number | undefined;
 let _isSaving = false;
+/** Set when the stored autosave came from a newer Yappy (an older build served by the
+ *  service worker, say). This build cannot open it, and must not overwrite it either:
+ *  the next autosave would replace the newer drawing with whatever is on screen. */
+let heldForNewerBuild = false;
 const tabId = crypto.randomUUID();
 
 // ── Public API ──────────────────────────────────────────────
@@ -143,6 +148,11 @@ export async function loadAutoSave(): Promise<boolean> {
         setStore('isDirty', false);
         return true;
     } catch (e) {
+        if (e instanceof DocumentTooNewError) {
+            heldForNewerBuild = true;
+            showToast(`${e.message} Autosave is paused so your newer drawing is not overwritten.`, 'error', 15000);
+            return false;
+        }
         console.error('[auto-save] restore failed:', e);
         return false;
     }
@@ -167,47 +177,15 @@ function scheduleAutoSave(): void {
     debounceTimer = window.setTimeout(performAutoSave, DEBOUNCE_MS);
 }
 
-/** Snapshot the live store into a full SlideDocument v4 (deep-copied). */
+/** Snapshot the live store as the open drawing (see `buildSlideDocument`, the one builder). */
 export function buildCurrentDocument(): SlideDocument {
-    // Sync canvas background/dimensions into slides array
-    saveActiveSlide();
-    return {
-        version: 4,
-        metadata: {
-            name: drawingId(),
-            updatedAt: new Date().toISOString(),
-            docType: store.docType,
-        },
-        elements: JSON.parse(JSON.stringify(store.elements ?? [])),
-        layers: JSON.parse(JSON.stringify(store.layers ?? [])),
-        slides: JSON.parse(JSON.stringify(store.slides ?? [])),
-        globalSettings: JSON.parse(JSON.stringify(store.globalSettings ?? {})),
-        gridSettings: JSON.parse(JSON.stringify(store.gridSettings ?? {})),
-        guides: JSON.parse(JSON.stringify(store.guides ?? [])),
-        states: JSON.parse(JSON.stringify(store.states ?? [])),
-        symbols: JSON.parse(JSON.stringify(store.symbols ?? [])),
-        graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles ?? [])),
-        swatches: JSON.parse(JSON.stringify(store.swatches ?? [])),
-        patterns: JSON.parse(JSON.stringify(store.patterns ?? [])),
-        artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
-        dimensionAnnotations: store.dimensionAnnotations?.length ? JSON.parse(JSON.stringify(store.dimensionAnnotations)) : undefined,
-        compositionTracks: store.compositionTracks?.length ? JSON.parse(JSON.stringify(store.compositionTracks)) : undefined,
-        tinyflyClips: store.tinyflyClips?.length ? JSON.parse(JSON.stringify(store.tinyflyClips)) : undefined,
-        animTimeline: store.animTimeline ? JSON.parse(JSON.stringify(store.animTimeline)) : undefined,
-        animScenes: store.animTimeline && Object.keys(store.animScenes).length
-            ? JSON.parse(JSON.stringify({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline }))
-            : undefined,
-        gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
-        gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
-        sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
-        gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,
-        blueprints: store.blueprints && Object.keys(store.blueprints).length ? JSON.parse(JSON.stringify(store.blueprints)) : undefined,
-    };
+    return buildSlideDocument(drawingId());
 }
 
 function performAutoSave(): void {
     // Don't save pristine/empty documents
     if (!store.isDirty) return;
+    if (heldForNewerBuild) return;
 
     _isSaving = true;
     try {

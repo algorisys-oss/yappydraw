@@ -31,7 +31,7 @@ import {
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
-    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash,
+    updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash,
     enterCropMode, exitCropMode, updateCropRect, setCropAspect,
     setDefaultTool as setDefaultToolAction, DEFAULT_TOOL_FALLBACK
 } from "./store/app-store";
@@ -86,7 +86,7 @@ import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
 import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
 import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, BlendMode, RichTextSpan, PathAnchor, PathSubpath, DoodlePalette, DoodleStamp } from "./types";
-import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
+import type { Slide, SlideTransition } from "./types/slide-types";
 import type { PropertyTrack, TimedKeyframe, TinyflyClip } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
 import { SceneScript, type PlayTargets, type PlayOptions, type PlaySpec } from "./utils/animation/scene-script";
@@ -3422,6 +3422,8 @@ export const YappyAPI = {
     goToFirstSlide() { return setActiveSlide(0); },
     goToLastSlide() { return setActiveSlide(store.slides.length - 1); },
     setDocType(type: import('./types/slide-types').DocType) { setDocType(type); },
+    /** Replace the document with a saved SlideDocument. Throws `DocumentTooNewError` (leaving the
+     *  open document untouched) when `doc.version` is newer than this build can read. */
     loadDocument(doc: any) { loadDocument(doc); },
     /** Snapshot the current drawing as a serializable document (the `.yappy` v4 format). */
     getDocument(name = 'Untitled') { return buildSlideDocument(name); },
@@ -5620,26 +5622,7 @@ export const YappyAPI = {
 
         /** Save the current document to the cloud. */
         async save(options?: { fileName?: string; folderId?: string }): Promise<any> {
-            saveActiveSlide();
-            const doc: SlideDocument = {
-                version: 4,
-                metadata: {
-                    name: options?.fileName || drawingId() || 'untitled',
-                    updatedAt: new Date().toISOString(),
-                    docType: store.docType,
-                },
-                elements: JSON.parse(JSON.stringify(store.elements)),
-                layers: JSON.parse(JSON.stringify(store.layers)),
-                slides: JSON.parse(JSON.stringify(store.slides)),
-                globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
-                gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
-                guides: JSON.parse(JSON.stringify(store.guides ?? [])),
-                states: JSON.parse(JSON.stringify(store.states)),
-                symbols: JSON.parse(JSON.stringify(store.symbols)),
-                graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
-                swatches: JSON.parse(JSON.stringify(store.swatches)),
-                artboards: JSON.parse(JSON.stringify(store.artboards)),
-            };
+            const doc = buildSlideDocument(options?.fileName || drawingId() || 'untitled');
             return cloudStorageManager.save(doc, options);
         },
 

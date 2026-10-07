@@ -2,6 +2,69 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A performance budget harness (Oct 7 2026)
+
+- **`tests/perf-budget.spec.ts`** seeds a deterministic N-element document (cloned from one real
+  element of each common kind, so the schema is never guessed) in both render styles. It
+  reports medians for fit, pan and 400% renders, hit test, SVG export, save and open, and fails
+  when a metric exceeds its budget. Run it alone: `PW_WORKERS=1 npx playwright test
+  tests/perf-budget.spec.ts`. It skips itself when the load average makes timings noise;
+  `PERF_FORCE=1` overrides that and `PERF_N` changes the size.
+- **No new API was needed to measure internals.** On the dev server a spec can
+  `import('/src/utils/hit-testing.ts')` and get the same module instance the app runs. `draw()`
+  only had to publish its own duration (`window.yappyLastDrawMs`).
+- **Seed through `loadDocument`, not N `create*` calls.** Each create snapshots history, so
+  seeding N elements that way is O(N²) and measures the seeding instead of the app.
+- **The first numbers are the point.** At 2,000 elements a fit-view paint takes ~190–350 ms
+  and one click's hit test ~11 ms. VectorCraft does 20,000 paths in 0.67 ms per click with a
+  plain top-down scan, so the gap is constant factors, not missing algorithms. Those are the
+  next things worth profiling.
+
+## Count the paints before optimising them (Oct 7 2026)
+
+- **"Request a frame" needs a "frame already requested" guard.** Each call site was
+  reasonable on its own, and together they repainted the scene once per store change. A two-line
+  guard fixed it, but only a counter showed the problem: nothing on screen looked wrong.
+- **Coalescing is only safe when the painter is a pure function of current state.** `draw()`
+  reads the store and paints, with no per-call bookkeeping, so dropping duplicate requests loses
+  nothing. Check that before coalescing any loop that advances time or decays trails per call.
+
+## Failure is not an empty result (Oct 7 2026)
+
+- **`catch { return [] }` turns a crash into an answer.** Every caller of `runBooleanOp`
+  correctly handled "empty", so the art was never destroyed. But the user got a confident,
+  wrong explanation. When a function can both legitimately return nothing *and* fail, the
+  return type has to tell them apart (`{ polys, failed }`).
+- **Fuzz the dependency before designing around it.** A one-minute fuzz of polygon-clipping
+  with near-coincident rings found thousands of crashes, all with the same cause, and all fixed
+  by snapping to a 1e-6 grid. That turned a vague "booleans sometimes fail" into a concrete
+  retry with a real regression fixture, before any WASM replacement (vectorcraft-review §5.1).
+- **Retry on the failure path only.** Snapping every input would change every result by a
+  rounding error. Snapping only after a throw leaves the normal path bit-identical, and a test
+  pins that.
+- **Mock a module from a different specifier than the one you import the real one by.**
+  Spreading a module's own namespace into `mock.module` of that same specifier hung `bun test`.
+  Loading the real engine by its dist path and mocking the package name works.
+
+## One document builder, and refusing what you can't read (Oct 7 2026)
+
+- **A field list written out in six places is six field lists.** Every new document field
+  (patterns, symmetry, the animation timeline…) was added to the save path its author was testing
+  and missed elsewhere. *Save to disk* lost animations for weeks because autosave, which everyone
+  exercises, was the complete copy. The fix is one builder, plus a test that fails when a second one
+  appears. A guard on the shape of the code catches the next drift too, not just the field we
+  happened to notice this time.
+- **"Unknown version" is not "old version".** Falling through to a legacy branch is the most
+  dangerous thing a reader can do with a future file: it succeeds, and then autosave makes it
+  true. Refuse before mutating anything, and say what to do. This matters more than usual for
+  Yappy, because the service worker can keep an older build alive next to newer saved data.
+- **Carry what you don't understand.** Yappy adds fields without bumping the version, so the
+  common forward-compatibility case is an older build opening a file with one extra key. Keeping
+  unknown top-level keys and writing them back costs a few lines. Dropping them loses whatever a
+  newer build stored there the first time an older tab autosaves.
+- Both ideas came from reviewing VectorCraft's format crate (`docs/vectorcraft-review.md` §4.5):
+  `TooNew` rejection and a `#[serde(flatten)] extra` map.
+
 ## Stick-figure walk, and faces over time (Sep 27 2026)
 
 - **A walk is an inverted pendulum.** The body vaults over a nearly straight planted leg, highest
@@ -10402,3 +10465,18 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Browsers can't choose the font format they are served.** Google gives static per-weight TTFs to
   a bare user agent and WOFF2 variable files to real browsers, and `User-Agent` is a forbidden
   header for fetch. What works from curl is not evidence of what works in the app.
+
+## Documenting the font system found two bugs
+
+- **Writing the reference doc is a review.** Laying out key → family → weights side by side exposed
+  that `monospace`/`code` had each other's ranges, and describing measurement exposed that a
+  freshly picked weight was measured before it loaded. Both had passed the tests written alongside
+  the feature. See `docs/fonts.md`.
+- **`document.fonts.check()` is not a readiness test in Chromium.** It returned true for a face
+  whose status was `unloaded`. Call `load()` (it resolves at once when the face is ready) and read
+  `FontFace.status` in tests.
+- **Reproduce with the font that can fail.** Inter is one variable file for all weights, so once
+  Regular has loaded every weight is ready. Poppins has one file per weight, which is where an
+  unloaded weight shows up. The first version of the regression test used Inter and could never have failed.
+- **Check an API helper's defaults before asserting on them.** `createText` makes a fixed-width box
+  from an estimate, so asserting that its width follows the font was wrong until `autoResize: true`.

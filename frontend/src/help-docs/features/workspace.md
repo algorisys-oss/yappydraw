@@ -843,7 +843,7 @@ Y.transformAgain();                                   // repeat the last move/sc
 | `moveSelectedGuides(dx, dy)` | Move the selection — vertical guides take `dx`, horizontal take `dy`. |
 | `removeSelectedGuides()` | Delete every selected guide; returns the count. |
 | `toggleGuidesLocked(locked?)` | Lock/unlock guides against pointer edits. |
-| `loadDocument(doc)` | Replace the document with a saved JSON snapshot. |
+| `loadDocument(doc)` | Replace the document with a saved JSON snapshot. Throws (and changes nothing) if the snapshot comes from a newer Yappy than the one running. |
 
 :::tip
 Save/restore the whole document as JSON: grab it with a snapshot and reload it later with ` Y.loadDocument(json)` — handy for programmatic scene resets.

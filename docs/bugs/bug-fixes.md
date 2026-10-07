@@ -1,5 +1,79 @@
 # Bug Fixes Log
 
+## 2026-10-07 — The canvas painted the same frame many times
+
+### 409. A burst of edits repainted the whole scene once per edit, in the same frame
+
+**Symptom:** none visible directly. The cost was wasted main-thread time. Ten API edits in
+one task (a script, a paste, a multi-element update) painted the full scene ten times before
+the next frame, and every one of those paints was identical.
+
+**Cause:** the canvas's tracking effect and about 37 pointer and keyboard handlers each called
+`requestAnimationFrame(draw)` with no "frame already pending" guard.
+
+**Fix:** `scheduleDraw()` in `components/canvas.tsx` keeps at most one pending frame, and every
+call site uses it. `draw()` reads the store when it runs, so one paint shows exactly what N would
+have. Synchronous `draw()` calls (context-menu actions) are unchanged. `draw()` now increments
+`window.yappyDrawCount`, which the spec reads. Test: `redraw-coalescing.spec.ts` (10 paints → ≤3
+over three frames; it fails against the old code with 10).
+
+## 2026-10-07 — Pathfinder failures reported as empty results
+
+### 408. A crashing boolean op blamed the shapes ("they overlap exactly")
+
+**Symptom:** on some shapes, Pathfinder or a compound shape did nothing and gave a misleading
+reason, such as *"Exclude: those shapes overlap exactly, so everything cancels out"* for
+shapes that plainly didn't.
+
+**Cause:** polygon-clipping throws (`Maximum call stack size exceeded`) on edges that nearly
+coincide, at offsets around 1e-10: the float noise left after duplicating and transforming a shape.
+`runBooleanOp` caught the throw and returned `[]`, which every caller reads as "empty result".
+Shape Builder silently dropped the affected faces the same way.
+
+**Fix:** `clipMultiPolys` (`utils/path-boolean.ts`) retries a throwing clip once on a 1e-6 grid.
+That fixed all 3,305 crashing inputs a one-minute fuzz run produced, and one is kept as the
+fixture `path-boolean-failure.fixture.json`. If the retry fails too, `runBooleanOpDetailed`
+returns `failed: true`, and Pathfinder, compound shapes and compound editing show an error saying
+the shapes *couldn't be combined* (nothing changed) instead of an empty-result reason. Tests:
+`path-boolean-failure.test.ts`, `pathfinder-failure-toast.test.ts` (fails against the old
+store).
+
+## 2026-10-07 — Saving the whole document
+
+### 406. Saving an animation to disk lost its timeline (and other saves lost other things)
+
+**Symptom:** an animation saved with *Save to disk* (`.yappy` or `.json`) reopened with an empty
+default timeline. Pattern swatches, drawing symmetry, dimension annotations and composition
+tracks were also missing from saved files. Cloud saves (dialog and `Yappy.cloud.save`) also
+dropped the game script, behaviours and variables, and templates dropped guides, symmetry and the
+timeline.
+
+**Cause:** six places built the `SlideDocument` by hand: `buildSlideDocument`, autosave's
+`buildCurrentDocument`, the menu's Save, the cloud dialog, the cloud API and Save as Template. Each
+new document field was added to some of them and not others. Autosave and the gallery happened to be
+the most complete, which is why the loss went unnoticed in normal use.
+
+**Fix:** `buildSlideDocument` (`utils/document-io.ts`) is the only builder now; the others call
+it. `document-io.test.ts` round-trips every field through load → save, and fails if any other
+file snapshots `store.elements` into a `version: 4` literal. The e2e test
+`save-whole-document.spec.ts` drives the real Save to disk menu and reads the written bytes.
+Against the old code it fails with `animTimeline.fps` undefined.
+
+### 407. A file from a newer Yappy opened as a blank one-page document
+
+**Symptom:** a document with a format version above 4 (from a newer build, or opened by an older
+build the service worker is still serving) loaded as a single default slide. The next autosave
+made that permanent.
+
+**Cause:** `loadDocument` and `migrateToSlideFormat` treated any version they didn't recognise
+as legacy v1/v2.
+
+**Fix:** both now throw `DocumentTooNewError` before touching the store. The open-file, gallery and
+embed paths show its message ("saved by a newer version of Yappy … reload the app to update"). If
+the *autosave* is the newer document, autosave pauses for the session so it can't overwrite it.
+Unknown top-level keys of a document this build *can* read (fields a newer build added without a
+version bump) are now kept and written back on the next save instead of dropped.
+
 ## 2026-09-27 — Stick-figure walk
 
 ### 402. A figure facing left walked with its knees bent backwards
@@ -10339,3 +10413,19 @@ Save dialog via a stubbed `showSaveFilePicker`); `tests/eyedropper.spec.ts` upda
   Shift + top/bottom scales vertically holding the width. Plain side-drag still sets wrap width.
 - **Create Outlines would silently outline a Light built-in with the Regular file.** It now refuses
   weights other than the bundled 400/700 with a message saying how to add the static file.
+
+## Fonts: code fonts had each other's weights, and a newly picked weight kept the wrong box size
+
+- **`monospace` and `code` had swapped weight lists.** `monospace` is Source Code Pro (200–900) and
+  `code` is JetBrains Mono (100–800), but `BUILTIN_FONT_WEIGHTS` had them reversed. So Source Code Pro
+  offered Thin (it has none, so ExtraLight was shown) and hid Black, and JetBrains Mono did the
+  opposite. The keys aren't family names, and nothing checked them. `builtin-fonts.test.ts` now
+  derives each key's weights from the stylesheet URL through `fontFamilyMap`, and fails on the old values.
+- **Picking a weight that hadn't loaded yet sized the box for a fallback font.** A font change
+  re-fits the text box synchronously, and only 400/700 are preloaded, so switching to e.g. Poppins
+  Thin measured a system fallback (297.7 px against 368 px) and saved that width. The box now re-fits
+  once `document.fonts.load()` resolves. The first attempt skipped the reload when
+  `document.fonts.check()` said the face was ready, and it never fired, because Chromium's `check()`
+  returns true for an unloaded face. `fontStretch` also now triggers a re-fit. Covered by
+  `tests/text-weights-axis-scale.spec.ts` (Poppins, whose weights are separate files; Inter is one
+  variable file and can't reproduce it). The test fails with the fix disabled.

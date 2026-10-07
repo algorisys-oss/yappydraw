@@ -453,6 +453,18 @@ const Canvas: Component = () => {
         } catch { return null; }
     };
 
+    // Coalesced repaint. Every tracked store change and most pointer handlers ask for a
+    // frame; without a pending-frame guard a burst of N changes in one task painted the
+    // whole scene N times in the same frame (redraw-coalescing.spec.ts). draw() reads the
+    // store when it runs, so one paint per frame shows exactly what N would have.
+    // Synchronous `draw()` calls (context-menu actions etc.) are unaffected.
+    let drawRaf = 0;
+    function scheduleDraw() {
+        if (drawRaf) return;
+        drawRaf = requestAnimationFrame(() => { drawRaf = 0; draw(); });
+    }
+    onCleanup(() => { if (drawRaf) cancelAnimationFrame(drawRaf); });
+
     function draw() {
         if (!canvasRef) return;
         const ctx = canvasRef.getContext("2d");
@@ -461,6 +473,8 @@ const Canvas: Component = () => {
         const startTime = performance.now();
         const currentTime = effectiveTime();
         (window as any).yappyGlobalTime = currentTime;
+        // Paint counter: the redraw-coalescing and perf-budget specs read it.
+        (window as any).yappyDrawCount = ((window as any).yappyDrawCount ?? 0) + 1;
 
         const { scale, panX, panY } = store.viewState;
         const isDarkMode = store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus';
@@ -748,7 +762,9 @@ const Canvas: Component = () => {
 
         ctx.restore();
 
-        perfMonitor.measureFrame(performance.now() - startTime, store.elements.length, totalRendered);
+        const drawMs = performance.now() - startTime;
+        (window as any).yappyLastDrawMs = drawMs; // read by perf-budget.spec.ts
+        perfMonitor.measureFrame(drawMs, store.elements.length, totalRendered);
     }
 
     createEffect(() => {
@@ -831,7 +847,7 @@ const Canvas: Component = () => {
         pointSnap();
         measureGuides();
         // Redraw on reactive changes
-        requestAnimationFrame(draw);
+        scheduleDraw();
     });
 
     // Animation mode bookkeeping: an element created by ANY code path (draw,
@@ -1593,7 +1609,7 @@ const Canvas: Component = () => {
             && (pState.isDragging || pState.isSelecting || pState.isPenBuilding) && !pState.secondaryContact) {
             pState.secondaryContact = true;
             e.preventDefault();
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
         if (fingers.length >= 2) {
@@ -1705,7 +1721,7 @@ const Canvas: Component = () => {
             // down) — drop the modifier so resize stops constraining.
             if (pState.secondaryContact && allFingerTouches(e).length === 0) {
                 pState.secondaryContact = false;
-                requestAnimationFrame(draw);
+                scheduleDraw();
             }
             return;
         }
@@ -1794,7 +1810,7 @@ const Canvas: Component = () => {
         // right-click ends it, as does clicking empty canvas in style mode. Consumes the click.
         if (store.eyedropper.active) {
             e.preventDefault();
-            if (e.button === 2) { eyedropperEndedByRightClickAt = performance.now(); cancelEyedropper(); requestAnimationFrame(draw); return; }
+            if (e.button === 2) { eyedropperEndedByRightClickAt = performance.now(); cancelEyedropper(); scheduleDraw(); return; }
             const hit = eyedropperHitAt(e.clientX, e.clientY);
             if (store.eyedropper.mode === 'color') {
                 // Colour pick: read the value off the DOCUMENT, not the screen. The exact
@@ -1810,11 +1826,11 @@ const Canvas: Component = () => {
                 const rendered = samplePixelHex(e.clientX, e.clientY);
                 const hex = (hit ? elementPickColor(hit, e.altKey, rendered) : null) ?? rendered;
                 resolveColorEyedropper(hex, true);
-                requestAnimationFrame(draw);
+                scheduleDraw();
                 return;
             }
             if (hit) applyEyedropperFrom(hit.id, e.shiftKey, true); else cancelEyedropper();
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
@@ -1870,7 +1886,7 @@ const Canvas: Component = () => {
                 // image keeps its shape. Doing the conversion inline here (as
                 // this did) silently skipped the resize.
                 exitCropMode(true);
-                requestAnimationFrame(draw);
+                scheduleDraw();
                 return;
             }
         }
@@ -1904,7 +1920,7 @@ const Canvas: Component = () => {
 
             if (hitEl && hitEl.type === 'image' && hitEl.dataURL) {
                 enterCropMode(hitEl.id);
-                requestAnimationFrame(draw);
+                scheduleDraw();
             } else if (hitEl) {
                 showToast('Crop only works on image elements', 'info');
             }
@@ -1967,9 +1983,9 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'path' && !pState.isPenBuilding && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
             && !findPenResumeTarget(x, y, 12 / store.viewState.scale)) {
             const edit = findPenEditTarget(x, y, store.viewState.scale);
-            if (edit) { applyPenEditTarget(edit, x, y, store.viewState.scale); setStore('penEditHint', null); requestAnimationFrame(draw); return; }
+            if (edit) { applyPenEditTarget(edit, x, y, store.viewState.scale); setStore('penEditHint', null); scheduleDraw(); return; }
         }
-        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.ctrlKey || e.metaKey, e.altKey); requestAnimationFrame(draw); return; }
+        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.ctrlKey || e.metaKey, e.altKey); scheduleDraw(); return; }
 
         drawOnDown(x, y, pState, pHelpers);
         smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled
@@ -2065,7 +2081,7 @@ const Canvas: Component = () => {
                         newRect = constrainCropToAspect(newRect, cropDragHandle, store.cropAspect, cropEl.width, cropEl.height);
                     }
                     updateCropRect(newRect);
-                    requestAnimationFrame(draw);
+                    scheduleDraw();
                     return;
                 }
                 // Update cursor based on hovered handle
@@ -2099,19 +2115,19 @@ const Canvas: Component = () => {
 
         if (store.selectedTool === 'text' && pState.isDrawing) {
             textOnMove(x, y, pState);
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
         if (store.selectedTool === 'richtext' && pState.isDrawing) {
             richTextOnMove(x, y, pState);
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
         if (pState.isPolylineBuilding) {
             polylineOnMove(x, y, pState, pHelpers, pSignals);
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
@@ -2123,7 +2139,7 @@ const Canvas: Component = () => {
             const t = findPenResumeTarget(x, y, 12 / store.viewState.scale);
             const had = !!store.penResumeHint;
             setPenResumeHint(t ? { x: t.x, y: t.y } : null);
-            if (t || had) requestAnimationFrame(draw);
+            if (t || had) scheduleDraw();
             // Pen+ / Pen− cursor over the selected path (same precedence as the click).
             const edit = t ? null : findPenEditTarget(x, y, store.viewState.scale);
             const hint = edit ? edit.kind : null;
@@ -2138,7 +2154,7 @@ const Canvas: Component = () => {
             // handle pair so the anchor becomes a cusp mid-draw.
             // Space held mid-drag moves the anchor being placed (see penSpaceHeld below).
             penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.altKey, penSpaceHeld && pState.penDragging);
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
@@ -2182,7 +2198,7 @@ const Canvas: Component = () => {
         handleAutoScroll(e, pState);
 
         if (pState.isDrawing || pState.isDragging) {
-            requestAnimationFrame(draw);
+            scheduleDraw();
         }
     };
 
@@ -2247,14 +2263,14 @@ const Canvas: Component = () => {
 
         if (pState.isPenBuilding) {
             penPathUp(pState);
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
         if (store.selectedTool === 'selection' || store.selectedTool === 'lasso') {
             const { x: upX, y: upY } = getWorldCoordinates(e.clientX, e.clientY);
             selectionOnUp(e, upX, upY, pState, pHelpers, pSignals);
-            requestAnimationFrame(draw); // reflect tap-to-toggle anchor edits immediately
+            scheduleDraw(); // reflect tap-to-toggle anchor edits immediately
             return;
         }
 
@@ -2274,13 +2290,13 @@ const Canvas: Component = () => {
     const handleDoubleClick = (e: MouseEvent) => {
         if (pState.isPolylineBuilding) {
             polylineFinalize(pState, pHelpers, pSignals);
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
         if (pState.isPenBuilding) {
             penPathFinalize(pState);
-            requestAnimationFrame(draw);
+            scheduleDraw();
             return;
         }
 
@@ -2296,14 +2312,14 @@ const Canvas: Component = () => {
                 if (el.type === 'symbolInstance' && el.symbolId && hitTestElement(el, wx, wy, threshold, store.elements, elementMap)) {
                     e.preventDefault();
                     enterSymbolEdit(el.id);
-                    requestAnimationFrame(draw);
+                    scheduleDraw();
                     return;
                 }
                 // Double-click a compound shape → edit its source shapes in place.
                 if (el.compoundOperands && el.compoundOperands.length && hitTestElement(el, wx, wy, threshold, store.elements, elementMap)) {
                     e.preventDefault();
                     enterCompoundEdit(el.id);
-                    requestAnimationFrame(draw);
+                    scheduleDraw();
                     return;
                 }
             }
@@ -2326,7 +2342,7 @@ const Canvas: Component = () => {
                 setStore('selection', unitId
                     ? store.elements.filter(m => m.groupIds?.includes(unitId)).map(m => m.id)
                     : [el.id]);
-                requestAnimationFrame(draw);
+                scheduleDraw();
                 return;
             }
 
@@ -2344,7 +2360,7 @@ const Canvas: Component = () => {
                 setStore('selection', [el.id]);
                 exitAllToolModes();
                 toggleNodeTool(true);
-                requestAnimationFrame(draw);
+                scheduleDraw();
                 return;
             }
         }
@@ -2398,7 +2414,7 @@ const Canvas: Component = () => {
 
                         pushToHistory();
                         updateElement(selEl.id, { tableColWidths: newWidths }, false);
-                        requestAnimationFrame(draw);
+                        scheduleDraw();
                         return;
                     }
                 }
@@ -2444,7 +2460,7 @@ const Canvas: Component = () => {
         // redraw — so a just-selected font (or a persisted one after reload) looks
         // like it "didn't apply" / lagged. FontFaceSet fires `loadingdone` once the
         // batch of pending faces resolves.
-        const onFontsLoaded = () => requestAnimationFrame(draw);
+        const onFontsLoaded = () => scheduleDraw();
         const fontSet = (document as any).fonts;
         if (fontSet?.addEventListener) {
             fontSet.addEventListener('loadingdone', onFontsLoaded);
@@ -2489,12 +2505,12 @@ const Canvas: Component = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 exitCropMode(true);   // single apply path — see the click-outside case
-                requestAnimationFrame(draw);
+                scheduleDraw();
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
                 exitCropMode(false);
-                requestAnimationFrame(draw);
+                scheduleDraw();
             }
         };
         window.addEventListener('keydown', handleCropKeys, true);
@@ -2507,8 +2523,8 @@ const Canvas: Component = () => {
          * to redo, and swallowing it would strand the user mid-path with no way back.
          */
         setPointUndoHandler(() => {
-            if (pState.isPolylineBuilding) { polylineUndo(pState); requestAnimationFrame(draw); return true; }
-            if (pState.isPenBuilding) { penPathUndo(pState); requestAnimationFrame(draw); return true; }
+            if (pState.isPolylineBuilding) { polylineUndo(pState); scheduleDraw(); return true; }
+            if (pState.isPenBuilding) { penPathUndo(pState); scheduleDraw(); return true; }
             return false;
         });
         onCleanup(() => setPointUndoHandler(null));
@@ -2520,12 +2536,12 @@ const Canvas: Component = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 polylineFinalize(pState, pHelpers, pSignals);
-                requestAnimationFrame(draw);
+                scheduleDraw();
             } else if (e.key === 'Backspace') {
                 e.preventDefault();
                 e.stopPropagation();
                 polylineUndo(pState);
-                requestAnimationFrame(draw);
+                scheduleDraw();
             }
         };
         window.addEventListener('keydown', handlePolylineKeys, true);
@@ -2538,12 +2554,12 @@ const Canvas: Component = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 penPathFinalize(pState);
-                requestAnimationFrame(draw);
+                scheduleDraw();
             } else if (e.key === 'Backspace') {
                 e.preventDefault();
                 e.stopPropagation();
                 penPathUndo(pState);
-                requestAnimationFrame(draw);
+                scheduleDraw();
             }
         };
         window.addEventListener('keydown', handlePenKeys, true);
@@ -2587,7 +2603,7 @@ const Canvas: Component = () => {
             e.preventDefault();
             e.stopPropagation();
             updateElement(pState.currentId, { containerText: pState.dragLabelBuffer });
-            requestAnimationFrame(draw);
+            scheduleDraw();
         };
         window.addEventListener('keydown', handleDragLabelKeys, true);
 
@@ -2616,7 +2632,7 @@ const Canvas: Component = () => {
         // on touch, so this is the mobile-friendly path to the same fill logic).
         registerColorDropCommit((cx, cy, color) => {
             applyAssetAtClientPoint(cx, cy, color, canvasEventCtx);
-            requestAnimationFrame(draw);
+            scheduleDraw();
         });
 
         window.addEventListener("resize", handleResize);
@@ -2677,7 +2693,7 @@ const Canvas: Component = () => {
                 pState.tableCellSelection = sel;
                 pState.tableCellSelectionElementId = sel ? store.selection[0] : null;
                 setTableCellSelection(sel);
-                requestAnimationFrame(draw);
+                scheduleDraw();
             },
             startEditingCell: (elementId: string, visualRow: number, visualCol: number, initialText?: string) => {
                 const el = store.elements.find(e => e.id === elementId);

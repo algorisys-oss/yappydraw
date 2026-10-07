@@ -238,6 +238,54 @@ export const migrateDrawingData = (data: any): {
 
 import type { SlideDocument, Slide, GlobalSettings } from '../types/slide-types';
 
+/** The SlideDocument version this build writes, and the newest it can read. */
+export const CURRENT_DOC_VERSION = 4;
+
+/** A document written by a newer Yappy. Opening it as legacy (the old behaviour)
+ *  dropped its slides, and the next autosave made the loss permanent. */
+export class DocumentTooNewError extends Error {
+    readonly version: number;
+    constructor(version: number) {
+        super(`This file was saved by a newer version of Yappy (document format v${version}; this version reads up to v${CURRENT_DOC_VERSION}). Reload the app to update, then open it again.`);
+        this.name = 'DocumentTooNewError';
+        this.version = version;
+    }
+}
+
+/** Throws DocumentTooNewError when `data` claims a version this build doesn't know. */
+export const assertReadableVersion = (data: any): void => {
+    const v = data?.version;
+    if (typeof v === 'number' && v > CURRENT_DOC_VERSION) throw new DocumentTooNewError(v);
+};
+
+/**
+ * Every top-level key a SlideDocument is read from or written to. Anything else was
+ * written by a build that knows more than this one; it is carried through to the next
+ * save untouched (see `setDocumentExtras`) rather than silently dropped.
+ */
+const KNOWN_DOC_KEYS = new Set([
+    'version', 'metadata', 'elements', 'layers', 'slides', 'globalSettings', 'gridSettings',
+    'guides', 'symmetry', 'states', 'symbols', 'graphicStyles', 'swatches', 'patterns',
+    'artboards', 'dimensionAnnotations', 'compositionTracks', 'tinyflyClips', 'animTimeline',
+    'animScenes', 'gameScript', 'gameAuthoringMode', 'sceneBehaviors', 'gameVars', 'blueprints',
+    // legacy (v1/v2, or migrated on load)
+    'blueprint', 'viewState', 'canvasBackgroundColor', 'initialStateId',
+]);
+
+let documentExtras: Record<string, unknown> = {};
+
+/** Remember the unknown top-level keys of the document being opened (replacing the last one's). */
+export const setDocumentExtras = (doc: any): void => {
+    documentExtras = {};
+    if (!doc || typeof doc !== 'object' || !isSlideDocument(doc)) return;
+    for (const [k, v] of Object.entries(doc)) {
+        if (!KNOWN_DOC_KEYS.has(k)) documentExtras[k] = JSON.parse(JSON.stringify(v ?? null));
+    }
+};
+
+/** A deep copy of the open document's unknown keys, for the save builder to write back. */
+export const getDocumentExtras = (): Record<string, unknown> => JSON.parse(JSON.stringify(documentExtras));
+
 /**
  * Check if data is already in the v3+ slide format (v3 or v4)
  */
@@ -249,6 +297,8 @@ export const isSlideDocument = (data: any): data is SlideDocument => {
  * Migrate legacy v2 format to new v3 slide format
  */
 export const migrateToSlideFormat = (data: any): SlideDocument => {
+    // A newer format is not legacy: refuse it rather than rebuild it as one slide.
+    assertReadableVersion(data);
     // If already v3, return as-is
     if (isSlideDocument(data)) {
         return data;

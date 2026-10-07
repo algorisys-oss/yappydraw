@@ -7,7 +7,8 @@
  */
 import type { UserTemplate } from '../types/template-types';
 import type { SlideDocument } from '../types/slide-types';
-import { store, saveActiveSlide } from '../store/app-store';
+import { store } from '../store/app-store';
+import { buildSlideDocument } from '../utils/document-io';
 import { exportPageToPng } from '../utils/export';
 import { templatePreviewDataUrl } from './template-preview';
 import { isPagedDocType } from '../types/slide-types';
@@ -48,32 +49,9 @@ function persist(templates: UserTemplate[]): boolean {
 
 /** Snapshot the current document into a saved user template. */
 export function saveCurrentAsTemplate(name: string, description = ''): UserTemplate | null {
-    // Sync canvas background/dimensions into the slides array first
-    saveActiveSlide();
-
-    const doc: SlideDocument = {
-        version: 4,
-        metadata: {
-            name,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            docType: store.docType,
-        },
-        elements: deep(store.elements ?? []),
-        layers: deep(store.layers ?? []),
-        slides: deep(store.slides ?? []),
-        globalSettings: deep(store.globalSettings ?? {}),
-        gridSettings: deep(store.gridSettings ?? {}),
-        states: deep(store.states ?? []),
-        symbols: deep(store.symbols ?? []),
-        graphicStyles: deep(store.graphicStyles ?? []),
-        swatches: deep(store.swatches ?? []),
-        patterns: deep(store.patterns ?? []),
-        artboards: deep(store.artboards ?? []),
-        gameScript: store.gameScript || undefined,
-        sceneBehaviors: store.sceneBehaviors?.length ? deep(store.sceneBehaviors) : undefined,
-        gameVars: store.gameVars?.length ? deep(store.gameVars) : undefined,
-    };
+    // The same document a save writes (syncs the active slide first).
+    const built = buildSlideDocument(name);
+    const doc: SlideDocument = { ...built, metadata: { ...built.metadata, createdAt: built.metadata.updatedAt } };
 
     // Small thumbnail from the active page. `exportPageToPng` is a true render, so it's
     // the preferred capture — but it needs a page, and the default doc type isn't paged.

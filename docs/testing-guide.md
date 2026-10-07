@@ -40,6 +40,20 @@ Run the comprehensive test suite:
 npx playwright test tests/comprehensive_features.spec.ts
 ```
 
+### Performance budgets
+
+`tests/perf-budget.spec.ts` times rendering (fit, pan, 400% zoom, in both sketch and
+architectural styles), hit testing, SVG export, save and open on a seeded synthetic document,
+and fails when a metric exceeds its budget. Run it on its own, because parallel workers make
+the timings noise:
+```bash
+PW_WORKERS=1 npx playwright test tests/perf-budget.spec.ts
+```
+It skips itself when the load average exceeds 0.75 × cores. `PERF_FORCE=1` runs it anyway, and
+`PERF_N=5000` changes the document size (budgets are calibrated for the default 2000). Read the
+printed table, not just pass/fail. Run it before and after any change to rendering, hit testing
+or serialisation.
+
 View the visual report (if needed):
 ```bash
 npx playwright show-report

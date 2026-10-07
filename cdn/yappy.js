@@ -1,9 +1,9 @@
-import { aj as o, ak as e, al as n, am as r, an as t, ao as m } from "./chunks/index-N8KIsBvL.js";
+import { ak as o, al as e, am as n, an as p, ao as r, ap as t } from "./chunks/index-D8TAEo6E.js";
 export {
   o as Yappy,
   e as clear,
   n as fontsReady,
-  r as mount,
-  t as toSVG,
-  m as version
+  p as mount,
+  r as toSVG,
+  t as version
 };

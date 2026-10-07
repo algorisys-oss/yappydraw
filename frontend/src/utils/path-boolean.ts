@@ -385,26 +385,62 @@ export function polyToSmoothSubpaths(poly: Poly, simplifyEps = 0): { subpaths: P
     return { subpaths, minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
 }
 
+type ClipFn = (first: MultiPoly, ...rest: MultiPoly[]) => MultiPoly;
+const CLIP: Record<BooleanOp, ClipFn> = {
+    union: (a, ...r) => polygonClipping.union(a as any, ...r as any) as MultiPoly,
+    intersect: (a, ...r) => polygonClipping.intersection(a as any, ...r as any) as MultiPoly,
+    exclude: (a, ...r) => polygonClipping.xor(a as any, ...r as any) as MultiPoly,
+    subtract: (a, ...r) => polygonClipping.difference(a as any, ...r as any) as MultiPoly,
+};
+
+/** Retry grid: 1e-6 px, far below the 0.25 px flattening tolerance, so the snap is invisible. */
+const SNAP = 1e6;
+const snapMultiPoly = (mp: MultiPoly): MultiPoly =>
+    mp.map(poly => poly.map(ring => ring.map(([x, y]) => [Math.round(x * SNAP) / SNAP, Math.round(y * SNAP) / SNAP] as [number, number])));
+
+/**
+ * Run one polygon-clipping op, retrying once on a snapped grid if it throws.
+ *
+ * polygon-clipping throws (usually "Maximum call stack size exceeded") on edges that nearly
+ * coincide: offsets around 1e-10, the float noise a duplicated and transformed shape carries.
+ * Snapping to 1e-6 fixed every such input a fuzz run produced (see
+ * path-boolean-failure.test.ts). If the retry throws too, `failed` is true. Callers must say so
+ * rather than report an empty result, which is a different, legitimate outcome.
+ * `clip` is injectable for tests.
+ */
+export function clipMultiPolys(op: BooleanOp, inputs: MultiPoly[], clip: ClipFn = CLIP[op]): { result: MultiPoly; failed: boolean } {
+    if (!inputs.length) return { result: [], failed: false };
+    const [first, ...rest] = inputs;
+    try {
+        return { result: clip(first, ...rest) || [], failed: false };
+    } catch (e) {
+        try {
+            const snapped = inputs.map(snapMultiPoly);
+            return { result: clip(snapped[0], ...snapped.slice(1)) || [], failed: false };
+        } catch (e2) {
+            console.warn(`[path-boolean] ${op} failed, even on a snapped grid:`, e, e2);
+            return { result: [], failed: true };
+        }
+    }
+}
+
 /**
  * Run a boolean op over elements (in the given order — `subtract` is first minus the
- * rest). Returns the result polygons (world-space; each = outer ring + holes), or [] if empty.
+ * rest). `polys` are the result polygons (world-space; each = outer ring + holes), empty when
+ * the op legitimately leaves nothing; `failed` is true when the engine could not compute it.
  */
-export function runBooleanOp(elements: DrawingElement[], op: BooleanOp): Poly[] {
-    if (elements.length < 2) return [];
+export function runBooleanOpDetailed(elements: DrawingElement[], op: BooleanOp): { polys: Poly[]; failed: boolean } {
+    if (elements.length < 2) return { polys: [], failed: false };
     const polys = elements.map(elementToMultiPolygon).filter(mp => mp.length > 0);
-    if (polys.length < 2) return [];
-    const [first, ...rest] = polys;
-    let result: MultiPoly;
-    try {
-        if (op === 'union') result = polygonClipping.union(first, ...rest) as MultiPoly;
-        else if (op === 'intersect') result = polygonClipping.intersection(first, ...rest) as MultiPoly;
-        else if (op === 'exclude') result = polygonClipping.xor(first, ...rest) as MultiPoly;
-        else result = polygonClipping.difference(first, ...rest) as MultiPoly; // subtract
-    } catch {
-        return [];
-    }
+    if (polys.length < 2) return { polys: [], failed: false };
+    const { result, failed } = clipMultiPolys(op, polys);
     // Each result polygon keeps its outer ring + any holes (even-odd subpaths downstream).
-    return (result || []).filter(poly => poly && poly.length > 0 && poly[0] && poly[0].length >= 4);
+    return { polys: result.filter(poly => poly && poly.length > 0 && poly[0] && poly[0].length >= 4), failed };
+}
+
+/** `runBooleanOpDetailed` for callers with no failure UI: [] for empty OR failed. */
+export function runBooleanOp(elements: DrawingElement[], op: BooleanOp): Poly[] {
+    return runBooleanOpDetailed(elements, op).polys;
 }
 
 // ── Face-level Shape Builder ─────────────────────────────────────────────────
@@ -467,12 +503,18 @@ export function computeShapeFaces(elements: DrawingElement[], maxN = 8): ShapeFa
         if (inside.length !== subset.length) continue; // some shape had no geometry
         let region: MultiPoly;
         try {
-            region = inside.length === 1 ? inside[0]
-                : polygonClipping.intersection(inside[0] as any, ...inside.slice(1) as any) as MultiPoly;
+            if (inside.length === 1) region = inside[0];
+            else {
+                const r = clipMultiPolys('intersect', inside);
+                if (r.failed) continue;
+                region = r.result;
+            }
             if (!region || !region.length) continue;
             const outside = mps.filter((_, i) => !subset.includes(i)).filter(mp => mp.length);
             if (outside.length) {
-                region = polygonClipping.difference(region as any, ...outside as any) as MultiPoly;
+                const r = clipMultiPolys('subtract', [region, ...outside]);
+                if (r.failed) continue;
+                region = r.result;
             }
         } catch { continue; }
         region = (region || []).filter(p => p && p[0] && p[0].length >= 4);

@@ -26,7 +26,6 @@ import {
 } from "lucide-solid";
 import { openDoodleDialog } from './doodle-dialog';
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
-import { effectiveGameScript } from "../game/behaviors-to-script";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { draggablePanel } from "../utils/draggable-panel";
 import { ToolOptionsBar } from "./tool-options-bar";
@@ -66,8 +65,8 @@ import { showRocketSettings, setShowRocketSettings } from "./rocket-settings-dia
 import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
 import type { CloudFileInfo } from "../storage/cloud/types";
-import { migrateToSlideFormat, isSlideDocument } from "../utils/migration";
-import type { SlideDocument } from "../types/slide-types";
+import { migrateToSlideFormat, isSlideDocument, DocumentTooNewError } from "../utils/migration";
+import { buildSlideDocument } from "../utils/document-io";
 import { isPagedDocType } from "../types/slide-types";
 import DesignSizeDialog from "./design-size-dialog";
 import type { Template } from "../types/template-types";
@@ -251,34 +250,8 @@ const Menu: Component = () => {
                 return;
             }
 
-            // 1. Ensure current slide data is synced to slides array
-            saveActiveSlide();
-
-            // 2. Prepare SlideDocument v4
-            const slideDoc: SlideDocument = {
-                version: 4,
-                metadata: {
-                    name: filename,
-                    updatedAt: new Date().toISOString(),
-                    docType: store.docType
-                },
-                elements: JSON.parse(JSON.stringify(store.elements)),
-                layers: JSON.parse(JSON.stringify(store.layers)),
-                slides: JSON.parse(JSON.stringify(store.slides)),
-                globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
-                gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
-                guides: JSON.parse(JSON.stringify(store.guides ?? [])),
-                states: JSON.parse(JSON.stringify(store.states)),
-                symbols: JSON.parse(JSON.stringify(store.symbols)),
-                graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
-                swatches: JSON.parse(JSON.stringify(store.swatches)),
-                artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
-                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
-                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,
-                blueprints: store.blueprints && Object.keys(store.blueprints).length ? JSON.parse(JSON.stringify(store.blueprints)) : undefined,
-                gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
-            };
+            // The one document builder (syncs the active slide first).
+            const slideDoc = buildSlideDocument(filename);
             const baseFilename = filename.replace(/\.(json|yappy)$/i, '');
 
             if (saveIntent() === 'workspace') {
@@ -375,7 +348,7 @@ const Menu: Component = () => {
             }
         } catch (e) {
             console.error(e);
-            showToast('Failed to load drawing', 'error');
+            showToast(e instanceof DocumentTooNewError ? e.message : 'Failed to load drawing', 'error');
         }
     };
 
@@ -476,7 +449,7 @@ const Menu: Component = () => {
             showToast('File loaded successfully', 'success');
         } catch (err) {
             console.error(err);
-            showToast('Failed to load file. It might be corrupted or invalid format.', 'error');
+            showToast(err instanceof DocumentTooNewError ? err.message : 'Failed to load file. It might be corrupted or invalid format.', 'error');
         }
 
         setIsMenuOpen(false);
@@ -494,7 +467,7 @@ const Menu: Component = () => {
             showToast('JSON loaded successfully', 'success');
         } catch (err) {
             console.error(err);
-            showToast('Failed to load JSON. The data may be corrupted or in an invalid format.', 'error');
+            showToast(err instanceof DocumentTooNewError ? err.message : 'Failed to load JSON. The data may be corrupted or in an invalid format.', 'error');
         }
         setIsLoadExportOpen(false);
         setIsMenuOpen(false);

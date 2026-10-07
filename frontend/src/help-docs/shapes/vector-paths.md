@@ -187,6 +187,15 @@ Combine two or more overlapping shapes into a new path. Select the shapes, right
 | **Intersect** | Keep only the overlapping region |
 | **Exclude** | Keep everything *except* the overlap |
 
+:::tip
+**"Nothing left" and "couldn't combine" mean different things.** When a result is genuinely
+empty (Intersect on shapes that don't touch, say) the message tells you why. If the geometry
+engine itself fails, which can happen when edges almost exactly coincide, you get an error
+saying it *couldn't combine* the shapes, and nothing is changed. Yappy has already retried
+once with the coordinates tidied. If you still see it, **Simplify** (<kbd>Ctrl</kbd>+<kbd>L</kbd>)
+the shapes or nudge one by a pixel and run it again.
+:::
+
 ## Outline Stroke & Offset Path
 
 Both live in the right-click **Path** submenu.

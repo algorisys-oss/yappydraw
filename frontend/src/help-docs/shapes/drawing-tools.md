@@ -199,7 +199,7 @@ Once you've finished typing, **drag a corner handle to scale the text itself**, 
 
 ## Font weights and width
 
-The **Style** menu under Font lists every weight a family really has. The built-in **Inter**, **Poppins**, **JetBrains Mono** and **Source Code Pro** go from **Thin** (or ExtraLight) to **Black**, with italics; **Merriweather** from Light to Black; **Caveat** Regular to Bold; **Hand-drawn** and **Marker** have one weight. A **Google font** you add by name lists exactly the weights Google has for it, and a **variable font file** lists every weight on its axis. The **B** button is still a quick Regular ↔ Bold toggle.
+The **Style** menu under Font lists every weight a family really has. The built-in **Inter** and **Poppins** go from **Thin** to **Black**, **JetBrains Mono** from Thin to ExtraBold, **Source Code Pro** from ExtraLight to Black, all with italics; **Merriweather** from Light to Black, with italics; **Caveat** Regular to Bold; **Hand-drawn** and **Marker** have one weight. A **Google font** you add by name lists exactly the weights Google has for it, and a **variable font file** lists every weight on its axis. The **B** button is still a quick Regular ↔ Bold toggle.
 
 **Width.** A variable font file with a **width axis** (for example Roboto Flex, or any file whose name ends in `wdth`) adds a **Width** control, from *Ultra-condensed* to *Ultra-expanded*. It uses the font's real condensed and expanded shapes, unlike **Horizontal Scale**, which stretches the letters. It only appears for fonts that have the axis.
 

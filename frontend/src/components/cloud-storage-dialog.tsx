@@ -12,9 +12,7 @@ import {
 } from 'lucide-solid';
 import { cloudStorageManager } from '../storage/cloud';
 import type { AuthState, CloudFileInfo } from '../storage/cloud/types';
-import type { SlideDocument } from '../types/slide-types';
-import { store } from '../store/app-store';
-import { saveActiveSlide } from '../store/app-store';
+import { buildSlideDocument } from '../utils/document-io';
 import { showToast } from './toast';
 import './cloud-storage-dialog.css';
 
@@ -149,29 +147,8 @@ export function CloudStorageDialog(props: CloudStorageDialogProps) {
         setSaving(true);
         setError('');
         try {
-            // Sync current slide state before saving
-            saveActiveSlide();
-
-            // Build SlideDocument from store (same as menu.tsx save)
-            const doc: SlideDocument = {
-                version: 4,
-                metadata: {
-                    name: saveFileName().trim(),
-                    updatedAt: new Date().toISOString(),
-                    docType: store.docType,
-                },
-                elements: JSON.parse(JSON.stringify(store.elements)),
-                layers: JSON.parse(JSON.stringify(store.layers)),
-                slides: JSON.parse(JSON.stringify(store.slides)),
-                globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
-                gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
-                guides: JSON.parse(JSON.stringify(store.guides ?? [])),
-                states: JSON.parse(JSON.stringify(store.states)),
-                symbols: JSON.parse(JSON.stringify(store.symbols)),
-                graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
-                swatches: JSON.parse(JSON.stringify(store.swatches)),
-                artboards: JSON.parse(JSON.stringify(store.artboards)),
-            };
+            // The same document every other save writes (syncs the active slide first).
+            const doc = buildSlideDocument(saveFileName().trim());
 
             // If no file explicitly selected, find existing file with the same name
             let overwriteId = selectedFileId();

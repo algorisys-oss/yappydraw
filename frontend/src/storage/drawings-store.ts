@@ -25,6 +25,8 @@ import { requestPersistentStorage } from './persistent-storage';
 import { loadDocument } from '../store/app-store';
 import { drawingId, setDrawingId } from '../components/menu';
 import type { SlideDocument } from '../types/slide-types';
+import { DocumentTooNewError } from '../utils/migration';
+import { showToast } from '../components/toast';
 
 const INDEX_KEY = 'yappy:drawings:index';
 const DRAWING_KEY = (id: string) => `yappy:drawing:${id}`;
@@ -189,6 +191,7 @@ export async function openDrawing(id: string): Promise<boolean> {
         setActiveDrawingId(id);
         return true;
     } catch (e) {
+        if (e instanceof DocumentTooNewError) showToast(e.message, 'error', 10000);
         console.error('[drawings-store] open failed:', e);
         return false;
     }

@@ -1,5 +1,7 @@
 import { batch, createSignal } from "solid-js";
 import { createStore, reconcile, unwrap } from "solid-js/store";
+// Store-free module (types + pure helpers only), so this edge introduces no cycle.
+import { assertReadableVersion, setDocumentExtras } from "../utils/migration";
 // Dockable-panel system (Phase D): migrated panels are toggled through the dock store so the
 // existing toolbar/menu/hotkey/API entry points keep working. dock-layout has no app-store import,
 // so this one-way edge introduces no cycle.
@@ -22,10 +24,10 @@ import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchI
 import { segmentIntersection } from "../utils/path-intersection";
 import { WIDTH_PROFILES, profileToWidthPoints, detectWidthProfile } from "../utils/width-profiles";
 import { scribbleStrokes } from "../utils/scribble";
-import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, runBooleanOpDetailed, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, legacyDistortParams, ringDiagonal, type DistortKind, type DistortParams } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
-import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
+import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight, getFontString } from "../utils/text-utils";
 import { shapeToPath, shapeDecorationSubpaths } from "../utils/shape-to-path";
 import { textElementToOutline, FontOutlineUnavailableError } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
@@ -1747,7 +1749,7 @@ export const updateGlobalTickerState = () => {
  * caller hasn't already supplied an explicit width/height in the same patch (e.g.
  * setElementTransform, which sizes the box itself).
  */
-const FONT_METRIC_KEYS = ['fontSize', 'fontFamily', 'letterSpacing', 'fontWeight', 'fontStyle', 'textScaleX'] as const;
+const FONT_METRIC_KEYS = ['fontSize', 'fontFamily', 'letterSpacing', 'fontWeight', 'fontStyle', 'fontStretch', 'textScaleX'] as const;
 /**
  * Does this patch require re-fitting a text box? True when it changes font metrics or flips the
  * auto-size mode (switching to auto-width must shrink the box onto the text, since the renderer
@@ -1786,6 +1788,36 @@ const autoSizeTextUpdates = (el: DrawingElement, updates: Partial<DrawingElement
     return { ...updates, height };
 };
 
+/**
+ * Re-fit a text box once the face it was just measured in has actually loaded.
+ *
+ * A re-fit measures synchronously, and a weight or width nobody has drawn yet isn't loaded: the
+ * canvas measures with the nearest face it HAS (Regular), and that width is saved with the box.
+ * Only 400/700 are preloaded at boot (utils/font-loading.ts), so picking Light or Black from the
+ * Style menu sized the box for Regular. Load the face, then fit again — sizing only, no undo step
+ * (the change that caused it already recorded one).
+ */
+const refitWhenFontLoads = (id: string, merged: DrawingElement) => {
+    const fonts = typeof document !== 'undefined' ? (document as any).fonts : null;
+    if (!fonts?.load) return;
+    const spec = getFontString(merged);
+    // No `fonts.check()` shortcut: Chromium answers true for a face that is still UNLOADED
+    // (measured: Poppins 100 "unloaded", check → true, measureText 297.7px from a fallback font
+    // vs 368px once loaded). `load()` resolves at once for a face that is already there, and the
+    // re-fit below only writes when the size actually changes. The text is passed so the faces
+    // for its own unicode-range subsets are the ones loaded.
+    fonts.load(spec, merged.text || undefined).then(() => {
+        const cur = store.elements.find(e => e.id === id);
+        // Only if the font is still the one that was requested.
+        if (!cur || getFontString(cur) !== spec) return;
+        const fit = autoSizeTextUpdates(cur, { fontFamily: cur.fontFamily });
+        const size: Partial<DrawingElement> = {};
+        if (fit.width !== undefined && Math.abs(fit.width - cur.width) > 0.5) size.width = fit.width;
+        if (fit.height !== undefined && Math.abs(fit.height - cur.height) > 0.5) size.height = fit.height;
+        if (Object.keys(size).length) setStore('elements', (e) => e.id === id, size);
+    }).catch(() => { /* the font can't load; the fallback metrics are the right ones then */ });
+};
+
 export const updateElement = (id: string, updates: Partial<DrawingElement>, recordHistory = false) => {
     if (recordHistory) pushToHistory();
 
@@ -1806,7 +1838,10 @@ export const updateElement = (id: string, updates: Partial<DrawingElement>, reco
     // (keeps the selection/hit rect matched to the rendered glyphs).
     if (needsTextRefit(updates)) {
         const el = store.elements.find(e => e.id === id);
-        if (el) updates = autoSizeTextUpdates(el, updates);
+        if (el) {
+            updates = autoSizeTextUpdates(el, updates);
+            if (el.type === 'text' || el.type === 'richtext') refitWhenFontLoads(id, { ...el, ...updates } as DrawingElement);
+        }
     }
 
     setStore("elements", (el) => el.id === id, updates);
@@ -2952,6 +2987,11 @@ export const detachSlideBackgroundImage = (slideIndex: number = store.activeSlid
 };
 
 export const loadDocument = (doc: any) => {
+    // Refuse a document from a newer Yappy BEFORE touching anything: its unknown shape
+    // used to fall into the legacy branch below and open as one empty default slide.
+    assertReadableVersion(doc);
+    // Unknown top-level keys (a newer build's additions) ride along to the next save.
+    setDocumentExtras(doc);
     // Shading buffers belong to the outgoing document's elements. Element ids repeat across
     // documents (`rect-1` in every one of them), and while the cache key covers everything
     // that changes what is drawn, holding a screenful of 384px canvases for artwork that no
@@ -9106,6 +9146,10 @@ export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
  * that don't overlap really is empty). Every one of these cases has an obvious fix, so
  * say which one applies.
  */
+/** The engine threw on these shapes even after the snapped retry (see `clipMultiPolys`).
+ *  Distinct from an empty result: the shapes may well overlap; we just couldn't compute it. */
+const BOOLEAN_FAILED = "Couldn't combine these shapes: the geometry engine failed on them. Nothing was changed. Try Simplify on the shapes, or nudge one slightly, and run it again.";
+
 const emptyResultReason = (els: DrawingElement[], op: BooleanOp): string => {
     // Lines and arrows flatten to zero polygons — there's no area to combine. The
     // engine needs two inputs WITH area, so even one stray line in an otherwise fine
@@ -9141,7 +9185,8 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     // Back → front (store order) so subtract is deterministic ("minus front").
     els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
 
-    const polys = runBooleanOp(els, op);
+    const { polys, failed } = runBooleanOpDetailed(els, op);
+    if (failed) { showToast(BOOLEAN_FAILED, 'error', 6000); return []; }
     if (polys.length === 0) { showToast(emptyResultReason(els, op), 'info', 4000); return []; }
 
     // Illustrator convention: the result inherits the FRONTMOST object's appearance
@@ -10332,7 +10377,8 @@ export const makeCompoundShape = (ids: string[], op: BooleanOp = 'union'): strin
     const els = store.elements.filter(e => ids.includes(e.id));
     if (els.length < 2) { showToast('Compound shape: select 2+ shapes', 'info'); return null; }
     els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b)); // back → front
-    const polys = runBooleanOp(els, op);
+    const { polys, failed } = runBooleanOpDetailed(els, op);
+    if (failed) { showToast(BOOLEAN_FAILED, 'error', 6000); return null; }
     if (!polys.length) { showToast('Compound shape: empty result', 'info'); return null; }
     const base = op === 'subtract' ? els[0] : els[els.length - 1];
     const compound = buildCompoundPath(polys, compoundStyleOf(base), op, els.map(e => ({ ...e })));
@@ -10349,7 +10395,8 @@ export const setCompoundShapeOp = (id: string, op: BooleanOp): void => {
     const el = store.elements.find(e => e.id === id);
     if (!el || !el.compoundOperands || el.compoundOperands.length < 2) return;
     const operands = syncCompoundOperands(el);
-    const polys = runBooleanOp(operands, op);
+    const { polys, failed } = runBooleanOpDetailed(operands, op);
+    if (failed) { showToast(BOOLEAN_FAILED, 'error', 6000); return; }
     if (!polys.length) { showToast('Compound shape: empty result', 'info'); return; }
     const rebuilt = buildCompoundPath(polys, compoundStyleOf(el), op, operands);
     if (!rebuilt) return;
@@ -10420,7 +10467,7 @@ export const exitCompoundEdit = (save = true): void => {
 
     if (save && editedEls.length >= 2) {
         const operands = editedEls.map(e => ({ ...e, groupIds: (e.groupIds || []).filter(g => g !== session.groupId) }));
-        const polys = runBooleanOp(operands, session.op);
+        const { polys, failed } = runBooleanOpDetailed(operands, session.op);
         const compound = polys.length ? buildCompoundPath(polys, session.style, session.op, operands) : null;
         if (compound) {
             setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), compound]);
@@ -10430,7 +10477,7 @@ export const exitCompoundEdit = (save = true): void => {
             showToast('Compound updated', 'success');
             return;
         }
-        showToast('Compound: empty result — kept as separate shapes', 'info');
+        showToast(failed ? `${BOOLEAN_FAILED.split('.')[0]}, so they were kept as separate shapes.` : 'Compound: empty result — kept as separate shapes', failed ? 'error' : 'info');
     }
 
     if (!save) {

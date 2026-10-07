@@ -1,52 +1,69 @@
 /**
- * Document (de)serialization shared by the web save/load flow and the desktop bridge.
+ * Document (de)serialization shared by every save and load path.
  * A Yappy document is a `SlideDocument` v4; `.yappy` files are GZIP-compressed JSON of it,
  * `.json` files are the plain JSON.
+ *
+ * `buildSlideDocument` is the ONLY place the live store is snapshotted into a document.
+ * Save to file, workspace, gallery/autosave, cloud, templates, the desktop bridge and the
+ * API all call it. They used to keep their own field lists, which drifted: Save to file
+ * lost the animation timeline and pattern swatches, cloud save lost the game script too.
+ * `document-io.test.ts` fails if a second hand-built copy appears.
  */
-import { store } from "../store/app-store";
+import { store, saveActiveSlide } from "../store/app-store";
 import type { SlideDocument } from "../types/slide-types";
 import { effectiveGameScript } from "../game/behaviors-to-script";
-import { isSlideDocument, migrateToSlideFormat } from "./migration";
+import { isSlideDocument, migrateToSlideFormat, getDocumentExtras, CURRENT_DOC_VERSION, DocumentTooNewError } from "./migration";
 
-/** Snapshot the current store as a SlideDocument v4 (the on-disk / workspace format). */
+export { CURRENT_DOC_VERSION, DocumentTooNewError };
+
+const copy = <T>(v: T): T => JSON.parse(JSON.stringify(v));
+
+/** Snapshot the current store as a SlideDocument (the on-disk / workspace format). */
 export function buildSlideDocument(name = 'Untitled'): SlideDocument {
+    // Sync the canvas background/dimensions into the slides array first.
+    saveActiveSlide();
     return {
-        version: 4,
+        // Keys a newer build wrote that this one doesn't know — written back unchanged.
+        // Spread first so a known key always comes from the live store.
+        ...getDocumentExtras(),
+        version: CURRENT_DOC_VERSION,
         metadata: { name, updatedAt: new Date().toISOString(), docType: store.docType },
-        elements: JSON.parse(JSON.stringify(store.elements)),
-        layers: JSON.parse(JSON.stringify(store.layers)),
-        slides: JSON.parse(JSON.stringify(store.slides)),
-        globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
-        gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
-        guides: JSON.parse(JSON.stringify(store.guides ?? [])),
+        elements: copy(store.elements ?? []),
+        layers: copy(store.layers ?? []),
+        slides: copy(store.slides ?? []),
+        globalSettings: copy(store.globalSettings ?? {}),
+        gridSettings: copy(store.gridSettings ?? {}),
+        guides: copy(store.guides ?? []),
         // `editing` is intentionally dropped — see SlideDocument.symmetry.
         symmetry: {
             mode: store.symmetry.mode, cx: store.symmetry.cx, cy: store.symmetry.cy,
             radialCount: store.symmetry.radialCount, angle: store.symmetry.angle,
             rings: store.symmetry.rings, ringSpacing: store.symmetry.ringSpacing,
         },
-        states: JSON.parse(JSON.stringify(store.states)),
-        symbols: JSON.parse(JSON.stringify(store.symbols)),
-        graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
-        swatches: JSON.parse(JSON.stringify(store.swatches)),
-        artboards: JSON.parse(JSON.stringify(store.artboards)),
-        dimensionAnnotations: store.dimensionAnnotations?.length ? JSON.parse(JSON.stringify(store.dimensionAnnotations)) : undefined,
-        compositionTracks: store.compositionTracks?.length ? JSON.parse(JSON.stringify(store.compositionTracks)) : undefined,
-        tinyflyClips: store.tinyflyClips?.length ? JSON.parse(JSON.stringify(store.tinyflyClips)) : undefined,
-        animTimeline: store.animTimeline ? JSON.parse(JSON.stringify(store.animTimeline)) : undefined,
+        states: copy(store.states ?? []),
+        symbols: copy(store.symbols ?? []),
+        graphicStyles: copy(store.graphicStyles ?? []),
+        swatches: copy(store.swatches ?? []),
+        patterns: copy(store.patterns ?? []),
+        artboards: copy(store.artboards ?? []),
+        dimensionAnnotations: store.dimensionAnnotations?.length ? copy(store.dimensionAnnotations) : undefined,
+        compositionTracks: store.compositionTracks?.length ? copy(store.compositionTracks) : undefined,
+        tinyflyClips: store.tinyflyClips?.length ? copy(store.tinyflyClips) : undefined,
+        animTimeline: store.animTimeline ? copy(store.animTimeline) : undefined,
         // Multi-scene: every scene keyed by slide id (active one folded back in).
         animScenes: store.animTimeline && Object.keys(store.animScenes).length
-            ? JSON.parse(JSON.stringify({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline }))
+            ? copy({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline })
             : undefined,
         gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
-        sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
-        gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,
-        blueprints: store.blueprints && Object.keys(store.blueprints).length ? JSON.parse(JSON.stringify(store.blueprints)) : undefined,
+        sceneBehaviors: store.sceneBehaviors?.length ? copy(store.sceneBehaviors) : undefined,
+        gameVars: store.gameVars?.length ? copy(store.gameVars) : undefined,
+        blueprints: store.blueprints && Object.keys(store.blueprints).length ? copy(store.blueprints) : undefined,
         gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
     };
 }
 
-/** Parse a raw document object (any version) into a normalized SlideDocument. */
+/** Parse a raw document object (any version) into a normalized SlideDocument.
+ *  Throws `DocumentTooNewError` for a document from a newer Yappy. */
 export function normalizeDocument(data: any): SlideDocument {
     return isSlideDocument(data) ? data : migrateToSlideFormat(data);
 }

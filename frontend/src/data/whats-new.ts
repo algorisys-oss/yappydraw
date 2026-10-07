@@ -13,8 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.270', date: '2026-10-07', items: [
+        'Saving an animation to disk keeps its timeline. Before, a saved animation reopened empty, and saved files also lost pattern swatches and symmetry settings. Cloud save and templates now keep everything too.',
+        'Opening a file made with a newer version of Yappy tells you to reload and update, instead of opening it as a blank page.',
+        'Pathfinder handles shapes with nearly overlapping edges. If it still can\u2019t combine them, it says so and leaves your shapes as they were.',
+        'Editing big drawings is a little smoother: the canvas no longer repaints the same frame several times.',
+    ] },
     { version: '0.8.269', date: '2026-09-29', items: [
-        'Every font weight: Inter, Poppins and the code fonts now go from Thin to Black, Merriweather from Light to Black. Pick one from Style under the font. Google fonts show every weight they have.',
+        'Every font weight: Inter and Poppins now go from Thin to Black, the two code fonts from Thin or ExtraLight to ExtraBold or Black, Merriweather from Light to Black. Pick one from Style under the font. Google fonts show every weight they have.',
         'Hold Shift and drag a text box\u2019s left or right handle to stretch the letters, or its top or bottom handle to make them taller.',
         'The eyedropper stays on after each pick, so you can sample colour after colour; a preview next to the cursor shows what you\u2019ll get. Press Esc when you\u2019re done.',
         'Save to disk now asks where to save your drawing and what to call it (Chrome, Edge and the desktop app).',

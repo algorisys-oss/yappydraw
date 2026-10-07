@@ -13,7 +13,9 @@
  */
 
 /** Weights each built-in font key can render, lightest first. Italic availability is in
- *  `fontCapabilities` (config/properties.ts). */
+ *  `fontCapabilities` (config/properties.ts). Keys are the stored `fontFamily` values, NOT
+ *  family names — `monospace` is Source Code Pro and `code` is JetBrains Mono (text-utils'
+ *  fontFamilyMap). builtin-fonts.test.ts derives these from the URL through that map. */
 export const BUILTIN_FONT_WEIGHTS: Record<string, number[]> = {
     'hand-drawn': [400],                                          // Handlee
     'marker': [400],                                              // Permanent Marker
@@ -21,8 +23,8 @@ export const BUILTIN_FONT_WEIGHTS: Record<string, number[]> = {
     'sans-serif': [100, 200, 300, 400, 500, 600, 700, 800, 900],  // Inter 100..900
     'poppins': [100, 200, 300, 400, 500, 600, 700, 800, 900],     // Poppins (static)
     'serif': [300, 400, 500, 600, 700, 800, 900],                 // Merriweather 300..900
-    'monospace': [100, 200, 300, 400, 500, 600, 700, 800],        // JetBrains Mono 100..800
-    'code': [200, 300, 400, 500, 600, 700, 800, 900],             // Source Code Pro 200..900
+    'monospace': [200, 300, 400, 500, 600, 700, 800, 900],        // Source Code Pro 200..900
+    'code': [100, 200, 300, 400, 500, 600, 700, 800],             // JetBrains Mono 100..800
 };
 
 const POPPINS = [100, 200, 300, 400, 500, 600, 700, 800, 900];

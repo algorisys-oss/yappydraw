@@ -6,7 +6,7 @@ import { loadDocument, setStore, store, zoomToFit, zoomToFitSlide, setCanvasBack
 import { setPanelOpen } from "../store/dock-layout";
 import { registerShapes } from "../shapes/register-shapes";
 import { storage } from "../storage/file-system-storage";
-import { isSlideDocument, migrateToSlideFormat } from "../utils/migration";
+import { isSlideDocument, migrateToSlideFormat, DocumentTooNewError } from "../utils/migration";
 import Toast from "./toast";
 import "./embed-viewer.css";
 
@@ -116,7 +116,7 @@ const EmbedViewer: Component = () => {
             setIsReady(true);
         } catch (err) {
             console.error("Failed to load embedded drawing:", err);
-            setError("Failed to load drawing");
+            setError(err instanceof DocumentTooNewError ? err.message : "Failed to load drawing");
         }
     });
 

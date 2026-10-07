@@ -1,5 +1,5 @@
 import { g as w, a as P, b as E, c as T } from "./ai-providers-CycU8sO1.js";
-import { s as u, b as r, p as y, u as b, _ as B, g as v, f as j } from "./index-N8KIsBvL.js";
+import { s as u, b as r, p as y, u as b, $ as B, g as v, f as j } from "./index-D8TAEo6E.js";
 const z = {
   rewrite: "Rewrite this text to be clearer and more engaging while keeping its meaning and rough length.",
   shorten: "Shorten this text to roughly half its length while keeping the key message.",
@@ -38,7 +38,7 @@ ${g.text}`,
   }
   return l > 0 ? r(`Magic Write updated ${l} text element${l === 1 ? "" : "s"}`, "success") : c || B(), l;
 }
-async function S(p, s, i) {
+async function $(p, s, i) {
   const e = w("openai");
   if (!e) return { dataURL: null, error: "Add an OpenAI API key in AI Settings first" };
   try {
@@ -104,9 +104,9 @@ function D(p, s, i, e) {
 async function K(p, s = {}) {
   const i = s.size || "1024x1024", e = P("openai"), t = i === "1536x1024" ? "1792x1024" : i === "1024x1536" ? "1024x1792" : "1024x1024";
   r("Generating image…", "loading");
-  let a = await S(p, e.startsWith("dall-e") ? t : i, e);
+  let a = await $(p, e.startsWith("dall-e") ? t : i, e);
   if (!a.dataURL && e !== "dall-e-3") {
-    const l = await S(p, t, "dall-e-3");
+    const l = await $(p, t, "dall-e-3");
     l.dataURL && (a = l);
   }
   if (!a.dataURL)
@@ -215,14 +215,14 @@ async function Y(p, s = {}) {
       "prompt",
       (s.prompt?.trim() ? `${s.prompt.trim()}. ` : "") + "Extend the existing image seamlessly into the transparent areas, continuing its scene, lighting, style, and perspective. Keep the original (non-transparent) pixels unchanged."
     ), f.append("size", "auto");
-    const { b64: L, error: $ } = await x(f, t);
+    const { b64: L, error: S } = await x(f, t);
     return L ? (y(), b(e.id, {
       dataURL: `data:image/png;base64,${L}`,
       x: e.x - e.width * a,
       y: e.y - e.height * o,
       width: e.width * (1 + a + n),
       height: e.height * (1 + o + l)
-    }), r("Magic Expand applied", "success"), !0) : (r($ || "Magic Expand failed", "error"), !1);
+    }), r("Magic Expand applied", "success"), !0) : (r(S || "Magic Expand failed", "error"), !1);
   } catch (c) {
     return r(`Magic Expand failed: ${c?.message || c}`, "error"), !1;
   }
