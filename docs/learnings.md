@@ -2,6 +2,20 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A scanner reads the lockfile, not the bundle (Oct 7 2026)
+
+- **A dependency can be "vulnerable" and still unreachable.** Hostinger flagged two High CVEs in
+  `image-size@1.2.1`, a dependency `pptxgenjs` declares but never imports (its Node branch
+  requires `sizeof`). It wasn't in `dist/`. Check reachability first (`npm ls <pkg> --all`, then
+  grep the parent's `dist/` and our build output), because it decides how urgent the fix is. It
+  doesn't decide whether to fix it: the host scans the lockfile, and a standing red warning trains
+  people to ignore the next one.
+- **`overrides` is the fix when the parent is already at its latest release.** Forcing a major
+  version under a parent is only safe when you know how the parent calls it. Here it never calls
+  it, so any version works. Note in the bug entry when the override can be removed.
+- **`npm install` evicts the `--no-save` repograph CLI.** Re-run `npm run repograph:install`
+  after any dependency change, or the release's map refresh silently does nothing.
+
 ## A performance budget harness (Oct 7 2026)
 
 - **`tests/perf-budget.spec.ts`** seeds a deterministic N-element document (cloned from one real

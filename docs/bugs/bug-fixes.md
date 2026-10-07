@@ -1,5 +1,22 @@
 # Bug Fixes Log
 
+## 2026-10-07 — Hostinger flagged image-size 1.2.1 (CVE-2025-71329, CVE-2025-71330)
+
+### 410. A transitive image-size with two DoS CVEs, from pptxgenjs
+
+**Symptom:** Hostinger's dependency scan reported two High CVEs in `image-size@1.2.1`: infinite
+loops in the JXL/HEIF parsers and in the ICNS parser. The fix is in 2.0.3.
+
+**Cause:** `pptxgenjs@4.0.1`, the latest release, still declares `image-size: ^1.2.1`. The actual
+exposure was nil. pptxgenjs's code never imports `image-size` (its Node-only branch calls
+`require('sizeof')`), so the package was never bundled and never parsed an image. The scanner
+reads the lockfile, though, so it was flagged anyway.
+
+**Fix:** an `"image-size": "^2.0.3"` entry in `package.json` `overrides`, matching the existing
+ejs/xmldom/dompurify pins. It resolves to 2.0.4. Nothing calls the API, so the major-version
+jump can't break anything, and `npm run build` passes. Remove the override once pptxgenjs
+depends on ≥2.0.3 itself.
+
 ## 2026-10-07 — The canvas painted the same frame many times
 
 ### 409. A burst of edits repainted the whole scene once per edit, in the same frame

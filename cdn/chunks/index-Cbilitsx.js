@@ -27038,7 +27038,7 @@ const kA = () => {
   const n = y.states.find((o) => o.id === e);
   if (n)
     if (S("activeStateId", e), t) {
-      const { MorphAnimator: o } = await import("./morph-animator-BflMJ1-9.js");
+      const { MorphAnimator: o } = await import("./morph-animator-DXLGtI7_.js");
       o.morphTo(n);
     } else
       Ae(() => {
@@ -27958,7 +27958,7 @@ const EE = () => sl, PE = (e) => {
   if (o.length >= y.layers.length)
     return R("Cannot delete every layer.", "error"), !1;
   if (t === void 0 && (s.length > 0 || a.length > 0)) {
-    const { askChoice: i } = await import("./choice-dialog-state-BVf-cgdn.js"), { t: l } = await Promise.resolve().then(() => iq), c = await i(
+    const { askChoice: i } = await import("./choice-dialog-state-BJMeLvok.js"), { t: l } = await Promise.resolve().then(() => iq), c = await i(
       l("layerDelete.title", { name: n.name }),
       a.length > 0 ? l("layerDelete.bodyGroup", { layers: a.length, objects: s.length }) : l("layerDelete.bodyLayer", { objects: s.length }),
       [
@@ -54167,7 +54167,7 @@ async function oie() {
     window.location.reload();
   }
 }
-const J3 = "0.8.270", e$ = {
+const J3 = "0.8.271", e$ = {
   version: J3
 };
 var rie = /* @__PURE__ */ Ge(`<div class=whatsnew-overlay><div class=whatsnew-modal role=dialog aria-modal=true aria-label="What's new"><div class=whatsnew-head><div class=whatsnew-title><span>What's new</span><span class=whatsnew-ver>v</span></div><button class=whatsnew-close aria-label=Close></button></div><div class=whatsnew-body></div><div class=whatsnew-foot><span class=whatsnew-foot-note>On the latest build? Reload to be sure.</span><button class=whatsnew-refresh title="Clear cache and reload the latest version"> Reload latest`), aie = /* @__PURE__ */ Ge("<div class=whatsnew-entry><div class=whatsnew-entry-head><span class=whatsnew-badge>v</span><span class=whatsnew-date></span></div><ul class=whatsnew-list>"), sie = /* @__PURE__ */ Ge("<li>");
@@ -61406,7 +61406,7 @@ const le = {
   },
   /** Execute a CRUD operation on a DS element with animation */
   async dsOperation(e, t, n) {
-    const { executeDsOperation: o } = await import("./ds-operations-CSbAdpBx.js");
+    const { executeDsOperation: o } = await import("./ds-operations-CLjpQNpM.js");
     return o(e, t, n || {});
   },
   // --- Actions & Helpers ---
@@ -61756,7 +61756,7 @@ const le = {
   async reconstructTurntableAI(e, t) {
     const n = t ?? y.selection[0];
     if (!n) return { success: !1, error: "No element selected" };
-    const o = await import("./turntable-ai-DzoRjHr9.js"), r = { yaw: e?.yaw, pitch: e?.pitch };
+    const o = await import("./turntable-ai-ChmygnAJ.js"), r = { yaw: e?.yaw, pitch: e?.pitch };
     return e?.mode === "image" ? o.reconstructTurntableAIImage(n, r) : o.reconstructTurntableAI(n, r);
   },
   /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
@@ -62969,7 +62969,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
   },
   /** Start (or replay) the first-visit onboarding tour. */
   startTour() {
-    import("./onboarding-tour-BBrW067n.js").then((e) => e.startTour());
+    import("./onboarding-tour-CfzFBkMl.js").then((e) => e.startTour());
   },
   /** Open the "What's new" popup (recent user-facing changes). */
   showWhatsNew() {
@@ -63145,11 +63145,11 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
   /** Start the game (uses the stored script unless one is passed). The document
    *  is snapshotted and fully restored on stop. Returns false on script errors. */
   async startGame(e) {
-    return (await import("./game-runtime-DoEkbWf6.js")).startGame(e);
+    return (await import("./game-runtime-BKK-V2yX.js")).startGame(e);
   },
   /** Stop a running game and restore the document. */
   async stopGame() {
-    (await import("./game-runtime-DoEkbWf6.js")).stopGame();
+    (await import("./game-runtime-BKK-V2yX.js")).stopGame();
   },
   /** True while a game is running. */
   isGameRunning() {
@@ -63219,7 +63219,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
   },
   /** Compile the blocks and play the resulting game (Play button). */
   async playBehaviorGame() {
-    const [e, t] = await Promise.all([Promise.resolve().then(() => Fx), import("./game-runtime-DoEkbWf6.js")]), n = e.effectiveGameScript(y.elements, y.sceneBehaviors ?? [], y.gameScript, y.gameVars ?? [], y.blueprints, y.gameAuthoringMode);
+    const [e, t] = await Promise.all([Promise.resolve().then(() => Fx), import("./game-runtime-BKK-V2yX.js")]), n = e.effectiveGameScript(y.elements, y.sceneBehaviors ?? [], y.gameScript, y.gameVars ?? [], y.blueprints, y.gameAuthoringMode);
     return n ? t.startGame(n) : !1;
   },
   // Version history (local IndexedDB snapshots)
@@ -63248,31 +63248,31 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
   // "My drawings" gallery — local multi-document library (IndexedDB, offline-first).
   /** Save the LIVE editor into the gallery (updates the open entry, or creates one). */
   async saveToGallery(e) {
-    return (await import("./drawings-store-B_eOW504.js")).saveCurrentToGallery(e ? { name: e } : {});
+    return (await import("./drawings-store-DyvjSnjC.js")).saveCurrentToGallery(e ? { name: e } : {});
   },
   /** Save the live editor as a NEW gallery drawing (never overwrites the open one). */
   async saveToGalleryAsNew(e) {
-    return (await import("./drawings-store-B_eOW504.js")).saveCurrentToGallery({ name: e, forceNew: !0 });
+    return (await import("./drawings-store-DyvjSnjC.js")).saveCurrentToGallery({ name: e, forceNew: !0 });
   },
   /** List saved-drawing metadata (newest first, no bodies loaded). */
   async listDrawings() {
-    return (await import("./drawings-store-B_eOW504.js")).listDrawings();
+    return (await import("./drawings-store-DyvjSnjC.js")).listDrawings();
   },
   /** Open a saved drawing into the editor by id. */
   async openDrawing(e) {
-    return (await import("./drawings-store-B_eOW504.js")).openDrawing(e);
+    return (await import("./drawings-store-DyvjSnjC.js")).openDrawing(e);
   },
   /** Rename a saved drawing. */
   async renameDrawing(e, t) {
-    return (await import("./drawings-store-B_eOW504.js")).renameDrawing(e, t);
+    return (await import("./drawings-store-DyvjSnjC.js")).renameDrawing(e, t);
   },
   /** Duplicate a saved drawing; returns the new entry's metadata. */
   async duplicateDrawing(e) {
-    return (await import("./drawings-store-B_eOW504.js")).duplicateDrawing(e);
+    return (await import("./drawings-store-DyvjSnjC.js")).duplicateDrawing(e);
   },
   /** Delete a saved drawing by id. */
   async deleteDrawing(e) {
-    return (await import("./drawings-store-B_eOW504.js")).deleteDrawing(e);
+    return (await import("./drawings-store-DyvjSnjC.js")).deleteDrawing(e);
   },
   /** Ask the browser to make local storage durable (dodges best-effort/ITP eviction). */
   async requestPersistentStorage() {
@@ -63357,7 +63357,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
    * skipped when 'photo' is out of scope or `includePhotos:false`.
    */
   searchElements(e, t) {
-    return import("./search-DmdXtY_L.js").then((n) => n.searchElements(e, t));
+    return import("./search-Dq7MszQj.js").then((n) => n.searchElements(e, t));
   },
   /**
    * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to drop it
@@ -64504,45 +64504,45 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
   },
   /** Export the current scene as a self-contained HTML file (animated figures play in it). */
   async exportHtml(e = "animation") {
-    return (await import("./export-game-Cftd-LxJ.js")).exportSceneAsHtml(e);
+    return (await import("./export-game-D0bFrjKk.js")).exportSceneAsHtml(e);
   },
   // AI assists (Canva-style; keys from AI Settings)
   /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */
   async magicWrite(e = "rewrite", t, n) {
-    return (await import("./canva-ai-BXmd7UK5.js")).magicWrite(n ?? [...y.selection], e, t);
+    return (await import("./canva-ai-C6wDVbtw.js")).magicWrite(n ?? [...y.selection], e, t);
   },
   /** Generate an image from a prompt (OpenAI) and insert it on the active page. Returns the element id. */
   async generateImage(e, t) {
-    return (await import("./canva-ai-BXmd7UK5.js")).generateImage(e, t);
+    return (await import("./canva-ai-C6wDVbtw.js")).generateImage(e, t);
   },
   /** Remove the background of the selected (or given) image element via OpenAI image editing.
    *  Original pixels are preserved by default (AI output used only as an alpha mask);
    *  pass {preserveOriginal: false} to take the AI's regenerated image as-is. */
   async removeBackground(e, t) {
-    return (await import("./canva-ai-BXmd7UK5.js")).removeBackground(e, t);
+    return (await import("./canva-ai-C6wDVbtw.js")).removeBackground(e, t);
   },
   /** Generate a full design document from a text brief (any LLM provider):
    *  headline, subhead, bullets, CTA and palette laid out proportionally.
    *  Pass a preset id or {width, height} (default 1080×1080). */
   async generateDesign(e, t) {
-    const n = await import("./design-generator-xe72arjS.js"), o = typeof t == "string" ? ap(t) : t;
+    const n = await import("./design-generator-zAGXW6v7.js"), o = typeof t == "string" ? ap(t) : t;
     return n.generateDesign(e, o ? { width: o.width, height: o.height } : void 0);
   },
   /** Magic Edit: repaint the selected (or given) image per an instruction, e.g.
    *  "remove the person on the left" (OpenAI image edits). */
   async magicEditImage(e, t) {
-    return (await import("./canva-ai-BXmd7UK5.js")).magicEditImage(t, e);
+    return (await import("./canva-ai-C6wDVbtw.js")).magicEditImage(t, e);
   },
   /** Replace Background: swap the background behind the subject of the selected
    *  (or given) image for a described scene, keeping the foreground untouched
    *  (OpenAI image edits). */
   async replaceBackground(e, t) {
-    return (await import("./canva-ai-BXmd7UK5.js")).replaceBackground(t, e);
+    return (await import("./canva-ai-C6wDVbtw.js")).replaceBackground(t, e);
   },
   /** Magic Expand: outpaint the selected (or given) image — margins are fractions
    *  of the source size (default 0.25 each side). The element grows to match. */
   async expandImage(e, t) {
-    return (await import("./canva-ai-BXmd7UK5.js")).expandImage(t, e);
+    return (await import("./canva-ai-C6wDVbtw.js")).expandImage(t, e);
   },
   // Font pairings
   /** List curated heading/body font pairings. */
@@ -65492,7 +65492,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
    * @param options.style3D - Render in the 3D concept-diagram style (pastel palette, solidBlock/perspectiveBlock containers, isometric cubes). Ignored when rocketMode is true.
    */
   async generateDiagram(e, t) {
-    const { generateDiagram: n } = await import("./drawing-engine-cx2CELj8.js");
+    const { generateDiagram: n } = await import("./drawing-engine-C4_X8tGW.js");
     return n(e, t);
   },
   /**
@@ -65504,7 +65504,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
    * @param options.style3D - Render in the 3D concept-diagram style.
    */
   async generateDiagramFromSketch(e, t) {
-    const { generateDiagramFromSketch: n } = await import("./drawing-engine-cx2CELj8.js");
+    const { generateDiagramFromSketch: n } = await import("./drawing-engine-C4_X8tGW.js");
     return n(e, t);
   },
   /**
@@ -65521,7 +65521,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
    * @param options.mode - 'quick' (single LLM call, fast) or 'deep' (2-stage agentic, richer content)
    */
   async generatePresentation(e, t) {
-    const { generatePresentation: n } = await import("./slide-generator-DHWjeMcy.js");
+    const { generatePresentation: n } = await import("./slide-generator-BhAaTusX.js");
     return n(e, { ...t, clearCanvas: !0 });
   },
   /**
@@ -65532,7 +65532,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${m} B${b}`, x = this.createText(u, f + s +
    * @param palette - Optional color palette name
    */
   async importMarkdownSlides(e, t) {
-    const { parseMarkdownToSlides: n } = await import("./markdown-to-slides-mNL8NYrB.js"), { loadDocument: o } = await Promise.resolve().then(() => vY), r = n(e, t);
+    const { parseMarkdownToSlides: n } = await import("./markdown-to-slides-BQZl1Zfg.js"), { loadDocument: o } = await Promise.resolve().then(() => vY), r = n(e, t);
     return o(r), { success: !0, slideCount: r.slides?.length || 0 };
   },
   // ─── Deploy to Rocket ──────────────────────────────────

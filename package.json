@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.270",
+  "version": "0.8.271",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -44,6 +44,7 @@
     "@xmldom/xmldom": "^0.9.12",
     "dompurify": "^3.4.15",
     "fflate": "^0.8.3",
-    "qs": "^6.16.0"
+    "qs": "^6.16.0",
+    "image-size": "^2.0.3"
   }
 }
