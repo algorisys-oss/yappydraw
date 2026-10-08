@@ -23,10 +23,15 @@ const HistoryPanel: Component = () => {
                     <button
                         class={`hp-row ${e.isCurrent ? 'current' : ''} ${e.index > (store.undoStackLength) ? 'future' : ''}`}
                         onClick={() => jumpToHistory(e.index)}
-                        title={e.isCurrent ? 'Current state' : `Jump to state ${e.index + 1}`}
+                        title={e.isCurrent
+                            ? (e.label ? `Current state — ${e.label}` : 'Current state')
+                            : `Jump to ${e.label ?? `state ${e.index + 1}`}`}
                     >
                         <span class="hp-dot" />
-                        <span class="hp-label">{e.isCurrent ? 'Current' : `State ${e.index + 1}`}</span>
+                        {/* Named steps read as what you did ("Group", "Delete"); the ~366
+                            unmigrated push sites keep the old "State n" until they move onto
+                            `command`, so the panel degrades one row at a time, not all at once. */}
+                        <span class="hp-label">{e.label ?? (e.isCurrent ? 'Current' : `State ${e.index + 1}`)}</span>
                         <span class="hp-count">{e.count} obj</span>
                     </button>
                 )}

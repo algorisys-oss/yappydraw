@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.275', date: '2026-10-08', items: [
+        'Undo no longer loses your selection. Undoing an edit puts back whatever you had selected before it, so you keep your place instead of starting again.',
+        'The History panel names what you did \u2014 \u201cGroup\u201d, \u201cDelete\u201d \u2014 instead of \u201cState 7\u201d.',
+        'Scripts can run a whole action as one named undo step that cleans up after itself if it fails: Yappy.command(\'Scatter\', ...).',
+    ] },
     { version: '0.8.274', date: '2026-10-08', items: [
         'Write with single-line fonts \u2014 letters made of pen strokes instead of filled shapes. Five classic Hershey faces, from a clean plotter sans to joined handwriting and blackletter.',
         'Because each letter is the line a pen would travel, your text can draw itself on: write a word, then reveal it stroke by stroke, letter after letter. They also work properly with pen plotters and engravers, which need a line to follow rather than a shape to trace around.',

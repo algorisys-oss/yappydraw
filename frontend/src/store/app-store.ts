@@ -970,8 +970,22 @@ interface HistorySnapshot {
     animTimeline: AnimTimeline | null;
     animScenes: Record<string, AnimTimeline>;
 }
-const undoStack: HistorySnapshot[] = [];
-const redoStack: HistorySnapshot[] = [];
+/**
+ * A history entry is a document snapshot plus the two things that make undo legible.
+ *
+ * `label` names the step ("Group", "Delete") so the History panel stops saying "State 7", and
+ * `selection` is what was selected BEFORE the edit, so undo can put it back instead of
+ * deselecting everything. Both are in-memory only — nothing here reaches a saved file.
+ *
+ * `label` is null for the ~366 existing `pushToHistory()` call sites, which is exactly today's
+ * behaviour and what lets the migration happen without touching them.
+ */
+interface HistoryEntry extends HistorySnapshot {
+    label: string | null;
+    selection: string[];
+}
+const undoStack: HistoryEntry[] = [];
+const redoStack: HistoryEntry[] = [];
 
 // One-level-deep snapshot: copy the container arrays AND shallow-clone every
 // item inside them.
@@ -1024,7 +1038,23 @@ const captureSnapshot = (): HistorySnapshot => ({
     animScenes: Object.fromEntries(Object.entries(store.animScenes).map(([id, tl]) => [id, cloneAnimTimeline(tl)])),
 });
 
-const restoreSnapshot = (snapshot: HistorySnapshot) => {
+/**
+ * Ids worth re-selecting after a restore: they must still exist, and be on a visible, unlocked
+ * layer. Undoing back to a state where the selection lived in a layer since hidden should not
+ * leave an invisible selection the user can nudge by accident; an empty selection is today's
+ * behaviour and the safe floor.
+ */
+const selectableAfterRestore = (ids: string[], elements: DrawingElement[]): string[] => {
+    if (!ids.length) return [];
+    const byId = new Map(elements.map(e => [e.id, e]));
+    return ids.filter(id => {
+        const el = byId.get(id);
+        if (!el) return false;
+        return isLayerVisible(el.layerId) && !isLayerLocked(el.layerId);
+    });
+};
+
+const restoreSnapshot = (snapshot: HistorySnapshot, selection: string[] = []) => {
     setStore("elements", snapshot.elements);
     setStore("layers", snapshot.layers);
     setStore("slides", snapshot.slides);
@@ -1043,7 +1073,9 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setAnimTimeline(snapshot.animTimeline ?? null);
     // reconcile: plain setStore MERGES records — deleted scene keys would survive.
     setStore("animScenes", reconcile(snapshot.animScenes ?? {}));
-    setStore("selection", []); // Clear selection to avoid stale IDs
+    // Restore the selection the entry carried, filtered to what is still selectable. Undo used
+    // to clear it unconditionally, which meant every undo cost you your place.
+    setStore("selection", selectableAfterRestore(selection, snapshot.elements));
 };
 
 /**
@@ -1071,9 +1103,30 @@ export const withoutHistory = <T>(fn: () => T): T => {
     try { return fn(); } finally { historySuspended--; }
 };
 
+/**
+ * The command transaction currently open, if any. See `withCommandHistory`.
+ *
+ * Module-level rather than threaded through, because the whole point is that the ~366 existing
+ * `pushToHistory()` call sites do not change: they keep calling the same function, and it
+ * behaves differently depending on whether a command is running.
+ */
+let txn: { label: string; pushed: boolean } | null = null;
+
 export const pushToHistory = () => {
     if (historySuspended > 0) return;
-    undoStack.push(captureSnapshot());
+    // Inside a command, only the FIRST push records an entry — the rest are the same logical
+    // step. That is what turns "a command that happens to call four store functions" into one
+    // undo, without editing any of those functions. Lazily, too: a command that returns early
+    // without editing never calls pushToHistory at all, so it leaves no entry, as today.
+    if (txn) {
+        if (txn.pushed) return;
+        txn.pushed = true;
+    }
+    undoStack.push({
+        ...captureSnapshot(),
+        label: txn?.label ?? null,
+        selection: [...store.selection],
+    });
     const maxDepth = clampHistoryDepth(store.globalSettings.historyDepth ?? HISTORY_DEPTH_DEFAULT);
     while (undoStack.length > maxDepth) undoStack.shift();
     redoStack.length = 0;
@@ -1082,15 +1135,80 @@ export const pushToHistory = () => {
     setStore("redoStackLength", 0);
 };
 
+/**
+ * Run `fn` as one named, atomic history step.
+ *
+ * Three things fall out of it: the step gets a name in the History panel, several internal
+ * pushes collapse into one undo, and a throw leaves the document exactly as it was instead of
+ * half-edited.
+ *
+ * `label` is an i18n key (or plain text) — whatever the History panel should show.
+ *
+ * Nesting joins the outer transaction rather than opening a second one, so a command built out
+ * of other commands is still one undo step.
+ *
+ * **Async caveat:** the transaction is a single module-level slot, so two overlapping async
+ * commands would share it. That is acceptable in a single-user editor driven by one pointer and
+ * one keyboard, and the alternative (async context tracking) buys nothing here — but it is why
+ * this must not be used to wrap long-running background work.
+ */
+export function withCommandHistory<T>(label: string, fn: () => T): T {
+    if (txn) return fn();                      // nested — the outer transaction owns the entry
+
+    const open = { label, pushed: false };
+    txn = open;
+
+    // Undo whatever the command managed to do before it threw, and take its entry back off the
+    // stack, so a failed command is indistinguishable from one that never ran.
+    const rollback = () => {
+        if (!open.pushed) return;
+        const entry = undoStack.pop();
+        if (!entry) return;
+        restoreSnapshot(entry, entry.selection);
+        setStore("undoStackLength", undoStack.length);
+    };
+
+    let result: T;
+    try {
+        result = fn();
+    } catch (err) {
+        txn = null;
+        rollback();
+        throw err;
+    }
+
+    if (result && typeof (result as any).then === 'function') {
+        return (result as any).then(
+            (value: unknown) => { txn = null; return value; },
+            (err: unknown) => { txn = null; rollback(); throw err; },
+        ) as T;
+    }
+
+    txn = null;
+    return result;
+}
+
+/** The label of the step the next undo would reverse, or null. For a menu item or a tooltip. */
+export const undoLabel = (): string | null =>
+    undoStack.length ? undoStack[undoStack.length - 1].label : null;
+
+/** The label of the step the next redo would re-apply, or null. */
+export const redoLabel = (): string | null =>
+    redoStack.length ? redoStack[redoStack.length - 1].label : null;
+
 export const undo = () => {
     if (undoStack.length === 0) return;
 
-    redoStack.push(captureSnapshot());
+    const previousState = undoStack.pop()!;
+    // The redo entry carries the SAME label — redoing "Group" is still the Group step — and the
+    // selection that is current now, so redo puts you back where undo found you.
+    redoStack.push({
+        ...captureSnapshot(),
+        label: previousState.label,
+        selection: [...store.selection],
+    });
 
-    const previousState = undoStack.pop();
-    if (previousState) {
-        restoreSnapshot(previousState);
-    }
+    restoreSnapshot(previousState, previousState.selection);
 
     setStore("undoStackLength", undoStack.length);
     setStore("redoStackLength", redoStack.length);
@@ -1099,12 +1217,14 @@ export const undo = () => {
 export const redo = () => {
     if (redoStack.length === 0) return;
 
-    undoStack.push(captureSnapshot());
+    const nextState = redoStack.pop()!;
+    undoStack.push({
+        ...captureSnapshot(),
+        label: nextState.label,
+        selection: [...store.selection],
+    });
 
-    const nextState = redoStack.pop();
-    if (nextState) {
-        restoreSnapshot(nextState);
-    }
+    restoreSnapshot(nextState, nextState.selection);
 
     setStore("undoStackLength", undoStack.length);
     setStore("redoStackLength", redoStack.length);
@@ -1130,10 +1250,18 @@ export const setPenConstrain = (on?: boolean) => setStore('penConstrain', v => o
 
 /** History timeline for the panel: past states (oldest→newest), the current
  *  state, then redoable future states. Each entry carries its element count. */
-export const getHistoryEntries = (): { index: number; count: number; isCurrent: boolean }[] => {
-    const past = undoStack.map((s, i) => ({ index: i, count: s.elements.length, isCurrent: false }));
-    const current = { index: undoStack.length, count: store.elements.length, isCurrent: true };
-    const future = redoStack.slice().reverse().map((s, j) => ({ index: undoStack.length + 1 + j, count: s.elements.length, isCurrent: false }));
+export const getHistoryEntries = (): { index: number; count: number; isCurrent: boolean; label: string | null }[] => {
+    // Each row is a STATE; its label names the edit that produced it. An entry holds the state
+    // BEFORE its edit and is labelled with that edit, so state i was produced by entry i-1 —
+    // and the very first row had no edit before it.
+    const past = undoStack.map((s, i) => ({
+        index: i, count: s.elements.length, isCurrent: false,
+        label: i === 0 ? null : undoStack[i - 1].label,
+    }));
+    // Current was produced by the most recent entry's edit — the one undo would reverse.
+    const current = { index: undoStack.length, count: store.elements.length, isCurrent: true, label: undoLabel() };
+    // A redo entry holds the state AFTER its edit, labelled with that edit, so it reads directly.
+    const future = redoStack.slice().reverse().map((s, j) => ({ index: undoStack.length + 1 + j, count: s.elements.length, isCurrent: false, label: s.label }));
     return [...past, current, ...future];
 };
 

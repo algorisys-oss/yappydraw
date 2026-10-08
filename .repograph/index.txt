@@ -1672,7 +1672,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 6070 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 FrameRegion:75 FrameRegionInfo:75 as:75 HarmonyType:87 PlayOptions:92 PlaySpec:92 PlayTargets:92 TexPart:94 AxesOptions:101 AxesSpec:101 PlotFn:101 VectorFieldOptions:101 VectorFn:101 DrawOp:103 TinyflyShape:107 DimensionMeasure:115 ElementOptions:194 normalizeElementType:439 plotRuns:470 addTinyflyClip:486 createTinyflyShape:509 DoodleOptions:536 normalizeDoodleSubpaths:547 doodleLayers:562 doodleRoleStyle:575 doodleKeyOf:596 doodleMembers:602 ElementType:848 Window:6059
+frontend/src/api.ts | typescript | 6103 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 FrameRegion:75 FrameRegionInfo:75 as:75 HarmonyType:87 PlayOptions:92 PlaySpec:92 PlayTargets:92 TexPart:94 AxesOptions:101 AxesSpec:101 PlotFn:101 VectorFieldOptions:101 VectorFn:101 DrawOp:103 TinyflyShape:107 DimensionMeasure:115 ElementOptions:194 normalizeElementType:439 plotRuns:470 addTinyflyClip:486 createTinyflyShape:509 DoodleOptions:536 normalizeDoodleSubpaths:547 doodleLayers:562 doodleRoleStyle:575 doodleKeyOf:596 doodleMembers:602 ElementType:848 Window:6092
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1698 | Component:1 App:111 moves:136 onPenMove:137 hidePen:141 handleKeyUp:180 handleKeyDown:190 along:632 as:893 the:944 handleFullscreenChange:1068 handleBeforeUnload:1074 handlePaste:1078 of:1192 isInternalPanelDrag:1195 handleGlobalDragEnter:1198 handleGlobalDragOver:1212 showDropFallbackPrompt:1230 cleanup:1260 outsideClick:1288 isImageFile:1300 first:1301 must:1314 extractDropData:1316 processExtractedDrop:1371 handleGlobalDrop:1492 handleDocumentDrop:1538
 frontend/src/assets/solid.svg | - | 1 |
@@ -1789,7 +1789,7 @@ frontend/src/components/group-isolation-banner.tsx | typescript | 58 | GroupIsol
 frontend/src/components/help-dialog.css | - | 233 |
 frontend/src/components/help-dialog.tsx | typescript | 488 | HotkeyKey:5 ShortcutEntry:9 ShortcutCategory:15 LocalizedCategory:21 parseKeys:276 Props:295 HelpDialog:300 handleKeyDown:341
 frontend/src/components/history-panel.css | - | 68 |
-frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
+frontend/src/components/history-panel.tsx | typescript | 43 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 129 | Component:1 InfraToolGroup:23 handler:31 getActiveTool:41 handleToolClick:50 as:58 as:64 handleRightClick:72 toggleMenu:77 activeTool:84 isActive:85
 frontend/src/components/keyframe-panel.css | - | 137 |
 frontend/src/components/keyframe-panel.tsx | typescript | 543 | Component:1 PropKind:8 PropDef:9 getPath:78 animatablePropsFor:85 snapT:107 clamp:120 matchPreset:122 near:127 formatValue:135 KeyframePanel:145 dur:150 frac:151 keysFor:154 valueAt:161 upsertKey:174 moveKey:191 deleteKey:204 addKeyHere:225 elLabel:236 wouldCycle:244 setParent:256 addNull:262 isSel:272 patchSelKey:289 applyPreset:301 laneRectOf:310 timeFromLane:314 startDragKey:318 move:329 up:339 seekFromLane:348 vx:359 vy:360 startHandleDrag:361 move:367 up:378 seekFromRuler:385 onRulerDown:391 move:394 up:395 play:402 restart:403 onKeyDown:406
@@ -1961,7 +1961,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 951 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 956 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2057,7 +2057,7 @@ frontend/src/help-docs/help-page.css | - | 587 |
 frontend/src/help-docs/help-page.tsx | typescript | 335 | Component:6 ShapeDoc:48 markdownDoc:71 shapeFromPath:211 HelpPage:216 navigateToShape:228 filteredShapes:233 currentDoc:244 handleBackToApp:246
 frontend/src/help-docs/markdown.test.ts | typescript | 299 | the:4 render:20 and:102
 frontend/src/help-docs/markdown.ts | typescript | 363 | Token:32 Tokens:32 DocMeta:34 RenderedDoc:60
-frontend/src/help-docs/shapes/basic-shapes.md | - | 253 |
+frontend/src/help-docs/shapes/basic-shapes.md | - | 279 |
 frontend/src/help-docs/shapes/bpmn.md | - | 226 |
 frontend/src/help-docs/shapes/connectors.md | - | 184 |
 frontend/src/help-docs/shapes/drawing-tools.md | - | 289 |
@@ -2208,7 +2208,7 @@ frontend/src/store/anim-pegs.test.ts | typescript | 134 | stubNode:16 kfs:46 set
 frontend/src/store/anim-timing.test.ts | typescript | 172 | stubNode:17 row:46 setup:48 select:70
 frontend/src/store/anim-tween-split.test.ts | typescript | 200 | stubNode:21 setupTween:52 form:57
 frontend/src/store/app-store.test.ts | typescript | 104 | seed:71
-frontend/src/store/app-store.ts | typescript | 11388 | LayoutDirection:23 OutlineNode:23 BooleanOp:27 Poly:27 ShapeFace:27 DistortKind:28 DistortParams:28 AssetMeta:50 WarpPreset:58 LayoutGridSpec:63 SymmetryMode:67 SymmetryOp:67 StrokeTextOptions:71 Theme:77 ResolvedTheme:78 loadPerspectiveGrid:116 DefaultToolChoice:146 PointerStyle:254 PaintChannel:271 AppState:273 HistorySnapshot:954 BP:2488 LayoutGuideTarget:5940 AlignmentType:6230 DistributionType:6230 CharPatch:7115 CharPatchArg:7118 SelBBox:8408 LastTransform:8896 RegionPathfinderOp:9459 SelectSimilarMatch:9600 buildPathFromPoly:10622 polysOriginMin:10664 syncCompoundOperands:10671 buildCompoundPath:10682 WorldSub:10908 rdpAnchors:10911 normalizeWorldSubs:10939 makePathFromWorldSubs:10954 elementToWorldSubs:10975 startInkCleanupIfNeeded:11327
+frontend/src/store/app-store.ts | typescript | 11516 | LayoutDirection:23 OutlineNode:23 BooleanOp:27 Poly:27 ShapeFace:27 DistortKind:28 DistortParams:28 AssetMeta:50 WarpPreset:58 LayoutGridSpec:63 SymmetryMode:67 SymmetryOp:67 StrokeTextOptions:71 Theme:77 ResolvedTheme:78 loadPerspectiveGrid:116 DefaultToolChoice:146 PointerStyle:254 PaintChannel:271 AppState:273 HistorySnapshot:954 HistoryEntry:983 withCommandHistory:1155 BP:2616 LayoutGuideTarget:6068 AlignmentType:6358 DistributionType:6358 CharPatch:7243 CharPatchArg:7246 SelBBox:8536 LastTransform:9024 RegionPathfinderOp:9587 SelectSimilarMatch:9728 buildPathFromPoly:10750 polysOriginMin:10792 syncCompoundOperands:10799 buildCompoundPath:10810 WorldSub:11036 rdpAnchors:11039 normalizeWorldSubs:11067 makePathFromWorldSubs:11082 elementToWorldSubs:11103 startInkCleanupIfNeeded:11455
 frontend/src/store/artboard-variations.test.ts | typescript | 148 | stubNode:15 base:40 circle:119
 frontend/src/store/dev-mode.test.ts | typescript | 100 | docWith:85
 frontend/src/store/dock-layout.ts | typescript | 211 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
@@ -2777,6 +2777,7 @@ tests/group-isolation.spec.ts | typescript | 172 | makeGroup:23 get:37 get:62 ge
 tests/help-doc-recovery.spec.ts | typescript | 53 |
 tests/help-docs.spec.ts | typescript | 23 |
 tests/history-panel.spec.ts | typescript | 44 | survives:21
+tests/history-transactions.spec.ts | typescript | 221 |
 tests/hotkeys.spec.ts | typescript | 385 |
 tests/html-export-animation.spec.ts | typescript | 104 | BrowserContext:1 Page:1 Window:8 exportAndOpen:20 boot:48
 tests/html-player-check.spec.ts | typescript | 113 | Page:1 Window:7 inkedPixels:11 exportDoc:26

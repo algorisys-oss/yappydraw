@@ -226,6 +226,32 @@ Yappy.batch(y => {
 Yappy.undo();   // removes all 100 circles
 ```
 
+### Naming the step: `Yappy.command`
+
+`batch` groups edits; `command` groups them **and gives the step a name**, so the History panel
+reads "Scatter" instead of "State 7":
+
+```
+Yappy.command('Scatter', () => {
+  for (let i = 0; i < 50; i++) Yappy.createCircle(i * 14, 0, 12, 12);
+});
+Yappy.undoLabel();   // 'Scatter'
+```
+
+Two more differences worth knowing:
+
+- **It leaves no trace if it changes nothing.** `batch` always records a step, even when the
+  function turns out to edit nothing; `command` only records one once a real edit happens.
+- **It undoes itself if it fails.** If the function throws part-way, `command` puts the document
+  back exactly as it found it and re-throws — no half-finished edit to clean up. With `batch`
+  the partial work stays and you undo it yourself.
+
+Reach for `command` when you're performing one action a person would name, and `batch` when
+you're bulk-creating and want the reactive coalescing too. Both nest.
+
+Undo also **keeps your selection** now: undoing an edit puts back whatever was selected before
+it, rather than deselecting everything.
+
 Or pass a list of shapes, which does the same thing:
 
 ```

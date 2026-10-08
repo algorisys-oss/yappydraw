@@ -1,6 +1,6 @@
 import {
     store, addElement, updateElement, deleteElements, setViewState, rotateView, resetRotation, pushToHistory, setStore, zoomToFit,
-    undo, redo, withoutHistory, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
+    undo, redo, withoutHistory, withCommandHistory, undoLabel, redoLabel, getHistoryEntries, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
     addLayer, deleteLayer, setActiveLayer, setLayerBlendMode, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion, setGridStyle, setGridOrigin, setGridOriginToSelection, toggleGuidesVisible, addLayoutGuides,
     isLayerVisible, isLayerLocked,
@@ -2220,6 +2220,39 @@ export const YappyAPI = {
         }
         return result;
     },
+
+    /**
+     * Run `fn` as ONE named, atomic undo step.
+     *
+     * The difference from `batch`, which also groups edits: `command` is **lazy** (a `fn` that
+     * edits nothing leaves no history entry at all — `batch` always pushes one), it **names**
+     * the step so the History panel says "Group" instead of "State 7", and it **rolls back** on
+     * a throw, so a command that fails halfway leaves the document exactly as it found it
+     * rather than half-edited. Commands nest: an inner one joins the outer step.
+     *
+     * Prefer `command` when the thing you are running is a single user-meaningful action, and
+     * `batch` when you are bulk-creating and want the reactive coalescing too.
+     *
+     * Synchronous or async; an async `fn` keeps the step open until its promise settles. Don't
+     * wrap long-running background work in it — the transaction is a single slot, so two
+     * overlapping commands would share it.
+     *
+     * @example Yappy.command('Scatter', () => { for (let i = 0; i < 50; i++) Yappy.createCircle(i * 12, 0, 8, 8); })
+     */
+    command<T>(label: string, fn: () => T): T { return withCommandHistory(label, fn); },
+
+    /**
+     * The undo timeline as the History panel sees it: past states, the current one, then the
+     * redoable future, each with the `label` of the edit that produced it (null for the ~366
+     * unmigrated call sites, which stay anonymous until they move onto `command`).
+     */
+    historyEntries() { return getHistoryEntries(); },
+    /** Name of the step the next `undo()` would reverse, or null for an unnamed one. */
+    undoLabel() { return undoLabel(); },
+    /** Name of the step the next `redo()` would re-apply, or null. */
+    redoLabel() { return redoLabel(); },
+    /** Run `fn` with undo snapshots suppressed entirely — no history entry at all. */
+    withoutHistory<T>(fn: () => T): T { return withoutHistory(fn); },
 
     /**
      * Create many elements in one undo step. Each spec is the arguments of `createElement`.

@@ -2,6 +2,41 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Transactions over call sites, and a test that passed for the wrong reason (Oct 8 2026)
+
+P1 of the command-registry plan — labelled undo, one-command-one-step, selection restore.
+
+- **The cheap migration was to change what a function MEANS, not where it is called.** There are
+  ~366 `pushToHistory()` call sites. Editing them was never going to happen. Making
+  `pushToHistory` transaction-aware — first push inside a command records, the rest collapse,
+  outside a command nothing changes — delivered one-undo-per-command across the whole app in
+  about forty lines, with every call site untouched. When a migration looks like 366 edits, ask
+  what single function they all go through.
+- **Lazy beats eager for a history transaction.** `Yappy.batch` (which already existed) pushes a
+  snapshot up front, so a batch that turns out to edit nothing still leaves an undo step.
+  Capturing on the *first real edit* instead means a command that early-returns leaves no
+  trace — which is both today's behaviour and the right behaviour. Same reason the rollback is
+  conditional on `txn.pushed`.
+- **An undo entry is the state BEFORE its edit, so labelling the rows is off by one.** My first
+  `getHistoryEntries` mapping was convoluted and wrong. Written out: entry *i* holds the state
+  before edit *i*, labelled with that edit, so the row showing state *i* was produced by entry
+  *i−1*, and row 0 by nothing. Two lines once stated plainly, and unreadable while I was
+  guessing. Write the invariant down before writing the index arithmetic.
+- **A rollback test with a bare `catch {}` passes when the function under test does not exist.**
+  Two of these tests "passed" against unfixed source: `Y.command` was undefined, the TypeError
+  landed in the test's own catch, `threw` was set, and every assertion about the document held
+  vacuously. **The A/B run is what exposed it** — a test that passes both with and without the
+  change is either a regression guard or a lie, and it is worth knowing which. Assert the error
+  MESSAGE, not that something threw.
+- **Restoring a selection needs a filter, and the filter needs a floor.** Ids can point at
+  elements that are deleted, on a hidden layer, or on a locked one. Filter to what is genuinely
+  selectable and fall back to empty — which is exactly today's behaviour, so the worst case of
+  the new feature is the old feature.
+- **Check the thing you are about to add does not already exist, in a different vocabulary.**
+  Third time this session. `Yappy.batch` is adjacent enough that a quick grep for "undo step"
+  found it, and the right answer was neither "skip it" nor "replace it" but to keep both and
+  make each doc comment say when to reach for the other.
+
 ## Single-line fonts: the data was the project, not the code (Oct 8 2026)
 
 Picked from the draw-presenter review — the one idea that gave Yappy a capability rather than a

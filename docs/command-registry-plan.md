@@ -1,6 +1,6 @@
 # Command registry and labelled undo: design for review
 
-**Status:** proposal, not started · **Date:** 2026-10-07 · **Branch:** `dev`
+**Status:** decisions settled; **P1 shipped 2026-10-08** (see §9), P2-P6 open · **Date:** 2026-10-07 · **Branch:** `dev`
 **Origin:** `docs/vectorcraft-review.md` §4.1–4.3 (VectorCraft's "everything is a command")
 **Decisions needed from Rajesh:** §9. Nothing in this doc is built until those are answered.
 
@@ -230,7 +230,7 @@ Each phase is one PR that ships on its own. "Done" includes tests, docs, the hel
 
 | Phase | Scope | Est. | Done when |
 |---|---|---|---|
-| **P1** History transactions | `HistoryEntry {label, selection}`; transaction-aware `pushToHistory`; undo/redo restore selection; History panel shows labels; rollback helper. No registry yet: `withCommandHistory(label, fn)` wraps existing palette actions | 1–1.5 d | Unit tests: N pushes in a txn → 1 entry; throw → rolled back, stack unchanged; undo restores selection; unlabelled pushes unchanged |
+| **P1** ✅ **done 2026-10-08** History transactions | `HistoryEntry {label, selection}`; transaction-aware `pushToHistory`; undo/redo restore selection; History panel shows labels; rollback helper. No registry yet: `withCommandHistory(label, fn)` wraps existing palette actions | 1–1.5 d | Unit tests: N pushes in a txn → 1 entry; throw → rolled back, stack unchanged; undo restores selection; unlabelled pushes unchanged |
 | **P2** Registry core | `CommandSpec`, `execute`, params validation (D1), `enabled` reasons, `ui-port`, aliases. Port the 149 palette commands as-is (same behaviour, now with `enabled` where obvious) | 2 d | Palette works identically; disabled commands show their reason; `registry.test.ts` green |
 | **P3** Command sweep | Playwright sweep over every command × 3 fixtures × {no params, junk} | 1 d | Green, with any bugs found fixed or listed as known (each with a repro) |
 | **P4** Keymap | `matchShortcut` + contexts; move the global shortcuts (file, edit, arrange, view, tool letters) from `app.tsx` into the registry, one category per commit | 2–3 d | `app.tsx` chain holds only modal/contextual keys; conflict test green; every existing hotkey spec green |
@@ -282,7 +282,38 @@ None of these change saved files. `HistoryEntry` is in-memory only.
 - A user-editable shortcut map (falls out of P4 cheaply, but it's a UI decision).
 - Menus generated from `CommandSpec.menu` paths.
 
-## 9. Decisions needed
+## 9. Decisions
+
+**Settled 2026-10-08 — all six taken as recommended** (Rajesh: "Lets fix the command-registry
+refactor as well", after the recommendations had been put to him). Recorded here so the table
+below is history rather than an open question.
+
+**P1 shipped the same day.** Worth noting it depended on **only D4 and D6** of the six: it adds
+no registry, so D1 (schemas), D2 (ids), D3 (conflict scanning) and D5 (disabled reasons) have
+nothing to act on until P2. That is the point of the ordering — P1 delivers the two visible wins
+(named undo steps, undo that keeps your selection) without committing to any of the registry's
+architecture.
+
+What P1 actually added, against the spec in §3.3:
+
+- `HistoryEntry extends HistorySnapshot { label, selection }`, and transaction-aware
+  `pushToHistory` — **no edits to any of the ~366 existing call sites**, as designed.
+- `withCommandHistory(label, fn)`, exposed as `Yappy.command(label, fn)`. Lazy (no edit → no
+  entry), collapsing, nesting, and rolling back on a throw — sync or async.
+- Undo and redo restore the selection, filtered to ids that still exist on a visible, unlocked
+  layer (the D4 risk mitigation), falling back to empty.
+- History panel rows read "Group" instead of "State 7" where a label exists, and keep "State n"
+  where one doesn't, so the panel improves one migrated command at a time.
+- `Yappy.historyEntries()`, `undoLabel()`, `redoLabel()`, `withoutHistory()`.
+- `tests/history-transactions.spec.ts` — 11 tests, all of which fail without the change.
+
+Note `Yappy.batch` already existed and is **not** the same thing: it is eager (always pushes an
+entry, even when `fn` edits nothing), unlabelled, and does not roll back. Both are kept, with
+their docs pointing at each other; `command` is the one for a single user-meaningful action.
+
+### The table as it stood
+
+## 9a. Decisions needed (resolved — see above)
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
