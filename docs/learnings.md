@@ -2,6 +2,31 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## "Written" is not "committed", and "served" is not "useful" (Oct 9 2026)
+
+The sitemap fix (#429) shipped in v0.8.276 and changed nothing, because of two gaps that each
+reported success.
+
+- **A `.gitignore` entry travels with `git archive`.** The fix generates a file into the
+  published tree and gitignores it here, because a committed copy could only ever be stale.
+  The ignore rule went into the mirror with everything else, so the mirror's `git add -A`
+  obeyed it and dropped the file. Anything written into a published tree that is ignored in the
+  source tree needs `git add -f` — and the publish should verify it is staged, not assume.
+- **The log showed the write, not the commit.** `build-lastmod: 43 files, 15 distinct dates`
+  is a true statement about a file that was then thrown away. When a step's success message
+  describes an intermediate artefact, it is not evidence the artefact survived — check the
+  thing you actually wanted.
+- **A fix is not verified by the pipeline reporting green; it is verified by looking at the
+  output.** Everything passed: `--verify` built the tree, all fourteen deploy checks were
+  green. One `curl | grep -c` on the live sitemap showed 42 identical dates. The habit worth
+  keeping is to check the *symptom* you set out to fix, in production, in the same session —
+  not the steps that were supposed to fix it.
+- **Then turn that curl into a check.** `verify:deploy` confirmed the sitemap was *served* and
+  counted its URLs — which is why #429 survived four releases and #430 survived its own fix.
+  It now asserts the dates **vary across pages**. Diversity rather than freshness, because the
+  signature of both bugs is one date moving for everything at once. When a bug gets past the
+  gate, the gate is part of the bug.
+
 ## A registry is only as honest as its assumptions about the thing it wraps (Oct 9 2026)
 
 P2 of the command-registry plan — the registry core, wired into the palette.

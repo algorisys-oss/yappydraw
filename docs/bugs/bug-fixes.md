@@ -1,5 +1,41 @@
 # Bug Fixes Log
 
+## 2026-10-09 — The sitemap fix shipped without its data, and the publish log said it worked
+
+### 430. A `.gitignore` entry in this repo stopped the file reaching the mirror
+
+**Symptom:** v0.8.276 shipped bug #429's fix. The publish log read
+`build-lastmod: 43 files, 15 distinct dates`, `--verify` built clean, every `verify:deploy`
+check passed — and the live sitemap still had **one identical date across all 42 URLs**, now
+2026-10-09 instead of 2026-10-08. The fix had changed nothing.
+
+**Cause:** #429's fix generates `frontend/src/prerender/lastmod.json` into the published tree,
+and gitignores it in THIS repo (a committed copy could only ever be stale). But `.gitignore`
+travels into the mirror with `git archive`, so the mirror's `git add -A` obeyed it and never
+committed the file. It was written, then dropped. The prerenderer found no map, fell back to
+git, and the mirror's squashed history gave every page the release date — exactly the behaviour
+being fixed.
+
+Worth naming the shape: **the publish log showed the file being written, not the file being
+committed**, so every signal said success.
+
+**Fix:** `publish-oss.sh` force-adds the file past the inherited ignore rule (`git add -f`) and
+**verifies it is staged**, failing the publish if not — rather than warning and pushing a tree
+that silently falls back.
+
+### 431. `verify:deploy` confirmed the sitemap was served, never that it said anything
+
+**Symptom:** both #429 and #430 were live with every deploy check green. The sitemap check
+asserted `<loc>` elements exist and counted them.
+
+**Cause:** "served" is not "useful". A sitemap where every URL claims to change on every deploy
+is worse than one with no `lastmod` at all, and nothing looked at the values.
+
+**Fix:** the check now asserts the dates **vary across pages** — diversity, not freshness,
+because the signature of both bugs is one date moving for everything at once. It is skipped on
+a sitemap with fewer than five URLs, where a single date is unremarkable. Run against the live
+site it immediately failed, which is how #430 was found.
+
 ## 2026-10-08 — Every sitemap entry claimed to change on every deploy
 
 ### 429. All 42 sitemap URLs carried the same `lastmod`, the release date

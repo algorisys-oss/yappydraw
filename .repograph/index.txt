@@ -2662,7 +2662,7 @@ scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 la
 scripts/npm/yappy.d.ts | typescript | 34 | ToSvgOptions:6 toSVG:25
 scripts/prerender.ts | typescript | 110 | lastmodMap:44 lastmodFor:72 main:91
 scripts/publish-npm.sh | shell | 144 | info:25 error:26 OTP_ARGS=:136
-scripts/publish-oss.sh | shell | 398 | info:43 warn:44 error:45 REQUIRED_PATHS=:200 MISSING_PATHS=:213
+scripts/publish-oss.sh | shell | 416 | info:43 warn:44 error:45 REQUIRED_PATHS=:200 MISSING_PATHS=:213
 scripts/record-gifs.mjs | javascript | 173 | clip:48 toGif:64 run:75
 scripts/record-inflate-demo.mjs | javascript | 435 | performer:33 run:137
 scripts/record-showcase.mjs | javascript | 336 | run:80
@@ -2671,7 +2671,7 @@ scripts/render.mjs | javascript | 321 | parseArgs:55 opts:56 fail:90 outputKind:
 scripts/repograph-refresh.sh | shell | 26 |
 scripts/test_relative_path.ts | typescript | 58 |
 scripts/vendor-tinyfly.sh | shell | 44 |
-scripts/verify-deploy.sh | shell | 291 | ok:39 bad:40 warn:41 info:42 need:44 hash_of:47 check_single_version:54 hashes=:56
+scripts/verify-deploy.sh | shell | 307 | ok:39 bad:40 warn:41 info:42 need:44 hash_of:47 check_single_version:54 hashes=:56
 scripts/verify-sdk.mjs | javascript | 102 | types:55
 tests/_canvas-coords.ts | typescript | 102 | canvasOrigin:33 toViewport:58 addOrigin:69 worldMouse:82
 tests/_mesh.spec.ts | typescript | 49 | w2s:34 key:43

@@ -1,5 +1,5 @@
 import { h as T, b as C, c as k } from "./ai-providers-CycU8sO1.js";
-import { a3 as A, a4 as N, a5 as v, a6 as x, G as L } from "./index-Bu3NZctJ.js";
+import { a3 as A, a4 as N, a5 as v, a6 as x, G as L } from "./index-DJSTqwMl.js";
 const R = `You are a presentation design assistant. Given a topic or description, generate a structured JSON slide deck.
 
 ## Output Format
