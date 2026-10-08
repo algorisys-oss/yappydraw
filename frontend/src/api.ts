@@ -10,7 +10,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, setPathCornerRadius, getPathCornerRadius, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, fitMindmapNodeToText, moveMindmapNode, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, setPathCornerRadius, getPathCornerRadius, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setInflate, clearInflate, setTurntable, clearTurntable, bakeTurntable, spinTurntable360, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
@@ -121,6 +121,8 @@ import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
 import type { PerspectiveGrid } from "./utils/perspective-snap";
 import { parseOutline } from "./utils/mindmap-layout";
+import { mindmapSiblingInDirection } from "./utils/mindmap-navigation";
+import { mindmapToOutline, saveMindmapOutline } from "./utils/mindmap-outline";
 import {
     animateElement,
     animateElements,
@@ -2173,6 +2175,14 @@ export const YappyAPI = {
         deleteElements([id]);
     },
 
+    /**
+     * Delete several elements in one history step. In a hierarchy (mind map / tree) each id
+     * takes its descendants and their branch connectors with it.
+     */
+    deleteElements(ids: string[]) {
+        deleteElements(ids);
+    },
+
     clear() {
         if (store.elements.length > 0) {
             pushToHistory();
@@ -3090,13 +3100,80 @@ export const YappyAPI = {
     applyPreviousState() { applyPreviousState(); },
 
     // Hierarchy / Mindmap actions
-    addChildNode(parentId: string) { return addChildNode(parentId); },
-    addSiblingNode(siblingId: string) { return addSiblingNode(siblingId); },
+    /** Add a child node. `opts.animate: false` lays the tree out synchronously (deterministic for tests/scripts). */
+    addChildNode(parentId: string, opts?: { text?: string; select?: boolean; reflow?: boolean; animate?: boolean }) { return addChildNode(parentId, opts); },
+    /** Add a sibling after `siblingId`. Same `opts` as `addChildNode`. */
+    addSiblingNode(siblingId: string, opts?: { animate?: boolean }) { return addSiblingNode(siblingId, opts); },
     toggleCollapseSelection() { toggleCollapseSelection(); },
     toggleCollapse(id: string) { toggleCollapse(id); },
     setParent(childId: string, parentId: string | null) { setParent(childId, parentId); },
     reorderMindmap(rootId: string, direction: LayoutDirection) { reorderMindmap(rootId, direction); },
     applyMindmapStyling(rootId: string) { applyMindmapStyling(rootId); },
+    /**
+     * Grow a mind-map node so its label fits, then reflow the tree. Grow-only — the node keeps
+     * its width and gains height for the extra wrapped lines, widening only if a single word
+     * cannot fit. Called automatically when a label is committed in the editor; exposed so a
+     * script that sets `containerText` directly can re-fit too. No-op on `autoResize` nodes.
+     */
+    fitMindmapNodeToText(id: string) { fitMindmapNodeToText(id); },
+    /**
+     * Move a node one place within its sibling row. `'earlier'` / `'later'` are positions in the
+     * SEQUENCE, not screen directions — which way that reads depends on the layout (down in a
+     * horizontal map, across in a vertical one, clockwise in a radial one). Returns false at the
+     * ends of the row, and for a root. Reflows afterwards.
+     */
+    moveMindmapNode(id: string, direction: 'earlier' | 'later') { return moveMindmapNode(id, direction); },
+    /** Swap two siblings' places in their row (both must share a parent). Reflows afterwards. */
+    swapMindmapSiblings(aId: string, bId: string) { return swapMindmapSiblings(aId, bId); },
+    /** The sibling lying in a screen direction from `id` — the one Alt+Shift+Arrow would swap with. */
+    mindmapSiblingInDirection(id: string, direction: 'up' | 'down' | 'left' | 'right') {
+        return mindmapSiblingInDirection(id, direction, store.elements);
+    },
+    /**
+     * Serialise a mind map to text. `'markdown'` (nested `-` bullets) and `'text'` (bare
+     * indented lines) both read back through `mindmapFromOutline`; `'opml'` is what FreeMind,
+     * Xmind and Workflowy import. Styling and geometry are not represented, and a collapsed
+     * branch still exports in full — collapse is a view setting.
+     */
+    mindmapToOutline(rootId: string, format: 'markdown' | 'text' | 'opml' = 'markdown') {
+        return mindmapToOutline(rootId, store.elements, format);
+    },
+    /** `mindmapToOutline` plus a Save dialog. Resolves `{ text, saved }`; `saved` is false if cancelled. */
+    saveMindmapOutline(rootId: string, format: 'markdown' | 'text' | 'opml' = 'markdown') {
+        return saveMindmapOutline(rootId, store.elements, format);
+    },
+    /**
+     * Focus mode: dim everything outside this branch to 12% and make it unclickable, then fit
+     * the view to the branch. Pass null to show the whole map again. Not a document edit — no
+     * history entry, nothing written to any element. Returns false if nothing changed.
+     */
+    setFocusBranch(id: string | null) { return setFocusBranch(id); },
+    /** Shift+F: focus the selected branch, or leave focus if already in it. */
+    toggleFocusBranch() { return toggleFocusBranch(); },
+    /** The id of the branch focus mode is pinned to, or null. */
+    get focusedBranch() { return store.focusBranchId; },
+    /** The defaults new mind maps use (Settings → Mindmap), including the layout gaps in px. */
+    getMindmapDefaults() {
+        return {
+            autoLayout: store.globalSettings.mindmapAutoLayout !== false,
+            direction: store.globalSettings.mindmapLayoutDirection ?? 'balanced',
+            spacing: store.globalSettings.mindmapSpacing ?? 100,
+            leafSpacing: store.globalSettings.mindmapLeafSpacing ?? 30,
+        };
+    },
+    /**
+     * Layout gaps, in pixels. `spacing` separates whole subtrees (the vertical gap scales with
+     * it at 0.4×); `leafSpacing` separates two adjacent leaf siblings and is deliberately
+     * tighter. Both are clamped. Re-layout a tree afterwards to see the change.
+     */
+    setMindmapSpacing(opts: { spacing?: number; leafSpacing?: number }) {
+        const patch: { mindmapSpacing?: number; mindmapLeafSpacing?: number } = {};
+        if (opts.spacing !== undefined) patch.mindmapSpacing = Math.min(400, Math.max(20, Math.round(opts.spacing)));
+        if (opts.leafSpacing !== undefined) patch.mindmapLeafSpacing = Math.min(200, Math.max(4, Math.round(opts.leafSpacing)));
+        updateGlobalSettings(patch);
+    },
+    /** Turn the mind-map auto-reflow on or off (Settings → Mindmap → Auto Layout). */
+    setMindmapAutoLayout(enabled: boolean) { updateGlobalSettings({ mindmapAutoLayout: enabled }); },
     /**
      * Seed a ready-to-edit mind map: an emphasised central node with a few branches
      * (some with sub-branches), laid out + coloured via the existing mindmap engine.

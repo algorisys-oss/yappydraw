@@ -514,7 +514,10 @@ export const ja: Dictionary = {
         'editor-editShapeLabel': '図形のラベルを編集',
         'editor-typeToLabel': '描画中に図形へラベルを付ける',
         'editor-toggleCollapseHoldToPan': '折りたたみを切り替え（タップ）・長押しでパン',
-        'editor-navigateMindmap': 'マインドマップ内を移動',
+        'editor-navigateMindmap': 'マインドマップ内を移動（レイアウトに従う）',
+        'editor-nudgeMindmapNode': 'マインドマップのノードを微調整（矢印キーは移動）',
+        'editor-reorderMindmapNode': 'ブランチ内でノードの順序を変更',
+        'editor-deleteNodeSubtree': 'ノードと配下のツリーをすべて削除',
         'editor-nudgeElement': '要素を微調整',
         'editor-nudgeCoarseFine': '微調整 — 粗く（10px）／細かく（0.1px）',
         'editor-starPolygonPointCount': '星／多角形の頂点数',
@@ -694,6 +697,10 @@ export const ja: Dictionary = {
         layoutVerticalDown: '垂直（下）',
         layoutVerticalUp: '垂直（上）',
         layoutRadial: '放射状',
+        mindmapSpacing: 'ブランチ間隔',
+        mindmapSpacingTitle: 'サブツリー全体の間隔（ピクセル）。大きくすると余裕のあるマップになります。垂直方向の間隔も連動します。',
+        mindmapLeafSpacing: 'リーフ間隔',
+        mindmapLeafSpacingTitle: '隣接するリーフノード同士の間隔（ピクセル）。ブランチ間隔より狭く保たれ、リーフがまとまって配置されます。',
         sectionTimelapse: 'タイムラプス',
         autoRecord: 'セッションを自動録画',
         autoRecordTitle: '各セッションで Procreate 風の制作過程を自動録画します。Ctrl+Shift+T でいつでも切り替えできます。',
@@ -1190,6 +1197,19 @@ export const ja: Dictionary = {
     },
 
     /** 用語は Illustrator 日本語版に合わせています（「押し出しとベベル」「膨張」）。 */
+    mindmapFocus: {
+        focusedOn: '「{{label}}」にフォーカス中',
+        untitled: '名称未設定のノード',
+        othersDimmed: '他 {{count}} 件を淡色表示',
+        showAll: 'すべて表示',
+        showAllTitle: 'マップ全体を表示（Esc または Shift+F）',
+    },
+    mindmapPanel: {
+        moveEarlier: 'ブランチ内で前へ移動（Alt+Shift+矢印）',
+        moveLater: 'ブランチ内で後ろへ移動（Alt+Shift+矢印）',
+        focusBranch: 'このブランチにフォーカス — 他を淡色表示（Shift+F）',
+        exportOutline: 'このブランチを Markdown アウトラインで書き出す',
+    },
     effects3d: {
         extrudeTitle: '3D 押し出し',
         extrudeAdd: '+ 3D 押し出しを追加',

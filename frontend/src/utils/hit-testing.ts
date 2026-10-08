@@ -16,6 +16,7 @@ import {
 } from './geometry';
 import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
+import { isFocusInert } from './mindmap-focus';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
 import { PathUtils, anchorsToPathData, getPathSubpaths } from './math/path-utils';
@@ -70,6 +71,9 @@ export function hitTestElement(
     // with the source outlines (and the bucket queries them explicitly).
     if (el.livePaintFillFor) return false;
     if (isElementHiddenByHierarchy(el, elements, elementMap)) return false;
+    // Focus mode dims everything outside the focused branch to 12%. Dimmed is not hidden, so
+    // this is the only thing stopping a click or drag from grabbing geometry you cannot see.
+    if (isFocusInert(el.id)) return false;
     if (!hitTestGeometry(el, x, y, threshold)) return false;
 
     // Hole-aware: a non-destructive erase mask punches holes into the shape.

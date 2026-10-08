@@ -417,6 +417,36 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 <option value="radial">{t("settings.layoutRadial")}</option>
                             </select>
                         </div>
+
+                        <div class="settings-row">
+                            <label title={t("settings.mindmapSpacingTitle")}>{t("settings.mindmapSpacing")}</label>
+                            <div class="settings-range-group">
+                                <input
+                                    type="range"
+                                    min={20}
+                                    max={400}
+                                    step={10}
+                                    value={store.globalSettings.mindmapSpacing ?? 100}
+                                    onInput={(e) => updateGlobalSettings({ mindmapSpacing: e.currentTarget.valueAsNumber })}
+                                />
+                                <span>{store.globalSettings.mindmapSpacing ?? 100}px</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-row">
+                            <label title={t("settings.mindmapLeafSpacingTitle")}>{t("settings.mindmapLeafSpacing")}</label>
+                            <div class="settings-range-group">
+                                <input
+                                    type="range"
+                                    min={4}
+                                    max={200}
+                                    step={2}
+                                    value={store.globalSettings.mindmapLeafSpacing ?? 30}
+                                    onInput={(e) => updateGlobalSettings({ mindmapLeafSpacing: e.currentTarget.valueAsNumber })}
+                                />
+                                <span>{store.globalSettings.mindmapLeafSpacing ?? 30}px</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="settings-section" data-cat="timelapse">

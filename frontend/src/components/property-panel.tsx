@@ -1,6 +1,7 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index, batch, onCleanup } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile } from "../store/app-store";
+import { store, moveMindmapNode, setFocusBranch, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
+import { saveMindmapOutline } from "../utils/mindmap-outline";
 import { MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS } from "../utils/symmetry";
 import { WIDTH_PROFILES } from "../utils/width-profiles";
 
@@ -29,7 +30,7 @@ import { findPagePreset, getPagePreset } from "../config/page-size-presets";
 import { getTextEffectPreset } from "../config/text-effect-presets";
 import type { DrawingElement } from "../types";
 import {
-    Copy, ChevronsDown, ChevronDown, ChevronUp, ChevronsUp, Trash2, Palette,
+    Copy, ChevronsDown, ChevronDown, ChevronUp, ChevronsUp, Trash2, Palette, FileDown,
     AlignStartVertical, AlignCenterVertical, AlignEndVertical,
     AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
     AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
@@ -217,6 +218,18 @@ const MindmapActions: Component<{ elementId: string }> = (props) => {
                             {el()?.isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                         </button>
                     </Show>
+                    <Show when={el()?.parentId}>
+                        {/* Sequence, not screen direction — which way "earlier" reads depends on
+                            the layout. Alt+Shift+Arrow does the same thing by direction. */}
+                        <button class="icon-btn" onClick={() => moveMindmapNode(props.elementId, 'earlier')} title={t('mindmapPanel.moveEarlier')}><ChevronsUp size={18} /></button>
+                        <button class="icon-btn" onClick={() => moveMindmapNode(props.elementId, 'later')} title={t('mindmapPanel.moveLater')}><ChevronsDown size={18} /></button>
+                    </Show>
+                    <button
+                        class={`icon-btn ${store.focusBranchId === props.elementId ? 'active' : ''}`}
+                        onClick={() => setFocusBranch(store.focusBranchId === props.elementId ? null : props.elementId)}
+                        title={t('mindmapPanel.focusBranch')}
+                    ><Crosshair size={18} /></button>
+                    <button class="icon-btn" onClick={() => void saveMindmapOutline(props.elementId, store.elements, 'markdown')} title={t('mindmapPanel.exportOutline')}><FileDown size={18} /></button>
                 </div>
                 <div class="group-title" style={{ "margin-top": "12px", "margin-bottom": "8px" }}>AUTO LAYOUT</div>
                 <div class="alignment-row">

@@ -7,7 +7,7 @@ import { lineHeightPx } from '../text-line-height';
 
 import { batch } from 'solid-js';
 import type { DrawingElement, RichTextSpan } from '../../types';
-import { store, updateElement, deleteElements, isLayerVisible } from '../../store/app-store';
+import { store, updateElement, deleteElements, isLayerVisible, fitMindmapNodeToText } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { animPosedElements } from '../../store/anim-ops';
@@ -180,6 +180,10 @@ export function commitText(ctx: TextEditingContext): void {
         }
     }
 
+    // A mind-map label that outgrew its inherited box grows the node and reflows the tree;
+    // a no-op for everything else (and for nodes already on `autoResize`).
+    fitMindmapNodeToText(id);
+
     ctx.setEditingId(null);
     ctx.setEditText("");
     requestAnimationFrame(ctx.redrawFn);
@@ -237,6 +241,8 @@ export function commitRichText(ctx: TextEditingContext): void {
             updateElement(id, { [richKey]: spans, [textKey]: plainText }, true);
         }
     }
+
+    fitMindmapNodeToText(id);
 
     ctx.setEditingId(null);
     ctx.setEditText("");

@@ -10,6 +10,7 @@ import type { MenuItem } from '../components/context-menu';
 import { filterTeachingMenu } from './teaching-menu-filter';
 import { WARP_PRESETS } from './envelope-warp';
 import { replaceImageOn } from './image-actions';
+import { saveMindmapOutline } from './mindmap-outline';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard, openArtboardDialog, duplicateArtboard,
@@ -29,7 +30,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements, moveElementsToLayer,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
+    addChildNode, addSiblingNode, reorderMindmap, moveMindmapNode, applyMindmapStyling, setFocusBranch, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -275,6 +276,8 @@ function buildContextMenuItems(
                 }
 
                 if (firstEl.parentId) {
+                    hierarchyItems.push({ label: 'Move Earlier', icon: '⤒', onClick: () => moveMindmapNode(firstId, 'earlier') });
+                    hierarchyItems.push({ label: 'Move Later', icon: '⤓', onClick: () => moveMindmapNode(firstId, 'later') });
                     hierarchyItems.push({ label: 'Clear Parent', onClick: () => clearParent(firstId) });
                 }
 
@@ -306,6 +309,28 @@ function buildContextMenuItems(
                 hierarchyItems.push({ separator: true });
                 hierarchyItems.push({ label: 'Auto Layout', submenu: autoLayoutItems, icon: '🪄' });
                 hierarchyItems.push({ label: 'Auto Style Branch', icon: '🎨', onClick: () => applyMindmapStyling(firstId) });
+            hierarchyItems.push({
+                label: store.focusBranchId ? 'Show Whole Map' : 'Focus This Branch',
+                icon: '🎯', onClick: () => store.focusBranchId ? setFocusBranch(null) : setFocusBranch(firstId),
+            });
+            hierarchyItems.push({
+                label: 'Export Outline', icon: '📄', submenu: [
+                    { label: 'Markdown (.md)', onClick: () => void saveMindmapOutline(firstId, store.elements, 'markdown') },
+                    { label: 'Indented text (.txt)', onClick: () => void saveMindmapOutline(firstId, store.elements, 'text') },
+                    { label: 'OPML (.opml)', onClick: () => void saveMindmapOutline(firstId, store.elements, 'opml') },
+                ],
+            });
+                hierarchyItems.push({
+                    label: store.focusBranchId ? 'Show Whole Map' : 'Focus This Branch',
+                    icon: '🎯', onClick: () => store.focusBranchId ? setFocusBranch(null) : setFocusBranch(firstId),
+                });
+                hierarchyItems.push({
+                    label: 'Export Outline', icon: '📄', submenu: [
+                        { label: 'Markdown (.md)', onClick: () => void saveMindmapOutline(firstId, store.elements, 'markdown') },
+                        { label: 'Indented text (.txt)', onClick: () => void saveMindmapOutline(firstId, store.elements, 'text') },
+                        { label: 'OPML (.opml)', onClick: () => void saveMindmapOutline(firstId, store.elements, 'opml') },
+                    ],
+                });
 
                 if (hierarchyItems.length > 0) {
                     if (items.length > 0) items.push({ separator: true });
@@ -544,6 +569,8 @@ function buildContextMenuItems(
             }
 
             if (firstEl.parentId) {
+                hierarchyItems.push({ label: 'Move Earlier', icon: '⤒', onClick: () => moveMindmapNode(firstId, 'earlier') });
+                hierarchyItems.push({ label: 'Move Later', icon: '⤓', onClick: () => moveMindmapNode(firstId, 'later') });
                 hierarchyItems.push({ label: 'Clear Parent', onClick: () => clearParent(firstId) });
             }
 

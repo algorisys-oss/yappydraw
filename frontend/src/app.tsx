@@ -6,7 +6,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleElementsPanel,
   toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, toggleGuidesVisible, toggleGuidesLocked, addLayer, toggleSlideNavigator,
@@ -55,6 +55,7 @@ import { EyedropperHud } from './components/eyedropper-hud';
 import ArtboardDialog from './components/artboard-dialog';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import { GroupIsolationBanner } from './components/group-isolation-banner';
+import { FocusBranchBanner } from './components/focus-branch-banner';
 import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard,
@@ -66,6 +67,7 @@ import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCe
 import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
+import { nextMindmapNode, isMindmapNode, mindmapSiblingInDirection } from './utils/mindmap-navigation';
 import { updateElement, deleteArtboard, swapFillStroke, selectAll, toggleShapeBuilder } from './store/app-store';
 const CropBar = lazy(() => import('./components/crop-bar'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
@@ -266,7 +268,7 @@ const App: Component = () => {
       }
       if (e.key === 'Escape' && store.focusBranchId) {
         e.preventDefault();
-        setStore('focusBranchId', null);
+        setFocusBranch(null);
         return;
       }
 
@@ -539,7 +541,29 @@ const App: Component = () => {
 
       // 3. Alt + Key shortcuts
       if (e.altKey && !e.ctrlKey && !e.metaKey) {
-        if (code === 'Enter' || key === 'enter') {
+        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) && store.selection.length > 0) {
+          // Arrows live here, not in the shared block below — that one is gated on `!e.altKey`,
+          // so anything Alt+Arrow never reaches it.
+          e.preventDefault();
+          const dir = key.slice(5) as 'up' | 'down' | 'left' | 'right'; // 'arrowup' → 'up'
+          const only = store.selection.length === 1
+            ? store.elements.find(el => el.id === store.selection[0]) : null;
+          if (e.shiftKey && only && isMindmapNode(only, store.elements)) {
+            // Alt+Shift+Arrow — reorder within the sibling row. Resolved by geometry, so "up"
+            // means the sibling that is actually above, whichever axis the layout stacks on.
+            const neighbour = mindmapSiblingInDirection(only.id, dir, store.elements);
+            if (neighbour) swapMindmapSiblings(only.id, neighbour);
+          } else {
+            // Alt+Arrow — plain 1px nudge. On a mind-map node that's the only way left to move
+            // it by keyboard, since bare arrows navigate the tree (Shift gives 10px, Ctrl 0.1px).
+            const amt = 1;
+            moveSelectedElements(
+              dir === 'left' ? -amt : dir === 'right' ? amt : 0,
+              dir === 'up' ? -amt : dir === 'down' ? amt : 0,
+              true,
+            );
+          }
+        } else if (code === 'Enter' || key === 'enter') {
           e.preventDefault();
           togglePropertyPanel();
         } else if (code === 'KeyL' || key === 'l') {
@@ -813,16 +837,11 @@ const App: Component = () => {
           e.preventDefault();
           cycleStrokeStyle();
         } else if (key === 'f' && e.shiftKey) {
-          // Focus Mode: toggle branch isolation for mindmap nodes
+          // Focus Mode: dim everything outside the selected branch. The store action owns the
+          // view fit, the toast and the "that isn't a node" case — it used to silently do
+          // nothing when the selection wasn't a mind-map node.
           e.preventDefault();
-          if (store.focusBranchId) {
-            setStore('focusBranchId', null);
-          } else if (store.selection.length === 1) {
-            const el = store.elements.find(el => el.id === store.selection[0]);
-            if (el && (el.parentId || store.elements.some(c => c.parentId === el.id))) {
-              setStore('focusBranchId', el.id);
-            }
-          }
+          toggleFocusBranch();
         } else if (key === 'f') {
           e.preventDefault();
           cycleFillStyle();
@@ -842,40 +861,21 @@ const App: Component = () => {
         } else if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
           if (store.selection.length > 0) {
             e.preventDefault();
-            // Mindmap navigation: single node with hierarchy, no Alt key
-            const CONNECTOR_TYPES = ['line', 'arrow', 'bezier', 'organicBranch', 'polyline'];
+            // Mindmap navigation: single node with hierarchy, no Alt key. Which relative a key
+            // leads to is read off the actual layout (see utils/mindmap-navigation.ts) — the
+            // parent is to the LEFT in a horizontal-right map, to the RIGHT on the left half of
+            // a balanced one, ABOVE in a vertical one, and anywhere at all in a radial one.
             const selEl = store.selection.length === 1
               ? store.elements.find(el => el.id === store.selection[0])
               : null;
-            const isMindmapNode = selEl && !CONNECTOR_TYPES.includes(selEl.type) &&
-              (selEl.parentId || store.elements.some(el => el.parentId === selEl.id));
-            if (isMindmapNode && !e.shiftKey) {
-              // Arrow key hierarchy navigation
-              if (key === 'arrowleft' && selEl.parentId) {
-                // Navigate to parent
-                setStore("selection", [selEl.parentId]);
-              } else if (key === 'arrowright') {
-                // Navigate to first child
-                const children = store.elements.filter(
-                  el => el.parentId === selEl.id && !CONNECTOR_TYPES.includes(el.type)
-                ).sort((a, b) => a.y - b.y);
-                if (children.length > 0) setStore("selection", [children[0].id]);
-              } else if (key === 'arrowup' || key === 'arrowdown') {
-                // Navigate between siblings
-                const parentId = selEl.parentId;
-                if (parentId) {
-                  const siblings = store.elements.filter(
-                    el => el.parentId === parentId && !CONNECTOR_TYPES.includes(el.type)
-                  ).sort((a, b) => a.y - b.y);
-                  const idx = siblings.findIndex(s => s.id === selEl.id);
-                  if (idx >= 0) {
-                    const nextIdx = key === 'arrowup' ? idx - 1 : idx + 1;
-                    if (nextIdx >= 0 && nextIdx < siblings.length) {
-                      setStore("selection", [siblings[nextIdx].id]);
-                    }
-                  }
-                }
-              }
+            // Alt never gets here (this whole section is gated on `!e.altKey`), so Alt+Arrow
+            // (1px nudge) and Alt+Shift+Arrow (reorder within the sibling row) are handled in
+            // the Alt block above. Shift still falls through to the coarse nudge below.
+            const canNavigate = !!selEl && isMindmapNode(selEl, store.elements);
+            if (canNavigate && !e.shiftKey) {
+              const dir = key.slice(5) as 'up' | 'down' | 'left' | 'right'; // 'arrowup' → 'up'
+              const target = nextMindmapNode(selEl.id, dir, store.elements);
+              if (target) setStore("selection", [target]);
             } else {
               // Up/Down on a single star / polygon / burst tweaks its point/side
               // count (Illustrator's "arrow keys change the number of points");
@@ -1650,6 +1650,7 @@ const App: Component = () => {
         <EyedropperHud />
         <SymbolEditBanner />
         <GroupIsolationBanner />
+        <FocusBranchBanner />
         <Show when={isMultiPageDocType(store.docType)}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation' && !store.gameActive}>

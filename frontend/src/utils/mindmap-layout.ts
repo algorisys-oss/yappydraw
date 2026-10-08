@@ -10,6 +10,7 @@ export interface MindmapNode {
     y: number;
     totalHeight?: number; // Used for vertical layout
     totalWidth?: number;  // Used for horizontal layout
+    leafCount?: number;   // Used for radial layout (leaf-proportional wedges)
     styleUpdates?: Partial<DrawingElement>; // Style properties to update
 }
 
@@ -93,13 +94,66 @@ export const PALETTE = [
     '#099268', // Green-Teal
 ];
 
+/**
+ * Element types that are branches/edges, never tree nodes.
+ *
+ * One list, exported, because there were five copies of it and they had drifted: the layout's
+ * omitted `polyline` while navigation's and the store's included it, so a polyline carrying a
+ * `parentId` counted as a child when laying out and as a connector when navigating. A node that
+ * exists for one subsystem and not another is the kind of disagreement that shows up as an
+ * unreproducible layout glitch.
+ */
+export const MINDMAP_CONNECTOR_TYPES: readonly string[] =
+    ['organicBranch', 'arrow', 'line', 'bezier', 'polyline'];
+
+/** True when an element can be a tree node (i.e. isn't a branch/edge). */
+export const isMindmapNodeType = (type: string): boolean => !MINDMAP_CONNECTOR_TYPES.includes(type);
+
+/**
+ * A node's children, in the order the layout lays them out — store-array order. Single source
+ * of truth for both the ordering and the connector filtering, so layout, navigation and the
+ * outline export can never disagree about what a branch contains or what sequence it reads in.
+ */
+export const mindmapChildren = (
+    parentId: string,
+    elements: readonly DrawingElement[],
+): DrawingElement[] => elements.filter(e => e.parentId === parentId && isMindmapNodeType(e.type));
+
+/** target node id → the connector that ends on it (the branch feeding that node). */
+function indexIncomingConnectors(elements: readonly DrawingElement[]): Map<string, DrawingElement> {
+    const byTarget = new Map<string, DrawingElement>();
+    for (const e of elements) {
+        const target = e.endBinding?.elementId;
+        if (!target || byTarget.has(target)) continue;
+        if (MINDMAP_CONNECTOR_TYPES.includes(e.type)) byTarget.set(target, e);
+    }
+    return byTarget;
+}
+
 export class MindmapLayoutEngine {
     private hSpacing: number;
     private vSpacing: number;
+    private leafGap: number;
 
-    constructor(spacing?: { hSpacing?: number; vSpacing?: number }) {
+    constructor(spacing?: { hSpacing?: number; vSpacing?: number; leafGap?: number }) {
         this.hSpacing = spacing?.hSpacing ?? 100;
         this.vSpacing = spacing?.vSpacing ?? 40;
+        // Two leaf siblings only need room not to touch — the full `hSpacing` is meant to
+        // separate whole SUBTREES. Charging every leaf pair the subtree gap is what spread a
+        // 66-node vertical tree across ~9800px (45 leaves × 120px of box, 44 × 100px of air).
+        this.leafGap = spacing?.leafGap ?? 30;
+    }
+
+    /** Gap between two adjacent siblings: tight between leaves, full width between subtrees. */
+    private siblingGap(a: MindmapNode, b: MindmapNode): number {
+        return a.children.length === 0 && b.children.length === 0 ? this.leafGap : this.hSpacing;
+    }
+
+    /** Total of the pairwise gaps across a sibling row (0 for a single child). */
+    private rowGaps(children: MindmapNode[]): number {
+        let total = 0;
+        for (let i = 1; i < children.length; i++) total += this.siblingGap(children[i - 1], children[i]);
+        return total;
     }
 
     /**
@@ -128,12 +182,8 @@ export class MindmapLayoutEngine {
         // descendants keep their positions until the node is expanded and re-laid-out.
         if (skipCollapsed && rootElement.isCollapsed) return node;
 
-        // Filter out connector types — they can inherit parentId from SolidJS proxy spread
-        const CONNECTOR_TYPES = ['organicBranch', 'arrow', 'line', 'bezier'];
-        const childrenElements = elements.filter(e =>
-            e.parentId === rootId && !CONNECTOR_TYPES.includes(e.type)
-        );
-        for (const childEl of childrenElements) {
+        // Connectors are filtered out — they can inherit parentId from a SolidJS proxy spread.
+        for (const childEl of mindmapChildren(rootId, elements)) {
             const childNode = this.buildTree(childEl.id, elements, _visited, skipCollapsed);
             if (childNode) {
                 node.children.push(childNode);
@@ -229,8 +279,7 @@ export class MindmapLayoutEngine {
         }
 
         const childrenWidth = node.children.reduce((acc, child) => acc + this.calculateSubtreeWidths(child), 0);
-        const totalSpacing = (node.children.length - 1) * this.hSpacing;
-        node.totalWidth = Math.max(node.width, childrenWidth + totalSpacing);
+        node.totalWidth = Math.max(node.width, childrenWidth + this.rowGaps(node.children));
         return node.totalWidth;
     }
 
@@ -242,55 +291,91 @@ export class MindmapLayoutEngine {
 
         const startY = direction === 'down' ? y + node.height + this.vSpacing : y - this.vSpacing;
 
-        const totalChildrenWidth = node.children.reduce((acc, c) => acc + c.totalWidth!, 0) + (node.children.length - 1) * this.hSpacing;
+        const totalChildrenWidth = node.children.reduce((acc, c) => acc + c.totalWidth!, 0) + this.rowGaps(node.children);
         let currentX = x + (node.width / 2) - (totalChildrenWidth / 2);
 
-        for (const child of node.children) {
+        for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            if (i > 0) currentX += this.siblingGap(node.children[i - 1], child);
             const childY = direction === 'down' ? startY : startY - child.height;
             const childX = currentX + (child.totalWidth! / 2) - (child.width / 2);
             this.assignVerticalPositions(child, childX, childY, direction);
-            currentX += child.totalWidth! + this.hSpacing;
+            currentX += child.totalWidth!;
         }
     }
 
     /**
-     * Calculates positions for a radial (neuron) layout.
+     * Radial ("neuron") layout: concentric rings around the central topic.
+     *
+     * Overlap-free by construction, which the previous version was not — it split each
+     * parent's wedge EVENLY among its children regardless of how much subtree each had to
+     * hold, measured rings from the parent's centre rather than the root's, and shrank the
+     * radius by 0.8 per level while the node count per ring grew. A 66-node tree came out
+     * with 46 overlapping pairs.
+     *
+     * Two invariants replace that guesswork:
+     *   • Angular — a node's wedge is its share of the tree's LEAVES, so the whole 2π is
+     *     divided in proportion to how much each subtree actually needs. Composed down the
+     *     tree, every node's span is `(its leaves / total leaves) × 2π`, and the first ring
+     *     is sized so even a one-leaf node gets an arc wider than a node box.
+     *   • Radial — rings are concentric about the root and step out by more than a node's
+     *     extent, so neighbouring rings cannot touch either.
      */
     layoutRadial(root: MindmapNode) {
-        // Scale the first ring with fan-out so many top-level branches don't crowd
-        // (circumference grows with child count, keeping arc-spacing roughly constant).
-        const childCount = root.children.length;
-        const radius = Math.max(250, Math.round((childCount * 90) / (2 * Math.PI)) + 180);
-        this.assignRadialPositions(root, root.x, root.y, 0, Math.PI * 2, radius);
+        this.countLeaves(root);
+        if (root.children.length === 0) return;
+
+        // Size everything off the largest node, so the tightest spot in the map still fits.
+        const extent = this.maxNodeExtent(root);
+        const ringGap = extent + this.vSpacing;
+        // Arc each leaf must be able to claim; the first ring's circumference has to supply
+        // one of these per leaf, which is what makes the angular invariant hold everywhere.
+        const leafArc = extent + this.vSpacing;
+        const firstRing = Math.max(
+            extent + this.hSpacing,
+            (root.leafCount! * leafArc) / (2 * Math.PI),
+        );
+
+        const cx = root.x + root.width / 2;
+        const cy = root.y + root.height / 2;
+        // Start at 12 o'clock so the first branch reads as "top" rather than "right".
+        this.assignRadialPositions(root, cx, cy, -Math.PI / 2, Math.PI * 2, firstRing, ringGap);
     }
 
-    private assignRadialPositions(node: MindmapNode, x: number, y: number, startAngle: number, endAngle: number, radius: number) {
-        node.x = x;
-        node.y = y;
+    /** Leaves under each node (a collapsed node counts as one), memoised onto the tree. */
+    private countLeaves(node: MindmapNode): number {
+        node.leafCount = node.children.length === 0
+            ? 1
+            : node.children.reduce((sum, c) => sum + this.countLeaves(c), 0);
+        return node.leafCount;
+    }
 
+    /** The largest width-or-height in the tree — the box every gap has to clear. */
+    private maxNodeExtent(node: MindmapNode): number {
+        return node.children.reduce(
+            (max, c) => Math.max(max, this.maxNodeExtent(c)),
+            Math.max(node.width, node.height),
+        );
+    }
+
+    /**
+     * Place `node`'s children on the ring at `radius` (measured from the root centre
+     * cx/cy), splitting `span` radians starting at `startAngle` in proportion to leaf count.
+     */
+    private assignRadialPositions(
+        node: MindmapNode, cx: number, cy: number,
+        startAngle: number, span: number, radius: number, ringGap: number,
+    ) {
         if (node.children.length === 0) return;
 
-        const centerX = x + node.width / 2;
-        const centerY = y + node.height / 2;
-
-        const totalAngle = endAngle - startAngle;
-        const anglePerChild = totalAngle / node.children.length;
-
-        for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
-            const angle = startAngle + (i + 0.5) * anglePerChild;
-
-            // Calculate child center relative to parent center
-            const childCenterX = centerX + Math.cos(angle) * (radius + node.width / 2);
-            const childCenterY = centerY + Math.sin(angle) * (radius + node.height / 2);
-
-            const childX = childCenterX - child.width / 2;
-            const childY = childCenterY - child.height / 2;
-
-            // Sub-children get a smaller wedge of the parent's angle to prevent overlap.
-            // Keep a radius floor so deep branches don't collapse into the centre.
-            const wedge = Math.min(Math.PI / 2, anglePerChild * 0.9);
-            this.assignRadialPositions(child, childX, childY, angle - wedge / 2, angle + wedge / 2, Math.max(160, radius * 0.8));
+        let angle = startAngle;
+        for (const child of node.children) {
+            const childSpan = span * (child.leafCount! / node.leafCount!);
+            const mid = angle + childSpan / 2;
+            child.x = cx + Math.cos(mid) * radius - child.width / 2;
+            child.y = cy + Math.sin(mid) * radius - child.height / 2;
+            this.assignRadialPositions(child, cx, cy, angle, childSpan, radius + ringGap, ringGap);
+            angle += childSpan;
         }
     }
 
@@ -335,20 +420,24 @@ export class MindmapLayoutEngine {
     /**
      * Collects all updated properties (position and style) into a flat map.
      */
-    getUpdates(node: MindmapNode, elements: readonly DrawingElement[], updates: Map<string, Partial<DrawingElement>> = new Map()) {
-        const currentUpdates: Partial<DrawingElement> = {
+    getUpdates(
+        node: MindmapNode,
+        elements: readonly DrawingElement[],
+        updates: Map<string, Partial<DrawingElement>> = new Map(),
+        // Built once at the top of the walk, not re-scanned per node: this used to do a
+        // linear `elements.find` for every node in the tree, which is O(n²) over the whole
+        // document and runs on every reflow.
+        incoming?: Map<string, DrawingElement>,
+    ) {
+        const byTarget = incoming ?? indexIncomingConnectors(elements);
+        updates.set(node.id, {
             x: node.x,
             y: node.y,
             ...node.styleUpdates
-        };
-        updates.set(node.id, currentUpdates);
+        });
 
         // Styling the incoming connector
-        const connector = elements.find(e =>
-            (e.type === 'arrow' || e.type === 'line' || e.type === 'bezier' || e.type === 'organicBranch') &&
-            e.endBinding?.elementId === node.id
-        );
-
+        const connector = byTarget.get(node.id);
         if (connector && node.styleUpdates) {
             updates.set(connector.id, {
                 strokeColor: node.styleUpdates.strokeColor,
@@ -358,7 +447,7 @@ export class MindmapLayoutEngine {
         }
 
         for (const child of node.children) {
-            this.getUpdates(child, elements, updates);
+            this.getUpdates(child, elements, updates, byTarget);
         }
         return updates;
     }
@@ -396,9 +485,7 @@ export function getBranchInfo(
     if (depth === 1) {
         // Parent is the root — we're adding a depth-1 child (subtree root)
         // Auto-assign a color based on how many children the root already has
-        const CONNECTOR_TYPES = ['organicBranch', 'arrow', 'line', 'bezier'];
-        const existingChildren = elements.filter(e => e.parentId === root.id && !CONNECTOR_TYPES.includes(e.type));
-        const colorIndex = existingChildren.length;
+        const colorIndex = mindmapChildren(root.id, elements).length;
         const color = PALETTE[colorIndex % PALETTE.length];
         const sw = Math.max(1.5, 4 - depth * 1);
         const op = Math.max(40, 100 - depth * 10);

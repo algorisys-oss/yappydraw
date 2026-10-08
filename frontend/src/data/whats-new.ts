@@ -13,6 +13,17 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.272', date: '2026-10-08', items: [
+        'Mind maps tidy themselves up again as you work. Adding, deleting, collapsing or moving a node re-arranges the tree, and new maps spread their branches left and right of the centre instead of stacking into one tall column. You can switch it off in Settings \u2192 Mindmap.',
+        'Deleting a node now deletes everything under it, in one undo \u2014 it used to leave the children stranded on the canvas with a line drawn to nothing.',
+        'Type a long label and the node grows to hold it, instead of the text spilling over the branches next to it.',
+        'Reorder a branch: Alt+Shift+Arrow swaps a node with its neighbour, or use Move Earlier / Move Later from the right-click menu. Dragging a node used to look like it reordered and then snap back.',
+        'Take a map out as text: right-click \u2192 Hierarchy \u2192 Export Outline for Markdown, plain indented text, or OPML for FreeMind, Xmind and Workflowy. Markdown and text paste straight back in.',
+        'Radial maps no longer draw nodes on top of each other, and top-down maps are far narrower.',
+        'Focus mode (Shift+F) now dims AND locks the rest of the map, zooms to the branch, and shows a bar telling you how to get back.',
+        'Settings \u2192 Mindmap has spacing sliders for how far apart branches and leaves sit.',
+        'Arrow keys move between nodes in the direction you actually see them \u2014 left used to always mean \u201cparent\u201d, which was backwards on half of a balanced map. Alt+Arrow nudges a node.',
+    ] },
     { version: '0.8.270', date: '2026-10-07', items: [
         'Saving an animation to disk keeps its timeline. Before, a saved animation reopened empty, and saved files also lost pattern swatches and symmetry settings. Cloud save and templates now keep everything too.',
         'Opening a file made with a newer version of Yappy tells you to reload and update, instead of opening it as a blank page.',

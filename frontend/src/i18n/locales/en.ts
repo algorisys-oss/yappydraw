@@ -521,7 +521,10 @@ export const en = {
         'editor-editShapeLabel': 'Edit Shape Label',
         'editor-typeToLabel': 'Label a Shape While Drawing It',
         'editor-toggleCollapseHoldToPan': 'Toggle Collapse (tap) · Hold to Pan',
-        'editor-navigateMindmap': 'Navigate Mindmap',
+        'editor-navigateMindmap': 'Navigate Mindmap (follows the layout)',
+        'editor-nudgeMindmapNode': 'Nudge a mindmap node (arrows navigate)',
+        'editor-reorderMindmapNode': 'Reorder node within its branch',
+        'editor-deleteNodeSubtree': 'Delete node and its whole subtree',
         'editor-nudgeElement': 'Nudge Element',
         'editor-nudgeCoarseFine': 'Nudge — coarse (10px) / fine (0.1px)',
         'editor-starPolygonPointCount': 'Star/Polygon point count',
@@ -701,6 +704,10 @@ export const en = {
         layoutVerticalDown: 'Vertical (Down)',
         layoutVerticalUp: 'Vertical (Up)',
         layoutRadial: 'Radial',
+        mindmapSpacing: 'Branch Spacing',
+        mindmapSpacingTitle: 'Gap between whole subtrees, in pixels. Larger = more airy maps; the vertical gap scales with it.',
+        mindmapLeafSpacing: 'Leaf Spacing',
+        mindmapLeafSpacingTitle: 'Gap between two adjacent leaf nodes, in pixels. Kept tighter than the branch gap so leaves pack together instead of each claiming a whole subtree\'s width.',
         sectionTimelapse: 'Time-lapse',
         autoRecord: 'Auto-record sessions',
         autoRecordTitle: 'Automatically capture a Procreate-style process recording for every session. Toggle a recording any time with Ctrl+Shift+T.',
@@ -1215,6 +1222,19 @@ export const en = {
      * recognises it here. Axis names (Yaw, Pitch) keep their aviation terms where the target
      * language does; German and Spanish do, Japanese uses its own established katakana.
      */
+    mindmapFocus: {
+        focusedOn: 'Focused on “{{label}}”',
+        untitled: 'Untitled node',
+        othersDimmed: '{{count}} others dimmed',
+        showAll: 'Show all',
+        showAllTitle: 'Show the whole map (Esc or Shift+F)',
+    },
+    mindmapPanel: {
+        moveEarlier: 'Move Earlier in branch (Alt+Shift+Arrow)',
+        moveLater: 'Move Later in branch (Alt+Shift+Arrow)',
+        focusBranch: 'Focus this branch — dim the rest of the map (Shift+F)',
+        exportOutline: 'Export this branch as a Markdown outline',
+    },
     effects3d: {
         extrudeTitle: '3D EXTRUDE',
         extrudeAdd: '+ Add 3D Extrude',

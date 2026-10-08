@@ -76,6 +76,7 @@ import { getMeasureSegments, type MeasureSegment, type Rect } from "../utils/mea
 import { renderCropOverlay, hitTestCropHandle, applyCropDrag, constrainCropToAspect, getCropHandleCursor, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
 import { fitShapeToText, fitUmlClassToContent } from "../utils/text-utils";
+import { focusBranchSet, setFocusFilter } from "../utils/mindmap-focus";
 import { plainTextToSpans } from "../utils/rich-text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { effectiveTime } from "../utils/animation/animation-engine";
@@ -558,39 +559,10 @@ const Canvas: Component = () => {
         // Grid under the artwork by default; `onTop` draws it after the elements instead.
         if (!store.gridSettings.onTop) renderGrid(ctx, canvasRef, store.gridSettings, scale, panX, panY, isDarkMode);
 
-        // 5. Compute focus branch set (for Focus Mode dimming)
-        let focusBranchIds: Set<string> | null = null;
-        if (store.focusBranchId) {
-            const fSet = new Set<string>();
-            // Add focused node
-            fSet.add(store.focusBranchId);
-            // Add all ancestors up to root
-            let cur = store.elements.find(e => e.id === store.focusBranchId);
-            while (cur?.parentId) {
-                fSet.add(cur.parentId);
-                cur = store.elements.find(e => e.id === cur!.parentId);
-            }
-            // Add all descendants (BFS)
-            const queue = [store.focusBranchId];
-            while (queue.length > 0) {
-                const pid = queue.shift()!;
-                for (const el of store.elements) {
-                    if (el.parentId === pid && !fSet.has(el.id)) {
-                        fSet.add(el.id);
-                        queue.push(el.id);
-                    }
-                }
-            }
-            // Add connectors between focused nodes
-            for (const el of store.elements) {
-                if ((el.type === 'organicBranch' || el.type === 'arrow' || el.type === 'line' || el.type === 'bezier') &&
-                    el.startBinding && el.endBinding &&
-                    fSet.has(el.startBinding.elementId) && fSet.has(el.endBinding.elementId)) {
-                    fSet.add(el.id);
-                }
-            }
-            focusBranchIds = fSet;
-        }
+        // 5. Focus Mode membership — dimming in the renderer, and inertness in hit testing /
+        // handle detection, both read this one set (utils/mindmap-focus.ts).
+        const focusBranchIds = focusBranchSet(store.focusBranchId, store.elements);
+        setFocusFilter(focusBranchIds);
 
         // Onion skin (Animation mode, paused only): ghost neighboring frames
         // UNDER the current cel — red past, green future.

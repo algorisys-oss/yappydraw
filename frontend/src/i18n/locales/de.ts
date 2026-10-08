@@ -514,7 +514,10 @@ export const de: Dictionary = {
         'editor-editShapeLabel': 'Formbeschriftung bearbeiten',
         'editor-typeToLabel': 'Form beim Zeichnen beschriften',
         'editor-toggleCollapseHoldToPan': 'Einklappen umschalten (tippen) · Halten zum Verschieben',
-        'editor-navigateMindmap': 'In der Mindmap navigieren',
+        'editor-navigateMindmap': 'In der Mindmap navigieren (folgt dem Layout)',
+        'editor-nudgeMindmapNode': 'Mindmap-Knoten verschieben (Pfeile navigieren)',
+        'editor-reorderMindmapNode': 'Knoten innerhalb des Zweigs umsortieren',
+        'editor-deleteNodeSubtree': 'Knoten und gesamten Unterbaum löschen',
         'editor-nudgeElement': 'Element verschieben',
         'editor-nudgeCoarseFine': 'Verschieben — grob (10 px) / fein (0,1 px)',
         'editor-starPolygonPointCount': 'Anzahl der Zacken von Stern/Vieleck',
@@ -694,6 +697,10 @@ export const de: Dictionary = {
         layoutVerticalDown: 'Vertikal (abwärts)',
         layoutVerticalUp: 'Vertikal (aufwärts)',
         layoutRadial: 'Radial',
+        mindmapSpacing: 'Zweigabstand',
+        mindmapSpacingTitle: 'Abstand zwischen ganzen Teilbäumen in Pixel. Größer = luftigere Maps; der vertikale Abstand skaliert mit.',
+        mindmapLeafSpacing: 'Blattabstand',
+        mindmapLeafSpacingTitle: 'Abstand zwischen zwei benachbarten Blattknoten in Pixel. Enger als der Zweigabstand, damit Blätter zusammenrücken.',
         sectionTimelapse: 'Zeitraffer',
         autoRecord: 'Sitzungen automatisch aufzeichnen',
         autoRecordTitle: 'Für jede Sitzung automatisch eine Prozessaufnahme im Procreate-Stil erstellen. Mit Strg+Shift+T jederzeit umschalten.',
@@ -1191,6 +1198,19 @@ export const de: Dictionary = {
     },
 
     /** Terminologie nach Illustrator DE: „Extrudieren und abgeflachte Kante“, „Aufblähen“. */
+    mindmapFocus: {
+        focusedOn: 'Fokus auf „{{label}}“',
+        untitled: 'Unbenannter Knoten',
+        othersDimmed: '{{count}} andere abgedunkelt',
+        showAll: 'Alle zeigen',
+        showAllTitle: 'Die ganze Map zeigen (Esc oder Umschalt+F)',
+    },
+    mindmapPanel: {
+        moveEarlier: 'Im Zweig nach vorn verschieben (Alt+Umschalt+Pfeil)',
+        moveLater: 'Im Zweig nach hinten verschieben (Alt+Umschalt+Pfeil)',
+        focusBranch: 'Diesen Zweig fokussieren — Rest der Map abdunkeln (Umschalt+F)',
+        exportOutline: 'Diesen Zweig als Markdown-Gliederung exportieren',
+    },
     effects3d: {
         extrudeTitle: '3D-EXTRUSION',
         extrudeAdd: '+ 3D-Extrusion hinzufügen',

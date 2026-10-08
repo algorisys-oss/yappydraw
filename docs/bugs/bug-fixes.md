@@ -1,5 +1,238 @@
 # Bug Fixes Log
 
+## 2026-10-08 — Mind mapping: focus mode was half-built, and a map could not leave as text
+
+### 419. Focus mode dimmed elements to 12% but left them fully clickable
+
+**Symptom:** in focus mode (<kbd>Shift</kbd>+<kbd>F</kbd>) you could select, drag and resize
+objects rendered at 12% opacity — picking up geometry you cannot see. Selection handles appeared
+over near-invisible shapes.
+
+**Cause:** the focus membership set was computed **inline in `canvas.tsx`'s render effect** and
+passed only to the renderer, which used it for a `0.12` opacity multiplier. Hit testing
+(`hit-testing.ts`) and handle detection (`handle-detection.ts`) had no idea focus mode existed.
+
+**Fix:** the set moved to `utils/mindmap-focus.ts` (`focusBranchSet`), and the canvas publishes
+it once per render via `setFocusFilter`. `hitTestElement` and `getHandleAtPosition` consult
+`isFocusInert(id)` and decline anything outside the focused branch. Deliberately NOT folded into
+`isElementHiddenByHierarchy`: that predicate also drives rendering, and focus **dims** rather
+than hides — visible-but-inert is the whole point. Ancestors stay in the set and stay
+interactive, so the path back to the central topic is still usable.
+
+### 420. Entering focus mode didn't move the view, so an off-screen branch stayed off-screen
+
+**Cause:** `Shift+F` was `setStore('focusBranchId', el.id)` written inline in three places, with
+no surrounding behaviour at all.
+
+**Fix:** one `setFocusBranch` action owns it — validate the id, select the node, fit the view to
+the branch (`zoomToFit` now takes an optional id list rather than always fitting the document),
+and fit the whole map back on exit.
+
+### 421. Nothing said you were in focus mode, or how to leave
+
+**Symptom:** the canvas looks washed out and half of it ignores you. Indistinguishable from a
+rendering bug, and the only exits were two keys nobody had been told about — focus mode wasn't
+mentioned in the mind-map help doc at all.
+
+**Fix:** `components/focus-branch-banner.tsx`, modelled on the group-isolation breadcrumb: names
+the focused node, counts what's dimmed, and carries a **Show all** button. Plus **Focus This
+Branch** in the right-click Hierarchy menu, a 🎯 toggle in the property panel, a help-doc
+section, and the hotkey already listed. `Shift+F` with a non-node selection used to do nothing
+silently; it now says why.
+
+### 422. A focus id left pointing at a deleted node dimmed the whole canvas with no cause
+
+**Cause:** the inline set contained the deleted id, matched nothing else, and so dimmed every
+element. `focusBranchId` also stayed set, which made the next `Shift+F` read as "leave focus"
+and appear to do nothing.
+
+**Fix:** `focusBranchSet` returns null for an id that no longer resolves (fail-safe: focus-off,
+not everything-dimmed), and `deleteElements` clears the flag when the focused node is among the
+deleted.
+
+### 423. No way to get a mind map out as text
+
+**Symptom:** `parseOutline` had always turned an indented list into a subtree — a map could be
+built from notes in one paste — but there was no path back. A map could only leave as a PNG or
+SVG, so it couldn't be diffed, searched, pasted into a doc, handed to an LLM, or opened in
+another outliner.
+
+**Fix:** `utils/mindmap-outline.ts` — `markdown` (nested `-` bullets) and `text` (bare indented
+lines) are pinned to exactly what `parseOutline` accepts, so the round trip is lossless for
+structure; `opml` is what FreeMind/Xmind/Workflowy import. Exposed as `Yappy.mindmapToOutline`
+and `Yappy.saveMindmapOutline`, in the Hierarchy context menu and the property panel. Export
+starts from the node you pick, so one branch can be taken out rather than the whole map.
+Lossy by nature and documented as such: styling and geometry have nowhere to go in an outline,
+and a collapsed branch exports in full because collapse is a view setting.
+
+### 424. Mindmap spacing was listed as configurable but hardcoded
+
+**Symptom:** todo.md Phase 54 recorded "Configurable horizontal/vertical spacing" as done. There
+was no setting, and no way to change the gaps.
+
+**Cause:** `MindmapLayoutEngine`'s constructor took a spacing object from the start, and
+`computeMindmapLayout` called `new MindmapLayoutEngine()` with no arguments — the options were
+unreachable. `addChildNode` had its own hardcoded `hOffset = 100` / `vGap = 40` besides.
+
+**Fix:** `mindmapSpacing` and `mindmapLeafSpacing` settings (persisted, clamped on read because
+localStorage is user-editable and a 0 gap would stack nodes), two sliders in Settings → Mindmap,
+passed into the engine, and `addChildNode`'s placement constants derived from them so the slot a
+new node first appears in matches where the reflow will put it.
+
+### 425. Five copies of the mindmap connector-type list, two of them different
+
+**Symptom:** none observed — a latent inconsistency found while wiring the outline export.
+
+**Cause:** `['organicBranch','arrow','line','bezier']` appeared in `mindmap-layout.ts` (three
+times), `mindmap-navigation.ts`, `app-store.ts` and `selection-renderer.ts`, and two of them
+omitted `polyline`. A polyline carrying a `parentId` therefore counted as a child node when
+laying out and as a connector when navigating — a node that exists for one subsystem and not
+another.
+
+**Fix:** one exported `MINDMAP_CONNECTOR_TYPES` plus `isMindmapNodeType` and `mindmapChildren`
+in `mindmap-layout.ts`, on the superset (including `polyline`). Layout, navigation, the store,
+handle detection and the outline export now all read the same list and the same child ordering.
+
+## 2026-10-08 — Mind mapping: a branch's order couldn't be changed
+
+### 417. No way to reorder nodes within a branch, and dragging silently didn't count
+
+**Symptom:** a branch was stuck in whatever sequence it was built in. Dragging a node above a
+sibling looked like it worked and then snapped back to the old order on the next reflow, with
+nothing to explain why.
+
+**Cause:** the layout reads each node's children in **store-array order** —
+`MindmapLayoutEngine.buildTree` filters by `parentId`, it never sorts — so the sequence a branch
+reads in is the element order, and no command or gesture could change it. A drag writes
+coordinates; the order lives somewhere else entirely, which is exactly why the snap-back looked
+like a bug rather than a missing feature. Arrow navigation sorted siblings by `y` instead, so
+the two disagreed about what "the next sibling" meant.
+
+**Fix:** `swapMindmapSiblings(a, b)` exchanges the two node elements' array positions (only
+those two — descendants are collected by `parentId`, so a node's array index orders it against
+its own siblings and nothing else, which leaves every other element's z-order untouched), then
+reflows. `moveMindmapNode(id, 'earlier' | 'later')` is the sequence-level command behind the
+**Move Earlier / Move Later** context-menu and property-panel entries. `Alt+Shift+Arrow` resolves
+a screen direction to the sibling actually lying that way, so "move it up" works whether the
+layout stacks siblings down the page (horizontal) or across it (vertical). Navigation now reads
+order off geometry too, so the two agree. The help doc says plainly that dragging changes
+position, not order.
+
+### 418. A shortcut using Alt can't live in app.tsx's shared-shortcuts block
+
+**Symptom:** `Alt+Arrow` (nudge a map node whose bare arrows navigate) and `Alt+Shift+Arrow`
+(reorder) were both inert — no error, no effect. Caught by the test that asserted the reorder,
+before it shipped.
+
+**Cause:** the arrow handling sits in app.tsx's section 5, "Shared Global Shortcuts (No
+Alt/Ctrl)", which is guarded by `if (!e.altKey && !e.ctrlKey && !e.metaKey)`. Any branch placed
+inside it that tests `e.altKey` is unreachable — the guard has already excluded it. The
+condition reads as a local hint about the branch rather than a hard gate on the whole section,
+which is what makes it easy to miss.
+
+**Fix:** both bindings moved into the `if (e.altKey && !e.ctrlKey && !e.metaKey)` block where
+Alt shortcuts are actually dispatched, and the shared block now carries a comment saying Alt
+never reaches it and where to look instead.
+
+## 2026-10-08 — Mind mapping: auto-layout disabled on a misdiagnosis, and five defects behind it
+
+### 411. Mind-map auto-reflow shipped OFF because the default direction was blamed on `balanced`
+
+**Symptom:** every reflow path in the mindmap engine was dead. Tab/Enter, delete, collapse,
+expand and reparent all fell back to `addChildNode`'s crude "place below the last child"
+placement, which measures a sibling's own height and ignores its subtree, so maps drifted
+into a mess as they grew. The in-app help doc described the auto-reflow as the normal
+behaviour throughout, and told the reader to turn Auto Layout *off* if they wanted manual
+placement — it was already off.
+
+**Cause:** `mindmapAutoLayout` defaulted to `'0'` under a comment reading *"the balanced
+auto-reflow needs more work (lays out vertically in practice)"*. The tall single column being
+seen is what `horizontal-right` does — one child per row, stacked down the right-hand side —
+and `horizontal-right` was the default `mindmapLayoutDirection`, so `balanced` only ever ran
+on a root that already carried an explicit `mindmapDir`. Measuring the engine directly settles
+it: on a root with 4 branches × 3 children, `horizontal-right` gives a 610×920 column and
+`balanced` gives 1050×440, both collision-free. Balanced was never the problem; nothing
+measured either, so the flag stayed off for 230-odd releases.
+
+**Fix:** `mindmapAutoLayout` defaults ON and `mindmapLayoutDirection` defaults to `balanced`.
+Explicit choices already in `localStorage` still win. `frontend/src/utils/mindmap-layout.test.ts`
+now asserts the geometry (overlap-free, compact) across six directions and four tree shapes, so
+the next regression is a failing test rather than a disabled feature.
+
+### 412. Radial layout overlapped dozens of nodes past depth 2
+
+**Symptom:** a radial map deeper than two levels drew nodes on top of each other — 46
+overlapping pairs on a 66-node tree, 20 on a 57-node one.
+
+**Cause:** `assignRadialPositions` split each parent's wedge *evenly* among its children
+regardless of how much subtree each had to hold, measured each ring from the **parent's**
+centre rather than the root's, and shrank the radius by `0.8` per level (with a 160px floor)
+while the node count per ring grew. Three independent reasons for the same collision.
+
+**Fix:** two invariants replace the guesswork. Angular — a node's wedge is its share of the
+tree's **leaves**, so composed down the tree every node spans `(its leaves / total leaves) × 2π`,
+and the first ring is sized so even a one-leaf node gets an arc wider than a node box. Radial —
+rings are concentric about the root and step out by more than a node's largest extent. Zero
+overlaps across every tested shape, and the map now starts at 12 o'clock instead of 3.
+
+### 413. Vertical layout spread a 66-node tree across ~9800px
+
+**Symptom:** the top-down (org-chart / sitemap) layout was unusable at any real size — a
+66-node tree came out 9800×304, a strip you pan along rather than a diagram.
+
+**Cause:** `calculateSubtreeWidths` charged every adjacent sibling pair the full `hSpacing`
+(100px), which exists to separate whole *subtrees*. For 45 leaf nodes that is 4400px of air
+between 5400px of boxes.
+
+**Fix:** a separate `leafGap` (30px) applies between two siblings that are both leaves;
+subtrees keep the full gap. The same 66-node tree is now 7700px wide, and the tight/loose
+distinction is asserted structurally rather than by a magic number.
+
+### 414. Deleting a mind-map node orphaned its subtree and left a branch drawn to nowhere
+
+**Symptom:** delete a node in the middle of a tree and its children stayed on canvas — each
+now its own root, since `isElementHiddenByHierarchy` bails out when an ancestor can't be
+resolved — with the parent→child `organicBranch` still drawn to the empty space the parent had
+occupied. The help doc has promised "Delete — delete node and children" throughout.
+
+**Cause:** `deleteElements` removed exactly the ids it was handed. `getDescendants` existed and
+was used by the reparent path, but never by delete, and nothing cleaned up the bound branch.
+
+**Fix:** `deleteElements` expands its ids through `getDescendants` and sweeps up `organicBranch`
+connectors bound to anything being removed, inside the existing single history step (so one
+undo restores the whole subtree). Scoped to `organicBranch` deliberately: a plain arrow bound to
+a deleted shape is a separate question and keeps its current behaviour.
+
+### 415. A mind-map label longer than its node spilled over the branches and neighbours
+
+**Symptom:** type a long label and the text ran outside the node, across the branch lines and
+the nodes next to it.
+
+**Cause:** `addChildNode` copies `width: parent.width` / `height: parent.height` verbatim and
+nothing re-measured afterwards. `autoResize` is absent from `getStyleSnapshot` and defaults
+`false`, so the fit-to-text path in `commitText` never ran for a node; container text is centred
+and **not** clipped, so the overflow just drew.
+
+**Fix:** `fitMindmapNodeToText(id)`, called from both text-commit paths (so the keyboard-only
+Tab→type→Esc flow is covered too) and exposed on the API for scripts that set `containerText`
+directly. Grow-only and height-first: the node keeps its width so a branch stays a tidy column
+of same-width boxes, gaining height for the extra wrapped lines and widening only when a single
+unbreakable word cannot fit. Shrinking would fight the user every time they shortened a label,
+and `autoResize` already exists for anyone who wants true text-sized boxes.
+
+### 416. The reflow animation re-routed every connector in the document, eleven times
+
+**Symptom:** no visible breakage; wasted main-thread time, worst on large drawings.
+
+**Cause:** `refreshMindmapConnectors` walked **all** elements and refreshed every bound line it
+found, and it runs once per frame of the ~180ms reflow. Reflowing a 20-node map inside a
+500-object drawing re-solved hundreds of unrelated connectors. `getUpdates` separately did a
+linear `elements.find` per node to locate its incoming branch — O(n²) over the document.
+
+**Fix:** the refresh takes the set of ids being laid out and skips connectors bound to anything
+else (the set is built once, not per frame); `getUpdates` builds a `target → connector` index
+once at the top of the walk.
+
 ## 2026-10-07 — Hostinger flagged image-size 1.2.1 (CVE-2025-71329, CVE-2025-71330)
 
 ### 410. A transitive image-size with two DoS CVEs, from pptxgenjs

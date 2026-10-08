@@ -2,6 +2,118 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Check whether the feature already exists, under a different name (Oct 8 2026)
+
+- **A grep for the words you would have used is not a search for the feature.** The mindmap
+  review listed "focus mode" as missing, having grepped `focusMode` and `isolateBranch`. It
+  shipped long ago as `focusBranchId` with a `Shift+F` binding and a line in the hotkey list.
+  Half an hour of building a duplicate (store field, a focus-aware visibility predicate) went
+  in the bin. Grep the *domain noun* (`focus`) before concluding, and check the hotkey table —
+  it is the cheapest inventory of what the app can already do.
+- **Which also means: the gap was real, just different.** The existing feature dimmed to 12%
+  and stopped there — dimmed elements stayed clickable and draggable, entering focus didn't move
+  the view, nothing said you were in the mode, and a deleted focus node dimmed the whole canvas
+  for good. "Exists" and "finished" are different claims, and the second one is the one users
+  care about. A half-built feature behind an undocumented hotkey is close to invisible.
+- **One predicate, two questions, don't merge them.** `isElementHiddenByHierarchy` answers both
+  "should this render" and "should this be hittable", which is fine while the answers agree.
+  Focus mode *dims* — it must stay visible and stop being interactive — so folding it in there
+  would have turned dimming into hiding. A separate `isFocusInert` consulted only by hit testing
+  and handle detection keeps the two questions apart.
+- **When a pure hot-path utility needs app state, publish rather than thread.** `hitTestElement`
+  takes an element list and no app state, and it is one of the hottest functions in the app. The
+  canvas computes the focus set once per render and publishes it (`setFocusFilter`); the
+  predicates read it. The alternative — a new positional argument on every caller — is churn
+  where any missed call site silently reintroduces the bug. Write down why the module-level
+  value is there, and make the stale case fail safe.
+- **Fail safe means fail OFF for a filter.** A focus id pointing at a deleted node produced a
+  set matching nothing, which dimmed everything. `focusBranchSet` returns null for an
+  unresolvable id, so a stale filter means "no focus" rather than "nothing qualifies". Any
+  predicate derived from an id should be asked what it does when the id is gone.
+- **An export format worth having is one you can read back.** `markdown` and `text` are pinned
+  to exactly what `parseOutline` already accepted, and the round trip is a test. Formats that
+  only go one way quietly become dead ends.
+- **"Configurable" in a todo list means a setting, not a constructor parameter.** The layout
+  engine accepted a spacing object from day one; nothing ever passed one, because the single
+  caller did `new MindmapLayoutEngine()`. An accepted option with no caller reads as done in
+  review and is unreachable in practice — the honest test is whether a user can change it.
+- **Clamp anything read back from localStorage.** It is user-editable, and a `0` spacing stacks
+  every node on the same pixel. Parse, default, clamp — in that order, in one helper.
+
+## Order and position are different things (Oct 8 2026)
+
+- **A tree layout reads an order from somewhere; find out where before adding a reorder.** The
+  mindmap engine takes each node's children in **store-array order** (`buildTree` filters, it
+  never sorts). So "reorder a branch" is an array operation, not a coordinate one — and that is
+  also why dragging a node past a sibling appeared to work and then snapped back. Two
+  subsystems disagreed about the sequence: layout used array order, arrow navigation sorted by
+  `y`. Pick one source of truth and make everything read it.
+- **Swap two elements, not a subtree.** Descendants are collected by `parentId`, so an element's
+  array index only ever orders it against its own siblings. Swapping just the two sibling nodes
+  reorders the branch and leaves every other element's z-order untouched — moving whole subtree
+  ranges around the array would have been both slower and riskier for no gain.
+- **Name an operation after what it does, not after the key that triggers it.** `moveUp` is a
+  lie in a vertical layout, where siblings stack across the page. The command is
+  `moveMindmapNode(id, 'earlier' | 'later')` — a position in the sequence — and the *keybinding*
+  resolves a screen direction to the sibling actually lying that way. Same split as navigation:
+  geometry at the edge, order in the core.
+- **In app.tsx, a section guard outranks a branch condition.** Section 5 is
+  "Shared Global Shortcuts (No Alt/Ctrl)" and opens with
+  `if (!e.altKey && !e.ctrlKey && !e.metaKey)`. An `e.altKey` branch written inside it is dead
+  code that looks completely reasonable — both new Alt bindings were inert until a test caught
+  it. Alt shortcuts belong in the `e.altKey && !e.ctrlKey && !e.metaKey` block. Worth checking
+  which guard you are already inside before adding a modifier branch anywhere in that handler.
+- **Test the binding, not just the action.** The store action worked from the first run; the
+  keyboard route was broken. An e2e test that dispatches the real `KeyboardEvent` is the only
+  thing that covers the dispatch chain, and it is the part most likely to be wrong — the action
+  is a function you just wrote, the chain is 900 lines of precedence you did not.
+- **The i18n ratchet counts per file, so a new `title=` on a button trips it** even in a file
+  already full of hardcoded strings. Add the key to all five locales and use `t()`; matching the
+  surrounding (hardcoded) style is the thing the ratchet exists to stop.
+
+## A disabled flag is a place bugs go to hide (Oct 8 2026)
+
+- **"Needs more work" on a default is a hypothesis, and it names the wrong suspect more often
+  than you'd think.** Mindmap auto-reflow shipped OFF for 230-odd releases under the comment
+  *"the balanced auto-reflow needs more work (lays out vertically in practice)"*. The tall
+  column being described is what `horizontal-right` DOES — and that, not `balanced`, was the
+  default direction, so `balanced` had never run. Measured directly: `horizontal-right` 610×920,
+  `balanced` 1050×440, both collision-free. Before disabling a strategy, check which strategy is
+  actually selected.
+- **Turning a feature off freezes everything downstream of it.** With the flag off, every reflow
+  caller was dead code, so three further defects sat unnoticed behind it: radial overlapped 46
+  node pairs on a 66-node tree, vertical spread the same tree across 9800px, and a node that
+  grew never triggered a re-layout. The flag didn't just hide the bug it was added for; it hid
+  the ones nobody had looked for.
+- **Layouts are measurable, so measure them.** A 416-line layout engine had zero unit tests —
+  the only coverage was three style-inheritance E2E tests. Two properties do almost all the work:
+  no two node boxes overlap, and the bounding box stays within a sane aspect ratio. Forty-odd
+  assertions over six directions × four tree shapes took one file and caught all three geometry
+  bugs; a throwaway `npx tsx` probe printing `bbox WxH overlaps=N` found them in the first run
+  and became the test.
+- **An aspect-ratio bound is only fair where the layout can honour it.** A top-down tree with 45
+  leaves is legitimately wide — 5400px of boxes before any gap — so asserting 6:1 there was
+  testing the wrong thing. Keep the universal invariant (no overlaps) universal, and make the
+  taste-based one specific: leaf siblings must sit closer together than separate subtrees do.
+- **Guarantee geometry by construction, not by fudge factors.** The old radial code tried
+  `min(π/2, anglePerChild * 0.9)` wedges and a `radius * 0.8` decay with a 160px floor — three
+  tunables, all guesses. Replacing them with two invariants (a node's wedge is its share of the
+  tree's *leaves*; rings are concentric about the root and step out by more than a node's
+  extent) makes overlap impossible instead of unlikely, and deletes the magic numbers.
+- **Grow-only is the right shape for auto-fit on something the user also positions.** A node
+  whose box shrank back whenever a label got shorter would fight every edit. Growing in height
+  while keeping the width also preserves what people want from a branch — a column of
+  same-width boxes — so the fix doesn't quietly redesign the look.
+- **Per-frame work scoped to the document instead of the subtree.** `refreshMindmapConnectors`
+  re-routed every bound line in the drawing on each of the ~11 animation frames. The reflow
+  already knows exactly which ids moved; passing that set down is the whole fix. Worth checking
+  any helper that an animation loop calls: "all elements" is cheap at 20 and expensive at 500.
+- **`parentId` on an element means one thing here, and the type says so.** Before making delete
+  cascade through it, the audit was worth it: `types.ts` documents it as the mindmap tree
+  (`transformParentId` is the animation parent, layers carry their own), and the DSL engine sets
+  it precisely to drive collapse toggles. Cascading is consistent with collapse — if collapsing
+  hides the subtree, deleting removes it.
+
 ## A scanner reads the lockfile, not the bundle (Oct 7 2026)
 
 - **A dependency can be "vulnerable" and still unreachable.** Hostinger flagged two High CVEs in

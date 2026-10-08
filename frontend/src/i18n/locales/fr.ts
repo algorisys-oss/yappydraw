@@ -529,7 +529,10 @@ export const fr: Dictionary = {
         'editor-editShapeLabel': "Modifier l'étiquette de la forme",
         'editor-typeToLabel': "Étiqueter une forme en la dessinant",
         'editor-toggleCollapseHoldToPan': 'Réduire/développer (appui) · maintenir pour faire glisser',
-        'editor-navigateMindmap': 'Naviguer dans la carte mentale',
+        'editor-navigateMindmap': 'Naviguer dans la carte mentale (suit la disposition)',
+        'editor-nudgeMindmapNode': 'Décaler un nœud de la carte (les flèches naviguent)',
+        'editor-reorderMindmapNode': 'Réordonner le nœud dans sa branche',
+        'editor-deleteNodeSubtree': 'Supprimer le nœud et tout son sous-arbre',
         'editor-nudgeElement': 'Décaler l’élément',
         'editor-nudgeCoarseFine': 'Décalage — grossier (10 px) / fin (0,1 px)',
         'editor-starPolygonPointCount': 'Nombre de branches de l’étoile/du polygone',
@@ -709,6 +712,10 @@ export const fr: Dictionary = {
         layoutVerticalDown: 'Verticale (bas)',
         layoutVerticalUp: 'Verticale (haut)',
         layoutRadial: 'Radiale',
+        mindmapSpacing: 'Espacement des branches',
+        mindmapSpacingTitle: 'Écart entre sous-arbres entiers, en pixels. Plus grand = cartes plus aérées ; l\'écart vertical suit.',
+        mindmapLeafSpacing: 'Espacement des feuilles',
+        mindmapLeafSpacingTitle: 'Écart entre deux nœuds feuilles voisins, en pixels. Plus serré que celui des branches, pour que les feuilles restent groupées.',
         sectionTimelapse: 'Time-lapse',
         autoRecord: 'Enregistrer les sessions automatiquement',
         autoRecordTitle: 'Capturer automatiquement un enregistrement du processus, à la manière de Procreate, pour chaque session. Activez ou arrêtez un enregistrement à tout moment avec Ctrl+Maj+T.',
@@ -1211,6 +1218,19 @@ export const fr: Dictionary = {
      * it here. The aviation axis names survive in French as they do in English:
      * *lacet* for yaw, *tangage* for pitch.
      */
+    mindmapFocus: {
+        focusedOn: 'Focus sur « {{label}} »',
+        untitled: 'Nœud sans titre',
+        othersDimmed: '{{count}} autres atténués',
+        showAll: 'Tout afficher',
+        showAllTitle: 'Afficher toute la carte (Échap ou Maj+F)',
+    },
+    mindmapPanel: {
+        moveEarlier: 'Déplacer avant dans la branche (Alt+Maj+Flèche)',
+        moveLater: 'Déplacer après dans la branche (Alt+Maj+Flèche)',
+        focusBranch: 'Focaliser cette branche — atténuer le reste de la carte (Maj+F)',
+        exportOutline: 'Exporter cette branche en plan Markdown',
+    },
     effects3d: {
         extrudeTitle: 'EXTRUSION 3D',
         extrudeAdd: '+ Ajouter une extrusion 3D',

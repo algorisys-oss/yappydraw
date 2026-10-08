@@ -20,14 +20,14 @@ import { createDefaultAnimTimeline } from "../types/anim-types";
 import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator";
 import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
-import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
+import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo, mindmapChildren } from "../utils/mindmap-layout";
 import { segmentIntersection } from "../utils/path-intersection";
 import { WIDTH_PROFILES, profileToWidthPoints, detectWidthProfile } from "../utils/width-profiles";
 import { scribbleStrokes } from "../utils/scribble";
 import { runBooleanOp, runBooleanOpDetailed, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, legacyDistortParams, ringDiagonal, type DistortKind, type DistortParams } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
-import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight, getFontString } from "../utils/text-utils";
+import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight, getFontString, measureContainerText, containerTextAvailableWidth, inscribedTextFactor, getMeasurementRenderer } from "../utils/text-utils";
 import { shapeToPath, shapeDecorationSubpaths } from "../utils/shape-to-path";
 import { textElementToOutline, FontOutlineUnavailableError } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
@@ -67,6 +67,7 @@ import {
     type SymmetryMode, type SymmetryOp,
 } from "../utils/symmetry";
 import { refreshBoundLine } from "../utils/binding-logic";
+import { getDescendants } from "../utils/hierarchy";
 import { abortDsAlgorithm } from "../utils/ds-operations";
 import { getImage } from "../utils/image-cache";
 import { defaultPaletteId } from "../config/color-palettes";
@@ -251,7 +252,13 @@ export const clampHistoryDepth = (n: number): number => {
 const POINTER_STYLES = ['crosshair', 'circle', 'arrow'] as const;
 export type PointerStyle = (typeof POINTER_STYLES)[number];
 
-export const readPointerStyle = (): PointerStyle => {
+export /** A persisted pixel gap, defaulted and clamped — localStorage is user-editable and a 0 gap overlaps nodes. */
+const clampSpacing = (raw: string | null, fallback: number, min: number, max: number): number => {
+    const n = parseInt(raw ?? '', 10);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+
+const readPointerStyle = (): PointerStyle => {
     try {
         const v = localStorage.getItem('pointerStyle') as PointerStyle | null;
         if (v && (POINTER_STYLES as readonly string[]).includes(v)) return v;
@@ -714,11 +721,19 @@ const initialState: AppState = {
         // artwork almost every time you selected anything. Pin it open when you're
         // actually doing boolean work.
         showPathfinderBar: (localStorage.getItem('showPathfinderBar') ?? '0') !== '0',
-        // Default OFF for now — the balanced auto-reflow needs more work (lays out
-        // vertically in practice). Re-enable via Settings → Mindmap. Existing explicit
-        // choices in localStorage are still respected.
-        mindmapAutoLayout: (localStorage.getItem('mindmapAutoLayout') ?? '0') !== '0',
-        mindmapLayoutDirection: (localStorage.getItem('mindmapLayoutDirection') as GlobalSettings['mindmapLayoutDirection']) || 'horizontal-right',
+        // Default ON. It shipped OFF on the diagnosis that "the balanced auto-reflow lays out
+        // vertically in practice" — but the tall single column that was being seen is what
+        // `horizontal-right` DOES, and that was the default direction, so `balanced` never ran
+        // unless a root carried an explicit `mindmapDir`. Balanced measures compact and
+        // collision-free (see mindmap-layout.test.ts); the default direction is now balanced
+        // and the reflow is back on. Existing explicit choices in localStorage still win.
+        mindmapAutoLayout: (localStorage.getItem('mindmapAutoLayout') ?? '1') !== '0',
+        mindmapLayoutDirection: (localStorage.getItem('mindmapLayoutDirection') as GlobalSettings['mindmapLayoutDirection']) || 'balanced',
+        // Spacing was listed as configurable for a long time while `computeMindmapLayout` built
+        // the engine with no arguments, so the constructor's options were unreachable. Clamped
+        // on read: a 0 here would stack nodes on top of each other, and localStorage is editable.
+        mindmapSpacing: clampSpacing(localStorage.getItem('mindmapSpacing'), 100, 20, 400),
+        mindmapLeafSpacing: clampSpacing(localStorage.getItem('mindmapLeafSpacing'), 30, 4, 200),
         // Docked LEFT by default (Illustrator/Inkscape): the toolbar reserves its own
         // column so it never covers the drawing surface. 'float' restores the old
         // overlay behaviour.
@@ -1136,8 +1151,10 @@ export const addChildNode = (parentId: string, opts: { recordHistory?: boolean; 
 
     if (opts.recordHistory !== false) pushToHistory();
     const newId = generateId(parent.type);
-    const hOffset = 100;
-    const vGap = 40;
+    // Follow the configured spacing, so the slot a new node first appears in matches where the
+    // reflow is about to put it (and is still sane when auto layout is off and this IS the slot).
+    const hOffset = store.globalSettings.mindmapSpacing ?? 100;
+    const vGap = Math.round(hOffset * 0.4);
 
     // Resolve branch color and depth-based stroke width
     const branch = getBranchInfo(parent.id, store.elements);
@@ -1547,8 +1564,35 @@ export const selectAll = () => {
     setStore('selection', els.map(el => el.id));
 };
 
-export const deleteElements = (ids: string[]) => {
-    if (ids.length === 0) return;
+/**
+ * Deleting a node in a hierarchy takes its subtree — and the branches drawn to it — with it.
+ *
+ * Without this, `deleteElements` removed exactly the ids it was handed: a mid-tree node went
+ * away and its children stayed on canvas, each now pointing at a `parentId` that resolved to
+ * nothing (so `isElementHiddenByHierarchy` bailed out and they rendered as orphan roots),
+ * while the parent→child `organicBranch` was still drawn to the empty space where the parent
+ * used to be. The help doc has always promised "Delete — delete node and children".
+ *
+ * Only `organicBranch` connectors are swept up: they exist solely to draw a tree edge. Plain
+ * arrows and lines bound to a deleted shape are a separate question and keep their current
+ * behaviour.
+ */
+const withHierarchyDescendants = (ids: string[]): string[] => {
+    const doomed = new Set(ids);
+    for (const id of ids) {
+        for (const d of getDescendants(id, store.elements)) doomed.add(d.id);
+    }
+    for (const el of store.elements) {
+        if (el.type !== 'organicBranch' || doomed.has(el.id)) continue;
+        const from = el.startBinding?.elementId, to = el.endBinding?.elementId;
+        if ((from && doomed.has(from)) || (to && doomed.has(to))) doomed.add(el.id);
+    }
+    return [...doomed];
+};
+
+export const deleteElements = (rawIds: string[]) => {
+    if (rawIds.length === 0) return;
+    const ids = withHierarchyDescendants(rawIds);
     pushToHistory(); // Save state before deletion
     // Uncontain children of deleted pools
     const deletedPoolIds = new Set(
@@ -1586,6 +1630,11 @@ export const deleteElements = (ids: string[]) => {
             setStore("dimensionAnnotations", (list) => list.filter(d => !deletedSet.has(d.targetId)));
         }
     });
+
+    // A focus id pointing at something just deleted: `focusBranchSet` already treats it as
+    // focus-off so the canvas can't dim with no cause, but the flag has to go too or Shift+F
+    // reads as "leave focus" and appears to do nothing.
+    if (store.focusBranchId && deletedSet.has(store.focusBranchId)) setStore('focusBranchId', null);
 
     if (survivingParents.size > 0) {
         const roots = new Set([...survivingParents].map(id => findMindmapRoot(id)));
@@ -2169,6 +2218,12 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.mindmapLayoutDirection !== undefined) {
         try { localStorage.setItem('mindmapLayoutDirection', updates.mindmapLayoutDirection); } catch { /* ignore */ }
+    }
+    if (updates.mindmapSpacing !== undefined) {
+        try { localStorage.setItem('mindmapSpacing', String(updates.mindmapSpacing)); } catch { /* ignore */ }
+    }
+    if (updates.mindmapLeafSpacing !== undefined) {
+        try { localStorage.setItem('mindmapLeafSpacing', String(updates.mindmapLeafSpacing)); } catch { /* ignore */ }
     }
     if (updates.toolbarVertical !== undefined) {
         try { localStorage.setItem('toolbarVertical', updates.toolbarVertical ? '1' : '0'); } catch { /* ignore */ }
@@ -4945,14 +5000,19 @@ export const toggleTheme = () => {
     setTheme(next);
 };
 
-export const zoomToFit = () => {
-    if (store.elements.length === 0) {
+/** Fit the view to the whole drawing, or to `ids` when given (e.g. one mind-map branch). */
+export const zoomToFit = (ids?: readonly string[]) => {
+    const subject = ids
+        ? store.elements.filter(el => ids.includes(el.id))
+        : store.elements;
+    if (subject.length === 0) {
+        if (ids) return;   // nothing to fit — leave the view where it is
         setStore("viewState", { scale: 1, panX: 0, panY: 0 });
         return;
     }
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    store.elements.forEach(el => {
+    subject.forEach(el => {
         minX = Math.min(minX, el.x);
         maxX = Math.max(maxX, el.x + el.width);
         minY = Math.min(minY, el.y);
@@ -9024,7 +9084,11 @@ export const clearParent = (id: string) => {
  */
 /** Run the chosen layout strategy and collect target updates (no store mutation). */
 export const computeMindmapLayout = (rootId: string, direction: LayoutDirection, skipCollapsed = false): Map<string, Partial<DrawingElement>> | null => {
-    const engine = new MindmapLayoutEngine();
+    const engine = new MindmapLayoutEngine({
+        hSpacing: store.globalSettings.mindmapSpacing,
+        vSpacing: Math.round((store.globalSettings.mindmapSpacing ?? 100) * 0.4),
+        leafGap: store.globalSettings.mindmapLeafSpacing,
+    });
     const tree = engine.buildTree(rootId, store.elements, undefined, skipCollapsed);
     if (!tree) return null;
 
@@ -9040,18 +9104,29 @@ export const computeMindmapLayout = (rootId: string, direction: LayoutDirection,
     return engine.getUpdates(tree, store.elements);
 };
 
-const refreshMindmapConnectors = () => {
+/**
+ * Re-route the branches attached to the nodes that just moved.
+ *
+ * Scoped to `movedIds` on purpose: this runs once per frame of the reflow animation, and
+ * unscoped it walked every element in the DOCUMENT and re-routed every bound line it found —
+ * so reflowing a 20-node map inside a 500-object drawing re-solved hundreds of unrelated
+ * connectors eleven times over. Pass the ids being laid out; omit only for a full sweep.
+ */
+const refreshMindmapConnectors = (movedIds?: ReadonlySet<string>) => {
     for (const el of store.elements) {
-        if ((el.type === 'organicBranch' || el.type === 'arrow' || el.type === 'line')
-            && (el.startBinding || el.endBinding)) {
-            refreshBoundLine(el.id, () => store.elements, (id, upd) => updateElement(id, upd, false));
+        if (el.type !== 'organicBranch' && el.type !== 'arrow' && el.type !== 'line') continue;
+        if (!el.startBinding && !el.endBinding) continue;
+        if (movedIds) {
+            const from = el.startBinding?.elementId, to = el.endBinding?.elementId;
+            if (!(from && movedIds.has(from)) && !(to && movedIds.has(to))) continue;
         }
+        refreshBoundLine(el.id, () => store.elements, (id, upd) => updateElement(id, upd, false));
     }
 };
 
 const applyMindmapUpdates = (updates: Map<string, Partial<DrawingElement>>) => {
     setStore("elements", store.elements.map(el => updates.has(el.id) ? { ...el, ...updates.get(el.id) } : el));
-    refreshMindmapConnectors();
+    refreshMindmapConnectors(new Set(updates.keys()));
 };
 
 export const layoutMindmapTree = (rootId: string, direction: LayoutDirection) => {
@@ -9113,6 +9188,7 @@ export const relayoutMindmap = (nodeId: string, opts: { animate?: boolean } = {}
     const start = performance.now();
     const DUR = 180;
     const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+    const moved = new Set(updates.keys());
     const step = (now: number) => {
         const t = Math.min(1, (now - start) / DUR);
         const e = ease(t);
@@ -9123,10 +9199,132 @@ export const relayoutMindmap = (nodeId: string, opts: { animate?: boolean } = {}
             if (t >= 1) return { ...el, ...target }; // snap to exact target (+ any non-position props)
             return { ...el, x: f.x + ((target.x as number) - f.x) * e, y: f.y + ((target.y as number) - f.y) * e };
         }));
-        refreshMindmapConnectors();
+        refreshMindmapConnectors(moved);
         reflowRaf = t < 1 ? requestAnimationFrame(step) : null;
     };
     reflowRaf = requestAnimationFrame(step);
+};
+
+/** True when `el` sits in a collapsible hierarchy — it has a parent, or real (non-branch) children. */
+const isHierarchyNode = (el: DrawingElement): boolean =>
+    !!el.parentId || mindmapChildren(el.id, store.elements).length > 0;
+
+/**
+ * Grow a mind-map node so its label fits, then reflow the tree around the new size.
+ *
+ * A child inherits its parent's width and height verbatim (`addChildNode`), and nothing
+ * re-measured after that — container text is centred and NOT clipped, so a label longer than
+ * the inherited box simply spilled out over the branch lines and the neighbouring nodes.
+ *
+ * Deliberately grow-only, and height-first: the box keeps the width it was given (so a branch
+ * stays a tidy column of same-width nodes) and gains height for the extra wrapped lines,
+ * widening only when a single unbreakable word cannot fit. Shrinking back would fight the
+ * user every time they shortened a label, and `autoResize` already exists for anyone who
+ * wants true text-sized boxes.
+ */
+export const fitMindmapNodeToText = (id: string) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || el.autoResize || !isHierarchyNode(el)) return;
+    const text = el.containerText || '';
+    if (!text.trim()) return;
+
+    const factor = inscribedTextFactor(el.type) || 1;
+    const metrics = measureContainerText(getMeasurementRenderer(), el, text, containerTextAvailableWidth(el));
+    // `padding` mirrors RenderPipeline.renderContainerText's 10px on each side.
+    const width = Math.max(el.width, Math.ceil(metrics.textWidth / factor) + 20);
+    const height = Math.max(el.height, Math.ceil(metrics.textHeight / factor) + 20);
+    if (width === el.width && height === el.height) return;
+
+    updateElement(id, { width, height }, false);
+    relayoutMindmap(id, { animate: true });
+};
+
+/**
+ * Reorder a node within its sibling row.
+ *
+ * The layout takes each node's children in store-array order (`buildTree` filters, it doesn't
+ * sort), so the sequence a branch reads in is the element order — and until now nothing could
+ * change it. Dragging a node past a sibling looked like it worked and then snapped back on the
+ * next reflow, because the drag moves coordinates and the order lives somewhere else.
+ *
+ * Swapping just the two node elements in place is deliberate: descendants are collected by
+ * `parentId`, so a node's array position only ever orders it against its OWN siblings, and
+ * leaving the rest of the array alone keeps every other element's z-order untouched.
+ */
+export const swapMindmapSiblings = (aId: string, bId: string): boolean => {
+    if (aId === bId) return false;
+    const a = store.elements.find(e => e.id === aId);
+    const b = store.elements.find(e => e.id === bId);
+    if (!a || !b || !a.parentId || a.parentId !== b.parentId) return false;
+
+    const i = store.elements.findIndex(e => e.id === aId);
+    const j = store.elements.findIndex(e => e.id === bId);
+    if (i < 0 || j < 0) return false;
+
+    pushToHistory();
+    const next = [...store.elements];
+    [next[i], next[j]] = [next[j], next[i]];
+    setStore('elements', next);
+    relayoutMindmap(aId, { animate: true });
+    return true;
+};
+
+/**
+ * Move a node one place `earlier` or `later` in its sibling sequence. Sequence, not screen
+ * direction — which way that reads depends on the layout (top-to-bottom in a horizontal map,
+ * left-to-right in a vertical one, clockwise in a radial one), so callers that mean a screen
+ * direction should resolve the neighbour with `mindmapSiblingInDirection` and call
+ * `swapMindmapSiblings` instead. Returns false at the ends of the row, and for a root.
+ */
+export const moveMindmapNode = (id: string, direction: 'earlier' | 'later'): boolean => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el?.parentId) return false;
+    const siblings = mindmapChildren(el.parentId, store.elements);
+    const idx = siblings.findIndex(s => s.id === id);
+    const neighbour = siblings[direction === 'earlier' ? idx - 1 : idx + 1];
+    if (!neighbour) return false;
+    return swapMindmapSiblings(id, neighbour.id);
+};
+
+/**
+ * Focus mode: show one branch and dim the rest of the canvas to 12%.
+ *
+ * The toggle has existed since Shift+F shipped, but only as a `setStore('focusBranchId', …)`
+ * written inline in three places, which is why the surrounding behaviour was missing: entering
+ * focus didn't move the view (so a branch off-screen stayed off-screen), nothing said you were
+ * in focus mode or how to leave, and a focus id left pointing at a deleted node dimmed the
+ * whole canvas with no visible cause. One action now owns all of it.
+ *
+ * NOT a document edit — no history entry, nothing written to any element — so it can't be
+ * saved into a file or undone into a half-state.
+ */
+export const setFocusBranch = (id: string | null): boolean => {
+    const next = id && store.elements.some(e => e.id === id) ? id : null;
+    if (next === store.focusBranchId) return false;
+    setStore('focusBranchId', next);
+    if (next) {
+        setStore('selection', [next]);
+        zoomToFit([next, ...getDescendants(next, store.elements).map(d => d.id)]);
+        showToast('Focus mode — press Esc or Shift+F to show the whole map', 'info', 3500);
+    } else {
+        zoomToFit();
+    }
+    return true;
+};
+
+/** Shift+F: focus the selected branch, or leave focus if already in it. */
+export const toggleFocusBranch = (): boolean => {
+    if (store.focusBranchId) return setFocusBranch(null);
+    if (store.selection.length !== 1) {
+        showToast('Select one mind-map node to focus its branch', 'info', 2500);
+        return false;
+    }
+    const el = store.elements.find(e => e.id === store.selection[0]);
+    if (!el || !isHierarchyNode(el)) {
+        showToast('Focus mode needs a node with a parent or children', 'info', 2500);
+        return false;
+    }
+    return setFocusBranch(el.id);
 };
 
 export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {

@@ -8,6 +8,8 @@ import type { DrawingElement } from '../types';
 import { rotatePoint } from './geometry';
 import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
+import { isFocusInert } from './mindmap-focus';
+import { isMindmapNodeType, mindmapChildren } from './mindmap-layout';
 import { getPathSubpaths } from './math/path-utils';
 import { getCustomPivot } from './transform-pivot';
 import { getWarpGrid } from './envelope-warp';
@@ -201,9 +203,9 @@ export function getHandleAtPosition(
     //     Checked before element selection so the click isn't swallowed.
     if (selection.length === 1) {
         const el = elements.find(e => e.id === selection[0]);
-        const CONNECTORS = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
-        const isMindmapNode = el && (!!el.parentId || elements.some(e => e.parentId === el.id));
-        if (el && isMindmapNode && !CONNECTORS.includes(el.type) && !isElementHiddenByHierarchy(el, elements)) {
+        const inHierarchy = el && (!!el.parentId || mindmapChildren(el.id, elements).length > 0);
+        if (el && inHierarchy && isMindmapNodeType(el.type)
+            && !isElementHiddenByHierarchy(el, elements) && !isFocusInert(el.id)) {
             const ecx = el.x + el.width / 2;
             const ecy = el.y + el.height / 2;
             const local = unrotatePoint(x, y, ecx, ecy, el.angle || 0);
@@ -249,6 +251,7 @@ export function getHandleAtPosition(
     for (let i = elements.length - 1; i >= 0; i--) {
         const el = elements[i];
         if (isElementHiddenByHierarchy(el, elements)) continue;
+        if (isFocusInert(el.id)) continue;   // dimmed by focus mode — no handles to grab
 
         const hasChildren = elements.some(e => e.parentId === el.id);
         if (hasChildren && el.type !== 'line' && el.type !== 'arrow' && el.type !== 'organicBranch' && el.type !== 'bezier') {

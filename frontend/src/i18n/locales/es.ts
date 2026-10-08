@@ -514,7 +514,10 @@ export const es: Dictionary = {
         'editor-editShapeLabel': 'Editar la etiqueta de la forma',
         'editor-typeToLabel': 'Etiquetar una forma mientras la dibujas',
         'editor-toggleCollapseHoldToPan': 'Alternar plegado (toque) · Mantener para desplazar',
-        'editor-navigateMindmap': 'Navegar por el mapa mental',
+        'editor-navigateMindmap': 'Navegar por el mapa mental (sigue el diseño)',
+        'editor-nudgeMindmapNode': 'Desplazar un nodo del mapa (las flechas navegan)',
+        'editor-reorderMindmapNode': 'Reordenar el nodo dentro de su rama',
+        'editor-deleteNodeSubtree': 'Eliminar el nodo y todo su subárbol',
         'editor-nudgeElement': 'Desplazar elemento',
         'editor-nudgeCoarseFine': 'Desplazar — grueso (10 px) / fino (0,1 px)',
         'editor-starPolygonPointCount': 'Número de puntas de estrella/polígono',
@@ -694,6 +697,10 @@ export const es: Dictionary = {
         layoutVerticalDown: 'Vertical (abajo)',
         layoutVerticalUp: 'Vertical (arriba)',
         layoutRadial: 'Radial',
+        mindmapSpacing: 'Espaciado de ramas',
+        mindmapSpacingTitle: 'Separación entre subárboles completos, en píxeles. Mayor = mapas más aireados; el hueco vertical escala con él.',
+        mindmapLeafSpacing: 'Espaciado de hojas',
+        mindmapLeafSpacingTitle: 'Separación entre dos nodos hoja adyacentes, en píxeles. Más ajustada que la de ramas, para que las hojas queden juntas.',
         sectionTimelapse: 'Cámara rápida',
         autoRecord: 'Grabar sesiones automáticamente',
         autoRecordTitle: 'Captura automáticamente una grabación del proceso al estilo Procreate en cada sesión. Actívala o deténla con Ctrl+Shift+T.',
@@ -1190,6 +1197,19 @@ export const es: Dictionary = {
     },
 
     /** Terminología según Illustrator ES: «Extrusión y bisel», «Inflar». */
+    mindmapFocus: {
+        focusedOn: 'Enfocado en «{{label}}»',
+        untitled: 'Nodo sin título',
+        othersDimmed: '{{count}} atenuados',
+        showAll: 'Mostrar todo',
+        showAllTitle: 'Mostrar todo el mapa (Esc o Mayús+F)',
+    },
+    mindmapPanel: {
+        moveEarlier: 'Mover antes en la rama (Alt+Mayús+Flecha)',
+        moveLater: 'Mover después en la rama (Alt+Mayús+Flecha)',
+        focusBranch: 'Enfocar esta rama — atenuar el resto del mapa (Mayús+F)',
+        exportOutline: 'Exportar esta rama como esquema Markdown',
+    },
     effects3d: {
         extrudeTitle: 'EXTRUSIÓN 3D',
         extrudeAdd: '+ Añadir extrusión 3D',
