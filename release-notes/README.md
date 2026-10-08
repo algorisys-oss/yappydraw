@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.278](0.8.278.md) — Documentation. The command registry shipped in 0.8.276 with no help page at all; `workspace.md` had mentioned the Command Palette a dozen times without ever explaining it
 - [0.8.277](0.8.277.md) — The sitemap fix from 0.8.276, actually shipped. A `.gitignore` entry in this repo travelled into the mirror with `git archive`, so the generated date map was written and then dropped by the mirror's `git add -A` — with the publish log, `--verify` and all fourteen deploy checks reporting success. Also teaches `verify:deploy` to check the sitemap *says* something, not just that it is served
 - [0.8.276](0.8.276.md) — The command palette now says why a command is unavailable instead of doing nothing, every palette command is one named undo step, and `Yappy.commands` exposes everything the app can do as data. Plus #429: every sitemap URL had been carrying the same `lastmod` for several releases — the prerenderer's lookup was correct, but Hostinger builds the mirror, whose history is one squashed commit per release
 - [0.8.275](0.8.275.md) — Undo keeps your selection instead of deselecting everything, and the History panel names its steps. `Yappy.command(label, fn)` runs an action as one named, atomic undo step that rolls itself back if it throws. Phase 1 of the command-registry plan, and the cheap part is that none of the ~366 existing `pushToHistory()` call sites changed — they became transaction-aware instead

@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport"
+keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
 ---
 
 # Workspace & Productivity
@@ -93,6 +93,47 @@ Yappy.getPaintColor('fill');                    // → '#e03131'
 Yappy.swapFillStroke();                         // Shift+X
 Yappy.resetPaint();                             // black stroke, no fill
 ```
+
+## Command Palette
+
+<kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on a Mac) opens a searchable list of everything Yappy can do — every tool, shape, view toggle, layer action and edit. Type a few letters, press <kbd>Enter</kbd>. It searches labels, categories and command ids, so English terms from the documentation keep working whatever language the interface is in.
+
+### It tells you why something is unavailable
+
+A command that can't run right now is shown **greyed, with the reason underneath** — a dimmed **Group** reads *"Select two or more objects"* — instead of being hidden, or looking clickable and then doing nothing. Reading the requirement is how you learn what an action needs; a row that has vanished teaches nothing.
+
+### One command, one undo
+
+Running something from the palette is a **single undo step**, however many changes it makes internally, and the History panel names it. If a command fails part-way it puts everything back rather than leaving half an edit behind.
+
+### Driving it from a script
+
+Every command is addressable by id, and `Yappy.commands` is the same way in that the palette uses — so a scripted command is one named, atomic undo step too.
+
+```
+Yappy.commands.list();
+// [{ id: 'action.group', label: 'Group', category: 'Actions',
+//    shortcut: 'Ctrl+G', enabled: 'Select two or more objects' }, …]
+
+Yappy.commands.run('action.group');
+// → { ok: true, result } — or { ok: false, reason: 'Select two or more objects' }
+```
+
+`enabled` is `true` when a command can run, or the reason it can't — so a script can check first, or just run it and read `reason`. Ids are grouped by area (`action.group`, `tool.lasso`, `view.zoomFit`); `Yappy.commands.aliases()` maps the older flat ids (`action-group`), which all still work.
+
+:::tip Finding an id
+`Yappy.commands.list().filter(c => c.label.includes('Group'))` is the quickest way to find what something is called. `.filter(c => c.enabled !== true)` shows everything currently unavailable, and why.
+:::
+
+### Reading the undo history
+
+```
+Yappy.historyEntries();   // the timeline the History panel shows, each with its label
+Yappy.undoLabel();        // name of the step Ctrl+Z would reverse, or null
+Yappy.redoLabel();
+```
+
+Steps from commands are named; edits made by hand (dragging, drawing) are unnamed and show as "State n", exactly as before.
 
 ## Guided tour
 
