@@ -4,7 +4,7 @@ name: Illustrator-class Tools
 icon: "🪄"
 category: Design
 description: Combine shapes (Unite/Subtract/Intersect/Exclude), Shape Builder, Magic Wand, Liquify, Knife & Scissors, generative shapes, and the Symbol Sprayer — with API examples
-keywords: unite union subtract minus front intersect exclude boolean combine merge shapes pathfinder compound shape non-destructive keep editable contextual toolbar pathfinder strip show hide pathfinder strip turn off pathfinder toolbar in the way obstructing floating panel appears on selection pin open lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid vanishing point horizon 1-point 2-point 3-point soft snap to perspective lines snap tolerance snap strength grid density touch type vertical type slice graph chart symbolism sprayer width tool width profile width profiles stroke profile variable width uniform bulge waist taper out taper in chisel oval leaf calligraphic nib brush stroke expressive line setWidthProfile widthProfiles live paint shape builder pathfinder offset stroke outline type on path warp preset make with warp arc arch flag wave rise bulge bend slider how much it bends curve amount bend text arc text properties panel bake warp remove warp vector tools palette google fonts font picker variable font variable fonts weight axis wght thin black single file hover preview font preview add font custom font ttf otf woff letter spacing preview applied
+keywords: unite union subtract minus front intersect exclude boolean combine merge shapes pathfinder compound shape non-destructive keep editable contextual toolbar pathfinder strip show hide pathfinder strip turn off pathfinder toolbar in the way obstructing floating panel appears on selection pin open lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid vanishing point horizon 1-point 2-point 3-point soft snap to perspective lines snap tolerance snap strength grid density touch type vertical type slice graph chart symbolism sprayer width tool width profile width profiles stroke profile variable width uniform bulge waist taper out taper in chisel oval leaf calligraphic nib brush stroke expressive line setWidthProfile widthProfiles live paint shape builder pathfinder offset stroke outline type on path warp preset make with warp arc arch flag wave rise bulge bend slider how much it bends curve amount bend text arc text properties panel bake warp remove warp vector tools palette google fonts font picker variable font variable fonts weight axis wght thin black single file hover preview font preview add font custom font ttf otf woff letter spacing preview applied single line font single-line stroke font hershey engraving centreline pen plotter plotter axidraw cnc laser engrave handwriting write on writes itself draw on strokeText stroke text drawIn drawOut script blackletter gothic simplex duplex
 ---
 
 # Illustrator-class Tools
@@ -258,6 +258,54 @@ Grids return one **group** so they move as a unit — double-click to enter the 
 
 :::tip
 **Noise Texture** / **Grunge Texture** (Vector Tools → Insert) cover the active artboard — else the page, else your artwork’s bounding box — with a procedural grain rectangle already set to *Multiply* at 14% opacity. It’s the one-click version of importing a grungy photo, stretching it over the picture and dialling the opacity down, and it keeps large flat colour areas from reading as dead. See **Masks, Appearance & Trace → Pattern Fills** for the per-shape controls.
+:::
+
+## ✍️ Single-line text — letters as pen strokes
+
+**Create Outlines** and `Yappy.tex` both turn text into *filled glyph shapes*. For two jobs that's the wrong shape:
+
+- **Handwriting that writes itself.** The draw-on reveal traces a path beautifully, but tracing a glyph's *outline* draws its silhouette — an **o** appears as two circles, not as one pen stroke.
+- **Pen plotters and engravers**, which need a centreline and can't invent one from an outline.
+
+A single-line (stroke) font *is* the centreline. `Yappy.strokeText` writes with one, producing one editable path per letter:
+
+```
+const t = await Yappy.strokeText(120, 200, 'Hello', { font: 'hershey-script', fontSize: 72 });
+Yappy.drawIn(t.ids, 600, { stagger: 90 });   // writes itself, letter by letter
+```
+
+### The faces
+
+| Id | Looks like |
+| --- | --- |
+| `hershey-simplex` | Clean single-stroke sans — the default, and the one to plot with |
+| `hershey-duplex` | Double-stroked, so it reads as the "bold" |
+| `hershey-sans` | Geometric, Futura-ish |
+| `hershey-script` | Joined handwriting |
+| `hershey-gothic` | Blackletter |
+
+`Yappy.strokeFonts()` lists them. These are Dr A. V. Hershey's 1967 letterforms — the data every plotter has used since — not fonts your system provides, so they look the same everywhere.
+
+### What you get
+
+One `path` element per glyph, grouped so the word drags as one object. Each letter is an ordinary path: restyle it, animate it, edit its points with the Node tool, export it to SVG. Because they're real paths, `Yappy.drawIn` traces them, which is what makes the handwriting effect work — and in **sketch** style it traces the hand-drawn strokes themselves, so the reveal ends exactly on the finished letterform instead of popping into it.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `font` | `hershey-simplex` | One of the ids above |
+| `fontSize` | 32 | **Cap height** in px, same as `tex` |
+| `letterSpacing` | 0 | Extra px between letters; negative tightens |
+| `lineHeight` | 1.6 | Multiple of `fontSize` between baselines |
+| `align` | `left` | `left` / `center` / `right`, for multi-line text |
+| `strokeColor`, `strokeWidth`, `opacity`, `renderStyle` | — | Applied to every letter |
+| `group` | true | Group the letters so the word moves as one |
+
+:::tip Pen plotters
+Stroke text exports to SVG as open paths with no fill, which is exactly what plotter software (AxiDraw, Inkscape's extensions, GRBL senders) expects. Outlined text gives those tools a shape to trace *around* instead of a line to draw.
+:::
+
+:::note Coverage
+Hershey faces cover ASCII 32–126. Characters outside that — accents, emoji, non-Latin scripts — are skipped and listed in the returned `missingChars`, rather than silently drawn as something else. For those, use ordinary text or **Create Outlines**.
 :::
 
 ## ↕ Vertical Type

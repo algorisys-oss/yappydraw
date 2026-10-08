@@ -1,5 +1,28 @@
 # Bug Fixes Log
 
+## 2026-10-08 — Presenting: stepping back landed on a half-built slide
+
+### 428. Backward navigation re-hid the previous slide's build steps
+
+**Symptom:** press ← in a presentation and you land on the previous slide with its on-click
+reveals undone — a slide that looked half-empty, and that then needed one ← per build step to
+get out of. Noticed while reviewing msurguy/draw-presenter, whose key table states the correct
+behaviour outright: "← previous slide (fully built)".
+
+**Cause:** `retreatPresentation` only decremented `activeSlideIndex`, and `setActiveSlide` then
+ran `slideBuildManager.init()` unconditionally, whose `applyStartHidden()` sets every on-click
+element's opacity to 0. Forward navigation wants exactly that; backward navigation wants the
+opposite, and nothing distinguished the two.
+
+**Fix:** `slideBuildManager.buildAll()` shows the slide's finished state instantly — restores the
+opacities `applyStartHidden` took away, marks every step played so `hasMoreSteps()` is false and
+the next → moves on. `setActiveSlide` takes a `buildFully` flag, which `retreatPresentation`
+passes. Deliberately does not replay the animations: a reveal re-run while someone scrubs
+backwards is noise, and the end state is all that is wanted.
+
+Forward behaviour is covered by its own test in the same spec, since the whole point is that the
+two directions differ.
+
 ## 2026-10-08 — The build's memory headroom was unknown, and the recorded figure was wrong
 
 ### 426. Nothing measured the build's peak memory, so CLAUDE.md's figure had drifted ~400 MB

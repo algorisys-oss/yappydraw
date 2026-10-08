@@ -131,7 +131,12 @@ export {
     pixelGlitch,
     pixelCurtainV,
     pixelCurtainH,
-    pixelRain
+    pixelRain,
+    // Progressive stroke reveal. Exported so `Yappy.drawIn`/`drawOut` can reach it — the
+    // presets were only reachable through `playEntranceAnimation`, which reads the element's
+    // own `entranceAnimation` property and so cannot be aimed at a specific preset.
+    drawIn,
+    drawOut
 } from './element-animator';
 
 export type { StaggerConfig } from './element-animator';

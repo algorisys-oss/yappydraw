@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.274', date: '2026-10-08', items: [
+        'Write with single-line fonts \u2014 letters made of pen strokes instead of filled shapes. Five classic Hershey faces, from a clean plotter sans to joined handwriting and blackletter.',
+        'Because each letter is the line a pen would travel, your text can draw itself on: write a word, then reveal it stroke by stroke, letter after letter. They also work properly with pen plotters and engravers, which need a line to follow rather than a shape to trace around.',
+        'Spotlight while presenting: select something and press the bulb in the presentation toolbar, and the rest of the slide fades back. Press it again or Esc to bring it all back.',
+        'Going back through a presentation now lands on the previous slide fully built, the way you last saw it \u2014 it used to reappear half-empty and take one press per reveal to get out of.',
+    ] },
     { version: '0.8.272', date: '2026-10-08', items: [
         'Mind maps tidy themselves up again as you work. Adding, deleting, collapsing or moving a node re-arranges the tree, and new maps spread their branches left and right of the centre instead of stacking into one tall column. You can switch it off in Settings \u2192 Mindmap.',
         'Deleting a node now deletes everything under it, in one undo \u2014 it used to leave the children stranded on the canvas with a line drawn to nothing.',

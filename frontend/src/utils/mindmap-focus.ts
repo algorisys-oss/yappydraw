@@ -53,6 +53,57 @@ export const focusBranchSet = (
 }
 
 /**
+ * Spotlight: dim the whole canvas except these elements and their descendants.
+ *
+ * Shares the renderer's focus-dimming path rather than adding a second one — the renderer
+ * already multiplies a non-member's opacity by 0.12, so a spotlight is the same question with a
+ * different answer for "what is in the set".
+ *
+ * Unlike mind-map focus, a spotlight does NOT change hit testing. Focus is a working mode you
+ * enter on purpose, where grabbing what you can't see is a hazard; a spotlight is emphasis, and
+ * silently making the rest of a drawing unclickable would be a surprise nobody asked for.
+ */
+export const spotlightSet = (
+    ids: readonly string[] | null | undefined,
+    elements: readonly DrawingElement[],
+): Set<string> | null => {
+    if (!ids?.length) return null;
+    const live = ids.filter(id => elements.some(e => e.id === id));
+    if (!live.length) return null;   // stale ids mean "no spotlight", never "dim everything"
+
+    const set = new Set<string>(live);
+    // A spotlit container brings its subtree: spotlighting a mind-map branch or a grouped
+    // diagram and having only the one box stay lit would be useless.
+    const queue = [...live];
+    while (queue.length) {
+        const pid = queue.shift()!;
+        for (const child of mindmapChildren(pid, elements)) {
+            if (set.has(child.id)) continue;
+            set.add(child.id);
+            queue.push(child.id);
+        }
+    }
+    for (const el of elements) {
+        if (!MINDMAP_CONNECTOR_TYPES.includes(el.type)) continue;
+        if (el.startBinding && el.endBinding &&
+            set.has(el.startBinding.elementId) && set.has(el.endBinding.elementId)) {
+            set.add(el.id);
+        }
+    }
+    return set;
+};
+
+/** Union of the dim-exempt sets — what the renderer keeps at full opacity. Null = dim nothing. */
+export const dimExemptSet = (
+    focus: Set<string> | null,
+    spotlight: Set<string> | null,
+): Set<string> | null => {
+    if (!focus) return spotlight;
+    if (!spotlight) return focus;
+    return new Set([...focus, ...spotlight]);
+};
+
+/**
  * The focus set, mirrored for the interaction predicates.
  *
  * `hitTestElement` and `getHandleAtPosition` are pure utilities that take an element list and

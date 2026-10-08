@@ -68,6 +68,7 @@ import {
 } from "../utils/symmetry";
 import { refreshBoundLine } from "../utils/binding-logic";
 import { getDescendants } from "../utils/hierarchy";
+import { loadStrokeFont, layoutStrokeText, strokesToSubpaths, strokesBounds, isStrokeFontId, DEFAULT_STROKE_FONT, type StrokeTextOptions } from "../utils/stroke-fonts";
 import { abortDsAlgorithm } from "../utils/ds-operations";
 import { getImage } from "../utils/image-cache";
 import { defaultPaletteId } from "../config/color-palettes";
@@ -422,6 +423,8 @@ interface AppState {
      *  While non-empty, clicks select individual objects *inside* the innermost
      *  group instead of the whole group — Illustrator's "enter the group". */
     isolatedGroupIds: string[];
+    /** Presentation spotlight: ids kept at full opacity while the rest of the canvas dims. */
+    spotlightIds: string[];
     /**
      * Eyedropper mode: the next canvas click either copies that object's style to `targets`
      * ('style'), or reports the exact colour under the pointer to whoever armed it ('color').
@@ -807,6 +810,7 @@ const initialState: AppState = {
     compoundEdit: null,
     alignToKeyObject: false,
     isolatedGroupIds: [],
+    spotlightIds: [],
     eyedropper: { active: false, targets: [], mode: 'style' as const },
     eyedropperHover: null,
     penCloseHint: null as { x: number; y: number } | null,
@@ -2616,7 +2620,11 @@ const resetOpenBoxElements = () => {
     }
 };
 
-export const setActiveSlide = async (index: number, skipAnimation?: boolean) => {
+/**
+ * `buildFully` shows the destination slide in its finished state instead of replaying its build
+ * steps — what backward navigation wants (see `slideBuildManager.buildAll`).
+ */
+export const setActiveSlide = async (index: number, skipAnimation?: boolean, buildFully?: boolean) => {
     if (index < 0 || index >= store.slides.length) return;
     if (index === store.activeSlideIndex && !slideTransitionManager.transitioning) {
         // Still re-center the viewport in case it drifted (e.g. after exiting presentation mode)
@@ -2663,7 +2671,8 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean) => 
             hideOpenBoxRevealElements();
             stopVideoPlayback(); // Stop any playing video from previous slide
             slideBuildManager.init(index);
-            slideBuildManager.playInitial();
+            if (buildFully) slideBuildManager.buildAll();
+            else slideBuildManager.playInitial();
 
             // Auto-play videos with videoAutoplay enabled
             const autoPlayVideo = store.elements.find(
@@ -2711,9 +2720,10 @@ export const retreatPresentation = async () => {
         return;
     }
 
-    // 2. Previous Slide
+    // 2. Previous Slide — shown fully built. Going back should land on the slide as you last
+    // saw it, not replay its reveals from an empty stage.
     if (store.activeSlideIndex > 0) {
-        await setActiveSlide(store.activeSlideIndex - 1);
+        await setActiveSlide(store.activeSlideIndex - 1, undefined, true);
     }
 };
 
@@ -9312,6 +9322,37 @@ export const setFocusBranch = (id: string | null): boolean => {
     return true;
 };
 
+/**
+ * Spotlight `ids` — dim everything else to 12% to put the emphasis on them.
+ *
+ * For presenting and for explainer scripts: the equivalent of pointing at one thing and letting
+ * the rest of the slide recede. Pass null or [] to clear. Ids that no longer resolve clear the
+ * spotlight rather than dimming the whole canvas, the same fail-OFF rule focus mode uses — a
+ * filter derived from an id has to be asked what it does when the id is gone.
+ *
+ * NOT a document edit (no history, nothing written to an element) and NOT a hit-testing change:
+ * dimmed elements stay clickable, because a spotlight is emphasis rather than a working mode.
+ */
+export const setSpotlight = (ids: readonly string[] | null): boolean => {
+    const next = (ids ?? []).filter(id => store.elements.some(e => e.id === id));
+    const same = next.length === store.spotlightIds.length
+        && next.every((id, i) => id === store.spotlightIds[i]);
+    if (same) return false;
+    setStore('spotlightIds', next);
+    bumpDirtyRevision();
+    return true;
+};
+
+/** Spotlight the current selection, or clear the spotlight if one is already on. */
+export const toggleSpotlight = (): boolean => {
+    if (store.spotlightIds.length > 0) return setSpotlight(null);
+    if (store.selection.length === 0) {
+        showToast('Select something to spotlight it', 'info', 2500);
+        return false;
+    }
+    return setSpotlight([...store.selection]);
+};
+
 /** Shift+F: focus the selected branch, or leave focus if already in it. */
 export const toggleFocusBranch = (): boolean => {
     if (store.focusBranchId) return setFocusBranch(null);
@@ -10466,6 +10507,118 @@ export const convertTextToOutlines = async (ids: string[]): Promise<string[]> =>
  * a multi-subpath `pathSubpaths` path (even-odd fill). World coords are normalized to the
  * polygon's bbox.
  */
+/**
+ * Single-line (stroke) text — `Yappy.strokeText`.
+ *
+ * Emits one `path` element per glyph with **open** subpaths, which is the whole reason this is
+ * small: paths already render in both styles, hit-test, export to SVG, edit with the node tool,
+ * and — because `path` is registered to `SpecialtyShapeRenderer`, which overrides
+ * `traceDrawStroke` — animate with `drawIn`. "Handwriting that writes itself" is then just
+ * `strokeText` + `drawIn`, with no new animation code.
+ *
+ * One element per glyph rather than one per string, mirroring `Yappy.tex`: it lets a caller
+ * recolour, stagger or animate individual letters, and the group keeps them draggable as one.
+ *
+ * `backgroundColor` is forced transparent. A stroke glyph is a centreline, and canvas fills an
+ * open path by closing it implicitly — so a fill would web over the inside of every letter.
+ */
+export const createStrokeText = async (
+    x: number,
+    y: number,
+    text: string,
+    opts: StrokeTextOptions & {
+        font?: string;
+        group?: boolean;
+        strokeColor?: string;
+        strokeWidth?: number;
+        renderStyle?: DrawingElement['renderStyle'];
+        opacity?: number;
+    } = {},
+): Promise<{ ids: string[]; parts: { index: number; char: string; elementId: string }[]; groupId: string; missingChars: string[] }> => {
+    const empty = { ids: [], parts: [], groupId: '', missingChars: [] };
+    if (!text) return empty;
+
+    const fontId = opts.font && isStrokeFontId(opts.font) ? opts.font : DEFAULT_STROKE_FONT;
+    let font;
+    try {
+        font = await loadStrokeFont(fontId);
+    } catch (err) {
+        console.error('[strokeText] font load failed', err);
+        showToast(`Could not load the ${fontId} stroke font`, 'error');
+        return empty;
+    }
+
+    const layout = layoutStrokeText(font, text, opts);
+    if (layout.glyphs.length === 0) {
+        // Whitespace-only input, or a string of characters this face cannot draw. Say which.
+        if (layout.missingChars.length) {
+            showToast(`This stroke font has no glyph for ${layout.missingChars.join(' ')}`, 'info', 4000);
+        }
+        return { ...empty, missingChars: layout.missingChars };
+    }
+
+    const groupId = generateId('strokegrp');
+    // Ids must be unique across this synchronous build loop: generateId scans the store for the
+    // max, and none of these are in it yet, so without the batch set every glyph collides.
+    const batchIds = new Set<string>();
+    const built: DrawingElement[] = [];
+    const parts: { index: number; char: string; elementId: string }[] = [];
+
+    layout.glyphs.forEach((glyph, index) => {
+        const world = glyph.strokes.map(run => {
+            const out = new Array<number>(run.length);
+            for (let i = 0; i < run.length; i += 2) { out[i] = x + run[i]; out[i + 1] = y + run[i + 1]; }
+            return out;
+        });
+        const bounds = strokesBounds(world);
+        if (!bounds) return;
+        const subpaths = strokesToSubpaths(world, bounds);
+        if (!subpaths.length) return;
+
+        const id = generateId('path', batchIds);
+        const single = subpaths.length === 1;
+        built.push({
+            ...store.defaultElementStyles,
+            id,
+            type: 'path',
+            x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+            pathAnchors: single ? subpaths[0].anchors : undefined,
+            // Open, in both representations — a glyph is a centreline, never a region.
+            pathClosed: single ? false : undefined,
+            pathSubpaths: single ? undefined : subpaths,
+            strokeFontId: fontId,
+            angle: 0,
+            seed: Math.floor(Math.random() * 2 ** 31),
+            roundness: null,
+            locked: false,
+            link: null,
+            layerId: store.activeLayerId,
+            groupIds: opts.group === false ? undefined : [groupId],
+            strokeColor: opts.strokeColor ?? store.defaultElementStyles.strokeColor ?? '#1e1e1e',
+            strokeWidth: opts.strokeWidth ?? 2,
+            backgroundColor: 'transparent',
+            fillStyle: 'solid',
+            ...(opts.renderStyle ? { renderStyle: opts.renderStyle } : {}),
+            ...(opts.opacity !== undefined ? { opacity: opts.opacity } : {}),
+        } as DrawingElement);
+        parts.push({ index, char: glyph.char, elementId: id });
+    });
+
+    if (!built.length) return { ...empty, missingChars: layout.missingChars };
+
+    const ids = built.map(e => e.id);
+    pushToHistory();
+    batch(() => {
+        setStore('elements', (prev: DrawingElement[]) => [...prev, ...built]);
+        setStore('selection', ids);
+    });
+    bumpDirtyRevision();
+    if (layout.missingChars.length) {
+        showToast(`Skipped ${layout.missingChars.length} character(s) this stroke font has no glyph for`, 'info', 4000);
+    }
+    return { ids, parts, groupId, missingChars: layout.missingChars };
+};
+
 function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>, smoothEps?: number, batchIds?: Set<string>, refit = false): DrawingElement | null {
     // Three ways to turn a result polygon into anchors:
     //   smoothEps > 0 → smooth EVERY vertex via Catmull-Rom (Blob Brush, where the input is a

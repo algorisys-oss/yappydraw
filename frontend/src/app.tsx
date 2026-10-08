@@ -6,7 +6,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleElementsPanel,
   toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, setSpotlight, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, toggleGuidesVisible, toggleGuidesLocked, addLayer, toggleSlideNavigator,
@@ -269,6 +269,11 @@ const App: Component = () => {
       if (e.key === 'Escape' && store.focusBranchId) {
         e.preventDefault();
         setFocusBranch(null);
+        return;
+      }
+      if (e.key === 'Escape' && store.spotlightIds.length > 0) {
+        e.preventDefault();
+        setSpotlight(null);
         return;
       }
 

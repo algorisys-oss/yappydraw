@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, afterEach } from "bun:test";
-import { focusBranchSet, setFocusFilter, isFocusInert } from "./mindmap-focus";
+import { focusBranchSet, setFocusFilter, isFocusInert, spotlightSet, dimExemptSet } from "./mindmap-focus";
 import type { DrawingElement } from "../types";
 
 const node = (id: string, parentId?: string): DrawingElement =>
@@ -89,5 +89,50 @@ describe("isFocusInert", () => {
     it("treats an empty set as focus-off rather than 'everything is inert'", () => {
         setFocusFilter(new Set());
         expect(isFocusInert('anything')).toBe(false);
+    });
+});
+
+describe("spotlightSet", () => {
+    it("brings a spotlit container's subtree and the branches inside it", () => {
+        const set = spotlightSet(['a'], TREE)!;
+        expect([...set].sort()).toEqual(['a', 'a-a1', 'a-a2', 'a1', 'a2'].sort());
+    });
+
+    it("does NOT pull in ancestors — a spotlight is emphasis, not a path to the root", () => {
+        // This is the deliberate difference from focus mode, which keeps the path back.
+        const set = spotlightSet(['a'], TREE)!;
+        expect(set.has('root')).toBe(false);
+        expect(focusBranchSet('a', TREE)!.has('root')).toBe(true);
+    });
+
+    it("spotlights several unrelated elements at once", () => {
+        const set = spotlightSet(['a1', 'loose'], TREE)!;
+        expect([...set].sort()).toEqual(['a1', 'loose']);
+    });
+
+    it("clears rather than dimming everything when the ids are empty or stale", () => {
+        expect(spotlightSet(null, TREE)).toBeNull();
+        expect(spotlightSet([], TREE)).toBeNull();
+        expect(spotlightSet(['deleted'], TREE)).toBeNull();
+    });
+
+    it("keeps the ids that still exist when only some are stale", () => {
+        expect([...spotlightSet(['a1', 'deleted'], TREE)!]).toEqual(['a1']);
+    });
+});
+
+describe("dimExemptSet", () => {
+    it("unions focus and spotlight, and passes either through alone", () => {
+        const focus = focusBranchSet('a', TREE)!;
+        const spot = spotlightSet(['loose'], TREE)!;
+        expect(dimExemptSet(focus, null)).toBe(focus);
+        expect(dimExemptSet(null, spot)).toBe(spot);
+        const both = dimExemptSet(focus, spot)!;
+        expect(both.has('root')).toBe(true);    // from focus
+        expect(both.has('loose')).toBe(true);   // from spotlight
+    });
+
+    it("is null when neither is active, so nothing dims", () => {
+        expect(dimExemptSet(null, null)).toBeNull();
     });
 });

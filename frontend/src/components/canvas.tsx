@@ -76,7 +76,7 @@ import { getMeasureSegments, type MeasureSegment, type Rect } from "../utils/mea
 import { renderCropOverlay, hitTestCropHandle, applyCropDrag, constrainCropToAspect, getCropHandleCursor, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
 import { fitShapeToText, fitUmlClassToContent } from "../utils/text-utils";
-import { focusBranchSet, setFocusFilter } from "../utils/mindmap-focus";
+import { focusBranchSet, setFocusFilter, spotlightSet, dimExemptSet } from "../utils/mindmap-focus";
 import { plainTextToSpans } from "../utils/rich-text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { effectiveTime } from "../utils/animation/animation-engine";
@@ -559,10 +559,12 @@ const Canvas: Component = () => {
         // Grid under the artwork by default; `onTop` draws it after the elements instead.
         if (!store.gridSettings.onTop) renderGrid(ctx, canvasRef, store.gridSettings, scale, panX, panY, isDarkMode);
 
-        // 5. Focus Mode membership — dimming in the renderer, and inertness in hit testing /
-        // handle detection, both read this one set (utils/mindmap-focus.ts).
-        const focusBranchIds = focusBranchSet(store.focusBranchId, store.elements);
-        setFocusFilter(focusBranchIds);
+        // 5. What stays at full opacity. Two sources feed the renderer's dimming: mind-map focus
+        // mode and the presentation spotlight. Only focus also makes the rest INERT — a
+        // spotlight is emphasis, not a mode, so it must not quietly disable half the canvas.
+        const focusIds = focusBranchSet(store.focusBranchId, store.elements);
+        setFocusFilter(focusIds);
+        const focusBranchIds = dimExemptSet(focusIds, spotlightSet(store.spotlightIds, store.elements));
 
         // Onion skin (Animation mode, paused only): ghost neighboring frames
         // UNDER the current cel — red past, green future.
@@ -807,6 +809,7 @@ const Canvas: Component = () => {
         store.theme;
         store.activeSlideIndex; // Track slide switches for redraw (e.g., after duplicateSlide)
         store.focusBranchId;
+        store.spotlightIds;
         // Animation mode: playhead scrub/play + timeline edits + onion settings
         store.animCurrentFrame;
         store.animTimeline;

@@ -144,6 +144,26 @@ class SlideBuildManager {
         this.restoreHiddenElements();
     }
 
+    /**
+     * Show the slide in its finished state, instantly and without animating.
+     *
+     * This is what stepping BACKWARD through a deck needs. Going forward, "next" reveals the
+     * build steps one at a time; going back, the slide you return to should already be the slide
+     * you last saw — fully built. Without this, `init()` re-hid every on-click element and left
+     * the steps unplayed, so pressing ← landed on a slide that looked half-empty and then needed
+     * as many ← presses as it had build steps to get out of. Two different behaviours for the two
+     * directions is the deliberate asymmetry every presenter tool has.
+     *
+     * Marks every step played so `hasMoreSteps()` is false and the next → moves on, and restores
+     * the opacities `applyStartHidden` took away. Does NOT run the animations: a reveal replayed
+     * at 10× while someone scrubs backwards is noise, and the end state is all that is wanted.
+     */
+    buildAll() {
+        this.restoreHiddenElements();
+        for (const step of this.buildSequence) step.played = true;
+        this._playedClickSteps = this.totalClickSteps;
+    }
+
     private executeStep(index: number): Promise<void> {
         const step = this.buildSequence[index];
         if (!step || step.played) return Promise.resolve();

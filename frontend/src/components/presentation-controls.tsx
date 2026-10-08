@@ -1,7 +1,7 @@
 import { type Component, Show, createSignal, onMount, onCleanup, createMemo } from 'solid-js';
-import { store, togglePresentationMode, advancePresentation, retreatPresentation, setSelectedTool } from '../store/app-store';
+import { store, togglePresentationMode, advancePresentation, retreatPresentation, setSelectedTool, toggleSpotlight } from '../store/app-store';
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
-import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser } from 'lucide-solid';
+import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser, Lightbulb } from 'lucide-solid';
 import { gifCapturing } from '../utils/recording-manager';
 import { PresentationCaptureButtons } from './presentation-capture';
 
@@ -139,6 +139,24 @@ export const PresentationControls: Component = () => {
                         title="Pointer (Advance Slides)"
                     >
                         <MousePointer2 size={18} />
+                    </button>
+                    {/* Spotlight: dim everything except what's selected, so one thing carries the
+                        moment. Clicking it again (or Esc) brings the slide back. */}
+                    <button
+                        onClick={() => toggleSpotlight()}
+                        style={{
+                            background: store.spotlightIds.length > 0 ? 'rgba(168, 85, 247, 0.1)' : 'none',
+                            border: 'none',
+                            color: store.spotlightIds.length > 0 ? '#a855f7' : '#64748b',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            padding: '8px',
+                            'border-radius': '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        title={store.spotlightIds.length > 0 ? 'Clear spotlight (Esc)' : 'Spotlight the selection'}
+                    >
+                        <Lightbulb size={18} />
                     </button>
                     <button
                         onClick={() => setSelectedTool('laser')}

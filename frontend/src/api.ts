@@ -10,7 +10,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, fitMindmapNodeToText, moveMindmapNode, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, setPathCornerRadius, getPathCornerRadius, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, fitMindmapNodeToText, moveMindmapNode, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, setSpotlight, toggleSpotlight, createStrokeText, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, setPathCornerRadius, getPathCornerRadius, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setInflate, clearInflate, setTurntable, clearTurntable, bakeTurntable, spinTurntable360, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
@@ -123,6 +123,7 @@ import type { PerspectiveGrid } from "./utils/perspective-snap";
 import { parseOutline } from "./utils/mindmap-layout";
 import { mindmapSiblingInDirection } from "./utils/mindmap-navigation";
 import { mindmapToOutline, saveMindmapOutline } from "./utils/mindmap-outline";
+import { STROKE_FONTS } from "./utils/stroke-fonts";
 import {
     animateElement,
     animateElements,
@@ -135,6 +136,8 @@ import {
     animateElementsFrom,
     playEntranceAnimation,
     playExitAnimation,
+    drawIn,
+    drawOut,
     createTimeline,
     fadeIn,
     fadeOut,
@@ -3152,6 +3155,19 @@ export const YappyAPI = {
     toggleFocusBranch() { return toggleFocusBranch(); },
     /** The id of the branch focus mode is pinned to, or null. */
     get focusedBranch() { return store.focusBranchId; },
+    /**
+     * Spotlight these elements — dim everything else to 12% so the emphasis is on them. Pass
+     * null or [] to clear; Escape clears too. A spotlit container brings its subtree with it.
+     *
+     * Dimmed elements stay clickable: a spotlight is emphasis, not a working mode (that is
+     * `setFocusBranch`, which also makes the rest inert). Not a document edit — no history
+     * entry, nothing written to any element, nothing saved into the file.
+     */
+    setSpotlight(ids: readonly string[] | null) { return setSpotlight(ids); },
+    /** Spotlight the current selection, or clear an existing spotlight. */
+    toggleSpotlight() { return toggleSpotlight(); },
+    /** The ids currently spotlit (empty when there is no spotlight). */
+    get spotlight() { return [...store.spotlightIds]; },
     /** The defaults new mind maps use (Settings → Mindmap), including the layout gaps in px. */
     getMindmapDefaults() {
         return {
@@ -3231,6 +3247,59 @@ export const YappyAPI = {
     editCompound(id: string) { enterCompoundEdit(id); },
     /** Finish in-place compound editing — rebuild from the edited sources (save) or restore the original (cancel). */
     finishCompoundEdit(save = true) { exitCompoundEdit(save); },
+    /**
+     * Single-line (stroke) text — letters as pen movement rather than filled outlines.
+     *
+     * The two existing text→vector routes, `createOutlines` and `tex`, both produce filled glyph
+     * shapes. That is the wrong shape for two jobs: handwriting that writes itself (dash-tracing
+     * a glyph's *contour* draws its silhouette, not a pen stroke) and pen plotters or engravers,
+     * which need a centreline. A stroke font is that centreline.
+     *
+     * Returns one `path` element per glyph in reading order, grouped, so individual letters can
+     * be recoloured, staggered or animated — the same shape `tex` returns. Pair it with
+     * `drawIn` for handwriting.
+     *
+     * `fontSize` is the CAP HEIGHT in px, as in `tex`. Faces: see `strokeFonts()`. Characters
+     * outside ASCII 32-126 are skipped and reported in `missingChars` rather than substituted.
+     *
+     * ```
+     * const t = await Yappy.strokeText(120, 200, 'Hello', { font: 'hershey-script', fontSize: 72 });
+     * Yappy.drawIn(t.ids, 600, { stagger: 90 });   // writes itself, letter by letter
+     * ```
+     */
+    strokeText(x: number, y: number, text: string, options?: {
+        font?: string; fontSize?: number; letterSpacing?: number; lineHeight?: number;
+        align?: 'left' | 'center' | 'right'; group?: boolean;
+        strokeColor?: string; strokeWidth?: number; opacity?: number;
+        renderStyle?: DrawingElement['renderStyle'];
+    }) {
+        return createStrokeText(x, y, text, options ?? {});
+    },
+    /** The single-line faces that ship: `[{ id, name }]`, for a picker or a script. */
+    strokeFonts() { return STROKE_FONTS.map(f => ({ id: f.id, name: f.name })); },
+    /**
+     * Progressive stroke reveal — the shape is dash-traced on as if being drawn.
+     *
+     * In sketch style it traces the shape's ACTUAL RoughJS strokes (`rough-stroke-trace.ts`), so
+     * the reveal ends on exactly the strokes the finished shape renders rather than popping into
+     * them at 100%. Pair it with `strokeText` for handwriting.
+     *
+     * Takes one id or many; `stagger` delays each successive element by that many ms, which is
+     * what makes a word write itself letter by letter. Returns the animation ids.
+     */
+    drawIn(ids: string | string[], duration = 1500, options?: { stagger?: number; delay?: number; easing?: string }) {
+        const list = Array.isArray(ids) ? ids : [ids];
+        const stagger = options?.stagger ?? 0;
+        const base = options?.delay ?? 0;
+        return list.map((id, i) => drawIn(id, duration, { ...options, delay: base + i * stagger } as any));
+    },
+    /** `drawIn` in reverse — the stroke progressively disappears. Same options. */
+    drawOut(ids: string | string[], duration = 1500, options?: { stagger?: number; delay?: number; easing?: string }) {
+        const list = Array.isArray(ids) ? ids : [ids];
+        const stagger = options?.stagger ?? 0;
+        const base = options?.delay ?? 0;
+        return list.map((id, i) => drawOut(id, duration, { ...options, delay: base + i * stagger } as any));
+    },
     /** Convert shapes to editable vector paths (in place). Returns the converted ids. */
     convertToPath(ids: string[]) { return convertToPath(ids); },
     /**

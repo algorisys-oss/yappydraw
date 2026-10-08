@@ -2,6 +2,87 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Single-line fonts: the data was the project, not the code (Oct 8 2026)
+
+Picked from the draw-presenter review — the one idea that gave Yappy a capability rather than a
+variation.
+
+- **The feature was 95% already built, in a system nobody had connected to it.** `drawIn` traces
+  real strokes; `pathSubpaths` carry a per-subpath `closed` flag; `path` is registered to
+  `SpecialtyShapeRenderer`, which overrides `traceDrawStroke` to stroke the SVG `d` directly.
+  So open, stroke-only glyph paths render, hit-test, export, edit AND animate with zero renderer
+  changes. Checking those four things before designing turned a feature into a data-conversion
+  job. Ask what the new thing could be *expressed as* before deciding it needs new machinery.
+- **Why an outline is not a centreline.** Both existing text→vector routes produce filled glyph
+  shapes, and dash-tracing a glyph's contour draws its silhouette — an 'o' appears as two
+  concentric circles, not as one pen stroke. No amount of animation work fixes that; it needs
+  different data. Same reason plotters and engravers want stroke fonts.
+- **Measure the font's metrics, don't recall them.** I "remembered" Hershey's baseline as y=0.
+  A ten-line probe over the real data said otherwise: baseline y=+9, caps to −12, descenders to
+  +16 — cap height 21, x-height 14, descender 7, y increasing downward. Every placement in the
+  layout depends on those four numbers, and all four would have been wrong.
+- **Normalise at build time, not at runtime.** The converter subtracts the baseline and the left
+  bearing, so every glyph starts at x=0 on a y=0 baseline. The runtime is then
+  `pen + x*scale, baseline + y*scale` with no per-glyph bookkeeping — and the normalisation is
+  something tests can assert about the shipped data rather than about code.
+- **A test that passes on a hand-made fixture proves nothing about the shipped data.** The unit
+  tests load the generated JSON, so a broken converter fails them. A fixture would have agreed
+  with whatever the converter did.
+- **Then let the data correct the test.** Two assertions were wrong, not the data: `_` is drawn
+  entirely *below* the baseline (correct), and `{}()[]` overshoot the cap height (correct in
+  every typeface). Both now name the exception instead of loosening the rule until it passes —
+  and the second became a test in its own right, so a future "normalise to cap height" idea has
+  to argue with it.
+- **Shipping the headline use case meant exposing something unrelated.** "Handwriting that
+  writes itself" needs `drawIn`, which existed but was unreachable from the API: the only route
+  was `playEntranceAnimation`, which reads the element's own `entranceAnimation` property and so
+  cannot be aimed at a preset. The e2e test is what surfaced it — I had written `Yappy.animate`
+  in the doc comment, a function I'd invented. **Doc examples should be executed, not written.**
+- **Licence-check before downloading, and record provenance next to the data.** The Hershey data
+  permits any use with two acknowledgements and permits conversion to any format except the
+  NTIS one — so JSON is fine, and the acknowledgement is embedded in every generated file's
+  `notice` field so it cannot be separated from the data it covers. Note the upstream repo's
+  `COPYING` is GPL-2.0 for its *software*; only the `.jhf` data was taken.
+- **Render it and look at it.** 20 unit tests and 9 e2e tests say the metrics and wiring are
+  right; none of them can say the letters are legible. A sample sheet of all five faces took two
+  minutes and is the only check that would have caught, say, a y-axis flip that happened to keep
+  every bounding box correct.
+
+## Reviewing another project: check your own codebase first, and distrust your own metric (Oct 8 2026)
+
+Reviewing msurguy/draw-presenter for ideas worth taking.
+
+- **Grep the domain noun before declaring a gap.** Same lesson as focus mode, applied
+  preventatively this time: before claiming draw-presenter's build-step model was novel, grep
+  found `slideBuildManager` with `hasMoreSteps`/`playNext`, and its transitions were already
+  direction-aware. Yappy's own `rough-stroke-trace.ts` is *better* than their stroke reveal — it
+  re-runs the shape's `renderSketch()` against a capture proxy so the reveal ends on exactly the
+  strokes the finished shape draws. Two thirds of their feature list was already here. The real
+  picks were the three things that were not.
+- **"Cheap because it reuses X" needs checking which half X covers.** The presentation spotlight
+  was pitched as cheap reuse of the mind-map focus dimming. The reuse covers the *dimming*; it
+  does not cover the *targeting*, and an interactive click-to-spotlight needs a new tool plus
+  pointer plumbing inside presentation mode. The authored version — `setSpotlight(ids)` feeding
+  the same dim set — is genuinely cheap AND closer to what their BrushReveal actually does.
+  Say which half was wrong rather than quietly delivering the small version.
+- **A pixel test is worth writing precisely because the bookkeeping can be perfect and the paint
+  wrong.** Focus mode shipped half-built exactly that way: known to the renderer, unknown to hit
+  testing. Five tests of store state would not have caught it.
+- **And then: distrust the metric before the feature.** The first pixel assertion failed, and
+  the feature was fine — the canvas is opaque and composited over the page colour, so a dimmed
+  red goes *pale* (255,224,224 over white) rather than losing alpha. Red-channel × alpha does not
+  move at all. Distance from a sampled background pixel is both correct and theme-independent.
+  When a new measurement disagrees with a feature you have reason to believe works, print the
+  raw numbers before touching the code.
+- **Two directions through a deck are two behaviours, not one with a sign flip.** → reveals the
+  next build step; ← returns to the previous slide *fully built*. Yappy had the forward half and
+  used it for both, so going back landed on a half-empty slide. Worth asking of any
+  next/previous pair whether "previous" is really the inverse.
+- **Licence-check a vendoring idea before recommending it.** Of draw-presenter's 67 single-line
+  fonts, Hershey is freely usable and EMS/Shriinivas are OFL 1.1, but the author himself flags
+  Cutlings, Relief and the Routed Gothic *conversion* as "license to confirm before
+  redistribution". The honest recommendation is three families, not 67.
+
 ## A number nobody measures is a number that has already drifted (Oct 8 2026)
 
 - **CLAUDE.md said the build peaks at "~1.65 GB". The first actual measurement said 2.05 GB.**

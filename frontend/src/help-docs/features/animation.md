@@ -742,6 +742,18 @@ Each animation has a **"Start hidden in presentation"** checkbox. When enabled, 
 
 Each animation shows a numbered badge indicating which click-step it belongs to. Blue badges mark **On Click** triggers (step boundaries), while dimmed badges show chained animations (After Previous / With Previous) that belong to the same step. Animations with **On Load** trigger show "auto" since they play immediately.
 
+### Going Back
+
+Forward and backward are deliberately different. **→** (or Space / Page Down) reveals the next build step and only moves to the next slide once the current one is fully built. **←** (or Page Up) goes straight to the previous slide and shows it **fully built** — as you last saw it, not replayed from an empty stage. So stepping back through a deck takes one press per slide, however many reveals each one has.
+
+### Spotlight
+
+Dim everything except one thing. Select an element (or several) and press the **💡 Spotlight** button in the presentation toolbar: the rest of the canvas fades back to 12% so the emphasis is unmistakable. Press it again, or <kbd>Esc</kbd>, to bring the slide back.
+
+A spotlit container brings its children with it, so spotlighting a mind-map branch or a grouped diagram lights the whole thing. Dimmed elements stay clickable — the spotlight is emphasis, not a mode — and it is never saved into your file or recorded in undo.
+
+From a script: `Yappy.setSpotlight([id, ...])`, `Yappy.setSpotlight(null)` to clear, `Yappy.toggleSpotlight()` for the current selection, and `Yappy.spotlight` to read what's lit.
+
 ### Infinite Canvas Presentations
 
 Click-to-advance works on both slides and infinite canvas mode. On infinite canvas:

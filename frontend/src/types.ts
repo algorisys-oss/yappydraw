@@ -757,6 +757,8 @@ export interface DrawingElement {
     // closed flag. The SVG `d` for rendering/hit-test is derived from these.
     pathAnchors?: PathAnchor[];
     pathClosed?: boolean;
+    /** Which single-line (stroke) font this path was written with, when it came from `strokeText`. */
+    strokeFontId?: string;
     // Multiple subpaths (holes / disjoint islands). When set, supersedes pathAnchors;
     // rendered + hit-tested with the even-odd fill rule. See PathSubpath.
     pathSubpaths?: PathSubpath[];

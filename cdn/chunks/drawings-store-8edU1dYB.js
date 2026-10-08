@@ -1,4 +1,4 @@
-import { A as I, B as u, C as l, D as m, E as S, G as U, H as w, I as E, b as N, J as y, K as O, L as p, M as T, N as C, O as G } from "./index-DxZxLaZI.js";
+import { A as I, B as u, C as l, D as m, E as S, G as U, H as w, I as E, b as N, J as y, K as O, L as p, M as T, N as C, O as G } from "./index-C1gfed6c.js";
 const f = "yappy:drawings:index", c = (t) => `yappy:drawing:${t}`;
 function $() {
   return `d-${typeof crypto < "u" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.floor(Math.random() * 1e9)}`}`;
