@@ -74,17 +74,38 @@ Additional Action items :
 - **Render-style parity: BOTH `sketch` and `architectural` drawing styles must work for every shape/feature.** A shape must render correctly (fill **and** stroke) in both modes. Sketch goes through rough.js (`renderSketchGeometry` → `rc.path`/`rc.polygon`/…); architectural goes through the clean canvas path (`renderArchitectural` → `RenderPipeline.renderGeometry` + `fill()`/`stroke()`). Gotcha: SVG-`path` geometry is a self-contained `Path2D` — it must be filled via `renderer.fillPath(d)` and stroked via `renderer.strokePath(d)`, because the `beginPath()+renderGeometry()+fill()/stroke()` pattern only works for geometries that append to the current path (rect/ellipse/points). When adding or changing a shape, verify it visually in **both** styles (a path-geometry shape that only sets up fill will silently lose its stroke in architectural mode).
 - WASM parity: When modifying JS code in `utils/geometry.ts`, `utils/hit-testing.ts`, `utils/routing.ts`, or `utils/object-snapping.ts`, ensure the corresponding WASM AssemblyScript module (`wasm/assemblyscript/assembly/`) and bridge (`wasm/bridge/`) stay in sync. The WASM path must produce identical results to the JS fallback.
 
+## Tests
+
+`npm test` runs the whole unit suite — `bun test frontend scripts`. Use it rather than a bare
+`bun test`, which also sweeps in `tests/*.spec.ts` and reports every Playwright spec as a
+failure. Playwright specs are separate: `npx playwright test tests/<name>.spec.ts`.
+
+There is no CI in this repo, so a test that no documented command runs is a test nobody runs —
+the same trap the i18n ratchet fell into (see `.githooks/pre-commit`). When you add a unit test
+outside `frontend/`, check `npm test` picks it up.
+
 ## "Ship it" — release workflow
 
 When I say **"ship it"** (or "ship"), run the full release sequence:
 1. **Update docs** — record learnings in `docs/learnings.md`, log any fixes in `docs/bugs/bug-fixes.md`, review the relevant **web help doc** (`frontend/src/help-docs/`) for completeness and refresh help docs / hotkeys (`components/help-dialog.tsx`), and update `api.ts` if features/attributes changed.
 2. **Bump the version** in `package.json` (patch unless I say otherwise).
 3. **Write a release note** — ALWAYS create `release-notes/<version>.md` for the version being shipped (e.g. `release-notes/0.5.2.md`). Use the template in `release-notes/README.md`: date, highlights, features, fixes, internal/test changes, and any breaking changes / migration notes. One file per version; never skip this step. If older shipped versions are missing notes, backfill them as applicable. **Also add a matching entry (newest first) to `frontend/src/data/whats-new.ts`** — the in-app "What's new" popup (opened by clicking the version number). Keep that copy user-facing (what it does FOR them), skipping purely internal/test-only releases.
-4. **Refresh the repo map** (`npm run repograph`) and verify the build passes (`npm run build`).
-   **The build is memory-bound.** `vite build` needs ~1.3 GB of V8 heap and would grow to
-   ~2.2 GB RSS left alone, so the `build` script pins it
-   (`node --max-old-space-size=1536 node_modules/vite/bin/vite.js build`) to keep the peak at
-   ~1.65 GB. Do not remove that without re-measuring the floor. If a *host* build ever fails
+4. **Refresh the repo map** (`npm run repograph`) and verify the build passes — use
+   `npm run build:memory`, which runs `npm run build` and additionally reports its peak memory
+   against a budget (see below). Plain `npm run build` is fine if you only need the artifact.
+   **The build is memory-bound, and `npm run build:memory` is how you know where it stands.**
+   It runs the build under a process-tree RSS sampler, prints the peak, and fails past a budget
+   (2400 MB). Measured 2026-10-08: **2013-2084 MB** across four runs, the largest single process
+   (vite's main thread) at 1740-1798 MB against its 1536 MB V8 heap cap. Run it
+   alongside the build on a release; it is deliberately NOT inside `npm run build`, because that
+   script is what Hostinger, the OSS `--verify` pass and the desktop build all run.
+   `vite build` needs ~1.3 GB of V8 heap and would grow to ~2.2 GB RSS left alone, so the `build`
+   script pins it (`node --max-old-space-size=1536 node_modules/vite/bin/vite.js build`). Do not
+   remove that without re-measuring the floor.
+   *(This paragraph used to claim the cap "keeps the peak at ~1.65 GB". The first actual
+   measurement put it ~400 MB higher. A number nobody measures drifts, and the fix is to make
+   measuring cheap rather than to write the number down again.)*
+   If a *host* build ever fails
    **with no logs at all**, that is the signature to recognise: a process that fails writes an
    error, a process that is OOM-killed cannot, so an empty log points at OOM/timeout, not at
    missing dependencies — whatever the host's own "analysis" claims (v0.8.234's blamed missing

@@ -2,6 +2,46 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A number nobody measures is a number that has already drifted (Oct 8 2026)
+
+- **CLAUDE.md said the build peaks at "~1.65 GB". The first actual measurement said 2.05 GB.**
+  Not because anything regressed suddenly — because the figure was written down once and the
+  bundle kept growing. Writing a number in a doc records a belief; measuring it on every release
+  records a fact. `npm run build:memory` now does the latter, and the stale sentence is called
+  out in place rather than quietly replaced.
+- **Measure the process TREE, not the process.** The build is `tsc -b && vite build && npm run
+  prerender` behind an npm wrapper, so four processes are alive at the peak: ~2050 MB total while
+  the biggest single one is ~1770 MB. The number that gets a build OOM-killed is the concurrent
+  total, and `/usr/bin/time`'s `ru_maxrss` reports the largest single reaped child instead —
+  close enough to mislead. Sampling `/proc/<pid>/status` VmRSS over the descendant set is a
+  dozen lines and gives both figures, plus which process was the big one.
+- **Under-reporting is the dangerous direction for a budget.** Miss a descendant and the peak
+  reads low, so the budget never trips and the guard is worse than nothing — it is a guard that
+  reports "fine" right up to the outage. That is why the tree-walk has unit tests with an
+  unrelated sibling process in the fixture, not just a happy path.
+- **Don't wrap the thing the host runs.** `npm run build` is what Hostinger, the OSS `--verify`
+  pass and the desktop build all invoke. Putting the sampler inside it would make the deployed
+  artifact depend on the measurement; a separate `build:memory` that *calls* it keeps the
+  measured thing and the shipped thing identical.
+- **Measure variance before setting a threshold.** Four runs came in at 2013, 2054, 2063 and
+  2084 MB — a ~3.5% spread — which is what makes a 15% budget meaningful rather than a coin
+  flip. A threshold set off one sample is a flake generator. (The fourth reading arrived from
+  the guard running on its own release, and was above the range the first three established —
+  which is the argument for recording a range rather than a single figure.)
+- **There was no `npm test`.** Unit tests were run ad hoc as `bun test frontend`, so a test added
+  anywhere else — like the one for this script — would have been run once by its author and never
+  again. There is no CI here, so the documented command IS the test runner. Added
+  `npm test` = `bun test frontend scripts` (a bare `bun test` sweeps in the Playwright specs and
+  reports all 264 as failures). Exactly the trap the i18n ratchet fell into: it existed from
+  Phase 1a with nothing to run it, sat green in package.json, and shipped three hardcoded strings
+  across four releases. `.githooks/pre-commit` puts it best — "a guard nothing invokes is not a
+  guard".
+- **Name the failure signature in the failing message.** The script distinguishes "killed at the
+  ceiling" (the no-logs OOM signature, bug #344) from "exited non-zero with memory to spare"
+  (so memory is NOT the cause — read the real error). That second message exists because
+  v0.8.236/237 was read as OOM when it was a plain ENOENT in the prerenderer: the diagnosis that
+  wasted the time was the plausible one, so the tool should rule it out rather than leave it open.
+
 ## Check whether the feature already exists, under a different name (Oct 8 2026)
 
 - **A grep for the words you would have used is not a search for the feature.** The mindmap

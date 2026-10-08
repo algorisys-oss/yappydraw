@@ -2623,6 +2623,8 @@ renderers/raylib/rust/src/viewport.rs | rust | 82 | Viewport:4{new:13 handle_inp
 scripts/add_animations.ts | typescript | 86 | addAnimation:10
 scripts/add_paper_plane_path.ts | typescript | 64 |
 scripts/build-illustrations.mjs | javascript | 95 | minify:41 slugify:47 titleCase:48
+scripts/build-memory.mjs | javascript | 177 | readProc:46 snapshot:64 treeUsage:80 verdict:107
+scripts/build-memory.test.mjs | javascript | 98 | proc:13
 scripts/embed-player.js | javascript | 46 |
 scripts/fix_text_width.py | python | 28 |
 scripts/gen-large-sketch.cjs | javascript | 1211 | seed:17 id:21 makeShape:25 makeArrow:45 addLeaves:174

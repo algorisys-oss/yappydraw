@@ -1,5 +1,51 @@
 # Bug Fixes Log
 
+## 2026-10-08 — The build's memory headroom was unknown, and the recorded figure was wrong
+
+### 426. Nothing measured the build's peak memory, so CLAUDE.md's figure had drifted ~400 MB
+
+**Symptom:** no failure yet — this is the one CLAUDE.md warns about in advance: "the peak still
+climbs release by release, and nothing measures it, so the next ceiling arrives as an outage."
+It has already arrived twice on the host (bug #344, then v0.8.236/237).
+
+**Cause:** `npm run build` pins V8 at `--max-old-space-size=1536` because the build is
+memory-bound, and CLAUDE.md recorded that this "keeps the peak at ~1.65 GB". Nothing ever
+measured it. Four runs now put the peak at **2013-2084 MB** of tree RSS, with the largest
+single process — vite's main thread — at **1740-1798 MB**. Not a sudden regression: the figure
+was written down once and the bundle kept growing (a 2.7 MB `index` chunk, a 2.0 MB
+`export-game`). A number nobody measures is a number that has already drifted.
+
+Why it matters more than an ordinary stale doc: **a process that fails writes an error, a
+process that is OOM-killed cannot**, so this failure mode reaches the host as a build failure
+with *no logs at all*. That is also why it is easy to misdiagnose in the other direction —
+v0.8.236/237 was read as OOM when it was a plain ENOENT in the prerenderer.
+
+**Fix:** `npm run build:memory` (`scripts/build-memory.mjs`) runs the build under a `/proc`
+VmRSS sampler across its whole descendant set, prints the peak and the biggest single process in
+it, and fails past a 2400 MB budget — the measured figure plus ~15%, set after establishing the
+run-to-run variance (~3.5% over four runs) rather than off one sample. It separates "killed at the ceiling"
+(the #344 signature) from "exited non-zero with memory to spare, so memory is NOT the cause",
+which is the message that would have saved the v0.8.236 investigation.
+
+The tree, not one process: four are alive at the peak, and the figure that gets a build killed is
+the concurrent total — `/usr/bin/time`'s `ru_maxrss` reports the largest single reaped child
+instead, close enough to mislead. Deliberately not folded into `npm run build`, which is what
+Hostinger, the OSS `--verify` pass and the desktop build all run.
+
+### 427. There was no `npm test`, so a unit test outside `frontend/` would never run again
+
+**Symptom:** found while adding the test for the above. Unit tests were run ad hoc as
+`bun test frontend`; anything added elsewhere would be run once by its author and then never,
+since this repo has no CI.
+
+**Cause:** `package.json` had no `test` script at all, and a bare `bun test` can't serve as one —
+it sweeps in `tests/*.spec.ts` and reports every Playwright spec as a failure.
+
+**Fix:** `npm test` = `bun test frontend scripts`, documented in CLAUDE.md with the reason. Same
+trap the i18n ratchet fell into: it existed from Phase 1a with nothing to run it, sat green in
+the package scripts, and shipped three hardcoded strings across four releases before anyone ran
+it. `.githooks/pre-commit` already says it — "a guard nothing invokes is not a guard".
+
 ## 2026-10-08 — Mind mapping: focus mode was half-built, and a map could not leave as text
 
 ### 419. Focus mode dimmed elements to 12% but left them fully clickable
