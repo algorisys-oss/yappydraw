@@ -51,3 +51,9 @@ knife-scissors-check.png
 # Scratch space for verification screenshots, throwaway scripts and scratch output.
 # Everything disposable goes here rather than at the repo root (see CLAUDE.md).
 temp/
+
+# Generated per-file sitemap dates. Written into the PUBLISHED tree by publish-oss.sh, where
+# git history is squashed and cannot answer; this repo has real history, so a committed copy
+# would only ever be stale. `node scripts/build-lastmod.mjs` with no args writes it here, which
+# is useful for checking the output and must not be committed.
+frontend/src/prerender/lastmod.json

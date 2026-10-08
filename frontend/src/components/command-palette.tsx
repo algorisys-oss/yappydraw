@@ -1,6 +1,7 @@
 import { type Component, createSignal, createEffect, For, Show } from "solid-js";
 import { store, toggleCommandPalette } from "../store/app-store";
 import { searchCommands } from "../utils/command-registry";
+import { execute, disabledReason } from "../commands/execute";
 import { t } from "../i18n";
 import "./command-palette.css";
 
@@ -10,7 +11,24 @@ const CommandPalette: Component = () => {
     let inputRef: HTMLInputElement | undefined;
 
     const filter = () => store.commandPaletteFilter ?? undefined;
-    const results = () => searchCommands(query(), filter());
+    /**
+     * Each row carries why it cannot run, if it cannot. Shown rather than hidden (D5): a
+     * command you can see and are told the precondition for is how you learn what it needs;
+     * a command that has vanished teaches nothing.
+     */
+    const results = () => searchCommands(query(), filter())
+        .map(c => ({ ...c, disabled: disabledReason(c.id) }));
+
+    /**
+     * Every invocation goes through `execute` — never `item.action()` — so a palette command
+     * is one labelled, atomic undo step, and a failure rolls back and says so. Enter and click
+     * share this so they cannot drift apart.
+     */
+    const run = (id: string) => {
+        if (disabledReason(id)) return;   // a greyed row is inert
+        execute(id);
+        toggleCommandPalette(false);
+    };
 
     createEffect(() => {
         if (store.showCommandPalette) {
@@ -31,10 +49,7 @@ const CommandPalette: Component = () => {
         } else if (e.key === "Enter") {
             e.preventDefault();
             const item = items[selectedIndex()];
-            if (item) {
-                item.action();
-                toggleCommandPalette(false);
-            }
+            if (item) run(item.id);
         } else if (e.key === "Escape") {
             e.preventDefault();
             toggleCommandPalette(false);
@@ -68,16 +83,16 @@ const CommandPalette: Component = () => {
                         <For each={results()}>
                             {(item, index) => (
                                 <div
-                                    class={`command-palette-item ${index() === selectedIndex() ? "selected" : ""}`}
-                                    onClick={() => {
-                                        item.action();
-                                        toggleCommandPalette(false);
-                                    }}
+                                    class={`command-palette-item ${index() === selectedIndex() ? "selected" : ""} ${item.disabled ? "disabled" : ""}`}
+                                    onClick={() => run(item.id)}
                                     onMouseEnter={() => setSelectedIndex(index())}
                                 >
                                     <div class="command-palette-item-info">
                                         <span class="command-palette-item-category">{t(`commandCategory.${item.category}`)}</span>
                                         <span class="command-palette-item-label">{item.label}</span>
+                                        <Show when={item.disabled}>
+                                            <span class="command-palette-item-reason">{item.disabled}</span>
+                                        </Show>
                                     </div>
                                     <Show when={item.shortcut}>
                                         <span class="command-palette-item-shortcut">{item.shortcut}</span>

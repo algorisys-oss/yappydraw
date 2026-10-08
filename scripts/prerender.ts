@@ -13,7 +13,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadEnv } from 'vite';
 import { renderAll } from '../frontend/src/prerender/render';
@@ -38,18 +38,48 @@ for (const [key, value] of Object.entries(loadEnv('production', ROOT, 'VITE_')))
 }
 
 /**
- * The date a page's source last changed, from git.
+ * A pre-computed path → date map, written by `scripts/build-lastmod.mjs` into the published
+ * tree. Absent in a normal local build, where git below answers correctly.
+ */
+const lastmodMap: Record<string, string> = (() => {
+    const mapPath = path.resolve(import.meta.dirname, '../frontend/src/prerender/lastmod.json');
+    try {
+        if (!existsSync(mapPath)) return {};
+        const parsed = JSON.parse(readFileSync(mapPath, 'utf8'));
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};   // a corrupt map must not fail the build; git and today still answer
+    }
+})();
+
+/**
+ * The date a page's source last changed.
  *
- * Stamping every page with today's date on every deploy is worse than omitting
- * `lastmod` — a crawler that sees 33 pages "change" daily and finds them
- * identical learns to ignore the field. Falls back to today only when git has
- * nothing to say (a file not committed yet).
+ * Stamping every page with today's date on every deploy is worse than omitting `lastmod` — a
+ * crawler that sees 33 pages "change" daily and finds them identical learns to ignore the
+ * field. Three sources, in order of how much they can be trusted:
+ *
+ *   1. **The generated map**, computed in the source repo where history is real.
+ *   2. **git**, which is right when this repo is what's being built.
+ *   3. **Today**, for a file not committed yet.
+ *
+ * The map exists because git is NOT right in the place that matters. Hostinger builds the OSS
+ * mirror, whose history is one squashed `chore: sync from upstream` commit per release touching
+ * every file, so `git log -1` returns the release date for everything — the live sitemap carried
+ * one identical date across all 42 URLs until this was fixed. `publish-oss.sh` writes the map
+ * into the published tree so the mirror's build does not depend on its own history at all.
  */
 const lastmodFor = (source: string): string => {
+    const mapped = lastmodMap[source];
+    if (mapped) return mapped;
     try {
         const out = execFileSync('git', ['log', '-1', '--format=%cs', '--', source], {
             cwd: path.resolve(import.meta.dirname, '..'),
             encoding: 'utf8',
+            // git writes "fatal: not a git repository" to stderr when the tree has no .git —
+            // true during `publish-oss.sh --verify`, which builds a `git archive` extraction.
+            // The fallback below handles it; don't let the noise look like a build error.
+            stdio: ['ignore', 'pipe', 'ignore'],
         }).trim();
         if (out) return out;
     } catch {

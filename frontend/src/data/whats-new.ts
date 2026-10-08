@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.276', date: '2026-10-09', items: [
+        'The command palette tells you why something is unavailable \u2014 a greyed \u201cGroup\u201d now reads \u201cSelect two or more objects\u201d, instead of doing nothing when you click it.',
+        'Every command you run from the palette is a single named undo step, and puts things back if it fails part-way.',
+        'For scripts: Yappy.commands.list() is everything the app can do, with whether each one can run right now, and Yappy.commands.run(id) does it.',
+    ] },
     { version: '0.8.275', date: '2026-10-08', items: [
         'Undo no longer loses your selection. Undoing an edit puts back whatever you had selected before it, so you keep your place instead of starting again.',
         'The History panel names what you did \u2014 \u201cGroup\u201d, \u201cDelete\u201d \u2014 instead of \u201cState 7\u201d.',

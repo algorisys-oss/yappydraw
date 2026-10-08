@@ -1,4 +1,4 @@
-import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
+import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal, createEffect, on } from 'solid-js';
 import { tryPointUndo } from './utils/point-undo';
 import { isMultiPageDocType } from './types/slide-types';
 import { isPanelOpen } from './store/dock-layout';
@@ -6,7 +6,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleElementsPanel,
   toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, setSpotlight, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, swapMindmapSiblings, setFocusBranch, toggleFocusBranch, setSpotlight, withCommandHistory, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, toggleGuidesVisible, toggleGuidesLocked, addLayer, toggleSlideNavigator,
@@ -68,6 +68,9 @@ import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
 import { nextMindmapNode, isMindmapNode, mindmapSiblingInDirection } from './utils/mindmap-navigation';
+import { currentLocale } from './i18n';
+import { setCommandUiPort } from './commands/ui-port';
+import { registerPaletteCommands } from './commands/adapt-palette';
 import { updateElement, deleteArtboard, swapFillStroke, selectAll, toggleShapeBuilder } from './store/app-store';
 const CropBar = lazy(() => import('./components/crop-bar'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
@@ -118,6 +121,23 @@ const App: Component = () => {
   // though hover still works. We draw our own dot that follows the pen across the
   // whole editor. Mouse/touch keep the normal system cursor (dot hidden).
   const [penPos, setPenPos] = createSignal<{ x: number; y: number } | null>(null);
+  onMount(() => {
+    // Fill the command port and build the registry. Must happen before anything can run a
+    // command; the port is what keeps `commands/*` free of component imports, so the registry
+    // stays loadable from a test or a headless backend (see commands/ui-port.ts).
+    setCommandUiPort({
+      notify: (message, kind) => showToast(message, kind ?? 'info'),
+      withHistory: withCommandHistory,
+    });
+    registerPaletteCommands();
+  });
+
+  // Labels are stored resolved (see CommandSpec.label), so a locale switch has to rebuild the
+  // registry. Registration is a few hundred object literals and idempotent, so re-running it
+  // is cheaper than making every label a thunk — and the legacy palette already rebuilt its
+  // whole list on every keystroke.
+  createEffect(on(currentLocale, () => registerPaletteCommands(), { defer: true }));
+
   onMount(() => {
     // Desktop (Tauri) shell: wire native menu + file Open/Save. No-op on web.
     void import('./desktop/desktop-bridge').then(m => m.initDesktop());

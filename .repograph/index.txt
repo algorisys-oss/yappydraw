@@ -1672,12 +1672,17 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 6103 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 FrameRegion:75 FrameRegionInfo:75 as:75 HarmonyType:87 PlayOptions:92 PlaySpec:92 PlayTargets:92 TexPart:94 AxesOptions:101 AxesSpec:101 PlotFn:101 VectorFieldOptions:101 VectorFn:101 DrawOp:103 TinyflyShape:107 DimensionMeasure:115 ElementOptions:194 normalizeElementType:439 plotRuns:470 addTinyflyClip:486 createTinyflyShape:509 DoodleOptions:536 normalizeDoodleSubpaths:547 doodleLayers:562 doodleRoleStyle:575 doodleKeyOf:596 doodleMembers:602 ElementType:848 Window:6092
+frontend/src/api.ts | typescript | 6140 | Theme:3 PaintChannel:19 SvgExportOptions:40 MandalaRing:47 DoodleKind:51 DoodleLayer:51 DoodleParams:51 DoodleRole:51 DoodleSpec:51 FrameRegion:75 FrameRegionInfo:75 as:75 HarmonyType:87 PlayOptions:92 PlaySpec:92 PlayTargets:92 TexPart:94 AxesOptions:101 AxesSpec:101 PlotFn:101 VectorFieldOptions:101 VectorFn:101 DrawOp:103 TinyflyShape:107 DimensionMeasure:115 ElementOptions:196 normalizeElementType:441 plotRuns:472 addTinyflyClip:488 createTinyflyShape:511 DoodleOptions:538 normalizeDoodleSubpaths:549 doodleLayers:564 doodleRoleStyle:577 doodleKeyOf:598 doodleMembers:604 ElementType:850 Window:6129
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1698 | Component:1 App:111 moves:136 onPenMove:137 hidePen:141 handleKeyUp:180 handleKeyDown:190 along:632 as:893 the:944 handleFullscreenChange:1068 handleBeforeUnload:1074 handlePaste:1078 of:1192 isInternalPanelDrag:1195 handleGlobalDragEnter:1198 handleGlobalDragOver:1212 showDropFallbackPrompt:1230 cleanup:1260 outsideClick:1288 isImageFile:1300 first:1301 must:1314 extractDropData:1316 processExtractedDrop:1371 handleGlobalDrop:1492 handleDocumentDrop:1538
+frontend/src/app.tsx | typescript | 1718 | Component:1 App:114 moves:156 onPenMove:157 hidePen:161 handleKeyUp:200 handleKeyDown:210 along:652 as:913 the:964 handleFullscreenChange:1088 handleBeforeUnload:1094 handlePaste:1098 of:1212 isInternalPanelDrag:1215 handleGlobalDragEnter:1218 handleGlobalDragOver:1232 showDropFallbackPrompt:1250 cleanup:1280 outsideClick:1308 isImageFile:1320 first:1321 must:1334 extractDropData:1336 processExtractedDrop:1391 handleGlobalDrop:1512 handleDocumentDrop:1558
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
+frontend/src/commands/adapt-palette.ts | typescript | 113 | Command:2 CommandSpec:3
+frontend/src/commands/execute.ts | typescript | 85 | CommandSpec:1 CommandResult:23
+frontend/src/commands/registry.test.ts | typescript | 168 | CommandSpec:13
+frontend/src/commands/registry.ts | typescript | 136 | CommandCategory:20 ParamSchema:31{parse:33 jsonSchema:35} CommandSpec:38
+frontend/src/commands/ui-port.ts | typescript | 55 | CommandUiPort:15{notify:17 withHistory:30}
 frontend/src/components/about-dialog.css | - | 228 |
 frontend/src/components/about-dialog.tsx | typescript | 129 | Component:13 openAbout:22 closeAbout:23 AboutDialog:41 onKey:44
 frontend/src/components/advanced-p3-picker.tsx | typescript | 213 | Component:1 OKLCH:2 Props:4 AdvancedP3Picker:11 handleCanvasMouseDown:77 update:79 onMouseMove:92 onMouseUp:93 handleHueMouseDown:101 update:103 onMouseMove:113 onMouseUp:114
@@ -1722,8 +1727,8 @@ frontend/src/components/cloud-storage-dialog.tsx | typescript | 476 | CloudDialo
 frontend/src/components/color-drop-hud.tsx | typescript | 29 | Component:1 ColorDropHud:8
 frontend/src/components/color-picker-pro.css | - | 147 |
 frontend/src/components/color-picker-pro.tsx | typescript | 322 | Component:1 clamp01:19 hsvToRgb:20 rgbToHsv:32 hsvToHex:44 hexToRgb:48 Props:55 ColorPickerPro:71 emit:101 setMode2:102 commitRecent:107 drag:115 run:119 up:125 triVerts:144 bary:155 onTriDown:201 run:208 up:227 canvasPick:237 eyedrop:243 applyHex:250
-frontend/src/components/command-palette.css | - | 139 |
-frontend/src/components/command-palette.tsx | typescript | 106 | Component:1 CommandPalette:7 filter:12 results:13 handleKeyDown:23 placeholder:44
+frontend/src/components/command-palette.css | - | 153 |
+frontend/src/components/command-palette.tsx | typescript | 121 | Component:1 CommandPalette:8 filter:13 results:19 run:27 handleKeyDown:41 placeholder:59
 frontend/src/components/connection-rel-tool-group.tsx | typescript | 197 | Component:1 ConnectionRelToolGroup:91 handler:99 getActiveTool:109 handleToolClick:118 as:126 as:132 handleRightClick:140 toggleMenu:145 activeTool:152 isActive:153
 frontend/src/components/connector-tool-group.css | - | 20 |
 frontend/src/components/connector-tool-group.tsx | typescript | 128 | Component:1 ConnectorType:9 ConnectorToolGroup:19 handler:27 getCurrentTool:37 isConnectorToolActive:41 handleSelectConnector:49 handleRightClick:71 toggleMenu:76
@@ -1961,7 +1966,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 956 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 961 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2630,6 +2635,8 @@ renderers/raylib/rust/src/viewport.rs | rust | 82 | Viewport:4{new:13 handle_inp
 scripts/add_animations.ts | typescript | 86 | addAnimation:10
 scripts/add_paper_plane_path.ts | typescript | 64 |
 scripts/build-illustrations.mjs | javascript | 95 | minify:41 slugify:47 titleCase:48
+scripts/build-lastmod.mjs | javascript | 109 | buildLastmodMap:60
+scripts/build-lastmod.test.mjs | javascript | 71 |
 scripts/build-memory.mjs | javascript | 177 | readProc:46 snapshot:64 treeUsage:80 verdict:107
 scripts/build-memory.test.mjs | javascript | 98 | proc:13
 scripts/build-stroke-fonts.mjs | javascript | 131 | parseGlyph:69 parseFace:93 payload:112 metrics:117
@@ -2653,9 +2660,9 @@ scripts/i18n-lint.mjs | javascript | 135 | isProse:39 walk:48 findStrings:59
 scripts/i18n-scaffold.mjs | javascript | 92 | in:6 quote:38 Dictionary:65
 scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 languageName:127 of:147 userContent:181 save:198 parseTranslations:206
 scripts/npm/yappy.d.ts | typescript | 34 | ToSvgOptions:6 toSVG:25
-scripts/prerender.ts | typescript | 80 | lastmodFor:48 main:61
+scripts/prerender.ts | typescript | 110 | lastmodMap:44 lastmodFor:72 main:91
 scripts/publish-npm.sh | shell | 144 | info:25 error:26 OTP_ARGS=:136
-scripts/publish-oss.sh | shell | 381 | info:43 warn:44 error:45 REQUIRED_PATHS=:183 MISSING_PATHS=:196
+scripts/publish-oss.sh | shell | 398 | info:43 warn:44 error:45 REQUIRED_PATHS=:200 MISSING_PATHS=:213
 scripts/record-gifs.mjs | javascript | 173 | clip:48 toGif:64 run:75
 scripts/record-inflate-demo.mjs | javascript | 435 | performer:33 run:137
 scripts/record-showcase.mjs | javascript | 336 | run:80
@@ -2710,6 +2717,7 @@ tests/clipping-mask.spec.ts | typescript | 70 |
 tests/code-block.spec.ts | typescript | 164 | hello:36 App:129
 tests/color-batch.spec.ts | typescript | 62 | hexToRgb:6 lum:22
 tests/color-eyedropper.spec.ts | typescript | 93 | boot:16 pick:27 onScreen:38
+tests/command-registry.spec.ts | typescript | 191 |
 tests/composition-evaluator.spec.ts | typescript | 47 | composition:4
 tests/compound-edit.spec.ts | typescript | 66 | widthOf:18
 tests/compound-shapes.spec.ts | typescript | 85 | state:31

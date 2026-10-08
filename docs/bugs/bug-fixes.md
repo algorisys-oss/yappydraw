@@ -1,5 +1,42 @@
 # Bug Fixes Log
 
+## 2026-10-08 — Every sitemap entry claimed to change on every deploy
+
+### 429. All 42 sitemap URLs carried the same `lastmod`, the release date
+
+**Symptom:** `curl https://yappydraw.com/sitemap.xml` returned one identical `<lastmod>` across
+all 42 URLs — today's date, every release. Shipped that way through at least v0.8.272-275.
+Nothing failed: the sitemap validated, `verify:deploy` passed (it checks the sitemap is
+*served*, not that it says anything useful), and no page looked wrong.
+
+**Cause:** `scripts/prerender.ts` stamps each entry with `git log -1 --format=%cs -- <source>`,
+and the comment above it already explains the stakes — "stamping every page with today's date
+on every deploy is worse than omitting `lastmod`; a crawler that sees 33 pages change daily and
+finds them identical learns to ignore the field". **The lookup is correct. The deploy
+architecture defeats it.** Hostinger does not build this repo; it builds the OSS mirror, whose
+history is one squashed `chore: sync from upstream` commit per release touching every file. So
+`git log -1` there returns the release date for everything the sitemap asks about.
+
+The same lookup fails outright during `publish-oss.sh --verify`, which builds a `git archive`
+extraction with no `.git` — the `fatal: not a git repository` lines in the publish output. That
+noise is what led to finding this; it had been scrolling past under a `tail` for several
+releases.
+
+**Fix:** compute the dates where the history is real and ship them as data.
+`scripts/build-lastmod.mjs` walks this repo's history **once** (`git log --name-only`,
+newest-first, first sighting of each path wins — one process, not one `git log` per file) and
+writes a path → date map for exactly the ~43 sources `renderAll` asks about.
+`publish-oss.sh` writes it into the published tree; `prerender.ts` prefers the map, falls back
+to git, then to today. A local build in this repo needs no map at all, and the generated file
+is gitignored because a committed copy could only ever be stale.
+
+The live sitemap now carries 15 distinct dates across its 42 URLs.
+
+**Tests:** `scripts/build-lastmod.test.mjs` — coverage of the fixed source paths (so a rename in
+`renderAll` fails loudly instead of silently falling back), valid ISO dates, the map staying
+small, and the one that matters: **the dates must not all be the same**, which is the exact
+symptom that went unnoticed for four releases.
+
 ## 2026-10-08 — Presenting: stepping back landed on a half-built slide
 
 ### 428. Backward navigation re-hid the previous slide's build steps

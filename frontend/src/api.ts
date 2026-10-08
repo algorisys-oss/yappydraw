@@ -124,6 +124,8 @@ import { parseOutline } from "./utils/mindmap-layout";
 import { mindmapSiblingInDirection } from "./utils/mindmap-navigation";
 import { mindmapToOutline, saveMindmapOutline } from "./utils/mindmap-outline";
 import { STROKE_FONTS } from "./utils/stroke-fonts";
+import { all as allCommands, aliases as commandAliases } from "./commands/registry";
+import { execute as executeCommand, disabledReason } from "./commands/execute";
 import {
     animateElement,
     animateElements,
@@ -3333,6 +3335,41 @@ export const YappyAPI = {
         const base = options?.delay ?? 0;
         return list.map((id, i) => drawOut(id, duration, { ...options, delay: base + i * stagger } as any));
     },
+    /**
+     * The command registry — everything the app can do, as data.
+     *
+     * `list()` is the inventory: id, label, category, shortcut, and whether each can run right
+     * now (`enabled: true`, or a string saying what it needs). `run()` is the single way in,
+     * the same one the command palette uses — so a scripted command is one labelled, atomic
+     * undo step, and rolls back if it throws, exactly as a clicked one is.
+     *
+     * Ids are namespaced (`action.group`); the palette's original ids (`action-group`) keep
+     * working as aliases.
+     *
+     * ```
+     * Yappy.commands.list().filter(c => c.category === 'Actions');
+     * Yappy.commands.run('action.group');        // → { ok: true, result }
+     * Yappy.commands.run('action.group');        // → { ok: false, reason: 'Select two or more objects' }
+     * ```
+     */
+    commands: {
+        list(): { id: string; label: string; category: string; shortcut?: string | string[]; enabled: true | string }[] {
+            return allCommands().map(spec => {
+                const reason = disabledReason(spec.id);
+                return {
+                    id: spec.id,
+                    label: spec.label,
+                    category: spec.category,
+                    shortcut: spec.shortcut,
+                    enabled: reason === null ? true as const : reason,
+                };
+            });
+        },
+        run(id: string, params?: unknown) { return executeCommand(id, params); },
+        /** alias → canonical id, for anything that stored an old palette id. */
+        aliases(): Record<string, string> { return Object.fromEntries(commandAliases()); },
+    },
+
     /** Convert shapes to editable vector paths (in place). Returns the converted ids. */
     convertToPath(ids: string[]) { return convertToPath(ids); },
     /**

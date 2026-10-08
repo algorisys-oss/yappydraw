@@ -137,3 +137,17 @@
 [data-theme='focus'] .command-palette-item-shortcut {
     background: rgba(255, 255, 255, 0.05);
 }
+/* A command that cannot run right now: greyed, inert, and carrying its reason as a subtitle
+   (D5). Shown rather than hidden on purpose — reading "Select two or more objects" is how
+   someone learns what Group needs; a row that has disappeared teaches nothing. */
+.command-palette-item.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.command-palette-item-reason {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary, #888);
+    margin-top: 1px;
+}

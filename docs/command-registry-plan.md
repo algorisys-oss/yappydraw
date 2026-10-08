@@ -1,6 +1,6 @@
 # Command registry and labelled undo: design for review
 
-**Status:** decisions settled; **P1 shipped 2026-10-08** (see §9), P2-P6 open · **Date:** 2026-10-07 · **Branch:** `dev`
+**Status:** decisions settled; **P1 and P2 done 2026-10-08/09** (see §9), P3-P6 open · **Date:** 2026-10-07 · **Branch:** `dev`
 **Origin:** `docs/vectorcraft-review.md` §4.1–4.3 (VectorCraft's "everything is a command")
 **Decisions needed from Rajesh:** §9. Nothing in this doc is built until those are answered.
 
@@ -231,7 +231,7 @@ Each phase is one PR that ships on its own. "Done" includes tests, docs, the hel
 | Phase | Scope | Est. | Done when |
 |---|---|---|---|
 | **P1** ✅ **done 2026-10-08** History transactions | `HistoryEntry {label, selection}`; transaction-aware `pushToHistory`; undo/redo restore selection; History panel shows labels; rollback helper. No registry yet: `withCommandHistory(label, fn)` wraps existing palette actions | 1–1.5 d | Unit tests: N pushes in a txn → 1 entry; throw → rolled back, stack unchanged; undo restores selection; unlabelled pushes unchanged |
-| **P2** Registry core | `CommandSpec`, `execute`, params validation (D1), `enabled` reasons, `ui-port`, aliases. Port the 149 palette commands as-is (same behaviour, now with `enabled` where obvious) | 2 d | Palette works identically; disabled commands show their reason; `registry.test.ts` green |
+| **P2** ✅ **done 2026-10-09** Registry core | `CommandSpec`, `execute`, params validation (D1), `enabled` reasons, `ui-port`, aliases. Port the 149 palette commands as-is (same behaviour, now with `enabled` where obvious) | 2 d | Palette works identically; disabled commands show their reason; `registry.test.ts` green |
 | **P3** Command sweep | Playwright sweep over every command × 3 fixtures × {no params, junk} | 1 d | Green, with any bugs found fixed or listed as known (each with a repro) |
 | **P4** Keymap | `matchShortcut` + contexts; move the global shortcuts (file, edit, arrange, view, tool letters) from `app.tsx` into the registry, one category per commit | 2–3 d | `app.tsx` chain holds only modal/contextual keys; conflict test green; every existing hotkey spec green |
 | **P5** Generated help | Help-dialog rows reference commands; drift test | 0.5 d | Shift+L appears in help; drift test fails if a shortcut is removed from the registry without the help row |
@@ -310,6 +310,45 @@ What P1 actually added, against the spec in §3.3:
 Note `Yappy.batch` already existed and is **not** the same thing: it is eager (always pushes an
 entry, even when `fn` edits nothing), unlabelled, and does not roll back. Both are kept, with
 their docs pointing at each other; `command` is the one for a single user-meaningful action.
+
+**P2 shipped 2026-10-09.** `frontend/src/commands/` — `registry.ts` (CommandSpec, register,
+alias resolution, namespaced ids), `execute.ts` (the §3.2 pipeline), `ui-port.ts`,
+`adapt-palette.ts`. The palette now runs every command through `execute`, so a palette action
+is one labelled, atomic undo step; `Yappy.commands.list/run/aliases` is live; unavailable
+commands are greyed with their reason (D5).
+
+Four things went differently from the plan, each for a reason found in the code:
+
+1. **The commands are adapted, not hand-ported.** 142 new object literals duplicating
+   definitions that already exist and are already translated would be 142 chances to mistype an
+   id, a label or a store call — found only when a user clicks the one nobody tested.
+   `adapt-palette.ts` derives the specs from `getCommands()`, so there is still exactly one
+   definition of each command. A per-area hand-port buys `params` and per-command tuning; that
+   arrives with P4, area by area.
+2. **Ids are derived, not tabled.** `action-new-artboard` → `action.newArtboard`, mechanically
+   (the legacy ids already carry their namespace as a prefix). The legacy id is always kept as
+   an alias, and a test asserts the derivation is injective across the real id set — if two
+   collapsed onto one, the second registration would throw and a command would vanish.
+3. **`label` is stored resolved, not as a key.** The plan assumed one key family; there are
+   three — `commands.<id>`, `shapes.<type>` for the shape commands, and the per-layer ones
+   interpolate a layer name that is in no dictionary. Reconstructing a key from an id got 186
+   of 328 wrong. Registration is cheap and idempotent, so the app re-registers on a locale
+   change instead.
+4. **Per-layer commands (`layer-<uuid>`) are excluded from the registry.** They are data, not
+   capability: one per layer, id changing as layers come and go. A registry is the stable
+   addressable surface a script or agent works against. The palette still lists them, because
+   it reads the live `searchCommands()` projection.
+
+**D1 is honoured but not yet installed.** Every registered command is `() => void`, so a
+validator would have zero callers today; `ParamSchema` is an interface that `zod/mini`
+implements in a few lines, and `execute` validates through it from day one. zod arrives with
+the first command that takes parameters — the sweep (P3) or the public schema export (P6).
+
+**History came through the port, not from the store.** §3.6 says the port is what lets the
+registry and `execute` run under `bun test`; it turns out that has to include
+`withCommandHistory`, because `store/app-store.ts` imports the toast component, which imports
+lucide-solid, which throws "Client-only API called on the server side" outside a browser. With
+history in the port, `registry.test.ts` runs headless — 20 tests, no DOM.
 
 ### The table as it stood
 

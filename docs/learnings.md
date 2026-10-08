@@ -2,6 +2,77 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## A registry is only as honest as its assumptions about the thing it wraps (Oct 9 2026)
+
+P2 of the command-registry plan — the registry core, wired into the palette.
+
+- **Don't hand-port what you can derive.** The plan said "port the 149 palette commands as-is".
+  Written by hand that is 149 object literals duplicating definitions that already exist and
+  are already translated — and 149 chances to mistype an id, a label key or a store call, each
+  surfacing only when a user clicks the one command nobody tested. Adapting the existing list
+  gives the same registry with one definition of each command. Same for the ids: the legacy
+  ones already carry their namespace as a prefix, so `action-new-artboard` →
+  `action.newArtboard` is re-punctuation, not a 142-row table. The test that makes that safe is
+  that the derivation is **injective** over the real id set — two ids collapsing onto one would
+  throw on the second registration and silently lose a command.
+- **I assumed one i18n key family and was wrong about 186 of 328.** `commands.<id>` covers most
+  of the palette; the shape commands come from `shapes.<type>`, and the per-layer ones
+  interpolate a layer name that is in no dictionary at all. The symptom was labels rendering as
+  the key. Reconstructing a key from an id is guessing — if the label is already resolved, keep
+  the resolved label and re-register when the locale changes.
+- **`getCommands()` was never a list; it is a live projection of store state.** It rebuilds on
+  every keystroke, including one entry per layer. Registering it once at startup freezes
+  something that was never static. The resolution is a boundary, not a refresh loop: entries
+  with a **stable, meaningful id** go in the registry (that is what a script or an agent can
+  address); `layer-3f2a…` is data, stays out, and the palette keeps listing it from the live
+  projection. Ask of anything you are about to cache: *is this a catalogue or a view?*
+- **The layering rule had a consequence the plan didn't spell out.** §3.6 says the UI port is
+  what lets `execute` run under `bun test`. It turns out that must include
+  `withCommandHistory`, because `store/app-store.ts` imports the toast component, which imports
+  lucide-solid, which throws "Client-only API called on the server side" the moment it loads
+  outside a browser. "No component imports" is not enough when the store imports components —
+  check the transitive reality with an actual headless import, which took one throwaway test.
+- **A decision about WHICH library is not a decision about WHEN to install it.** D1 picked
+  `zod/mini` for parameter validation. Every registered command is `() => void`, so installing
+  it now adds a dependency with zero callers (and, here, evicts the `--no-save` repograph CLI).
+  The interface it will implement exists and `execute` validates through it from day one; the
+  library arrives with the first command that takes parameters. Honour the decision, not a
+  schedule nobody chose.
+- **Route every caller through one entry point in the same change that creates it.** The palette
+  called `item.action()` in two places — Enter and click — which is exactly how two paths drift.
+  Both now go through one `run()` that consults `disabledReason` first, so a greyed row is inert
+  by construction rather than by remembering to check in both places.
+
+## The guard was right; the deployment defeated it (Oct 8 2026)
+
+- **Code can be correct and still wrong in production, because production is a different
+  place.** `prerender.ts` reads each page's real commit date for the sitemap, with a comment
+  explaining precisely why identical dates are harmful. It was right about this repo and wrong
+  about the one that gets built: Hostinger builds the OSS *mirror*, whose history is one
+  squashed sync commit per release touching every file. The guard could not see the gap because
+  the gap is not in the code. Worth asking of any build-time inference: *which repo, which
+  machine, which history is this actually running against?*
+- **Four releases shipped it.** Nothing failed — the sitemap validated, the pages rendered, and
+  `verify:deploy` passed, because it checks the sitemap is *served*, not that its contents say
+  anything. A check that confirms a file exists is not a check on what is in it.
+- **It was found by output I had been truncating away.** Three `fatal: not a git repository`
+  lines in the publish log, under a `tail` that the rename list had been pushing them out of.
+  They had almost certainly been there for releases. The habit worth keeping: when a line you
+  have not seen before appears in a log, read it rather than scroll past — and be suspicious of
+  a `grep | tail` that could be hiding the thing you are grepping for.
+- **Compute where the knowledge is, ship the answer.** The fix is not cleverer git usage; it is
+  moving the computation to the only place that can answer (the source repo) and sending the
+  result along as data. That also makes the mirror's build deterministic rather than dependent
+  on its own history — a strictly better property for anything a third party rebuilds.
+- **One pass, not N.** `git log --name-only` newest-first with "first sighting wins" replaces
+  one `git log` per file: one process instead of sixty, and it stays one as pages are added.
+- **Narrow the data to what is asked for.** The first cut matched whole directories and produced
+  1745 entries for the ~43 the sitemap needs. The map ships to the mirror, so its size is not
+  free — and a map full of paths nobody queries is also one nobody can eyeball for correctness.
+- **Test the symptom, not just the mechanism.** The valuable assertion is not "dates are valid
+  ISO strings"; it is **"the dates are not all identical"** — the literal shape of the bug that
+  hid for four releases.
+
 ## Transactions over call sites, and a test that passed for the wrong reason (Oct 8 2026)
 
 P1 of the command-registry plan — labelled undo, one-command-one-step, selection restore.
