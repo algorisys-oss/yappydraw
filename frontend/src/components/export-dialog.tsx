@@ -117,13 +117,18 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
         } else if (format() === 'svg') {
             exportToSvg(onlySelected());
         } else if (format() === 'pdf') {
-            await exportToPdf(scale(), hasBackground(), onlySelected(), {
-                vector: pdfVector(),
-                colorMode: pdfVector() && pdfCmyk() ? 'cmyk' : 'rgb',
-                profile: pdfProfile(),
-                pdfx: pdfVector() && pdfCmyk() && pdfX(),
-                title: pdfTitle(),
-            });
+            try {
+                await exportToPdf(scale(), hasBackground(), onlySelected(), {
+                    vector: pdfVector(),
+                    colorMode: pdfVector() && pdfCmyk() ? 'cmyk' : 'rgb',
+                    profile: pdfProfile(),
+                    pdfx: pdfVector() && pdfCmyk() && pdfX(),
+                    title: pdfTitle(),
+                });
+            } catch (err) {
+                // A PDF/X file that fails its own check is refused, not saved — say what failed.
+                showToast(t('pdfExport.failed', { message: err instanceof Error ? err.message : String(err) }), 'error', 10000);
+            }
         } else if (format() === 'pptx') {
             exportToPptx(scale(), hasBackground(), onlySelected());
         } else if (format() === 'gif') {

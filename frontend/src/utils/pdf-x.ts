@@ -111,7 +111,10 @@ export async function applyPdfX4(bytes: Uint8Array, o: PdfXOptions): Promise<Uin
     // 2. XMP metadata — left unfiltered so any tool can read it without decoding.
     const xmp = new TextEncoder().encode(xmpPacket({ title: o.title, xmpDate: dates.xmp, producer, ...ids }));
     const metaNum = file.add('<<\n/Type /Metadata\n/Subtype /XML\n>>', xmp);
-    file.set(catalogNum, catalog.dict.replace(/>>\s*$/, `/OutputIntents [${intentNum} 0 R]\n/Metadata ${metaNum} 0 R\n>>`));
+    // jsPDF opens the file at page 1 with an /OpenAction. It is harmless, but PDF/X readers
+    // and preflights treat document actions with suspicion, and nothing is lost without it.
+    const catalogDict = catalog.dict.replace(/\/OpenAction\s*\[[^\]]*\]\s*/, '');
+    file.set(catalogNum, catalogDict.replace(/>>\s*$/, `/OutputIntents [${intentNum} 0 R]\n/Metadata ${metaNum} 0 R\n>>`));
 
     // 3. Info dictionary, from the same values as the XMP.
     file.set(infoNum, `<<\n/Producer ${pdfString(producer)}\n/Creator (YappyDraw)\n/Title ${pdfString(o.title)}\n/CreationDate (${dates.pdf})\n/ModDate (${dates.pdf})\n/Trapped /False\n/GTS_PDFXVersion (PDF/X-4)\n>>`);
@@ -158,7 +161,172 @@ export async function applyPdfX4(bytes: Uint8Array, o: PdfXOptions): Promise<Uin
     }
     for (const num of dropped) if (!kept.has(num)) file.remove(num);
 
+    // 6. Transparency blends in CMYK (see `setCmykBlending`).
+    setCmykBlending(file);
+
     file.setVersion('1.6');
-    return file.toBytes();
+    const out = file.toBytes();
+    // 7. Refuse to hand back a file our own checks reject.
+    const problems = await verifyPdfX4(out);
+    if (problems.length) throw new PdfXError(problems);
+    return out;
+}
+
+/** A PDF/X file that failed `verifyPdfX4` — `problems` says what, one line each. */
+export class PdfXError extends Error {
+    problems: string[];
+    constructor(problems: string[]) {
+        super(`PDF/X-4 check failed: ${problems.join('; ')}`);
+        this.problems = problems;
+    }
+}
+
+/**
+ * Whether anything in the file makes transparency: a graphics state with alpha < 1, a soft mask
+ * or a blend mode, or an image with an SMask. Graphics states are found through the resource
+ * dictionaries' `/ExtGState << /GS1 19 0 R >>` references — jsPDF writes the state objects
+ * without the optional `/Type /ExtGState`, so looking for the type finds nothing.
+ */
+function usesTransparency(file: PdfFile): boolean {
+    const states = new Set<number>();
+    for (const num of file.objectNumbers()) {
+        const o = file.get(num)!;
+        if (/\/Type\s*\/ExtGState/.test(o.dict)) states.add(num);
+        const res = /\/ExtGState\s*<<([^>]*)>>/.exec(o.dict)?.[1] ?? '';
+        for (const m of res.matchAll(/(\d+)\s+0\s+R/g)) states.add(parseInt(m[1], 10));
+    }
+    for (const num of file.objectNumbers()) {
+        const o = file.get(num)!;
+        if (states.has(num)) {
+            const alpha = [...o.dict.matchAll(/\/(?:ca|CA)\s+([\d.]+)/g)].some(m => parseFloat(m[1]) < 1);
+            const smask = /\/SMask\s*(?!\/None)[<\d]/.test(o.dict);
+            const blend = /\/BM\s*\/(?!Normal\b|Compatible\b)\w+/.test(o.dict);
+            if (alpha || smask || blend) return true;
+        }
+        if (/\/Subtype\s*\/Image/.test(o.dict) && /\/SMask\s+\d+\s+0\s+R/.test(o.dict)) return true;
+    }
+    return false;
+}
+
+/** Form XObjects that are the `/G` of a luminosity soft mask — they keep their RGB group. */
+function luminosityMaskGroups(file: PdfFile): Set<number> {
+    const groups = new Set<number>();
+    for (const num of file.objectNumbers()) {
+        const m = /\/S\s*\/Luminosity[\s\S]*?\/G\s+(\d+)\s+0\s+R/.exec(file.get(num)!.dict);
+        if (m) groups.add(parseInt(m[1], 10));
+    }
+    return groups;
+}
+
+/**
+ * Transparency in a PDF/X-4 file blends in the output intent's colour space (VectorCraft does
+ * the same: pdf/src/export.rs `cmyk_blending`). jsPDF writes one resource dictionary shared by
+ * every page, so a file that uses transparency anywhere gets a CMYK page group on every page —
+ * a page group on a page that doesn't use transparency changes nothing it draws.
+ *
+ * Existing groups that blend in RGB are moved to CMYK too, except soft-mask groups
+ * (`/S /Luminosity` masks): their luminance is a screen luminance, so they stay as they are.
+ */
+function setCmykBlending(file: PdfFile): void {
+    const maskGroups = luminosityMaskGroups(file);
+    for (const num of file.objectNumbers()) {
+        const o = file.get(num)!;
+        if (maskGroups.has(num) || !/\/Group\s*<<[^>]*\/CS\s*\/DeviceRGB/.test(o.dict)) continue;
+        file.set(num, o.dict.replace(/(\/Group\s*<<[^>]*\/CS\s*)\/DeviceRGB/, '$1/DeviceCMYK'), o.stream);
+    }
+    if (!usesTransparency(file)) return;
+    for (const num of file.objectNumbers()) {
+        const o = file.get(num)!;
+        if (o.stream || !/\/Type\s*\/Page\b/.test(o.dict) || /\/Group\s*</.test(o.dict)) continue;
+        file.set(num, o.dict.replace(/>>\s*$/, '/Group << /Type /Group /S /Transparency /CS /DeviceCMYK >>\n>>'));
+    }
+}
+
+/**
+ * Check a finished file against the PDF/X-4 rules this exporter is responsible for. Returns the
+ * problems found (empty = passed). It is not a preflight — Acrobat / pdfToolbox check far more —
+ * but it catches every rule we know we can break, before the file leaves the app.
+ */
+export async function verifyPdfX4(bytes: Uint8Array): Promise<string[]> {
+    const problems: string[] = [];
+    const head = toLatin1(bytes.subarray(0, 8));
+    const version = /^%PDF-(\d\.\d)/.exec(head)?.[1];
+    if (!version || parseFloat(version) > 1.6) problems.push(`PDF version ${version ?? '?'} (PDF/X-4 is at most 1.6)`);
+
+    let file: PdfFile;
+    try { file = new PdfFile(bytes); } catch (err) { return [...problems, `unreadable: ${(err as Error).message}`]; }
+    if (/\/Encrypt\b/.test(file.getTrailer())) problems.push('the file is encrypted');
+    if (!/\/ID\s*\[/.test(file.getTrailer())) problems.push('no file /ID in the trailer');
+
+    const catalog = file.get(file.ref('Root') ?? -1)?.dict ?? '';
+    if (/\/OpenAction|\/AA\b/.test(catalog)) problems.push('the catalog has document actions');
+    const intentNum = /\/OutputIntents\s*\[\s*(\d+)\s+0\s+R/.exec(catalog)?.[1];
+    const intent = intentNum ? file.get(+intentNum)?.dict ?? '' : '';
+    if (!/\/S\s*\/GTS_PDFX/.test(intent)) problems.push('no GTS_PDFX output intent');
+    if (!/\/OutputConditionIdentifier\s*[(<]/.test(intent)) problems.push('the output intent has no OutputConditionIdentifier');
+    const profNum = /\/DestOutputProfile\s+(\d+)\s+0\s+R/.exec(intent)?.[1];
+    const prof = profNum ? file.get(+profNum) : null;
+    if (!prof?.stream || !/\/N\s+4\b/.test(prof.dict)) problems.push('the output intent has no embedded CMYK profile');
+
+    const metaNum = /\/Metadata\s+(\d+)\s+0\s+R/.exec(catalog)?.[1];
+    const xmp = metaNum ? new TextDecoder().decode(file.get(+metaNum)?.stream ?? new Uint8Array()) : '';
+    if (!/<pdfxid:GTS_PDFXVersion>PDF\/X-4<\/pdfxid:GTS_PDFXVersion>/.test(xmp)) problems.push('XMP does not identify PDF/X-4');
+
+    const info = file.get(file.ref('Info') ?? -1)?.dict ?? '';
+    if (!/\/Trapped\s*\/(True|False)/.test(info)) problems.push('Info has no /Trapped True or False');
+    if (!/\/Title\s*[(<]/.test(info)) problems.push('Info has no /Title');
+    const created = /\/CreationDate\s*\(D:(\d{14})/.exec(info)?.[1];
+    const xmpCreated = /<xmp:CreateDate>(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/.exec(xmp)?.slice(1).join('');
+    if (!created || created !== xmpCreated) problems.push('Info and XMP creation dates disagree');
+    if (!/\/ModDate\s*\(D:/.test(info)) problems.push('Info has no /ModDate');
+
+    // Pages: boxes, and a CMYK group wherever transparency is used.
+    const transparent = usesTransparency(file);
+    const contentNums = new Set<number>();
+    for (const num of file.objectNumbers()) {
+        const o = file.get(num)!;
+        if (o.stream || !/\/Type\s*\/Page\b/.test(o.dict)) continue;
+        const box = (k: string) => {
+            const m = new RegExp(`/${k}\\s*\\[\\s*([-\\d.]+)\\s+([-\\d.]+)\\s+([-\\d.]+)\\s+([-\\d.]+)`).exec(o.dict);
+            return m ? m.slice(1).map(Number) : null;
+        };
+        const media = box('MediaBox'), trim = box('TrimBox'), bleed = box('BleedBox');
+        const inside = (a: number[], b: number[]) => a[0] >= b[0] - 1e-3 && a[1] >= b[1] - 1e-3 && a[2] <= b[2] + 1e-3 && a[3] <= b[3] + 1e-3;
+        if (!media) problems.push(`page ${num}: no MediaBox`);
+        if (!trim) problems.push(`page ${num}: no TrimBox`);
+        if (media && trim && !inside(trim, media)) problems.push(`page ${num}: TrimBox outside the MediaBox`);
+        if (bleed && media && trim && !(inside(trim, bleed) && inside(bleed, media))) problems.push(`page ${num}: BleedBox not between TrimBox and MediaBox`);
+        if (transparent && !/\/Group\s*<<[^>]*\/S\s*\/Transparency[^>]*\/CS\s*\/DeviceCMYK/.test(o.dict)) problems.push(`page ${num}: transparency without a CMYK page group`);
+        for (const m of (/\/Contents\s*(\[[^\]]*\]|\d+\s+0\s+R)/.exec(o.dict)?.[1] ?? '').matchAll(/(\d+)\s+0\s+R/g)) contentNums.add(+m[1]);
+    }
+
+    // Colour: nothing device-RGB, in dictionaries or in content streams.
+    const groupsRgb: number[] = [];
+    const maskGroups = luminosityMaskGroups(file);
+    for (const num of file.objectNumbers()) {
+        const o = file.get(num)!;
+        if (/\/Subtype\s*\/Form/.test(o.dict)) contentNums.add(num);
+        if (/\/DeviceRGB|\/CalRGB/.test(o.dict) && !maskGroups.has(num)) groupsRgb.push(num);
+    }
+    if (groupsRgb.length) problems.push(`RGB colour space in object${groupsRgb.length > 1 ? 's' : ''} ${groupsRgb.join(', ')}`);
+    for (const num of contentNums) {
+        const o = file.get(num);
+        if (!o?.stream) continue;
+        const text = toLatin1(await decodeStream(o.dict, o.stream));
+        if (/(^|\s)[\d.]+\s+[\d.]+\s+[\d.]+\s+(rg|RG)(?=\s)/.test(text)) problems.push(`RGB colour operators in content stream ${num}`);
+    }
+
+    // Fonts: every one embedded.
+    for (const num of file.objectNumbers()) {
+        const o = file.get(num)!;
+        if (/\/Type\s*\/Font\b/.test(o.dict) && /\/Subtype\s*\/(Type1|TrueType|MMType1|CIDFontType[02])\b/.test(o.dict)) {
+            const fd = /\/FontDescriptor\s+(\d+)\s+0\s+R/.exec(o.dict)?.[1];
+            const desc = fd ? file.get(+fd)?.dict ?? '' : '';
+            if (!/\/FontFile[23]?\s+\d+\s+0\s+R/.test(desc)) {
+                problems.push(`font ${/\/BaseFont\s*\/([^\s/]+)/.exec(o.dict)?.[1] ?? num} is not embedded`);
+            }
+        }
+    }
+    return problems;
 }
 

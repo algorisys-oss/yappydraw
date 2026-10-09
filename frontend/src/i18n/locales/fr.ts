@@ -1352,6 +1352,7 @@ export const fr: Dictionary = {
         title: 'Titre du document',
         titlePlaceholder: 'Titre (ex. Affiche de printemps)',
         pdfxHint: 'Ajoute ce que vérifient les imprimeurs : le profil d’impression, les zones de rognage et de fond perdu (votre réglage de fond perdu est ajouté autour de chaque page) et toutes les polices incorporées. Lancez le contrôle en amont de votre imprimeur avant l’envoi.',
+        failed: 'L’export PDF a échoué : {{ message }}',
     },
     socialExport: {
         heading: 'Prêt pour les réseaux sociaux',

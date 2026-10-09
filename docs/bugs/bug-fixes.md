@@ -1,5 +1,52 @@
 # Bug Fixes Log
 
+## 2026-10-09 — Found by the model-based command test
+
+### 434. The print-preview overlay became "the canvas" for rulers and tool overlays (v0.8.279)
+
+**Symptom:** v0.8.279 put the print-preview overlay `<canvas>` *before* the drawing canvas inside
+`.canvas-drop-zone`. Everything that finds the drawing canvas with a selector got the overlay instead:
+`utils/overlay-transform.ts` (`document.querySelector('.canvas-drop-zone canvas')`) — the canvas origin
+for rulers and ~29 tool overlays — read a `display: none` element whose rect is all zeros, so overlays
+were positioned from the window origin instead of the canvas's (off by the canvas offset, ~45 px with
+the default dock); `recording-manager.ts`'s fallback picked it up too; and 59 Playwright specs that
+`waitForSelector('canvas')` waited forever for the hidden first canvas.
+
+**Found by:** the new model-based spec, whose `waitForSelector('canvas')` timed out on a quiet machine.
+
+**Fix:** the overlay (and its badge) now come *after* the drawing canvas in the DOM; stacking is
+unchanged (absolute, `z-index: 1`), and the overlay still copies the canvas's offset each frame. The
+comment at the overlay says why the order matters.
+
+### (test) The sweep's "commands that need a selection refuse without one" tested nothing for one id
+
+`tests/command-sweep.spec.ts` listed `action.duplicate`, which is not a registered command.
+`commands.run` returns `ok: false` for an unknown id too, so the assertion "refuses with nothing
+selected" passed for it vacuously. The list now uses registered ids, and asserts the reason is not
+"unknown command".
+
+## 2026-10-09 — PDF/X-4 hardening (VectorCraft review 2, pick #1)
+
+### 433. PDF/X-4 files with transparency had no CMYK page group, and nothing checked the output
+
+**Symptom:** none visible — found by comparing with VectorCraft before anyone preflighted. A v0.8.279
+PDF/X-4 export containing a semi-transparent object or an image with alpha had no page
+`/Group << /S /Transparency /CS … >>`, so a reader would blend in its own default space; a PDF/X-4
+preflight flags that. The catalog also kept jsPDF's `/OpenAction`. Both were listed as "known gaps"
+in the plan rather than fixed.
+
+**Cause:** the exporter wrote the PDF/X structure but never looked at what the content used. And
+jsPDF writes its graphics-state objects without `/Type /ExtGState`, so even a search for transparency
+would have found none — they have to be reached through the resource dictionaries' references.
+
+**Fix:** `utils/pdf-x.ts` — `setCmykBlending` adds a DeviceCMYK page group to every page when anything
+uses transparency (alpha < 1, soft masks, blend modes, images with SMask) and moves any RGB group to
+CMYK except luminosity soft-mask groups; `/OpenAction` is removed; and `verifyPdfX4` checks the written
+file (version, output intent + embedded CMYK profile, XMP, Info/XMP dates, Trapped, Trim/Bleed boxes,
+page groups, no RGB in dictionaries or content streams, every font embedded). A file that fails is
+**refused** with the list of problems instead of being saved. Unit tests: 8 new (each rule
+mutation-checked); spec: PDF/X with transparency.
+
 ## 2026-10-09 — Effects and masks in exports (found building vector PDF)
 
 ### 431. Shadows, glows and feather were the wrong size in any export at a scale other than 1×

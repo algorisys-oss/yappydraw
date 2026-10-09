@@ -2,6 +2,42 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Model-based undo: measure what a passing property exercised (Oct 9 2026)
+
+VectorCraft review 2, pick #2: `tests/command-model.spec.ts` (fast-check) and junk params on every
+sweep fixture.
+
+- **A property that passes may have tested nothing.** The first version passed 40 random sequences —
+  having round-tripped **3** undo steps in total. Of ~313 commands, 27 edit the document; the rest
+  switch tools, toggle views or open panels. Drawn uniformly, a sequence almost never edits. The spec
+  now probes which commands move the history (one run each, everything selected), weights the
+  generator towards them, and prints and asserts how many undo/redo steps it round-tripped (327 over
+  300 sequences).
+- **`ok: false` for an unknown id hides typos.** The sabotage self-test used `action.duplicate`,
+  which doesn't exist — and so did a sweep assertion that had been "passing" since P3. Refusal tests
+  must check the *reason*, not just `ok`.
+- **Adding an element can change what `querySelector` returns.** The print-preview overlay was
+  inserted before the drawing canvas; every `querySelector('canvas')` in app code and 59 specs
+  silently switched targets (bug #434). An overlay goes after what it overlays.
+- **Load from other sessions fakes failures.** A batch failed with `page.goto` timeouts and
+  `ERR_NETWORK_IO_SUSPENDED` while three `ffmpeg` processes from another session ran; on a quiet
+  machine the same 48 tests passed. Check `/proc/loadavg` before reading a red run.
+
+## A known gap is a bug with a deadline you haven't set (Oct 9 2026)
+
+PDF/X-4 hardening, prompted by VectorCraft review 2.
+
+- **"Known gaps" in a plan shipped as defects.** v0.8.279 listed "no page transparency group" and
+  "`/OpenAction`" as things a preflight *may* flag, and released anyway. Comparing with VectorCraft —
+  which fixes the first and refuses files its own checks reject — turned a footnote into bug #433.
+  If a gap is cheap to close and known, close it before the release, not after the preflight.
+- **Verify the output, not the intent.** `applyPdfX4` wrote every structure the spec asks for, but
+  never looked at what the content used. `verifyPdfX4` reads the written file back and refuses to save
+  one that breaks a rule; each rule is mutation-checked.
+- **jsPDF's ExtGState objects have no `/Type /ExtGState`.** The type is optional and jsPDF omits it, so
+  "find the graphics states" by type finds none: follow `/ExtGState << /GS1 n 0 R >>` from the
+  resource dictionaries. The first version of the transparency check silently said "none".
+
 ## CMYK PDF: three seams into a library that only speaks RGB (Oct 9 2026)
 
 P1 + P3 of `docs/cmyk-print-plan.md`.

@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.279",
+  "version": "0.8.280",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -33,6 +33,7 @@
     "@playwright/test": "^1.58.0",
     "@types/opentype.js": "^1.3.10",
     "assemblyscript": "^0.28.9",
+    "fast-check": "^4.10.2",
     "gh-pages": "^6.3.0",
     "marked": "^18.0.10",
     "tsx": "^4.21.0",

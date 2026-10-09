@@ -2808,15 +2808,6 @@ const Canvas: Component = () => {
     return (
         <>
             <div class="canvas-drop-zone" style={{ position: "relative", width: "100%", height: "100%" }}>
-                {/* Print preview: the frame through the press profile, over a canvas that turns
-                    transparent but keeps every pointer event (utils/print-preview). */}
-                <canvas ref={registerPrintPreviewOverlay} class="print-preview-overlay" aria-hidden="true"
-                    style={{ position: 'absolute', left: '0', top: '0', 'pointer-events': 'none', 'z-index': 1, display: printPreviewActive() ? 'block' : 'none' }} />
-                <Show when={printPreviewActive()}>
-                    <button class="print-preview-badge" title={t('printPreview.exit')} onClick={() => void setPrintPreview(false)}>
-                        {t('printPreview.badge', { profile: printPreviewProfile() === 'gracol' ? 'GRACoL' : 'FOGRA39' })} ✕
-                    </button>
-                </Show>
                 <canvas
                     ref={canvasRef}
                     classList={{ 'print-preview-source': printPreviewActive() }}
@@ -2860,6 +2851,17 @@ const Canvas: Component = () => {
                         filter: 'none',
                     }}
                 />
+                {/* Print preview: the frame through the press profile, over a canvas that turns
+                    transparent but keeps every pointer event (utils/print-preview). It must come
+                    AFTER the drawing canvas in the DOM: code and tests find "the canvas" with
+                    querySelector('canvas'), and a hidden first canvas broke them (bug #434). */}
+                <canvas ref={registerPrintPreviewOverlay} class="print-preview-overlay" aria-hidden="true"
+                    style={{ position: 'absolute', left: '0', top: '0', 'pointer-events': 'none', 'z-index': 1, display: printPreviewActive() ? 'block' : 'none' }} />
+                <Show when={printPreviewActive()}>
+                    <button class="print-preview-badge" title={t('printPreview.exit')} onClick={() => void setPrintPreview(false)}>
+                        {t('printPreview.badge', { profile: printPreviewProfile() === 'gracol' ? 'GRACoL' : 'FOGRA39' })} ✕
+                    </button>
+                </Show>
             </div>
 
             {/* Global Texture Overlay */}

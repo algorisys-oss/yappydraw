@@ -813,8 +813,11 @@ document a title. The PDF then carries what a print shop's preflight checks for:
   (Inter, Merriweather or Source Code Pro), never left as a reference;
 - the PDF/X-4 identification printers' software looks for.
 
-Before sending a file to press, run your printer's **preflight** (or Acrobat's *Preflight →
-PDF/X-4*). Yappy writes the file to the standard, but the preflight is the check that counts.
+Yappy checks every PDF/X file it writes against the PDF/X-4 rules it is responsible for — embedded
+fonts, no screen (RGB) colour anywhere, trim/bleed boxes, the press profile, transparency blending in
+CMYK — and **refuses to save a file that fails**, telling you what was wrong, rather than handing you
+one a print shop would reject. Before sending a file to press, still run your printer's
+**preflight** (or Acrobat's *Preflight → PDF/X-4*): it checks far more than Yappy can.
 From a script: `await Yappy.exportPDF({ pdfx: true, title: 'Spring poster' })`.
 
 **Print preview.** To see how your design will print *before* exporting, turn on the print

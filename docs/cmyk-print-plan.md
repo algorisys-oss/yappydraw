@@ -98,8 +98,9 @@ needs Rajesh or a print shop.
 XMP + matching Info, TrimBox/BleedBox, PDF 1.6, unused standard fonts removed); X mode embeds a
 bundled stand-in instead of a standard font; bleed expands each page region. Poppler reports the
 result as ISO 15930 (PDF/X), PDF 1.6, every font embedded. **Not yet done: a real preflight.**
-Known gaps a preflight may flag: no explicit page transparency-group blending space
-(`/Group << /S /Transparency /CS /DeviceCMYK >>`), and jsPDF's catalog `/OpenAction`.
+~~Known gaps a preflight may flag: no explicit page transparency-group blending space, and jsPDF's
+catalog `/OpenAction`.~~ Both fixed 2026-10-09 (bug #433), with a `verifyPdfX4` self-check that
+refuses a non-conforming file. A real preflight is still the final word.
 
 ### P6 — Print preview (soft proof) — ✅ done 2026-10-09
 View toggle that renders the canvas through the soft-proof transform (cached per colour), so

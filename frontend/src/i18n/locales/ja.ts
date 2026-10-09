@@ -1330,6 +1330,7 @@ export const ja: Dictionary = {
         title: 'ドキュメントのタイトル',
         titlePlaceholder: 'タイトル（例：春のポスター）',
         pdfxHint: '印刷所が確認する項目を追加します：印刷プロファイル、仕上がり枠と裁ち落とし枠（裁ち落とし設定を各ページの周囲に追加）、すべてのフォントの埋め込み。入稿前に印刷所のプリフライトを実行してください。',
+        failed: 'PDF の書き出しに失敗しました：{{ message }}',
     },
     socialExport: {
         heading: 'SNS 用に書き出す',

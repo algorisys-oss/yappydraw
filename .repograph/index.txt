@@ -1718,7 +1718,7 @@ frontend/src/components/bpmn-tool-group.tsx | typescript | 241 | Component:1 Bpm
 frontend/src/components/brand-kit-panel.css | - | 88 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
 frontend/src/components/canvas-toolbar.tsx | typescript | 135 | Component:1 CanvasToolbar:7 resetHideTimeout:11 toolBtnStyle:33
-frontend/src/components/canvas.tsx | typescript | 3038 | Component:1 TextEditingContext:71 CanvasEventContext:73 MeasureSegment:78 CropHandle:79 Canvas:99 setEditingId:222 flushPenPoints:269 handleResize:298 canvasCursor:358 buildAnchorMenu:386 eyedropperHitAt:424 samplePixelHex:444 scheduleDraw:466 draw:472 and:790 viewportTransform:876 getWorldCoordinates:885 getWheelCtx:893 onWheel:899 normalizePencil:902 applyMasterProjection:938 canInteractWithElement:948 checkBinding:975 refreshLinePoints:978 refreshBoundLine:981 commitText:1000 commitRichText:1008 isPenDrawingTool:1050 pickStylusTouch:1059 findTouchById:1067 finalizeTouchStroke:1075 smartShapeEnabled:1105 cancelShapeHold:1109 resetActiveStroke:1117 fireShapeHold:1128 armShapeHold:1186 noteShapeMove:1194 beginTouchPenStroke:1210 handleTouchStart:1230 handleTouchMove:1261 handleTouchEnd:1314 isTouchBlockedByGesture:1357 cancelLongPress:1378 clearUndoRepeat:1425 fitView:1430 armUndoRepeat:1434 cancelInflightForGesture:1455 beginGesture:1482 updateGesture:1513 endGesture:1564 fireTap:1571 handleTouchStartGesture:1577 handleTouchMoveGesture:1612 handleTouchEndGesture:1697 handlePointerDown:1744 move:1769 up:1779 selectionRect:1977 artboardForRect:1988 updateMeasureHover:2003 handlePointerMove:2019 handlePointerUp:2185 handleDoubleClick:2270 onPenSpace:2417 onFontsLoaded:2443 clearMeasureOnAltUp:2452 handleCropKeys:2482 handlePolylineKeys:2513 handlePenKeys:2531 handleDragLabelKeys:2563 releasePointer:2595 releaseAllPointers:2600 dropHandler:2605 for:2669
+frontend/src/components/canvas.tsx | typescript | 3040 | Component:1 TextEditingContext:71 CanvasEventContext:73 MeasureSegment:78 CropHandle:79 Canvas:99 setEditingId:222 flushPenPoints:269 handleResize:298 canvasCursor:358 buildAnchorMenu:386 eyedropperHitAt:424 samplePixelHex:444 scheduleDraw:466 draw:472 and:790 viewportTransform:876 getWorldCoordinates:885 getWheelCtx:893 onWheel:899 normalizePencil:902 applyMasterProjection:938 canInteractWithElement:948 checkBinding:975 refreshLinePoints:978 refreshBoundLine:981 commitText:1000 commitRichText:1008 isPenDrawingTool:1050 pickStylusTouch:1059 findTouchById:1067 finalizeTouchStroke:1075 smartShapeEnabled:1105 cancelShapeHold:1109 resetActiveStroke:1117 fireShapeHold:1128 armShapeHold:1186 noteShapeMove:1194 beginTouchPenStroke:1210 handleTouchStart:1230 handleTouchMove:1261 handleTouchEnd:1314 isTouchBlockedByGesture:1357 cancelLongPress:1378 clearUndoRepeat:1425 fitView:1430 armUndoRepeat:1434 cancelInflightForGesture:1455 beginGesture:1482 updateGesture:1513 endGesture:1564 fireTap:1571 handleTouchStartGesture:1577 handleTouchMoveGesture:1612 handleTouchEndGesture:1697 handlePointerDown:1744 move:1769 up:1779 selectionRect:1977 artboardForRect:1988 updateMeasureHover:2003 handlePointerMove:2019 handlePointerUp:2185 handleDoubleClick:2270 onPenSpace:2417 onFontsLoaded:2443 clearMeasureOnAltUp:2452 handleCropKeys:2482 handlePolylineKeys:2513 handlePenKeys:2531 handleDragLabelKeys:2563 releasePointer:2595 releaseAllPointers:2600 dropHandler:2605 for:2669
 frontend/src/components/choice-dialog-state.ts | typescript | 38 | Choice:13 PendingChoice:19 askChoice:29 answerChoice:34
 frontend/src/components/choice-dialog.css | - | 34 |
 frontend/src/components/choice-dialog.tsx | typescript | 41 | isOpen:8 cancel:9 ChoiceDialog:12
@@ -1765,7 +1765,7 @@ frontend/src/components/elements-panel.tsx | typescript | 361 | Component:1 Font
 frontend/src/components/embed-viewer.css | - | 81 |
 frontend/src/components/embed-viewer.tsx | typescript | 171 | EmbedOptions:13 parseEmbedOptions:21 EmbedViewer:37 fitToView:42 handleResize:124 openUrl:130
 frontend/src/components/export-dialog.css | - | 209 |
-frontend/src/components/export-dialog.tsx | typescript | 375 | Component:1 SocialTarget:6 ExportDialogProps:15 ExportDialog:20 isPaged:36 isVideo:37 activePage:40 socialTargets:41 exportForSocial:46 handleKeyDown:91 handleExport:102
+frontend/src/components/export-dialog.tsx | typescript | 380 | Component:1 SocialTarget:6 ExportDialogProps:15 ExportDialog:20 isPaged:36 isVideo:37 activePage:40 socialTargets:41 exportForSocial:46 handleKeyDown:91 handleExport:102
 frontend/src/components/eyedropper-hud.css | - | 13 |
 frontend/src/components/eyedropper-hud.tsx | typescript | 40 | EyedropperHud:12 h:13 isColor:14 pos:15
 frontend/src/components/file-open-dialog.css | - | 158 |
@@ -1969,7 +1969,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 969 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 974 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2058,7 +2058,7 @@ frontend/src/help-docs/features/qr-code.md | - | 124 |
 frontend/src/help-docs/features/stick-animation.md | - | 184 |
 frontend/src/help-docs/features/stick-library.md | - | 242 |
 frontend/src/help-docs/features/symbols.md | - | 159 |
-frontend/src/help-docs/features/workspace.md | - | 994 |
+frontend/src/help-docs/features/workspace.md | - | 997 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 581 |
 frontend/src/help-docs/help-md.d.ts | typescript | 28 |
 frontend/src/help-docs/help-page.css | - | 587 |
@@ -2090,11 +2090,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1428 |
-frontend/src/i18n/locales/en.ts | typescript | 1460 | Dictionary:1460
-frontend/src/i18n/locales/es.ts | typescript | 1427 |
-frontend/src/i18n/locales/fr.ts | typescript | 1449 | de:111
-frontend/src/i18n/locales/ja.ts | typescript | 1427 |
+frontend/src/i18n/locales/de.ts | typescript | 1429 |
+frontend/src/i18n/locales/en.ts | typescript | 1461 | Dictionary:1461
+frontend/src/i18n/locales/es.ts | typescript | 1428 |
+frontend/src/i18n/locales/fr.ts | typescript | 1450 | de:111
+frontend/src/i18n/locales/ja.ts | typescript | 1428 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
@@ -2449,8 +2449,8 @@ frontend/src/utils/pdf-cmyk.ts | typescript | 294 | ExactCmyk:21 exactCmykFromSw
 frontend/src/utils/pdf-rewrite.ts | typescript | 195 | PdfObject:40 PdfFile:48 decodeStream:185
 frontend/src/utils/pdf-vector.test.ts | typescript | 104 | buf:9 f:59 read:83 nodeInflate:84
 frontend/src/utils/pdf-vector.ts | typescript | 401 | ExactCmyk:28 SpotInk:28 SpotMap:28 PdfPageRegion:31 TextFace:43 EmbeddableFont:86 PdfCmykOptions:327
-frontend/src/utils/pdf-x.test.ts | typescript | 117 | sample:19
-frontend/src/utils/pdf-x.ts | typescript | 164 | PdfXOptions:23 pdfString:35 pdfAndXmpDates:47 xmpPacket:59 applyPdfX4:95
+frontend/src/utils/pdf-x.test.ts | typescript | 198 | sample:26 good:161 tamper:163
+frontend/src/utils/pdf-x.ts | typescript | 332 | PdfXOptions:23 pdfString:35 pdfAndXmpDates:47 xmpPacket:59 applyPdfX4:95 PdfXError:176{constructor:178} usesTransparency:190 luminosityMaskGroups:212 setCmykBlending:230 verifyPdfX4:250
 frontend/src/utils/pen-cursor.ts | typescript | 32 | PenCursorBadge:10 penCursor:22
 frontend/src/utils/performance-monitor.ts | typescript | 49 | PerformanceMonitor:1{constructor:8 measureFrame:13 setEnabled:43}
 frontend/src/utils/perspective-plane.test.ts | typescript | 149 | PerspectiveGrid:11
@@ -2731,8 +2731,9 @@ tests/clipping-mask.spec.ts | typescript | 70 |
 tests/code-block.spec.ts | typescript | 164 | hello:36 App:129
 tests/color-batch.spec.ts | typescript | 62 | hexToRgb:6 lum:22
 tests/color-eyedropper.spec.ts | typescript | 93 | boot:16 pick:27 onScreen:38
+tests/command-model.spec.ts | typescript | 170 | Page:1 Step:27 Outcome:28
 tests/command-registry.spec.ts | typescript | 191 |
-tests/command-sweep.spec.ts | typescript | 213 | Fixture:49 Report:51
+tests/command-sweep.spec.ts | typescript | 193 | Fixture:22 Report:24
 tests/composition-evaluator.spec.ts | typescript | 47 | composition:4
 tests/compound-edit.spec.ts | typescript | 66 | widthOf:18
 tests/compound-shapes.spec.ts | typescript | 85 | state:31
@@ -2799,6 +2800,7 @@ tests/grid-customization.spec.ts | typescript | 205 | boot:13
 tests/group-isolation.spec.ts | typescript | 172 | makeGroup:23 get:37 get:62 get:113
 tests/help-doc-recovery.spec.ts | typescript | 53 |
 tests/help-docs.spec.ts | typescript | 23 |
+tests/helpers/command-skip.ts | typescript | 28 |
 tests/history-panel.spec.ts | typescript | 44 | survives:21
 tests/history-transactions.spec.ts | typescript | 221 |
 tests/hotkeys.spec.ts | typescript | 385 |
@@ -2964,7 +2966,7 @@ tests/types/motion-types.spec.ts | typescript | 90 |
 tests/ui-panels.spec.ts | typescript | 249 |
 tests/uml-tools.spec.ts | typescript | 185 |
 tests/upa-texture-simplify-library.spec.ts | typescript | 285 | of:115
-tests/vector-pdf-export.spec.ts | typescript | 350 | Page:1
+tests/vector-pdf-export.spec.ts | typescript | 375 | Page:1
 tests/vector-tools-panel.spec.ts | typescript | 174 | count:45 world:156
 tests/vertical-type.spec.ts | typescript | 25 | resizes:4 snap:10
 tests/width-profiles.spec.ts | typescript | 209 | boot:12

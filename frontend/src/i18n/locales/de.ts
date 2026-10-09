@@ -1331,6 +1331,7 @@ export const de: Dictionary = {
         title: 'Dokumenttitel',
         titlePlaceholder: 'Titel (z. B. Frühlingsplakat)',
         pdfxHint: 'Ergänzt, was Druckereien prüfen: das Druckprofil, Endformat- und Anschnittrahmen (deine Anschnitt-Einstellung wird um jede Seite ergänzt) und eingebettete Schriften. Lass vor dem Druck den Preflight deiner Druckerei laufen.',
+        failed: 'PDF-Export fehlgeschlagen: {{ message }}',
     },
     socialExport: {
         heading: 'Bereit für Social Media',

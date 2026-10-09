@@ -1330,6 +1330,7 @@ export const es: Dictionary = {
         title: 'Título del documento',
         titlePlaceholder: 'Título (p. ej. Cartel de primavera)',
         pdfxHint: 'Añade lo que comprueban las imprentas: el perfil de impresión, las cajas de corte y sangrado (tu ajuste de sangrado se añade alrededor de cada página) y todas las fuentes incrustadas. Pasa el preflight de tu imprenta antes de enviarlo a imprimir.',
+        failed: 'Falló la exportación a PDF: {{ message }}',
     },
     socialExport: {
         heading: 'Listo para redes sociales',

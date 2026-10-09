@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PRINT_PROFILES } from './color-management';
 import { PdfFile, decodeStream, toLatin1 } from './pdf-rewrite';
-import { applyPdfX4, pdfAndXmpDates, pdfString, xmpPacket } from './pdf-x';
+import { PdfXError, applyPdfX4, pdfAndXmpDates, pdfString, verifyPdfX4, xmpPacket } from './pdf-x';
 
 const root = join(import.meta.dir, '../../..');
 const profileBytes = new Uint8Array(readFileSync(join(root, 'frontend/public/icc/fogra39-coated.icc')));
@@ -16,15 +16,33 @@ beforeAll(async () => {
     ({ jsPDF } = await import('jspdf'));
 });
 
-const sample = (pages = 1) => {
+const poppins = Buffer.from(readFileSync(join(root, 'frontend/public/fonts/outline/poppins-400.ttf'))).toString('base64');
+
+/**
+ * A small CMYK document like the exporter's: CMYK fills and text in an EMBEDDED font (what PDF/X
+ * requires). `opts` adds what the checks are about: an unembedded standard font, transparency,
+ * an RGB colour.
+ */
+const sample = (pages = 1, opts: { standardFont?: boolean; transparency?: boolean; rgb?: boolean } = {}) => {
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [400, 300], hotfixes: ['px_scaling'], compress: true });
+    pdf.addFileToVFS('p.ttf', poppins);
+    pdf.addFont('p.ttf', 'yd-poppins-400', 'normal');
     for (let i = 0; i < pages; i++) {
         if (i) pdf.addPage([400, 300], 'landscape');
         pdf.setFillColor(0, 0.5, 1, 0);
         pdf.rect(10, 10, 100, 50, 'F');
     }
-    pdf.setFont('helvetica', 'normal');
-    pdf.text('Only Helvetica is used', 10, 200);
+    if (opts.transparency) {
+        pdf.setGState(new (pdf as any).GState({ opacity: 0.5 }));
+        pdf.rect(50, 50, 100, 50, 'F');
+    }
+    if (opts.rgb) {
+        pdf.setFillColor(255, 0, 0);
+        pdf.rect(200, 10, 20, 20, 'F');
+    }
+    pdf.setTextColor(0, 0, 0, 1);
+    pdf.setFont(opts.standardFont ? 'helvetica' : 'yd-poppins-400', 'normal');
+    pdf.text('Text in one font', 10, 200);
     return new Uint8Array(pdf.output('arraybuffer'));
 };
 
@@ -98,17 +116,80 @@ describe('applyPdfX4', () => {
         expect(t).not.toContain('/BleedBox');
     });
 
-    test('drops the unused standard fonts jsPDF always lists, keeping the ones set', async () => {
+    test('drops the unused standard fonts jsPDF always lists, keeping the one set', async () => {
         const before = toLatin1(sample());
-        expect((before.match(/\/BaseFont \//g) ?? []).length).toBe(14);
+        expect((before.match(/\/BaseFont \/[A-Z]/g) ?? []).length).toBe(14); // the standard 14
         const out = toLatin1(await applyPdfX4(sample(), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 0, ...FIXED }));
-        expect(out.match(/\/BaseFont \/[\w-]+/g)).toEqual(['/BaseFont /Helvetica']);
-        // …and the file still parses with its references intact.
+        // Only the embedded face is left (jsPDF writes it as a Type0 + CIDFont pair).
+        for (const f of out.match(/\/BaseFont \/[\w+-]+/g) ?? []) expect(f).toContain('yd-poppins-400');
         const file = new PdfFile(new Uint8Array([...out].map(c => c.charCodeAt(0))));
         const res = file.objectNumbers().map(n => file.get(n)!).find(o => /^<<\s*\/ProcSet/.test(o.dict))!;
         const ref = parseInt(/\/F\d+ (\d+) 0 R/.exec(res.dict)![1], 10);
-        expect(file.get(ref)!.dict).toContain('/Helvetica');
+        expect(file.get(ref)!.dict).toContain('yd-poppins-400');
     });
+
+    test('a used, unembedded font is refused, not shipped', async () => {
+        const run = applyPdfX4(sample(1, { standardFont: true }), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 0, ...FIXED });
+        expect(run).rejects.toBeInstanceOf(PdfXError);
+        expect(run).rejects.toThrow('font Helvetica is not embedded');
+    });
+
+    test('an RGB colour anywhere is refused', async () => {
+        const err = await applyPdfX4(sample(1, { rgb: true }), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 0, ...FIXED }).catch(e => e);
+        expect(err).toBeInstanceOf(PdfXError);
+        expect((err as PdfXError).problems.join()).toContain('RGB colour operators');
+    });
+
+    test('transparency gets a CMYK page group on every page', async () => {
+        const out = toLatin1(await applyPdfX4(sample(2, { transparency: true }), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 0, ...FIXED }));
+        expect((out.match(/\/Group << \/Type \/Group \/S \/Transparency \/CS \/DeviceCMYK >>/g) ?? []).length).toBe(2);
+    });
+
+    test('no transparency, no page group', async () => {
+        const out = toLatin1(await applyPdfX4(sample(1), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 0, ...FIXED }));
+        expect(out).not.toContain('/S /Transparency');
+    });
+
+    test('jsPDF\u2019s /OpenAction is removed', async () => {
+        expect(toLatin1(sample())).toContain('/OpenAction');
+        const out = toLatin1(await applyPdfX4(sample(), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 0, ...FIXED }));
+        expect(out).not.toContain('/OpenAction');
+    });
+});
+
+describe('verifyPdfX4', () => {
+    const good = () => applyPdfX4(sample(), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 9, ...FIXED });
+    /** Tamper with one object's dictionary and re-serialise. */
+    const tamper = (bytes: Uint8Array, find: RegExp, replace: string) => {
+        const file = new PdfFile(bytes);
+        for (const n of file.objectNumbers()) {
+            const o = file.get(n)!;
+            if (find.test(o.dict)) { file.set(n, o.dict.replace(find, replace), o.stream); break; }
+        }
+        return file.toBytes();
+    };
+
+    test('a file the exporter wrote passes', async () => {
+        expect(await verifyPdfX4(await good())).toEqual([]);
+    });
+
+    test('a plain (non-X) PDF fails on every PDF/X rule', async () => {
+        const problems = await verifyPdfX4(sample());
+        expect(problems).toContain('no GTS_PDFX output intent');
+        expect(problems).toContain('XMP does not identify PDF/X-4');
+        expect(problems.some(p => p.includes('no TrimBox'))).toBe(true);
+        expect(problems).toContain('the catalog has document actions');
+    });
+
+    test('catches a missing TrimBox, a trim outside the media, and disagreeing dates', async () => {
+        const ok = await good();
+        expect(await verifyPdfX4(tamper(ok, /\/TrimBox \[[^\]]*\]/, ''))).toEqual(expect.arrayContaining([expect.stringContaining('no TrimBox')]));
+        expect(await verifyPdfX4(tamper(ok, /\/TrimBox \[[^\]]*\]/, '/TrimBox [-5 9 291 216]'))).toEqual(expect.arrayContaining([expect.stringContaining('TrimBox outside')]));
+        expect(await verifyPdfX4(tamper(ok, /\/CreationDate \(D:\d{4}/, '/CreationDate (D:1999'))).toContain('Info and XMP creation dates disagree');
+    });
+});
+
+describe('applyPdfX4 — refusals', () => {
 
     test('refuses a file that already has an output intent rather than stacking a second', async () => {
         const once = await applyPdfX4(sample(), { profile: PRINT_PROFILES.fogra39, profileBytes, title: 't', bleedPt: 0, ...FIXED });

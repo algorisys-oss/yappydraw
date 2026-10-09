@@ -1,5 +1,5 @@
 import { g as w, a as P, b as E, c as T } from "./ai-providers-CycU8sO1.js";
-import { s as u, b as r, p as y, u as b, C as B, g as v, f as j } from "./index-xELOblG8.js";
+import { s as u, b as r, p as y, u as b, C as B, g as v, f as j } from "./index-De-LpBry.js";
 const z = {
   rewrite: "Rewrite this text to be clearer and more engaging while keeping its meaning and rough length.",
   shorten: "Shorten this text to roughly half its length while keeping the key message.",

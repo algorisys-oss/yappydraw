@@ -1,4 +1,4 @@
-import { L as S, M as C, N as $ } from "./index-xELOblG8.js";
+import { L as S, M as C, N as $ } from "./index-De-LpBry.js";
 import { p as E, i as P, a as D, c as T } from "./pdf-cmyk-CqVZV2FF.js";
 const b = (t, i) => {
   for (let n = t; n; n = n.parentElement) {
@@ -173,7 +173,7 @@ const b = (t, i) => {
     let m = new Uint8Array(a.output("arraybuffer"));
     if (e && (m = await T(m, e.engine, e.exact, g)), e?.pdfx) {
       if (o > 0) throw new Error("PDF/X: an image could not be converted to CMYK");
-      const { applyPdfX4: p } = await import("./pdf-x-317WCbxY.js");
+      const { applyPdfX4: p } = await import("./pdf-x-DBYFVbAz.js");
       m = await p(m, {
         profile: e.engine.profile,
         profileBytes: e.engine.profileBytes,

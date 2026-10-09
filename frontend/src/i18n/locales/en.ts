@@ -1356,6 +1356,7 @@ export const en = {
         title: 'Document title',
         titlePlaceholder: 'Title (e.g. Spring poster)',
         pdfxHint: 'Adds what print shops check for: the press profile, trim and bleed boxes (your bleed setting is added around each page) and every font embedded. Run your printer’s preflight before sending it to press.',
+        failed: 'PDF export failed: {{ message }}',
     },
     socialExport: {
         heading: 'Ready for social',

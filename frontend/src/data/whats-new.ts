@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.280', date: '2026-10-09', items: [
+        'PDF/X-4 files now check themselves before they\u2019re saved. If something would make a print shop reject the file, Yappy tells you what it is instead of saving it.',
+        'Semi-transparent artwork in a PDF/X-4 now blends the way a press prints it, in CMYK.',
+        'Fixed: rulers and some tool overlays could sit slightly off from the canvas after the last update.',
+    ] },
     { version: '0.8.279', date: '2026-10-09', items: [
         'PDFs are sharp now. Shapes stay crisp at any zoom and text stays real text you can select, search and copy \u2014 the old one-picture-per-page PDF is still there as \u201cImage\u201d.',
         'Sending something to a print shop? Choose CMYK (print) when exporting a PDF: every colour, gradient and photo is converted to printing inks through a real press profile, and black prints as pure black ink.',
