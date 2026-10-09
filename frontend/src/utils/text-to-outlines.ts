@@ -114,6 +114,20 @@ function resolveFace(files: FamilyFiles, weight: number, italic: boolean): Resol
 }
 
 /**
+ * The bundled font file a PDF embeds for a built-in family, or null — the same slant-then-weight
+ * match as `resolveFace`. The `.woff` italics are fine: the PDF exporter unwraps WOFF to the
+ * TrueType inside it (utils/pdf-vector `woffToSfnt`), so every bundled face is a true face in
+ * the PDF. Names are `<family>[-italic]-<weight>.<ext>`, so the name says what the face is.
+ */
+export function pdfFontFile(familyKey: string, weight: number, italic: boolean): { file: string; italic: boolean; bold: boolean } | null {
+    const entry = FONT_FILES[familyKey];
+    if (!entry) return null;
+    const face = resolveFace(entry, weight, italic);
+    if (!face) return null;
+    return { file: face.file, italic: face.file.includes('-italic-'), bold: face.file.includes('-700') };
+}
+
+/**
  * Thrown when a font's outlines genuinely can't be reached. Carries a message meant for
  * the user rather than a stack trace — the caller surfaces it as a toast, because the
  * only useful response is "add the font file", which they have to do themselves.

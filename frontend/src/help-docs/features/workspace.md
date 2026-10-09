@@ -711,9 +711,11 @@ match it.
 
 ### Masks and animated poses
 
-- **Clipping and opacity masks** apply in PNG, JPG, PDF, PPTX, copy-as-PNG, slices, artboards and
-  Rasterize. The mask shape itself never appears in the file. **SVG** export doesn't clip yet:
-  masked artwork comes out whole (the mask shape is still left out).
+- **Clipping and opacity masks** apply in every export — PNG, JPG, SVG, both kinds of PDF, PPTX,
+  copy-as-PNG, slices, artboards and Rasterize. The mask shape itself never appears in the file.
+  In **SVG** a clipping mask is a real `<clipPath>` and an opacity mask a real `<mask>`, so the
+  masked artwork stays vector and editable; in the **Vector** PDF a clipping mask stays vector too,
+  and an opacity-masked object becomes an image (a PDF has no luminance mask we can write).
 - **Anything posed by animation** exports the way the canvas shows it at the current playhead:
   keyframes, tinyfly clips and parented layers (a head parented to a neck stays on the neck). In an
   animation document, only the current frame is exported.
@@ -739,8 +741,109 @@ now enough to keep it out of both the pixels *and* the box.
 
 SVG export is real **vector**: shapes become `<path>`s, text becomes ` <text>`, and gradients & gradient-mesh fills export as proper ` <linearGradient>`/`<radialGradient>`/`<pattern>` definitions — so the file stays crisp at any size and is editable in Illustrator, Inkscape or the browser. Sketch-style strokes export as vector too (via rough.js). A few highly decorative shapes fall back to an embedded raster image.
 
+### Vector PDF
+
+PDF export is **vector** by default. Pick **PDF** in the Export dialog and you'll see a **PDF type**
+switch:
+
+- **Vector** (default) — shapes and sketch strokes stay real paths and gradients become real PDF
+  gradients, so the PDF is sharp at any zoom and prints cleanly at any size. (Pattern fills repeat
+  a small tile image, exactly as in the SVG export; photos stay photos.) **Text stays text**: it is embedded in
+  its font, so you can select, search and copy it in any PDF reader.
+- **Image** — the older PDF: each page is one picture, at the **Scale** you choose. Use it when
+  your drawing relies on effects the vector version can't carry yet.
+
+Paged documents (Design, Slides) get **one PDF page per page**, at the page's exact size, with its
+page colour (untick **White Background** for a transparent page that prints on white paper).
+Artwork stops at the page edge, the same as on the canvas.
+
+**Effects and masks.** Everything the canvas shows makes it into the Vector PDF. What can stay
+vector does: shapes, text, gradients and **clipping masks**. What a PDF has no vector form for is
+kept as a small image of just that part:
+
+- a **drop shadow** or **outer glow** becomes an image of the shadow alone, *under* the shape — the
+  shape itself is still vector and its text still selectable;
+- a **feathered** object, and an object under an **opacity mask**, become an image of that object;
+- **image filters** (brightness, blur, invert…) are baked into the image.
+
+**Image** is still there when you want every page as one picture.
+
+**Fonts.** The built-in fonts are embedded in **Regular**, **Bold** and **Italic** — only the
+glyphs you used, so each font adds roughly 10 kB. Merriweather has no Bold Italic bundled (its
+Italic is used), and the families with no italic at all (Handlee, Caveat, Permanent Marker) come
+out upright. A font you added yourself is embedded if it's a **.ttf** or **.woff** file. Anything
+else — a Google font, a `.otf` or `.woff2` — is replaced with the closest standard PDF font
+(Helvetica, Times or Courier), and a message names the fonts that were replaced. To embed one,
+add it as a `.ttf` with **＋ Add font…**.
+
+### Print-ready PDF (CMYK)
+
+Sending a PDF to a print shop? Under **Vector**, set **Colour** to **CMYK (print)** and pick the
+press profile your printer uses:
+
+- **FOGRA39** — coated paper, Europe (ISO Coated). The default.
+- **GRACoL** — coated paper, US.
+
+Every colour, gradient and photo is converted to the four printing inks (cyan, magenta, yellow,
+black) through that profile, so what the printer gets is what the profile says will print —
+not a guess the printer's software makes later.
+
+- **Pure black prints as black ink only** (0/0/0/100), the way printers expect for text and
+  lines. Every other colour, including near-blacks, goes through the profile.
+- **Very bright screen colours** — pure green, electric blue, neon pink — can't be printed with
+  four inks and come out duller. That is the profile telling the truth, not a bug.
+- **Exact inks for brand colours.** Give a swatch exact CMYK values (Swatches panel → the
+  swatch's **printer** button) and every object using that swatch prints with exactly those
+  inks, gradients included. The swatch's on-screen colour is updated to show how those inks will
+  look. From a script: `await Yappy.setSwatchCmyk(id, [100, 60, 0, 10])`.
+- **Spot inks print on their own plate.** A swatch marked as a spot ink (e.g. *PANTONE 186 C*)
+  is written as a real spot colour (a PDF *Separation*), so the printer gets a separate plate with
+  exactly that name for every fill and outline in that colour. Its CMYK values are the fallback
+  for a four-colour press. Text, gradients and photos in a spot colour use the CMYK fallback.
+- If you're not sure which profile to use, ask your printer — it's a one-word answer for them.
+
+**PDF/X-4 for print shops.** Tick **PDF/X-4 (print-shop standard)** under CMYK and give the
+document a title. The PDF then carries what a print shop's preflight checks for:
+
+- the **press profile** embedded and named as the output condition (FOGRA39 or GRACoL);
+- **trim and bleed boxes** on every page. Your document's **bleed** setting (Settings, or
+  `Yappy.setBleed(px)`) is added around each page, and artwork that runs off the page edge
+  prints into the bleed so the cut has no white sliver;
+- **every font embedded** — a font that can't be embedded is replaced with a bundled one
+  (Inter, Merriweather or Source Code Pro), never left as a reference;
+- the PDF/X-4 identification printers' software looks for.
+
+Before sending a file to press, run your printer's **preflight** (or Acrobat's *Preflight →
+PDF/X-4*). Yappy writes the file to the standard, but the preflight is the check that counts.
+From a script: `await Yappy.exportPDF({ pdfx: true, title: 'Spring poster' })`.
+
+**Print preview.** To see how your design will print *before* exporting, turn on the print
+preview: command palette (⌘/Ctrl-K) → **Toggle Print Preview (CMYK)**, or
+`await Yappy.setPrintPreview(true)`. The whole canvas — shapes, gradients, photos, shadows — is
+shown through the press profile, so colours that can't be printed with four inks show as the
+duller colour they'll become, and black shows as black ink. You can keep drawing and editing
+while it's on. A **Print preview · FOGRA39** badge at the top shows it's active; click it to turn
+the preview off. It needs a browser with WebGL2 (every current one has it). The preview changes
+only what you see — nothing in your document.
+
+**Checking it on screen.** Most PDF viewers show CMYK with a rough conversion, so a CMYK PDF can
+look a little different from the RGB one on your monitor. Print shops, Acrobat and Affinity
+read the inks themselves.
+
+The profiles are free, openly licensed ICC profiles (see `frontend/public/icc/README.md`).
+
+From a script:
+
+```js
+await Yappy.exportPDF();                                  // vector, downloads yappy_drawing.pdf
+const blob = await Yappy.exportPDF({ download: false });  // get the file without saving it
+await Yappy.exportPDF({ vector: false, scale: 3 });       // the Image PDF at 3×
+await Yappy.exportPDF({ onlySelected: true, background: false });
+await Yappy.exportPDF({ colorMode: 'cmyk', profile: 'gracol' }); // print PDF, US coated
+```
+
 :::tip
-Choose **SVG** for logos, icons and anything you'll scale or re-edit; **PNG** (2×) for crisp raster output; **PDF** for print.
+Choose **SVG** for logos, icons and anything you'll scale or re-edit; **PNG** (2×) for crisp raster output; **PDF** (Vector) for print and sharing documents.
 :::
 
 ### Excalidraw import & export

@@ -195,3 +195,15 @@
     line-height: 1.4;
     color: var(--text-secondary);
 }
+
+/* Explanatory text under an option (PDF type, GIF frame rate): secondary, not body copy. */
+.option-group .hint {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.pdf-title-input {
+    font-size: 0.85rem; padding: 4px 6px; border-radius: 4px;
+    border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-primary);
+}

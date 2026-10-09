@@ -75,7 +75,20 @@ export interface GraphicStyle { id: string; name: string; style: Partial<Drawing
  *  `darkColor` is the optional dark-theme counterpart. Nothing on the canvas uses
  *  it (the canvas renders one theme at a time); it exists so a themeable SVG
  *  export can emit a light/dark pair per swatch and let the viewer's theme pick. */
-export interface Swatch { id: string; name: string; color: string; darkColor?: string; group?: string; }
+export interface Swatch {
+    id: string; name: string; color: string; darkColor?: string; group?: string;
+    /**
+     * Print colour, ink percentages C M Y K (0–100). When set it is the source of truth for a
+     * CMYK PDF — exported exactly, not converted — and `color` is its on-screen preview (see
+     * utils/color-management). Absent: the CMYK export converts `color` through the profile.
+     */
+    cmyk?: [number, number, number, number];
+    /**
+     * A named spot ink (e.g. "PANTONE 186 C"), exported as a PDF Separation colour space. `cmyk`
+     * is then required: it is the alternate a CMYK-only device prints.
+     */
+    spot?: { name: string };
+}
 
 /** A reusable, document-level pattern swatch — a named `PatternFill` that can be
  *  applied to any shape from the Patterns panel. */

@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.279', date: '2026-10-09', items: [
+        'PDFs are sharp now. Shapes stay crisp at any zoom and text stays real text you can select, search and copy \u2014 the old one-picture-per-page PDF is still there as \u201cImage\u201d.',
+        'Sending something to a print shop? Choose CMYK (print) when exporting a PDF: every colour, gradient and photo is converted to printing inks through a real press profile, and black prints as pure black ink.',
+        'Give a swatch your brand\u2019s exact CMYK values, or make it a spot ink like PANTONE 186 C that prints on its own plate \u2014 Swatches panel \u2192 the printer button.',
+        'PDF/X-4 for print shops, with trim and bleed built in.',
+        'See how it will print before you export: command palette \u2192 Toggle Print Preview (CMYK). Colours that can\u2019t be printed show the way they\u2019ll actually come out, and you can keep editing.',
+        'Shadows and glows now look the same in 2\u00d7 and 3\u00d7 image exports as on the canvas \u2014 they used to shrink.',
+    ] },
     { version: '0.8.276', date: '2026-10-09', items: [
         'The command palette tells you why something is unavailable \u2014 a greyed \u201cGroup\u201d now reads \u201cSelect two or more objects\u201d, instead of doing nothing when you click it.',
         'Every command you run from the palette is a single named undo step, and puts things back if it fails part-way.',

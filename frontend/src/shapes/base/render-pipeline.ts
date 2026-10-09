@@ -150,16 +150,21 @@ export class RenderPipeline {
                 : blend;
         }
 
+        // Effect lengths are world units; the canvas takes them in device pixels and ignores
+        // the transform. Without this a 2× export drew half-size shadows, and the canvas drew
+        // them at a different size at every zoom level and on every pixel density.
+        const k = renderer.getScale?.() ?? 1;
+
         // Apply Drop Shadow, or — if no shadow — Outer Glow (a coloured halo, i.e.
         // a shadow with 0 offset). Canvas only has one shadow slot, so shadow wins.
         if (el.shadowEnabled) {
             renderer.shadowColor = el.shadowColor || 'rgba(0,0,0,0.3)';
-            renderer.shadowBlur = el.shadowBlur || 10;
-            renderer.shadowOffsetX = el.shadowOffsetX || 5;
-            renderer.shadowOffsetY = el.shadowOffsetY || 5;
+            renderer.shadowBlur = (el.shadowBlur || 10) * k;
+            renderer.shadowOffsetX = (el.shadowOffsetX || 5) * k;
+            renderer.shadowOffsetY = (el.shadowOffsetY || 5) * k;
         } else if (el.glowEnabled) {
             renderer.shadowColor = el.glowColor || '#ffd400';
-            renderer.shadowBlur = el.glowBlur ?? 12;
+            renderer.shadowBlur = (el.glowBlur ?? 12) * k;
             renderer.shadowOffsetX = 0;
             renderer.shadowOffsetY = 0;
         } else {
@@ -173,7 +178,11 @@ export class RenderPipeline {
             if (filterStr !== 'none') filterParts.push(filterStr);
         }
         if (el.featherRadius && el.featherRadius > 0) filterParts.push(`blur(${el.featherRadius}px)`);
-        if (filterParts.length) renderer.filter = filterParts.join(' ');
+        if (filterParts.length) {
+            const f = filterParts.join(' ');
+            // blur() radii are device pixels too (feather, and an image's Blur adjustment).
+            renderer.filter = k === 1 ? f : f.replace(/blur\(([\d.]+)px\)/g, (_, r) => `blur(${parseFloat(r) * k}px)`);
+        }
 
         const angle = el.angle || 0;
         let finalAngle = angle;

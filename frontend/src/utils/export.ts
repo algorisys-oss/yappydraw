@@ -32,7 +32,7 @@ import {
 } from "./svg-theme";
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText, type RichTextSegment } from "./rich-text-utils";
-import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
+import { getShapeGeometry, getCentredShapeGeometry, type ShapeGeometry } from "./shape-geometry";
 import { effectiveStrokeAlign } from "./stroke-align";
 import { connectorGeometry } from "./connector-geometry";
 import { svgFillPaint, svgPatternDef } from "./svg-paint";
@@ -43,6 +43,9 @@ import { transformEffectRenderCopies, hasTransformEffect } from "./transform-eff
 import { hasExtrude, extrudeOwnsFront, renderExtrudeBody } from "./extrude";
 import { hasRevolve, renderRevolve } from "./revolve";
 import { showToast } from "../components/toast";
+import { t } from "../i18n";
+import type { PdfPageRegion } from "./pdf-vector";
+import type { PrintProfileId } from "./color-management";
 import { renderDimensions } from "./dimension-renderer";
 import { appendDimensionSvg } from "./dimension-svg";
 
@@ -965,6 +968,13 @@ export interface SvgExportOptions extends SvgThemeOptions {
      * otherwise both contain `rect-1`.
      */
     elementIds?: boolean;
+    /**
+     * Internal (vector PDF): emit what svg2pdf can't render — SVG filters (shadow, glow,
+     * feather) and `<mask>` (opacity masks) — as per-object bitmaps instead. The shape itself
+     * stays vector wherever it can: a shadow/glow becomes a bitmap halo *under* the vector
+     * shape; only feathered and opacity-masked objects are rasterised whole.
+     */
+    rasterEffects?: boolean;
 }
 
 /** Export as a file: builds the SVG, saves it, and returns the markup. */
@@ -978,6 +988,200 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgExportOptions)
 
 /** Build the SVG markup without saving it — the SDK's path, which must never download. */
 export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOptions): string | undefined => {
+    const built = buildExportSvg(onlySelected, themeOpts);
+    return built ? new XMLSerializer().serializeToString(built.svg) : undefined;
+};
+
+/**
+ * The export SVG as a live element, plus where world coordinates land in it.
+ *
+ * A world point (x, y) sits at (x - originX, y - originY) in the SVG's user space — which
+ * is what lets the vector PDF exporter crop one page per slide out of a single build with
+ * a viewBox, instead of re-running this whole function per page.
+ */
+export interface BuiltExportSvg {
+    svg: SVGSVGElement;
+    originX: number;
+    originY: number;
+    /** The elements that were drawn, after the hidden/selection filters. */
+    elements: DrawingElement[];
+}
+
+/** Scale for the per-object bitmaps the SVG builder embeds (effects, opacity masks). */
+const EFFECT_RASTER_SCALE = 2;
+
+const hasEffect = (el: DrawingElement) => !!el.shadowEnabled || !!el.glowEnabled || (el.featherRadius ?? 0) > 0;
+
+/**
+ * The world-space box an element's effects can reach. `elementsBounds` pads by the stored
+ * blur, but the renderer defaults an unset shadow blur to 10 and glow to 12 — pad for what is
+ * actually drawn, plus the Gaussian's tail (it extends ~2σ past the nominal radius).
+ */
+function effectBounds(el: DrawingElement): Bounds {
+    const b = elementsBounds([el]);
+    const blur = Math.max(el.shadowEnabled ? (el.shadowBlur || 10) : 0, el.glowEnabled ? (el.glowBlur ?? 12) : 0, el.featherRadius || 0);
+    const off = el.shadowEnabled ? Math.max(Math.abs(el.shadowOffsetX || 5), Math.abs(el.shadowOffsetY || 5)) : 0;
+    const pad = blur + off + 4;
+    return { minX: b.minX - pad, minY: b.minY - pad, maxX: b.maxX + pad, maxY: b.maxY + pad };
+}
+
+/**
+ * Draw into a world-space box on a fresh canvas and return it as an SVG `<image>` placed at
+ * that box. `draw` gets a context already transformed so world coordinates just work.
+ */
+function rasterImageNode(b: Bounds, draw: (ctx: CanvasRenderingContext2D, rc: ReturnType<typeof rough.canvas>) => void): SVGImageElement | null {
+    const w = b.maxX - b.minX, h = b.maxY - b.minY;
+    if (!(w > 0 && h > 0)) return null;
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(w * EFFECT_RASTER_SCALE);
+    c.height = Math.ceil(h * EFFECT_RASTER_SCALE);
+    const ctx = c.getContext('2d');
+    if (!ctx) return null;
+    ctx.scale(EFFECT_RASTER_SCALE, EFFECT_RASTER_SCALE);
+    ctx.translate(-b.minX, -b.minY);
+    draw(ctx, rough.canvas(c));
+    const img = document.createElementNS(SVGNS, 'image') as SVGImageElement;
+    img.setAttribute('href', c.toDataURL('image/png'));
+    img.setAttribute('x', `${b.minX}`);
+    img.setAttribute('y', `${b.minY}`);
+    img.setAttribute('width', `${w}`);
+    img.setAttribute('height', `${h}`);
+    return img;
+}
+
+/**
+ * Shadow / glow / feather as an SVG filter on a wrapper outside the element's own transform —
+ * the canvas offsets a shadow in unrotated space, and so does this. Mirrors
+ * RenderPipeline.applyTransformations: feather blurs the shape (CSS `blur(r)` is σ = r), then a
+ * shadow wins over a glow (canvas has one shadow slot), with σ = shadowBlur / 2.
+ */
+function effectFilter(el: DrawingElement, defs: SVGElement): string {
+    const id = `yd-fx-${el.id}`;
+    const b = effectBounds(el);
+    const f = document.createElementNS(SVGNS, 'filter');
+    f.setAttribute('id', id);
+    f.setAttribute('filterUnits', 'userSpaceOnUse');
+    f.setAttribute('x', `${b.minX}`);
+    f.setAttribute('y', `${b.minY}`);
+    f.setAttribute('width', `${b.maxX - b.minX}`);
+    f.setAttribute('height', `${b.maxY - b.minY}`);
+    f.setAttribute('color-interpolation-filters', 'sRGB');
+    let input = 'SourceGraphic';
+    if ((el.featherRadius ?? 0) > 0) {
+        const blur = document.createElementNS(SVGNS, 'feGaussianBlur');
+        blur.setAttribute('in', input);
+        blur.setAttribute('stdDeviation', `${el.featherRadius}`);
+        blur.setAttribute('result', 'feathered');
+        f.appendChild(blur);
+        input = 'feathered';
+    }
+    const shadow = el.shadowEnabled
+        ? { color: el.shadowColor || 'rgba(0,0,0,0.3)', blur: el.shadowBlur || 10, dx: el.shadowOffsetX || 5, dy: el.shadowOffsetY || 5 }
+        : el.glowEnabled ? { color: el.glowColor || '#ffd400', blur: el.glowBlur ?? 12, dx: 0, dy: 0 } : null;
+    if (shadow) {
+        const ds = document.createElementNS(SVGNS, 'feDropShadow');
+        ds.setAttribute('in', input);
+        ds.setAttribute('dx', `${shadow.dx}`);
+        ds.setAttribute('dy', `${shadow.dy}`);
+        ds.setAttribute('stdDeviation', `${shadow.blur / 2}`);
+        ds.setAttribute('flood-color', shadow.color);
+        f.appendChild(ds);
+    }
+    defs.appendChild(f);
+    return `url(#${id})`;
+}
+
+/**
+ * Just the shadow/glow of an element, as a bitmap, with none of the element in it: the shape is
+ * drawn far off the canvas and its shadow offset by the same distance back into view. A glow is a zero-offset
+ * shadow (RenderPipeline), so it is expressed as one here.
+ *
+ * This is the whole canvas shadow, including the part under the shape — which is what the
+ * canvas shows through a semi-transparent fill. Knocking the shape out of a normal render
+ * instead left a light seam (both edges anti-aliased) or, eroded, a dark rim of the bitmap's
+ * own stroke peeking past the vector one.
+ */
+function haloImage(el: DrawingElement): SVGImageElement | null {
+    const FAR = 100000; // world px — far enough that no shape pixel lands on the canvas
+    const shadow = el.shadowEnabled
+        ? { color: el.shadowColor || 'rgba(0,0,0,0.3)', blur: el.shadowBlur || 10, dx: el.shadowOffsetX || 5, dy: el.shadowOffsetY || 5 }
+        : { color: el.glowColor || '#ffd400', blur: el.glowBlur ?? 12, dx: 0, dy: 0 };
+    const moved = {
+        ...el,
+        x: el.x - FAR,
+        featherRadius: 0, clipMaskId: null, glowEnabled: false,
+        shadowEnabled: true,
+        shadowColor: shadow.color,
+        shadowBlur: shadow.blur,
+        shadowOffsetX: shadow.dx + FAR, // world px; RenderPipeline scales it to device px
+        shadowOffsetY: shadow.dy || 0.0001, // 0 would read as "unset" and default to 5
+    } as DrawingElement;
+    return rasterImageNode(effectBounds(el), (ctx, rc) => renderElUnmasked(rc, ctx, moved));
+}
+
+/** The mask element as the scene is posing it, or undefined when it isn't in the document. */
+const maskFor = (el: DrawingElement): DrawingElement | undefined =>
+    el.clipMaskId ? (scenePose?.get(el.clipMaskId) ?? store.elements.find(e => e.id === el.clipMaskId && e.isClipMask)) : undefined;
+
+/** A `<clipPath>` for a mask shape, once per mask: its geometry, lifted to world space. */
+function clipPathFor(mask: DrawingElement, defs: SVGElement): string | null {
+    const id = `yd-clip-${mask.id}`;
+    if (!defs.querySelector(`#${CSS.escape(id)}`)) {
+        const geo = getCentredShapeGeometry(mask);
+        if (!geo) return null;
+        const { ds, evenOdd } = geometryToDs(geo);
+        if (ds.length === 0) return null;
+        const cp = document.createElementNS(SVGNS, 'clipPath');
+        cp.setAttribute('id', id);
+        cp.setAttribute('clipPathUnits', 'userSpaceOnUse');
+        const cx = mask.x + mask.width / 2, cy = mask.y + mask.height / 2;
+        const t = [`translate(${cx}, ${cy})`];
+        if (mask.angle) t.push(`rotate(${(mask.angle * 180) / Math.PI})`);
+        if (mask.flipX || mask.flipY) t.push(`scale(${mask.flipX ? -1 : 1}, ${mask.flipY ? -1 : 1})`);
+        const path = document.createElementNS(SVGNS, 'path');
+        path.setAttribute('d', ds.join(' '));
+        path.setAttribute('transform', t.join(' '));
+        // clip-rule, not fill-rule: same as maskFillRule on the canvas.
+        if (evenOdd || maskFillRule(mask) === 'evenodd') path.setAttribute('clip-rule', 'evenodd');
+        cp.appendChild(path);
+        defs.appendChild(cp);
+    }
+    return `url(#${id})`;
+}
+
+/**
+ * An SVG `<mask>` (luminance) for an opacity mask: the mask shape rendered as it looks, as a
+ * bitmap — the content it masks stays vector. Same rule as the canvas: content α *= mask
+ * luminance (renderOpacityMasked).
+ */
+function opacityMaskFor(mask: DrawingElement, defs: SVGElement): string | null {
+    const id = `yd-mask-${mask.id}`;
+    if (!defs.querySelector(`#${CSS.escape(id)}`)) {
+        const b = elementsBounds([mask]);
+        const img = rasterImageNode(b, (ctx, rc) => renderElement(rc, ctx, { ...mask, isClipMask: false, clipMaskId: null } as DrawingElement));
+        if (!img) return null;
+        const m = document.createElementNS(SVGNS, 'mask');
+        m.setAttribute('id', id);
+        m.setAttribute('maskUnits', 'userSpaceOnUse');
+        m.setAttribute('x', `${b.minX}`);
+        m.setAttribute('y', `${b.minY}`);
+        m.setAttribute('width', `${b.maxX - b.minX}`);
+        m.setAttribute('height', `${b.maxY - b.minY}`);
+        m.setAttribute('style', 'mask-type: luminance');
+        m.appendChild(img);
+        defs.appendChild(m);
+    }
+    return `url(#${id})`;
+}
+
+const wrapG = (child: SVGElement, attrs: Record<string, string>): SVGGElement => {
+    const w = document.createElementNS(SVGNS, 'g') as SVGGElement;
+    for (const [k, v] of Object.entries(attrs)) w.setAttribute(k, v);
+    w.appendChild(child);
+    return w;
+};
+
+export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptions): BuiltExportSvg | undefined => {
     let elements = exportScene().filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
@@ -1011,7 +1215,7 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
     const swatchById = new Map(store.swatches.map(sw => [sw.id, sw]));
     const usedSwatches = new Map<string, Swatch>();
 
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg') as SVGSVGElement;
     svg.setAttribute('width', `${width}`);
     svg.setAttribute('height', `${height}`);
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -1044,6 +1248,8 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
             rect.setAttribute('width', `${s.dimensions.width}`);
             rect.setAttribute('height', `${s.dimensions.height}`);
             rect.setAttribute('fill', s.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff'));
+            // Marked so the PDF exporter can drop it when "background" is off.
+            rect.setAttribute('data-yappy-page-bg', '');
             g.appendChild(rect);
         });
     }
@@ -1636,6 +1842,37 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
                     if (el.strokeSwatchId && swatchById.has(el.strokeSwatchId)) usedSwatches.set(el.strokeSwatchId, swatchById.get(el.strokeSwatchId)!);
                 }
             }
+            // ── Effects (shadow / glow / feather) and masks ────────────────────────────
+            // Canvas-fallback bitmaps already have their effects baked in, but not their mask.
+            const rasterFx = !!themeOpts?.rasterEffects;
+            const mask = maskFor(el);
+            if (mask && el.maskType === 'opacity' && rasterFx) {
+                // svg2pdf has no <mask>: the whole masked object becomes one bitmap.
+                const img = rasterImageNode(effectBounds(el), (ctx) => renderOpacityMasked(ctx, el, mask, false, 1));
+                if (img) node = img;
+            } else {
+                if (!isCanvasFallback && hasEffect(el)) {
+                    if (!rasterFx) {
+                        node = wrapG(node, { filter: effectFilter(el, defs) });
+                    } else if ((el.featherRadius ?? 0) > 0) {
+                        // Feather blurs the shape itself — nothing vector is left to keep.
+                        const img = rasterImageNode(effectBounds(el), (ctx, rc) => renderElUnmasked(rc, ctx, { ...el, clipMaskId: null } as DrawingElement));
+                        if (img) node = img;
+                    } else {
+                        const halo = haloImage(el);
+                        if (halo) {
+                            const both = document.createElementNS(SVGNS, 'g');
+                            both.appendChild(halo);
+                            both.appendChild(node);
+                            node = both;
+                        }
+                    }
+                }
+                if (mask) {
+                    const ref = el.maskType === 'opacity' ? opacityMaskFor(mask, defs) : clipPathFor(mask, defs);
+                    if (ref) node = wrapG(node, el.maskType === 'opacity' ? { mask: ref } : { 'clip-path': ref });
+                }
+            }
             if (themeOpts?.elementIds) {
                 const tag = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 tag.setAttribute('data-yappy-id', el.id);
@@ -1657,7 +1894,7 @@ export const renderSvgString = (onlySelected: boolean, themeOpts?: SvgExportOpti
         defs.appendChild(themeStyle);
     }
 
-    return new XMLSerializer().serializeToString(svg);
+    return { svg, originX: minX - padding, originY: minY - padding, elements };
 };
 
 /**
@@ -1680,11 +1917,97 @@ const pdfImage = (canvas: HTMLCanvasElement, background: boolean) =>
         ? { data: canvas.toDataURL('image/jpeg', 0.92), format: 'JPEG' as const }
         : { data: canvas.toDataURL('image/png'), format: 'PNG' as const };
 
-export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean) => {
+export interface PdfExportOptions {
+    /**
+     * `true` (the default): real vector paths and selectable, embedded-font text, built from
+     * the SVG export. `false`: the older raster PDF — one bitmap per page at `scale`.
+     */
+    vector?: boolean;
+    /** `false` returns the PDF as a Blob without saving it (the API's path). Default true. */
+    download?: boolean;
+    /**
+     * `'cmyk'`: a print PDF — every colour, gradient and image separated to DeviceCMYK through
+     * the ICC `profile` (swatches with an exact `cmyk` keep it). Vector PDF only. Default 'rgb'.
+     */
+    colorMode?: 'rgb' | 'cmyk';
+    /** Press profile for `colorMode: 'cmyk'`. Default FOGRA39. */
+    profile?: PrintProfileId;
+    /**
+     * PDF/X-4 for a print shop (implies `colorMode: 'cmyk'`): output intent with the embedded
+     * profile, XMP identification, trim/bleed boxes, every font embedded. The document's bleed
+     * setting (Settings → bleed) is added around every page.
+     */
+    pdfx?: boolean;
+    /** Document title written into the PDF (required by PDF/X). Default "Yappy drawing". */
+    title?: string;
+}
+
+const finishPdf = async (pdf: { output(type: 'blob'): Blob } | Uint8Array, download: boolean): Promise<Blob> => {
+    const blob = pdf instanceof Uint8Array ? new Blob([pdf as BlobPart], { type: 'application/pdf' }) : pdf.output('blob');
+    if (download) await saveBlob(blob, 'yappy_drawing.pdf', { description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } });
+    return blob;
+};
+
+/**
+ * Vector PDF: build the export SVG once, then render one page per slide (paged documents) or
+ * a single page around the drawing/selection. See utils/pdf-vector for what it adds on top of
+ * the SVG export — page cropping, embedded fonts, baked image filters.
+ */
+const exportToVectorPdf = async (background: boolean, onlySelected: boolean, download: boolean, options: PdfExportOptions = {}): Promise<Blob | undefined> => {
+    const isSlides = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
+    const pdfx = !!options.pdfx;
+    // PDF/X pages carry the document's bleed past the trim edge, so artwork running off the page
+    // prints to the cut instead of leaving a white sliver.
+    const bleed = pdfx ? Math.max(0, store.globalSettings.bleed ?? 0) : 0;
+    // Wrappers carry each element's id, which is how a page drops the elements it doesn't own.
+    const built = buildExportSvg(onlySelected, { elementIds: isSlides, rasterEffects: true });
+    if (!built) return;
+    const { svg, originX, originY, elements } = built;
+
+    let regions: PdfPageRegion[];
+    if (isSlides) {
+        const sortedSlides = [...store.slides].sort((a, b) => a.order - b.order);
+        regions = sortedSlides.map((slide, pageIdx) => ({
+            x: slide.spatialPosition.x - bleed,
+            y: slide.spatialPosition.y - bleed,
+            width: slide.dimensions.width + bleed * 2,
+            height: slide.dimensions.height + bleed * 2,
+            keep: new Set(elements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx).map(el => el.id)),
+            background: background ? (slide.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff')) : null,
+        }));
+    } else {
+        const w = Number(svg.getAttribute('width'));
+        const h = Number(svg.getAttribute('height'));
+        regions = [{ x: originX - bleed, y: originY - bleed, width: w + bleed * 2, height: h + bleed * 2, background: background ? documentBackground() : null }];
+    }
+
+    const { renderSvgPagesToPdf } = await import('./pdf-vector');
+    let cmyk: import('./pdf-vector').PdfCmykOptions | undefined;
+    if (options.colorMode === 'cmyk' || pdfx) {
+        const [{ loadColorEngine }, { exactCmykFromSwatches, spotsFromSwatches }] = await Promise.all([import('./color-management'), import('./pdf-cmyk')]);
+        cmyk = {
+            engine: await loadColorEngine(options.profile),
+            exact: exactCmykFromSwatches(store.swatches),
+            spots: spotsFromSwatches(store.swatches),
+            // jsPDF's px_scaling unit: 1 px = 0.75 pt.
+            pdfx: pdfx ? { title: options.title?.trim() || 'Yappy drawing', bleedPt: bleed * 0.75 } : undefined,
+        };
+    }
+    const { bytes, substitutedFonts, rgbImages } = await renderSvgPagesToPdf(svg, originX, originY, regions, cmyk);
+    if (substitutedFonts.length > 0) {
+        showToast(t('pdfExport.fontsSubstituted', { fonts: substitutedFonts.join(', ') }), 'info', 6000);
+    }
+    if (rgbImages > 0) console.warn(`[pdf] ${rgbImages} image(s) could not be converted to CMYK and stay RGB`);
+    return finishPdf(bytes, download);
+};
+
+export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean, options: PdfExportOptions = {}): Promise<Blob | undefined> => {
+    const { vector = true, download = true } = options;
     await ensureExportImages();
     // Hidden objects never reach a PDF/PPTX page (see isExportable).
     const allElements = exportScene().filter(isExportable);
     if (allElements.length === 0) return;
+    if (vector) return exportToVectorPdf(background, onlySelected, download, options);
     const { jsPDF } = await import("jspdf");
 
     const isSlides = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
@@ -1746,7 +2069,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
             pdf.addImage(img.data, img.format, 0, 0, sW, sH);
         }
 
-        pdf.save('yappy_drawing.pdf');
+        return finishPdf(pdf, download);
     } else {
         // Single page: selection or infinite canvas
         let elements = allElements;
@@ -1795,7 +2118,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 
         const img = pdfImage(canvas, background);
         pdf.addImage(img.data, img.format, 0, 0, width, height);
-        pdf.save('yappy_drawing.pdf');
+        return finishPdf(pdf, download);
     }
 };
 

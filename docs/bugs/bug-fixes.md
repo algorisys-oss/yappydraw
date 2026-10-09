@@ -1,5 +1,38 @@
 # Bug Fixes Log
 
+## 2026-10-09 — Effects and masks in exports (found building vector PDF)
+
+### 431. Shadows, glows and feather were the wrong size in any export at a scale other than 1×
+
+**Symptom:** a 2× PNG export showed a drop shadow half as long and half as soft as a 1× export
+of the same drawing; 3× a third. The SVG exporter's 2× fallback bitmaps had the same fault, and
+on the canvas a shadow changed size relative to its shape as you zoomed (and between a standard
+and a high-density screen).
+
+**Cause:** `RenderPipeline.applyTransformations` handed `shadowBlur`, `shadowOffsetX/Y`, the glow
+radius and the feather `blur()` to the canvas as-is. Canvas takes all of those in **device
+pixels** and ignores the current transform, so any scale — export scale, zoom, devicePixelRatio —
+shrank them relative to the artwork. Everything else (the visual-bounds padding, the new SVG
+filters) treats them as world units.
+
+**Fix:** `IRenderer.getScale()` (the transform's scale; `CanvasRenderer` reads it from
+`getTransform()`), and the pipeline multiplies every effect length by it, including `blur()`
+terms in the filter string. Spec: `tests/vector-pdf-export.spec.ts` "shadows are the same world
+size at every export scale" — 14.5 px apart with the fix reverted.
+
+**Note:** on a high-density screen at 100 % zoom, shadows now draw at their true size, which is
+larger than before. That is the fix, not a regression.
+
+### 432. SVG export ignored clipping and opacity masks
+
+**Symptom:** a clipped or opacity-masked object came out of SVG export whole (the mask shape was
+left out, so nothing clipped it). Documented as a known gap.
+
+**Fix:** clipping masks export as `<clipPath clipPathUnits="userSpaceOnUse">` built from the mask's
+centred geometry plus its rotate/flip (the same lift as `buildClipPath2D`), opacity masks as a
+luminance `<mask>`. Shadow/glow/feather, previously dropped from natively-vector shapes in SVG,
+export as `<filter>` (`feGaussianBlur` + `feDropShadow`, σ = blur / 2 to match canvas).
+
 ## 2026-10-09 — The sitemap fix shipped without its data, and the publish log said it worked
 
 ### 430. A `.gitignore` entry in this repo stopped the file reaching the mirror

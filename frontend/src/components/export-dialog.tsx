@@ -5,6 +5,7 @@ import { isPagedDocType } from "../types/slide-types";
 import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg, ensureExportImages, exportPageForPlatform } from "../utils/export";
 import { socialTargetsForPage, type SocialTarget } from "../utils/social-export";
 import { t, currentLocale } from "../i18n";
+import type { PrintProfileId } from "../utils/color-management";
 import { formatFileSize } from "../i18n/format";
 import { showToast } from "./toast";
 import { drawingId } from "./menu";
@@ -18,6 +19,13 @@ interface ExportDialogProps {
 
 const ExportDialog: Component<ExportDialogProps> = (props) => {
     const [format, setFormat] = createSignal<'png' | 'jpg' | 'svg' | 'pdf' | 'pptx' | 'webm' | 'mp4' | 'gif'>('png');
+    // Vector by default: sharp, with selectable text. "Image" makes one picture per page.
+    const [pdfVector, setPdfVector] = createSignal(true);
+    // Print colour (vector PDF only): RGB for screens, CMYK separated through a press profile.
+    const [pdfCmyk, setPdfCmyk] = createSignal(false);
+    const [pdfProfile, setPdfProfile] = createSignal('fogra39' as PrintProfileId);
+    const [pdfX, setPdfX] = createSignal(false);
+    const [pdfTitle, setPdfTitle] = createSignal('');
     const [scale, setScale] = createSignal<number>(2);
     const [hasBackground, setHasBackground] = createSignal(true);
     const [onlySelected, setOnlySelected] = createSignal(store.selection.length > 0);
@@ -109,7 +117,13 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
         } else if (format() === 'svg') {
             exportToSvg(onlySelected());
         } else if (format() === 'pdf') {
-            exportToPdf(scale(), hasBackground(), onlySelected());
+            await exportToPdf(scale(), hasBackground(), onlySelected(), {
+                vector: pdfVector(),
+                colorMode: pdfVector() && pdfCmyk() ? 'cmyk' : 'rgb',
+                profile: pdfProfile(),
+                pdfx: pdfVector() && pdfCmyk() && pdfX(),
+                title: pdfTitle(),
+            });
         } else if (format() === 'pptx') {
             exportToPptx(scale(), hasBackground(), onlySelected());
         } else if (format() === 'gif') {
@@ -285,7 +299,46 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                             </div>
                         </Show>
 
+                        <Show when={format() === 'pdf'}>
+                            <div class="option-group">
+                                <label>{t('pdfExport.mode')}</label>
+                                <div class="scale-group">
+                                    <button class={`scale-btn ${pdfVector() ? 'active' : ''}`} aria-pressed={pdfVector()} onClick={() => setPdfVector(true)}>{t('pdfExport.vector')}</button>
+                                    <button class={`scale-btn ${!pdfVector() ? 'active' : ''}`} aria-pressed={!pdfVector()} onClick={() => setPdfVector(false)}>{t('pdfExport.raster')}</button>
+                                </div>
+                                <span class="hint">{pdfVector() ? t('pdfExport.vectorHint') : t('pdfExport.rasterHint')}</span>
+                            </div>
+                            <Show when={pdfVector()}>
+                                <div class="option-group">
+                                    <label>{t('pdfExport.colorMode')}</label>
+                                    <div class="scale-group">
+                                        <button class={`scale-btn ${!pdfCmyk() ? 'active' : ''}`} aria-pressed={!pdfCmyk()} onClick={() => setPdfCmyk(false)}>{t('pdfExport.rgb')}</button>
+                                        <button class={`scale-btn ${pdfCmyk() ? 'active' : ''}`} aria-pressed={pdfCmyk()} onClick={() => setPdfCmyk(true)}>{t('pdfExport.cmyk')}</button>
+                                    </div>
+                                    <Show when={pdfCmyk()}>
+                                        <select aria-label={t('pdfExport.profile')} value={pdfProfile()} onChange={(e) => setPdfProfile(e.currentTarget.value as PrintProfileId)}>
+                                            <option value="fogra39">{t('pdfExport.profileFogra39')}</option>
+                                            <option value="gracol">{t('pdfExport.profileGracol')}</option>
+                                        </select>
+                                    </Show>
+                                    <span class="hint">{pdfCmyk() ? t('pdfExport.cmykHint') : t('pdfExport.rgbHint')}</span>
+                                    <Show when={pdfCmyk()}>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked={pdfX()} onChange={(e) => setPdfX(e.currentTarget.checked)} />
+                                            {t('pdfExport.pdfx')}
+                                        </label>
+                                        <Show when={pdfX()}>
+                                            <input type="text" class="pdf-title-input" aria-label={t('pdfExport.title')} placeholder={t('pdfExport.titlePlaceholder')}
+                                                value={pdfTitle()} onInput={(e) => setPdfTitle(e.currentTarget.value)} />
+                                            <span class="hint">{t('pdfExport.pdfxHint')}</span>
+                                        </Show>
+                                    </Show>
+                                </div>
+                            </Show>
+                        </Show>
+
                         <Show when={format() === 'png' || format() === 'jpg' || format() === 'pdf' || format() === 'pptx'}>
+                            <Show when={!(format() === 'pdf' && pdfVector())}>
                             <div class="option-group">
                                 <label>Scale</label>
                                 <div class="scale-group">
@@ -294,6 +347,7 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                     <button class={`scale-btn ${scale() === 3 ? 'active' : ''}`} onClick={() => setScale(3)}>3x</button>
                                 </div>
                             </div>
+                            </Show>
 
                             <Show when={format() !== 'jpg'}>
                                 <div class="option-group">

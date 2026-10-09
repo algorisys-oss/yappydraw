@@ -78,6 +78,15 @@ export interface IRenderer {
     globalAlpha: number;
     globalCompositeOperation: string;
 
+    /**
+     * How many device pixels one user-space unit currently covers (the current transform's
+     * scale). Canvas shadow lengths and CSS `blur()` are in DEVICE pixels and ignore the
+     * transform, so anything sized in world units — shadows, glows, feather — must be
+     * multiplied by this to look the same at every zoom and export scale. Optional: a renderer
+     * without device pixels (SVG) leaves it out and lengths pass through unscaled.
+     */
+    getScale?(): number;
+
     // ── Shadows ──
     shadowColor: string;
     shadowBlur: number;

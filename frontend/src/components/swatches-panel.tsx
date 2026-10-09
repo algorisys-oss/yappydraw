@@ -5,7 +5,8 @@ import {
     createSwatchGroupFromSelection,
 } from '../store/app-store';
 import type { Swatch } from '../types';
-import { Plus, Trash2, FolderPlus } from 'lucide-solid';
+import { Plus, Trash2, FolderPlus, Printer } from 'lucide-solid';
+import SwatchPrintEditor from './swatch-print-editor';
 import { t } from '../i18n';
 import { sectionSwatches, nextFreeGroupName } from '../utils/swatch-groups';
 import './swatches-panel.css';
@@ -32,6 +33,8 @@ const SwatchesPanel: Component = () => {
     // '' = no group being renamed (a group name is never empty).
     const [editingGroup, setEditingGroup] = createSignal('');
     const [groupName, setGroupName] = createSignal('');
+    // The swatch whose print colour (CMYK / spot) is open for editing.
+    const [printId, setPrintId] = createSignal(null as string | null);
     const startRename = (s: Swatch) => { setEditingId(s.id); setEditingName(s.name); };
     const commitRename = (id: string) => { renameSwatch(id, editingName()); setEditingId(null); setEditingName(''); };
     const commitGroupRename = (from: string) => { renameSwatchGroup(from, groupName()); setEditingGroup(''); setGroupName(''); };
@@ -63,6 +66,11 @@ const SwatchesPanel: Component = () => {
                 <input class="sw-color" type="color" value={/^#[0-9a-fA-F]{6}$/.test(sw.color) ? sw.color : '#000000'} title="Edit swatch colour (updates linked objects)"
                     onClick={(e) => e.stopPropagation()}
                     onInput={(e) => updateSwatchColor(sw.id, e.currentTarget.value)} />
+                <Show when={sw.spot || sw.cmyk}>
+                    <span class="sw-badge" title={sw.spot ? t('swatchPrint.badgeSpot', { name: sw.spot.name }) : t('swatchPrint.badgeCmyk', { cmyk: sw.cmyk!.join(' / ') })}>
+                        {sw.spot ? t('swatchPrint.badgeSpotShort') : t('swatchPrint.badgeCmykShort')}
+                    </span>
+                </Show>
             </div>
             <Show when={editingId() === sw.id} fallback={
                 <div class="sw-name" title={sw.name} onDblClick={() => startRename(sw)}>{sw.name}</div>
@@ -74,6 +82,9 @@ const SwatchesPanel: Component = () => {
             </Show>
             <div class="sw-actions">
                 <button class="sw-act" title="Apply as stroke" onClick={() => applySwatch(sw.id, 'stroke')}>S</button>
+                <button class={`sw-act ${printId() === sw.id ? 'sw-act-on' : ''}`} title={t('swatchPrint.open')} aria-label={t('swatchPrint.open')}
+                    aria-pressed={printId() === sw.id}
+                    onClick={() => setPrintId(printId() === sw.id ? null : sw.id)}><Printer size={12} /></button>
                 {/* Value is reset to the current group after every change, so picking
                     "New group…" and cancelling the prompt leaves the menu honest. */}
                 <select class="sw-group-select" title={t('swatchesPanel.moveToGroup')}
@@ -96,6 +107,9 @@ const SwatchesPanel: Component = () => {
                     <FolderPlus size={15} /> {t('swatchesPanel.newGroup')}
                 </button>
             </div>
+            <Show when={printId()}>
+                {(id) => <SwatchPrintEditor swatchId={id()} onClose={() => setPrintId(null)} />}
+            </Show>
             <Show when={store.swatches.length > 0} fallback={
                 <div class="sw-empty">No swatches yet.<br />Click <Plus size={12} /> to add one. Editing a swatch recolours every object linked to it.<br />{t('swatchesPanel.emptyGroupsHint')}</div>
             }>

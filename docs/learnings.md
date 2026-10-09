@@ -2,6 +2,158 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## CMYK PDF: three seams into a library that only speaks RGB (Oct 9 2026)
+
+P1 + P3 of `docs/cmyk-print-plan.md`.
+
+- **Find the narrowest seam before forking.** svg2pdf.js sets every vector colour through three
+  jsPDF instance methods; wrapping them made all fills, strokes and text CMYK in ~15 lines. Images
+  and gradients have no such seam, and each needed a different one: a registered jsPDF image
+  processor, and a post-pass over the finished file.
+- **`TextDecoder('latin1')` is windows-1252.** The Encoding standard maps the `latin1` label to
+  cp1252, which remaps 0x80–0x9F. Every zlib stream starts `78 9C`; 0x9C became U+0153, written
+  back as 0x53 — "Bad FCHECK in flate stream" on every image. Binary strings must be built with
+  `String.fromCharCode`. A unit test now round-trips all 256 byte values.
+- **jsPDF copies `jsPDF.API` onto each instance at construction.** A processor registered on the
+  API after `new jsPDF()` passes the "is this format supported" check (which reads the API) and
+  then fails the call (which reads the instance). Register on both.
+- **Read what the library does to your data, not just whether it accepts it.** jsPDF writes
+  `/Decode [1 0 1 0 1 0 1 0]` for every DeviceCMYK image (it assumes Adobe's inverted CMYK
+  JPEGs), so the bytes are stored inverted; and `putImage` strips the document's Flate filter for
+  images, so the pixels are deflated up front — which drags the soft mask onto the same filter
+  and needs an explicit `predictor: 1` or jsPDF writes `/Predictor undefined`.
+- **Patch the finished PDF from its own xref, never by scanning.** Compressed streams are binary
+  and can contain `N 0 obj` by chance. `PdfFile` reads offsets from the xref table, replaces or
+  appends objects, and rebuilds it — and refuses any layout it doesn't recognise.
+- **Profile licensing was the real research.** The ECI, Adobe and IDEAlliance FOGRA39/GRACoL
+  profiles aren't redistributable; colord's are CC0 and were already on this machine, with the
+  licence in the Debian copyright file.
+- **Pure black → K-only is a decision, not a conversion.** The profile maps sRGB black to
+  79/70/53/98 (correct colorimetrically, terrible for small text). Exactly `#000000` is mapped to
+  0/0/0/100; everything else trusts the profile.
+- **Many unit tests leave a partial `global.window` behind**, and jsPDF's node build reads
+  `window.atob` when `window` exists. A test using jsPDF must complete the stub and import it
+  dynamically, or it passes alone and fails in the suite.
+- **Verify separations with a separator, not a viewer.** `gs -sDEVICE=tiffsep` writes one
+  file per plate; a `PANTONE 186 C` plate holding exactly the spot fill and outline — and the
+  magenta plate *not* holding them — is proof that a screen render can't give.
+- **A test helper that trims "trailing whitespace" from binary is a bug waiting.** The spec's
+  stream decoder stripped every newline before `endstream`; one stream's deflate data ended in
+  0x0A, so every stream "failed to decode" and the assertion blamed the export. Trim exactly the
+  one EOL delimiter. (`PdfFile` reads `/Length` and never had the problem.)
+- **PDF/X is mostly bookkeeping, and the bookkeeping must agree with itself.** Info and XMP are
+  written from one timestamp and one title, because preflight compares them. jsPDF lists all 14
+  standard fonts in every resource dictionary whether used or not — invisible in a normal PDF, a
+  "font not embedded" in PDF/X — so the unused ones are pruned by scanning content streams for
+  `Tf`. Without a validator, say "written to the standard", not "compliant".
+- **Soft proof the frame, not the colours.** The plan said "proof each colour as it's drawn";
+  that misses everything drawn as pixels (photos, gradients, shadows). One 33³ LUT through the
+  profile, sampled trilinearly by a WebGL2 3D texture over the finished frame, proofs every pixel
+  for the cost of a texture upload. The overlay must match the canvas's *offset*, not just its
+  size — it sat 45 px off until it copied `offsetLeft/Top`.
+- **`window.Yappy` existing doesn't mean the canvas does.** A spec that looks the canvas up right
+  after the API appears can catch the welcome screen; wait for the canvas element itself.
+- **Don't edit store files while a Playwright run is going.** HMR reloads the page mid-test; five
+  "failures" in one run were that, on a load-9 machine. Re-run on a quiet server before believing.
+
+## Effects in exports: device pixels, conflation, and a type-check that checked nothing (Oct 9 2026)
+
+Follow-ups to vector PDF: masks, shadow/glow/feather, the WOFF italics.
+
+- **Canvas shadow and `blur()` lengths are device pixels; `ctx.scale` doesn't touch them.** Every
+  render at a scale other than 1 drew effects at the wrong size: 2×/3× PNG exports had half/third
+  size shadows, the SVG exporter's 2× fallback bitmaps too, and the canvas changed shadow size with
+  zoom and pixel density. One fix at the source — `RenderPipeline` multiplies by
+  `renderer.getScale()` — instead of compensating in each exporter (which I had started doing,
+  and which would then have double-scaled). A spec measures shadow reach at 1× and 2×; with the
+  fix reverted it is off by 14.5 px.
+- **Don't knock a shape out of its own shadow — draw the shadow alone.** The first halo was "render
+  with shadow, `destination-out` the shape". Both anti-aliased edges are partial on the same
+  pixels and composite to a light seam (conflation); eroding the knock-out by 1 px swapped it for
+  a dark rim of the bitmap's own stroke. The standard trick has neither: draw the shape 100 000 px
+  off-canvas with the shadow offset back by the same amount. It is also *more* faithful — a canvas
+  shadow shows through a semi-transparent fill, and so does this.
+- **svg2pdf supports `<clipPath>` but not `<mask>` or filters.** So the split is by what PDF can
+  say, not by effect: clip masks stay vector in the PDF; shadows become a halo bitmap under a
+  vector shape; only feather and opacity masks rasterise the object. The SVG export gets the real
+  `<clipPath>`/`<mask>`/`<filter>` — masks used to be silently ignored there.
+- **WOFF 1.0 is a container, not a format.** Each table is zlib-compressed; rebuilding the sfnt
+  directory is ~50 lines with `DecompressionStream`, no dependency, no duplicated font files — and
+  it made user-added `.woff` fonts embeddable too. The test parses both with opentype.js and
+  compares glyph outlines, not just headers.
+- **`compress: true` on jsPDF.** Without it every embedded image was stored raw: a 460×360 halo was
+  ~650 kB, the test PDF 2.7 MB. With it, 108 kB.
+- **`npx tsc --noEmit -p .` checks nothing here.** The root `tsconfig.json` is `"files": []` with
+  project references, so it exits 0 on any input. A broken German locale string (my regex stopped
+  at a comma inside the sentence) sailed through it and was caught by the i18n unit test instead.
+  Use `npx tsc --noEmit -p tsconfig.app.json` (or `tsc -b`, which `npm run build` runs).
+- **`pdffonts` "sub: no" doesn't mean unsubsetted.** It only looks for the `ABCDEF+` name prefix.
+  Decoding the FontFile2 streams showed ~20 kB per face against ~150 kB for the full font.
+
+## Vector PDF: reuse the vector path you already have, and read the fallback (Oct 9 2026)
+
+Vector PDF export, the first Affinity-parity gap (branch `feat/vector-pdf-export`).
+
+- **The second renderer was already written.** The SVG exporter turns every shape into vector
+  markup; a vector PDF is that SVG through svg2pdf.js. Writing jsPDF drawing calls per shape
+  would have been a third renderer to keep in parity with canvas and SVG — and every SVG fix now
+  lands in the PDF for free. The cost is the inverse: every SVG *gap* (masks don't clip, no
+  shadows) is a PDF gap too, which is why the dialog counts and names them before export.
+- **A spike before the plan paid for itself in one run.** Ten minutes against the real exported
+  SVG showed the paths were fine and the fonts were not — the whole design question was fonts.
+- **Read the library's fallback, not just its happy path.** svg2pdf falls back to *Times* for any
+  family jsPDF doesn't know, and knows only weights 400/700 (`combineFontStyleAndFontWeight`
+  yields `"600normal"`, which never matches). So text nodes are rewritten before conversion:
+  each embedded TTF is its own font name at 400/normal, and an unembeddable face gets a
+  deliberately chosen Helvetica/Times/Courier — never Times by accident.
+- **jsPDF only parses TrueType.** The outline fonts already bundled for Create Outlines were the
+  font source, minus the `.woff` italics; custom fonts are checked by magic number (`0x00010000`
+  / `true`), because `OTTO` (CFF) and WOFF would fail inside jsPDF with only a console error.
+  `getFontList()` after `addFont` is the reliable "did it register" signal.
+- **One SVG, many pages.** Build the SVG once with `data-yappy-id` wrappers, then each page is a
+  clone with a viewBox onto its slide and the wrappers of elements another page owns removed —
+  the same `ownerSlideIndex` rule the raster exporter uses.
+- **A size comparison is not a content comparison.** The first filter test compared PDF sizes; a
+  solid red and a solid cyan PNG compress to the same length, so it would have passed with the
+  filter dropped. It now compares the image stream bytes, and was mutation-checked by disabling
+  the bake and watching it fail.
+- **Don't write a number you didn't measure — twice in one feature.** The first hint promised
+  "small files"; with fonts embedded the test PDF was 150 kB against 47 kB raster, so it went.
+  Then a to-do claimed jsPDF "embeds whole TTFs, ~35-80 kB each". Measured: the four fonts are
+  ~1 MB raw and the PDF holding all four was 150 kB — jsPDF already subsets to the glyphs used.
+  The to-do would have sent someone to build a feature that exists.
+
+## A sweep that passes first time is a harness to distrust (Oct 9 2026)
+
+P3 of the command-registry plan — run every command against three document states.
+
+- **All eight tests passed on the first run, and that was the moment to stop and check the
+  harness, not to write it up.** Earlier the same day a rollback test had passed against
+  unfixed source because a bare `catch {}` swallowed a TypeError. So the sweep got a self-test:
+  it deliberately corrupts the document through the **same code path** and asserts the
+  integrity check fires. A sweep that cannot fail proves nothing, and the only way to know is
+  to make it fail on purpose.
+- **Measure coverage, don't assume it.** "313 commands ran" could mean 300 of them were refused
+  for want of a selection, leaving the sweep an elaborate test of the refusal path. Counting it
+  took one probe: 299 execute on an empty document, 310 on a populated one, 2-13 refused. Worth
+  knowing before claiming the sweep covers anything.
+- **The first corruption I tried to inject was rejected, and that was information.** A dangling
+  selection id did not land, because `Yappy.select()` filters ids that do not exist. Good
+  behaviour discovered by trying to break it. The injection that *did* work — a NaN position —
+  is itself a finding: `updateElement` does not validate numeric fields, so the same validation
+  exists in one API and not its neighbour. Logged with a repro.
+- **"Found no bugs" is a legitimate result once the instrument is calibrated, and worthless
+  before.** The plan expected the sweep to surface problems. It did not, and reporting that
+  honestly is only possible because the harness was shown to work first.
+- **A skip list needs reasons and a ceiling.** 16 commands are excluded — native `confirm()`,
+  in-app modals, presentation mode, gallery IO. Each carries a reason string, a test asserts
+  every skipped id still exists (so the list cannot rot into "things that fail"), and another
+  caps its size. Otherwise the easiest way to keep a sweep green is to stop sweeping.
+- **An axis can be sized for a world that has not arrived.** The plan budgeted "every command ×
+  3 fixtures × {no params, junk}". No command declares parameters, so the junk axis collapses
+  to one assertion — that `execute` ignores what a command did not ask for. Running it 313
+  times would have looked thorough and tested the same line repeatedly.
+
 ## "Written" is not "committed", and "served" is not "useful" (Oct 9 2026)
 
 The sitemap fix (#429) shipped in v0.8.276 and changed nothing, because of two gaps that each

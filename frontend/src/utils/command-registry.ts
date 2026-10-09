@@ -19,6 +19,7 @@ import {
     applyFeather, applyGlow, setExtrude, toggleRevolve, setTransformEffect,
     isDevMode, toggleArtboardTool, openArtboardDialog, toggleTypeOnPath
 } from "../store/app-store";
+import { togglePrintPreview, printPreviewError, printPreviewActive } from './print-preview';
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
 import { flipSelected, lockSelected, unlockAllElements } from "./object-context-actions";
 import { showToast } from "../components/toast";
@@ -35,6 +36,14 @@ import type { ToolType } from "../types";
 import { canvasCenterClient } from './dock-layout';
 import { rasterizeSelection } from './rasterize';
 import { t, type ShapeKey } from "../i18n";
+
+
+/** Toggle the print preview, telling the user when it can't turn on (no WebGL2, profile offline). */
+const togglePrintPreviewWithFeedback = async () => {
+    const wanted = !printPreviewActive();
+    const on = await togglePrintPreview();
+    if (wanted && !on) showToast(printPreviewError() || t('printPreview.failed'), 'error', 6000);
+};
 
 export interface Command {
     id: string;
@@ -402,6 +411,7 @@ export const getCommands = (): Command[] => {
         { id: 'view-zen', label: t('commands.view-zen'), category: 'View', action: () => toggleZenMode(), shortcut: 'Alt+Z' },
         { id: 'view-outline', label: t('commands.view-outline'), category: 'View', action: () => toggleOutlineView() },
         { id: 'view-trim', label: t('commands.view-trim'), category: 'View', action: () => toggleTrimView() },
+        { id: 'view-print-preview', label: t('commands.view-print-preview'), category: 'View', action: () => void togglePrintPreviewWithFeedback() },
         { id: 'view-smart-shape', label: t('commands.view-smart-shape'), category: 'View', action: () => updateGlobalSettings({ smartShape: store.globalSettings.smartShape === false }), shortcut: 'Shift+Q' },
         { id: 'view-pen-pressure', label: t('commands.view-pen-pressure'), category: 'View', action: () => updateGlobalSettings({ penPressure: store.globalSettings.penPressure === false }) },
         { id: 'view-pen-stabilization', label: t('commands.view-pen-stabilization'), category: 'View', action: () => togglePenStabilization(), shortcut: 'Shift+S' },

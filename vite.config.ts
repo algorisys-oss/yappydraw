@@ -86,7 +86,9 @@ export default defineConfig({
           // `helpdoc-` replaced `-doc-` when the help documents moved from
           // `*-doc.tsx` to Markdown; the prefix is assigned in the rollup output
           // config below, so it no longer depends on a document's filename.
-          const LAZY_HEAVY = /(export-game|jspdf|pptxgen|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|helpdoc-|search-)/i
+          // `svg2pdf`/`pdf-vector`/`lcms`/`color-management` are the vector & CMYK PDF path
+          // (utils/pdf-vector, utils/color-management): ~450 kB incl. the colour engine's WASM.
+          const LAZY_HEAVY = /(export-game|jspdf|pptxgen|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|helpdoc-|search-|svg2pdf|pdf-vector|pdf-cmyk|pdf-rewrite|pdf-x|lcms|color-management)/i
           return {
             // `illustrations/` is ~1,600 SVGs (~4 MB) of which a user sees a handful; they
             // are fetched on demand and kept by the runtimeCaching rule below.

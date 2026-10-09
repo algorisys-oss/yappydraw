@@ -176,6 +176,12 @@ Y.setGlow({ enabled: false });            // remove the glow
 A canvas has a single shadow slot, so an object shows *either* a drop shadow *or* an outer glow — the drop shadow wins if both are set.
 :::
 
+**In exports.** Feather, glow and drop shadows appear in every export at the size you see on the
+canvas — PNG and JPG at any scale (1×, 2× or 3× all match), **SVG** as real filters you can edit,
+and the **Vector PDF** as a small image of just the shadow or glow under a shape that stays
+vector (a feathered object becomes an image, since its edges *are* the blur). See *Export* in
+Workspace & Productivity.
+
 ## Scribble
 
 Turn a fill into a hand-drawn **scribble** of back-and-forth strokes in the fill colour — instant sketch energy. Right-click → **Scribble fill…** (or the Effects panel) opens the **Effect** dialog: set the line *spacing*, *angle* and *line width* and watch the shape update live, then **OK** (one undo step) or **Cancel**.

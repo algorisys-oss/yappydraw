@@ -1,4 +1,7 @@
 import { type Component, onMount, createEffect, onCleanup, createSignal, Show, untrack, batch } from "solid-js";
+import { printPreviewFrame, registerPrintPreviewOverlay, printPreviewActive, printPreviewProfile, setPrintPreview } from '../utils/print-preview';
+import { t } from '../i18n';
+import './print-preview.css';
 import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
@@ -735,6 +738,8 @@ const Canvas: Component = () => {
         }
 
         ctx.restore();
+
+        printPreviewFrame(canvasRef);
 
         const drawMs = performance.now() - startTime;
         (window as any).yappyLastDrawMs = drawMs; // read by perf-budget.spec.ts
@@ -2803,8 +2808,18 @@ const Canvas: Component = () => {
     return (
         <>
             <div class="canvas-drop-zone" style={{ position: "relative", width: "100%", height: "100%" }}>
+                {/* Print preview: the frame through the press profile, over a canvas that turns
+                    transparent but keeps every pointer event (utils/print-preview). */}
+                <canvas ref={registerPrintPreviewOverlay} class="print-preview-overlay" aria-hidden="true"
+                    style={{ position: 'absolute', left: '0', top: '0', 'pointer-events': 'none', 'z-index': 1, display: printPreviewActive() ? 'block' : 'none' }} />
+                <Show when={printPreviewActive()}>
+                    <button class="print-preview-badge" title={t('printPreview.exit')} onClick={() => void setPrintPreview(false)}>
+                        {t('printPreview.badge', { profile: printPreviewProfile() === 'gracol' ? 'GRACoL' : 'FOGRA39' })} ✕
+                    </button>
+                </Show>
                 <canvas
                     ref={canvasRef}
+                    classList={{ 'print-preview-source': printPreviewActive() }}
                     onWheel={onWheel}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}

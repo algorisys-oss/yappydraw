@@ -155,6 +155,27 @@ A document **colour palette** with live links. Open it with **Alt+W** (or Menu �
 
 **Colour groups** keep a design's combination together. Select artwork and click **Group** in the Swatches panel to save every colour in the selection (fills and strokes) as a named group. Each group gets its own section with a strip preview of its colours: double-click the name to rename it, **+** adds the current selection's colours to it, and the bin deletes the group and its swatches. Each swatch's small menu moves it into a group, into a new group, or out of any group. API: `createSwatchGroupFromSelection(name)`, `setSwatchGroup(ids, name)`, `renameSwatchGroup(from, to)`, `deleteSwatchGroup(name, keepSwatches?)`.
 
+**Print colour — exact CMYK inks and spot inks.** Click a swatch's **printer** button to open its
+print colour:
+
+- **Screen** vs **Prints as** shows the swatch next to how it will look on paper through the press
+  profile. Very bright screen colours (neon green, electric blue) can't be printed with four inks;
+  a note tells you when the printed colour will be noticeably duller.
+- The **C / M / Y / K** sliders start from the profile's conversion of the screen colour. Type your
+  brand's official values if you have them, then **Apply**. Every object linked to the swatch now
+  prints with exactly those inks in a CMYK PDF (gradients included), and the swatch's screen
+  colour — and every linked object — updates to show how those inks print.
+- Tick **Spot ink** and give it the exact name your printer uses (e.g. *PANTONE 186 C*) to print
+  the colour as its own plate in a CMYK PDF — every fill and outline in that swatch goes on it.
+  The CMYK values are its fallback for four-colour printing, and are also used for text,
+  gradients and photos in that colour.
+- Chips with print colour show a small **CMYK** or **SPOT** badge. **Remove print colour** turns the
+  swatch back into a plain screen colour.
+
+From a script: `await Yappy.setSwatchCmyk(id, [100, 60, 0, 10])` (`null` clears),
+`await Yappy.setSwatchSpot(id, 'PANTONE 186 C')` (`null` clears). See *Print-ready PDF (CMYK)* in
+Workspace & Productivity.
+
 ### Recolor Artwork
 
 Select several objects, then right-click → **Recolor Artwork…**. The panel shows the **palette** actually used by the selection (each colour with its usage count). Click a swatch to **remap** that colour everywhere in the selection at once — great for trying palette variants. The **Adjust all** controls shift the whole palette's **hue / lightness / saturation** together. Every step is undoable.

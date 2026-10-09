@@ -6804,6 +6804,67 @@ export const updateSwatchColor = (swatchId: string, color: string) => {
     bumpDirtyRevision();
 };
 
+/**
+ * Give a swatch exact print inks (C M Y K, 0–100), or clear them with null.
+ *
+ * The inks become the swatch's source of truth for a CMYK PDF, and its on-screen colour is
+ * re-derived from them through the press profile, so the screen shows what will print — every
+ * object linked to the swatch follows. That second step needs the colour engine (lazy-loaded);
+ * if it can't load, the inks are still recorded and the screen colour is left as it was.
+ * One undo step covers both.
+ */
+export const setSwatchCmyk = async (swatchId: string, cmyk: [number, number, number, number] | null, profile?: 'fogra39' | 'gracol'): Promise<void> => {
+    if (!store.swatches.some(s => s.id === swatchId)) return;
+    if (cmyk && (cmyk.length !== 4 || cmyk.some(v => typeof v !== 'number' || !Number.isFinite(v)))) {
+        throw new Error('setSwatchCmyk: expected [c, m, y, k], each 0–100');
+    }
+    const inks = cmyk ? cmyk.map(v => Math.round(Math.min(100, Math.max(0, v)) * 10) / 10) as [number, number, number, number] : undefined;
+    pushToHistory();
+    // A spot ink can't exist without its CMYK alternate, so clearing the inks clears it too.
+    setStore('swatches', s => s.id === swatchId, () => (inks ? { cmyk: inks } : { cmyk: undefined, spot: undefined }));
+    bumpDirtyRevision();
+    if (!inks) return;
+    try {
+        const { loadColorEngine, rgbToHex } = await import('../utils/color-management');
+        const color = rgbToHex((await loadColorEngine(profile)).cmykToRgb(inks));
+        // The swatch may have been edited or deleted while the engine loaded.
+        const sw = store.swatches.find(s => s.id === swatchId);
+        if (!sw || JSON.stringify(sw.cmyk) !== JSON.stringify(inks)) return;
+        setStore('swatches', s => s.id === swatchId, () => ({ color }));
+        setStore('elements', (e: DrawingElement) => e.fillSwatchId === swatchId, () => ({ backgroundColor: color }));
+        setStore('elements', (e: DrawingElement) => e.strokeSwatchId === swatchId, () => ({ strokeColor: color }));
+        bumpDirtyRevision();
+    } catch (err) {
+        console.warn('[swatch] CMYK preview unavailable — inks kept, screen colour unchanged', err);
+    }
+};
+
+/**
+ * Make a swatch a named spot ink (e.g. "PANTONE 186 C"), or a process colour again with null.
+ *
+ * A spot ink needs a CMYK alternate — what a four-colour device prints instead — so a swatch
+ * without `cmyk` gets one from its screen colour through the press profile first. The name is
+ * what the PDF Separation is called, so the printer sees exactly that plate name.
+ */
+export const setSwatchSpot = async (swatchId: string, name: string | null, profile?: 'fogra39' | 'gracol'): Promise<void> => {
+    const sw = store.swatches.find(s => s.id === swatchId);
+    if (!sw) return;
+    const n = name?.trim() ?? '';
+    if (name !== null && !n) throw new Error('setSwatchSpot: a spot ink needs a name');
+    if (n && !sw.cmyk) {
+        const { loadColorEngine, parseRgb } = await import('../utils/color-management');
+        const rgb = parseRgb(sw.color);
+        if (!rgb) throw new Error(`setSwatchSpot: can't read the swatch colour ${sw.color}`);
+        const cmyk = (await loadColorEngine(profile)).rgbToCmyk(rgb);
+        pushToHistory();
+        setStore('swatches', s => s.id === swatchId, () => ({ cmyk, spot: { name: n } }));
+    } else {
+        pushToHistory();
+        setStore('swatches', s => s.id === swatchId, () => ({ spot: n ? { name: n } : undefined }));
+    }
+    bumpDirtyRevision();
+};
+
 export const renameSwatch = (swatchId: string, name: string) => {
     const n = name.trim(); if (!n) return;
     setStore('swatches', s => s.id === swatchId, () => ({ name: n }));

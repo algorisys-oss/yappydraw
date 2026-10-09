@@ -93,3 +93,44 @@
     border: 1px solid var(--border-color); border-radius: 4px;
     background: var(--bg-secondary); color: var(--text-secondary);
 }
+
+/* Print colour: a badge on chips with exact inks / a spot ink, and the inline CMYK editor. */
+.sw-badge {
+    position: absolute; left: 2px; top: 2px; padding: 0 3px; border-radius: 3px;
+    font-size: 8px; font-weight: 700; line-height: 12px; letter-spacing: 0.02em;
+    background: rgba(255, 255, 255, 0.85); color: #111; pointer-events: auto;
+}
+.sw-act-on { background: var(--bg-hover); color: var(--text-primary); border-color: var(--primary-color, #3b82f6); }
+
+.sw-print {
+    border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; margin-bottom: 10px;
+    background: var(--bg-secondary); display: flex; flex-direction: column; gap: 6px;
+}
+.sw-print-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.sw-print-title { font-size: 11px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sw-print-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sw-print-chip { height: 30px; border-radius: 4px; border: 1px solid var(--border-color); display: flex; align-items: flex-end; }
+.sw-print-chip span { font-size: 9px; padding: 1px 4px; margin: 2px; border-radius: 3px; background: rgba(255, 255, 255, 0.85); color: #111; }
+.sw-print-row { display: grid; grid-template-columns: 14px 1fr 46px 10px; align-items: center; gap: 4px; }
+.sw-print-ink { font-size: 10px; font-weight: 700; text-align: center; color: var(--text-primary); }
+.sw-ink-c { color: #0a9fd8; } .sw-ink-m { color: #e0408f; } .sw-ink-y { color: #c2a300; } .sw-ink-k { color: var(--text-primary); }
+.sw-print-row input[type='range'] { width: 100%; min-width: 0; }
+.sw-print-num {
+    width: 100%; font-size: 11px; padding: 1px 3px; border: 1px solid var(--border-color); border-radius: 3px;
+    background: var(--bg-panel); color: var(--text-primary);
+}
+.sw-print-pct { font-size: 10px; color: var(--text-secondary); }
+.sw-print-spot { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-primary); }
+.sw-print-spot-name {
+    font-size: 11px; padding: 3px 5px; border: 1px solid var(--border-color); border-radius: 3px;
+    background: var(--bg-panel); color: var(--text-primary);
+}
+.sw-print-note { font-size: 10px; line-height: 1.4; color: var(--text-secondary); }
+.sw-print-warn { color: var(--warning-color, #b45309); }
+.sw-print-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.sw-print-btn {
+    font-size: 11px; padding: 3px 10px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-primary);
+}
+.sw-print-btn:disabled { opacity: 0.6; cursor: default; }
+.sw-print-primary { background: var(--primary-color, #3b82f6); border-color: var(--primary-color, #3b82f6); color: #fff; }

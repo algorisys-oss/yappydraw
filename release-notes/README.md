@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.279](0.8.279.md) — Print-ready PDF. PDF export is vector (sharp shapes, selectable embedded-font text), with a CMYK mode separated through real press profiles (FOGRA39 / GRACoL via LittleCMS), exact swatch inks, spot colours on their own plate, PDF/X-4, and an on-screen print preview. Plus #431 (shadows the wrong size in 2×/3× exports and at any zoom) and #432 (SVG export ignored masks)
 - [0.8.278](0.8.278.md) — Documentation. The command registry shipped in 0.8.276 with no help page at all; `workspace.md` had mentioned the Command Palette a dozen times without ever explaining it
 - [0.8.277](0.8.277.md) — The sitemap fix from 0.8.276, actually shipped. A `.gitignore` entry in this repo travelled into the mirror with `git archive`, so the generated date map was written and then dropped by the mirror's `git add -A` — with the publish log, `--verify` and all fourteen deploy checks reporting success. Also teaches `verify:deploy` to check the sitemap *says* something, not just that it is served
 - [0.8.276](0.8.276.md) — The command palette now says why a command is unavailable instead of doing nothing, every palette command is one named undo step, and `Yappy.commands` exposes everything the app can do as data. Plus #429: every sitemap URL had been carrying the same `lastmod` for several releases — the prerenderer's lookup was correct, but Hostinger builds the mirror, whose history is one squashed commit per release

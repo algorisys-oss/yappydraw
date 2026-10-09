@@ -125,6 +125,10 @@ export class CanvasRenderer implements IRenderer {
     get shadowColor(): string { return this.ctx.shadowColor; }
     set shadowColor(value: string) { this.ctx.shadowColor = value; }
 
+    getScale(): number {
+        const m = this.ctx.getTransform();
+        return Math.hypot(m.a, m.b) || 1;
+    }
     get shadowBlur(): number { return this.ctx.shadowBlur; }
     set shadowBlur(value: number) { this.ctx.shadowBlur = value; }
 

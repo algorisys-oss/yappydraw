@@ -1,0 +1,10 @@
+/* Print preview (utils/print-preview): the source canvas turns transparent under the proofed
+   overlay but stays the hit target, so editing works unchanged. */
+.print-preview-source { opacity: 0; }
+.print-preview-badge {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2;
+    padding: 4px 10px; border-radius: 999px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.print-preview-badge:hover { background: var(--bg-hover); }

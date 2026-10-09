@@ -1,6 +1,6 @@
 # Command registry and labelled undo: design for review
 
-**Status:** decisions settled; **P1 and P2 done 2026-10-08/09** (see §9), P3-P6 open · **Date:** 2026-10-07 · **Branch:** `dev`
+**Status:** decisions settled; **P1-P3 done 2026-10-08/09** (see §9), P4-P6 open · **Date:** 2026-10-07 · **Branch:** `dev`
 **Origin:** `docs/vectorcraft-review.md` §4.1–4.3 (VectorCraft's "everything is a command")
 **Decisions needed from Rajesh:** §9. Nothing in this doc is built until those are answered.
 
@@ -232,7 +232,7 @@ Each phase is one PR that ships on its own. "Done" includes tests, docs, the hel
 |---|---|---|---|
 | **P1** ✅ **done 2026-10-08** History transactions | `HistoryEntry {label, selection}`; transaction-aware `pushToHistory`; undo/redo restore selection; History panel shows labels; rollback helper. No registry yet: `withCommandHistory(label, fn)` wraps existing palette actions | 1–1.5 d | Unit tests: N pushes in a txn → 1 entry; throw → rolled back, stack unchanged; undo restores selection; unlabelled pushes unchanged |
 | **P2** ✅ **done 2026-10-09** Registry core | `CommandSpec`, `execute`, params validation (D1), `enabled` reasons, `ui-port`, aliases. Port the 149 palette commands as-is (same behaviour, now with `enabled` where obvious) | 2 d | Palette works identically; disabled commands show their reason; `registry.test.ts` green |
-| **P3** Command sweep | Playwright sweep over every command × 3 fixtures × {no params, junk} | 1 d | Green, with any bugs found fixed or listed as known (each with a repro) |
+| **P3** ✅ **done 2026-10-09** Command sweep | Playwright sweep over every command × 3 fixtures × {no params, junk} | 1 d | Green, with any bugs found fixed or listed as known (each with a repro) |
 | **P4** Keymap | `matchShortcut` + contexts; move the global shortcuts (file, edit, arrange, view, tool letters) from `app.tsx` into the registry, one category per commit | 2–3 d | `app.tsx` chain holds only modal/contextual keys; conflict test green; every existing hotkey spec green |
 | **P5** Generated help | Help-dialog rows reference commands; drift test | 0.5 d | Shift+L appears in help; drift test fails if a shortcut is removed from the registry without the help row |
 | **P6** Public API | `Yappy.commands.list/run`, JSON Schema export, help doc for scripting | 0.5–1 d | API help doc lists them; one e2e spec drives a command by id |
@@ -349,6 +349,30 @@ registry and `execute` run under `bun test`; it turns out that has to include
 `withCommandHistory`, because `store/app-store.ts` imports the toast component, which imports
 lucide-solid, which throws "Client-only API called on the server side" outside a browser. With
 history in the port, `registry.test.ts` runs headless — 20 tests, no DOM.
+
+**P3 shipped 2026-10-09** — `tests/command-sweep.spec.ts`. Every command (313 of 329, the rest
+skipped with a stated reason) against three document states, plus a junk-parameter pass.
+
+**It found no bugs in the commands**, which is only worth reporting because the harness was
+then shown able to fail. Everything passed on the first run, so the sweep gained a self-test
+that deliberately corrupts the document through the *same code path* and asserts the integrity
+check lights up. Coverage is real rather than nominal: 299 commands actually execute on an
+empty document and 310 on a populated one — only 2-13 are refused, so the sweep is exercising
+the commands and not the refusal path.
+
+Two things came out of it anyway:
+
+- **`Yappy.select()` filters ids that do not exist**, which is why a dangling selection id could
+  not be injected as test corruption. Good behaviour, now known.
+- **`updateElement` accepts non-finite numbers** — a NaN position was the only corruption the
+  API would let through, and is what the self-test uses. Logged as a hardening item in
+  `todo.md` with a repro: nothing in the app produces it today, but a script or a corrupt
+  import can, and the value reaches the saved file.
+
+**D1 still has no caller.** The junk-parameter axis the plan sized for assumes commands that
+declare parameters; none do, so `execute` ignoring undeclared params is the whole of it, and
+that is asserted once rather than 313 times. zod arrives with the first command that takes
+parameters — now P6, since P3 did not need it.
 
 ### The table as it stood
 

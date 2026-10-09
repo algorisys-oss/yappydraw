@@ -6,7 +6,7 @@ import {
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, toggleKeyframePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, renameSwatchGroup, deleteSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, setSelectedGuides, selectGuide, selectAllGuides, clearGuideSelection, removeSelectedGuides, moveSelectedGuides, toggleGuidesLocked, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, toggleKeyframePanel, createSwatch, applySwatch, updateSwatchColor, setSwatchCmyk, setSwatchSpot, renameSwatch, deleteSwatch, setSwatchGroup, renameSwatchGroup, deleteSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, setSelectedGuides, selectGuide, selectAllGuides, clearGuideSelection, removeSelectedGuides, moveSelectedGuides, toggleGuidesLocked, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -35,9 +35,10 @@ import {
     enterCropMode, exitCropMode, updateCropRect, setCropAspect,
     setDefaultTool as setDefaultToolAction, DEFAULT_TOOL_FALLBACK
 } from "./store/app-store";
+import { setPrintPreview, printPreviewActive } from './utils/print-preview';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
-import { exportToSvg, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
+import { exportToSvg, exportToPdf, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
 import { socialTargetsForPage, SOCIAL_TARGETS } from "./utils/social-export";
 import { GRID_STYLES, gridSnap, gridUnitToPx } from "./utils/grid-lattice";
 import { openLayoutGuidesDialog } from "./components/layout-guides-dialog";
@@ -2408,6 +2409,42 @@ export const YappyAPI = {
     },
 
     /**
+     * Export the drawing as a PDF and resolve to the file as a Blob.
+     *
+     * Vector by default: real paths, gradients, clipping masks and images, with text embedded
+     * in the built-in fonts (Regular, Bold, Italic) or a custom `.ttf`/`.woff`, so it stays
+     * selectable and sharp at any zoom. Paged documents (Design, Slides) get one PDF page per
+     * page, at the page size. Shadows, glows, feather and opacity masks are kept as small
+     * per-object images (a shadow under a still-vector shape). Pass `{ vector: false }` for the
+     * raster PDF: one bitmap per page at `scale`.
+     *
+     *   await Yappy.exportPDF();                          // vector, downloads yappy_drawing.pdf
+     *   const blob = await Yappy.exportPDF({ download: false });
+     *   await Yappy.exportPDF({ vector: false, scale: 3 });
+     *
+     * `{ colorMode: 'cmyk' }` makes a print PDF: every colour, gradient and image separated to
+     * DeviceCMYK through an ICC press profile (`profile: 'fogra39'` — the default, coated paper,
+     * Europe — or `'gracol'`, coated, US). Pure black becomes K-only; a swatch with an exact
+     * `cmyk` is exported as exactly those inks.
+     *
+     *   await Yappy.exportPDF({ colorMode: 'cmyk', profile: 'gracol' });
+     *
+     * `{ pdfx: true }` makes it PDF/X-4 (implies CMYK): output intent with the embedded press
+     * profile, XMP identification, TrimBox/BleedBox (the document bleed — `setBleed` — is added
+     * around each page) and every font embedded. `title` names the document (default
+     * "Yappy drawing"). Run a preflight before sending it to press.
+     *
+     *   await Yappy.exportPDF({ pdfx: true, title: 'Spring poster' });
+     */
+    exportPDF(options: {
+        vector?: boolean; onlySelected?: boolean; background?: boolean; scale?: number; download?: boolean;
+        colorMode?: 'rgb' | 'cmyk'; profile?: 'fogra39' | 'gracol'; pdfx?: boolean; title?: string;
+    } = {}): Promise<Blob | undefined> {
+        const { vector = true, onlySelected = false, background = true, scale = 2, download = true, colorMode = 'rgb', profile, pdfx, title } = options;
+        return exportToPdf(scale, background, onlySelected, { vector, download, colorMode, profile, pdfx, title });
+    },
+
+    /**
      * Serialize the drawing (or selection) to an Excalidraw `.excalidraw` file (v2). Primitives map
      * directly; `path` and Yappy-only shapes downgrade to line polygons. Returns
      * `{ json, downgraded }` — `downgraded` is how many shapes lost semantic fidelity.
@@ -2720,12 +2757,27 @@ export const YappyAPI = {
     applySwatch(swatchId: string, target: 'fill' | 'stroke' = 'fill', ids?: string[]) { applySwatch(swatchId, target, ids); },
     /** Recolour a swatch — every linked object updates with it. */
     updateSwatchColor(swatchId: string, color: string) { updateSwatchColor(swatchId, color); },
+    /**
+     * Give a swatch exact print inks — `[c, m, y, k]`, each 0–100 — or clear them with `null`.
+     * A CMYK PDF exports those inks exactly; the swatch's screen colour (and every linked object)
+     * is re-derived from them through the press profile. Resolves once the preview is applied.
+     *
+     *   const id = Yappy.createSwatch('#1c5aa6', 'Brand blue');
+     *   await Yappy.setSwatchCmyk(id, [100, 60, 0, 10]);
+     */
+    setSwatchCmyk(swatchId: string, cmyk: [number, number, number, number] | null, profile?: 'fogra39' | 'gracol') { return setSwatchCmyk(swatchId, cmyk, profile); },
+    /**
+     * Make a swatch a named spot ink (`'PANTONE 186 C'`) — a separate plate in a CMYK PDF — or a
+     * process colour again with `null`. A swatch without exact inks gets a CMYK alternate from
+     * its screen colour first (what a four-colour device prints instead).
+     */
+    setSwatchSpot(swatchId: string, name: string | null, profile?: 'fogra39' | 'gracol') { return setSwatchSpot(swatchId, name, profile); },
     /** Rename a swatch. */
     renameSwatch(swatchId: string, name: string) { renameSwatch(swatchId, name); },
     /** Delete a swatch (links on objects are dropped). */
     deleteSwatch(swatchId: string) { deleteSwatch(swatchId); },
     /** List global swatches. */
-    listSwatches() { return store.swatches.map(s => ({ id: s.id, name: s.name, color: s.color, darkColor: s.darkColor, group: s.group })); },
+    listSwatches() { return store.swatches.map(s => ({ id: s.id, name: s.name, color: s.color, darkColor: s.darkColor, group: s.group, cmyk: s.cmyk ? [...s.cmyk] : undefined, spot: s.spot ? { ...s.spot } : undefined })); },
     /** Set the print bleed margin (px) around artboards; >0 shows crop marks. */
     setBleed(px: number) { setBleed(px); },
     getBleed() { return store.globalSettings.bleed ?? 0; },
@@ -2753,6 +2805,16 @@ export const YappyAPI = {
     fitArtboardToArtwork(id?: string, pad = 20) { return fitArtboardToArtwork(id, pad); },
     /** Toggle Outline (wireframe) view — path outlines only, no fills. */
     toggleOutlineView(on?: boolean) { toggleOutlineView(on); },
+    /**
+     * Print preview (soft proof): show the canvas as it will print through a press profile —
+     * every pixel goes sRGB → CMYK → sRGB. Editing works as usual underneath. Resolves to whether
+     * the preview is on (it needs WebGL2). View only: nothing in the document changes.
+     *
+     *   await Yappy.setPrintPreview(true, 'gracol');
+     */
+    setPrintPreview(on: boolean, profile?: 'fogra39' | 'gracol') { return setPrintPreview(on, profile); },
+    /** Whether the print preview is on. */
+    isPrintPreview() { return printPreviewActive(); },
     isOutlineView() { return store.outlineView; },
     /** Toggle Trim View — temporarily hide everything outside the artboards. */
     toggleTrimView(on?: boolean) { toggleTrimView(on); },
