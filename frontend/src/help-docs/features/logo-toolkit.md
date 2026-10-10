@@ -226,6 +226,8 @@ The rotation point is per-selection and resets automatically when you select som
 
 **What Flip mirrors about.** One object flips about *its own centre*, so it turns in place. Flip *several* at once and they mirror about the centre of the whole selection — so the objects swap sides as a group rather than each spinning where it sits. Flip the group again to get back exactly where you started.
 
+Flip always mirrors across the **screen's** axis, as in Illustrator: *Flip Horizontal* mirrors left↔right even when the object is rotated. (Before 0.8.282 a rotated object was mirrored along its own tilted axis, so a shape turned 45° looked as if it had been flipped vertically.)
+
 :::note
 **Vector geometry flips with the shape.** On a pen path or pencil stroke, Flip mirrors the stored anchors and their Bézier handles — so the anchor squares stay on the outline and the path is immediately editable (and exports) in its new orientation. Curved connectors take their control points along too. Nothing needs baking or re-drawing after a flip.
 :::

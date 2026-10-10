@@ -225,24 +225,40 @@ Works on:
 
 You can also double-click a shape or connector to type a label and switch on **Text on Path** in the quick toolbar or Properties panel.
 
+### Text on a shape is its own object
+
+As in Illustrator, putting text on a **closed shape** (with Alt+T or the Text on Path switch) makes a **separate text object** that follows the shape's outline. The shape itself is unchanged and carries no text.
+
+- **Select the text by clicking its letters.** Click the shape anywhere else to select the shape.
+- **Move it on its own:** drag the letters, or nudge them with the arrow keys. The shape stays where it is.
+- **Style the letters from the Text settings only:** Text Color, Text Outline (outline colour and width), font and size. The shape's fill and stroke never change the text. Changing a shape's stroke no longer recolours any text inside it either.
+- **Bring it closer or push it away** with **Distance from Path**.
+
+Documents made before 0.8.282 can still have text attached to the shape itself. Right-click the shape → **Detach Text from Shape** (also in the command palette) moves it onto its own object without moving a single letter.
+
+Lines, connectors, pen strokes and Pen paths still carry their own text along themselves.
+
 **Layout** (Properties panel → Text, once Text on Path is on):
 
 | Setting | What it does |
 | --- | --- |
 | **Start Position** | Where the text sits along the path, 0–1 (0 = the start, or the top of a loop). |
 | **Text Align** | *Start at position* puts the first letter there; *Center on position* puts the middle of the text there. |
-| **Flip to Other Side** | Moves the text to the other side of the path, still reading left to right. On a loop it runs the other way round, which gives the bottom half of a badge. |
-| **Text Position** | On the line, or just outside it. |
+| **Flip to Other Side** | Runs the text the other way round a loop, so it reads left to right along the bottom of a badge. On an open path it moves the text below the line. |
+| **Position** | *Outside / above*, *Centred on the line*, or *Inside / below*. On a closed shape, outside and inside mean the shape's outside and inside, even when flipped. |
+| **Distance from Path** | Gap in px between the path and the letters. 0 makes them touch; negative pulls them across the line. |
 | **Letter Spacing** | Extra space between letters (negative tightens). |
 
-**Logo badge recipe.** Draw a circle (O) and give it the top text: Alt+T, click, type. For the bottom line, draw a second circle the same size, give it its text, then set **Flip to Other Side** on and **Start Position** to **0.5**. To hide a ring and keep only its text, set its stroke to none. The text stays visible and uses its own text colour (black by default).
+**Too much text?** As in Illustrator, text that doesn't fit is hidden rather than drawn over itself: a loop shows at most one full turn, and on an open path letters past either end are left out. Make the font smaller, tighten Letter Spacing, or shorten the text.
+
+**Logo badge recipe.** Draw a circle (O) and give it the top text: Alt+T, click, type. For the bottom line, select the circle again, add a second line with Alt+T, then set **Flip to Other Side** on and **Start Position** to **0.5**. Both lines are separate objects, so each can be moved and styled on its own.
 
 ```
 const Y = window.Yappy;
 const ring = Y.createCircle(0, 0, 300, 300);
-Y.attachTextToPath(ring, 'YAPPY DRAW STUDIO');                          // centred on top
-const low = Y.createCircle(0, 0, 300, 300, { strokeColor: 'transparent' });
-Y.attachTextToPath(low, 'EST 2026', { flip: true, align: 'center', offset: 0.5 });
+const top = Y.attachTextToPath(ring, 'YAPPY DRAW STUDIO', { position: 'outside', distance: 8 }); // its own object
+Y.attachTextToPath(ring, 'EST 2026', { flip: true, align: 'center', offset: 0.5 });          // a second one
+Y.updateElement(top, { textStrokeEnabled: true, textStrokeColor: '#f59e0b', textStrokeWidth: 2 });
 const arch = Y.createPath([
   { x: 400, y: 200, kind: 'smooth', outX: 80, outY: -150 },
   { x: 700, y: 200, kind: 'smooth', inX: -80, inY: -150 },
@@ -250,7 +266,7 @@ const arch = Y.createPath([
 Y.attachTextToPath(arch, 'along a pen path');                            // mid-way, centred
 ```
 
-`attachTextToPath(id, text, { align, offset, flip, side, spacing })` returns `false` when the element has no path to follow. The same settings are element properties: `curvedText`, `textPathOffset`, `textPathAlign`, `textPathFlip`, `textPathSide` and `textPathSpacing`.
+`attachTextToPath(id, text, { align, offset, flip, position, distance, spacing })` returns the id of the element now carrying the text: the new text object for a closed shape, otherwise the path itself. It returns `false` when the element has no path to follow. `putTextOnOutline(shapeId, text?, opts?)` does the same for a shape directly, and `detachTextFromShape(ids?)` converts older documents. The settings are element properties: `curvedText`, `textPathOffset`, `textPathAlign`, `textPathFlip`, `textPathPosition`, `textPathDistance`, `textPathSpacing`, plus `textStrokeEnabled` / `textStrokeColor` / `textStrokeWidth` for the outline. (`textPathSide`, the old *On the line / Outside* setting, is still read for older documents.)
 
 Curved text renders in both the sketch and architectural styles and is exported to PNG and SVG as it appears.
 

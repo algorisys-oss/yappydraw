@@ -967,7 +967,19 @@ export interface DrawingElement {
     curvedText?: boolean;
     textPathOffset?: number;          // 0..1 start position along the path (default 0 = start / top of a loop)
     textPathSpacing?: number;         // extra px between glyphs for curved text (default 0)
-    textPathSide?: 'on' | 'outside';  // baseline placement relative to the path (default 'on')
+    /** LEGACY baseline placement ('on' = just above, 'outside' = 0.4em to the right of travel —
+     *  which was INSIDE a clockwise loop despite the name). Read only while neither
+     *  `textPathPosition` nor `textPathDistance` is set; the panel no longer writes it. */
+    textPathSide?: 'on' | 'outside';
+    /** Which side of the path the letters sit on: a closed shape's outside / inside (above /
+     *  below on an open path), or centred on the line. */
+    textPathPosition?: 'outside' | 'center' | 'inside';
+    /** Gap in px between the path and the near edge of the letters (0 = touching). */
+    textPathDistance?: number;
+    /** A Type-on-Path object (Illustrator model): a path that exists to carry its text. The path
+     *  itself is an unpainted guide; you select it by its letters, and its text is styled only by
+     *  the text controls. Created when text is put on a shape's outline. */
+    typeOnPath?: boolean;
     textPathAlign?: 'start' | 'center'; // 'center' = textPathOffset marks the MIDDLE of the text (default 'start')
     textPathFlip?: boolean;           // run the text the other way round the path, on the other side (bottom-of-a-badge text)
 

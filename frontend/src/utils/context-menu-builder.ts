@@ -13,7 +13,7 @@ import { replaceImageOn } from './image-actions';
 import { saveMindmapOutline } from './mindmap-outline';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard, openArtboardDialog, duplicateArtboard, fitArtboardToSelection,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard, openArtboardDialog, duplicateArtboard, fitArtboardToSelection, detachTextFromShape, isOutlineTextShape,
     blendShapes, blendAlongPath, blendShapesMorph,
     toggleRecolorPanel, toggleBehaviorsPanel, isDevMode,
     toggleShapeBuilder,
@@ -1589,6 +1589,10 @@ function buildContextMenuItems(
                 // Shape label → Touch Type per-letter on the containerText.
                 items.push({ label: 'Touch Type (per-letter)', icon: '🅰', onClick: () => YappyAPI.toggleTouchType(true) });
             }
+        }
+        // Curved text still welded to a shape (older documents) → its own Type-on-Path object.
+        if (store.selection.some(id => { const e = store.elements.find(x => x.id === id); return !!e && isOutlineTextShape(e) && !!e.curvedText && !!e.containerText; })) {
+            items.push({ label: 'Detach Text from Shape', icon: '⤴', onClick: () => detachTextFromShape([...store.selection]) });
         }
         if (selectionCount === 1) {
             items.push(

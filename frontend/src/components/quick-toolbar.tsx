@@ -5,7 +5,7 @@
  */
 
 import { type Component, Show, For, createSignal, createMemo, createEffect, onCleanup } from "solid-js";
-import { store, updateElement, pushToHistory, applyMindmapStyling } from "../store/app-store";
+import { store, updateElement, pushToHistory, applyMindmapStyling, setCurvedText } from "../store/app-store";
 import { getElementPreviewBaseState, isElementAnimating } from "../utils/animation/element-animator";
 import { replaceImageOn } from "../utils/image-actions";
 import { Palette, SlidersHorizontal, Image as ImageIcon, Type } from "lucide-solid";
@@ -166,6 +166,7 @@ const ToolbarContainer: Component<{
         // For text/richtext the visible font colour is `textColor || strokeColor`, so a
         // baked-in default textColor (from defaults) overrides strokeColor and the "Text
         // Color" swatch never changes anything. Set both, matching p3-color-picker.
+        if (key === 'curvedText') { setCurvedText([id], !!value); return; }
         if (key === 'strokeColor' && (el.type === 'text' || el.type === 'richtext')) {
             updateElement(id, { strokeColor: value, textColor: value }, false);
             return;

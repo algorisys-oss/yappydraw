@@ -35,7 +35,8 @@ global.document = {
     addEventListener: () => { }, removeEventListener: () => { },
 } as any;
 
-const { store, setStore, createArtboards, duplicateArtboard, attachTextToPath } = await import("./app-store");
+const { store, setStore, createArtboards, duplicateArtboard, attachTextToPath, putTextOnOutline, setCurvedText, detachTextFromShape, updateElement, undo } = await import("./app-store");
+const { getElementTextPath, layoutTextAlongPath, textPathOptionsFor } = await import("../utils/text-on-path");
 
 const base = (id: string, over: any = {}): any => ({
     id, type: 'rectangle', x: 0, y: 0, width: 10, height: 10, angle: 0,
@@ -116,27 +117,38 @@ describe('duplicateArtboard with a count', () => {
 });
 
 describe('attachTextToPath', () => {
-    const circle = () => base('circ', { type: 'circle', width: 200, height: 200 });
+    const circle = (over: any = {}) => base('circ', { type: 'circle', width: 200, height: 200, ...over });
+    const carrier = () => store.elements.find(e => e.typeOnPath)!;
 
-    it('centres the text at the top of a closed shape the first time', () => {
+    it('puts text on a closed shape as its OWN object, centred at the top (Illustrator model)', () => {
+        setStore('elements', [circle({ strokeColor: '#123456' })]);
+        const id = attachTextToPath('circ', 'HELLO');
+        expect(typeof id).toBe('string');
+        const shape = store.elements.find(e => e.id === 'circ')!;
+        expect(shape.containerText).toBeUndefined();
+        expect(shape.curvedText).toBe(false);
+        expect(carrier()).toMatchObject({
+            id, type: 'path', typeOnPath: true, curvedText: true, containerText: 'HELLO',
+            textPathAlign: 'center', strokeColor: 'transparent', backgroundColor: 'transparent',
+            textColor: '#123456', textPathPosition: 'outside',
+        });
+        expect(carrier().textPathOffset).toBeCloseTo(0, 6);   // a circle's path starts at the top too
+        expect(store.elements.map(e => e.id)).toEqual(['circ', id]); // just above the shape
+        expect(store.selection).toEqual([id as string]);
+    });
+
+    it('explicit options win on the new object', () => {
         setStore('elements', [circle()]);
-        expect(attachTextToPath('circ', 'HELLO')).toBe(true);
-        const e = store.elements[0];
-        expect(e).toMatchObject({ curvedText: true, containerText: 'HELLO', textPathAlign: 'center', textPathOffset: 0 });
+        attachTextToPath('circ', 'Y', { flip: true, offset: 0.5, position: 'inside', distance: 7 });
+        expect(carrier()).toMatchObject({ textPathFlip: true, textPathPosition: 'inside', textPathDistance: 7 });
+        expect(carrier().textPathOffset).toBeCloseTo(0.5, 6);
     });
 
-    it('keeps an existing layout when re-attaching; explicit options win', () => {
-        setStore('elements', [{ ...circle(), curvedText: true, textPathAlign: 'start', textPathOffset: 0.2 }]);
-        attachTextToPath('circ', 'X');
-        expect(store.elements[0]).toMatchObject({ textPathAlign: 'start', textPathOffset: 0.2 });
-        attachTextToPath('circ', 'Y', { flip: true, offset: 0.5 });
-        expect(store.elements[0]).toMatchObject({ textPathFlip: true, textPathOffset: 0.5 });
-    });
-
-    it('accepts a Pen path and centres mid-way along an open one', () => {
+    it('accepts a Pen path (the path carries its own text) and centres mid-way along an open one', () => {
         setStore('elements', [base('pen', { type: 'path', pathAnchors: [{ x: 0, y: 0, kind: 'corner' }, { x: 100, y: 0, kind: 'corner' }] })]);
-        expect(attachTextToPath('pen', 'Hi')).toBe(true);
+        expect(attachTextToPath('pen', 'Hi')).toBe('pen');
         expect(store.elements[0].textPathOffset).toBe(0.5);
+        expect(store.elements).toHaveLength(1);
     });
 
     it('refuses an element with no walkable path', () => {
@@ -144,5 +156,61 @@ describe('attachTextToPath', () => {
         expect(attachTextToPath('img', 'nope')).toBe(false);
         expect(attachTextToPath('missing', 'nope')).toBe(false);
         expect(store.elements[0].curvedText).toBeUndefined();
+    });
+});
+
+describe('Detach Text from Shape keeps every glyph where it was', () => {
+    const measure = () => 10;
+    const glyphs = (el: any) => {
+        const tp = getElementTextPath(el)!;
+        return layoutTextAlongPath(measure, el.containerText, tp.points, el.fontSize || 20, textPathOptionsFor(el, el.fontSize || 20, tp.closed)).glyphs
+            .map(g => ({ x: g.x - g.side * Math.sin(g.angle), y: g.y + g.side * Math.cos(g.angle) }));
+    };
+    const shapes: [string, any][] = [
+        ['circle', {}], ['rectangle', {}], ['triangle', {}], ['hexagon', {}], ['diamond', {}],
+    ];
+    for (const [type, over] of shapes) for (const flip of [false, true]) for (const offset of [0, 0.3]) {
+        it(`${type}${flip ? ' flipped' : ''} at offset ${offset}`, () => {
+            const shape = base('s', { type, x: 50, y: 40, width: 300, height: 200, fontSize: 20, curvedText: true,
+                containerText: 'BOSTON BREWING', textPathAlign: 'center', textPathOffset: offset, textPathFlip: flip, ...over });
+            const before = glyphs(shape);
+            setStore('elements', [shape]);
+            const [id] = detachTextFromShape(['s']);
+            const after = glyphs(store.elements.find(e => e.id === id));
+            expect(after.length).toBe(before.length);
+            // The new path is a Bézier/exact trace, the old one a sampled outline: allow a pixel or two.
+            after.forEach((g, i) => { expect(Math.abs(g.x - before[i].x)).toBeLessThan(2.5); expect(Math.abs(g.y - before[i].y)).toBeLessThan(2.5); });
+        });
+    }
+});
+
+describe('Text on Path toggle and shape colours', () => {
+    it('the toggle on a closed shape creates the object in one undo step', () => {
+        setStore('elements', [base('c', { type: 'circle', width: 100, height: 100, containerText: 'LOGO' })]);
+        const [id] = setCurvedText(['c'], true);
+        expect(store.elements.find(e => e.id === id)?.typeOnPath).toBe(true);
+        undo();
+        expect(store.elements.map(e => e.id)).toEqual(['c']);
+        expect(store.elements[0].containerText).toBe('LOGO');
+    });
+
+    it("changing a shape's stroke no longer recolours its text", () => {
+        setStore('elements', [base('c', { type: 'circle', strokeColor: '#111111', containerText: 'Label' })]);
+        updateElement('c', { strokeColor: '#ff0000' });
+        expect(store.elements[0]).toMatchObject({ strokeColor: '#ff0000', textColor: '#111111' });
+    });
+
+    it('an explicit text colour is left alone, and text elements are not pinned', () => {
+        setStore('elements', [
+            base('c', { type: 'circle', strokeColor: '#111111', containerText: 'Label', textColor: '#00ff00' }),
+            base('t', { type: 'text', strokeColor: '#111111', text: 'Hi' }),
+            base('e', { type: 'circle', strokeColor: '#111111' }),
+        ]);
+        updateElement('c', { strokeColor: '#ff0000' });
+        updateElement('t', { strokeColor: '#ff0000' });
+        updateElement('e', { strokeColor: '#ff0000' });
+        expect(store.elements.find(e => e.id === 'c')!.textColor).toBe('#00ff00');
+        expect(store.elements.find(e => e.id === 't')!.textColor).toBeUndefined();
+        expect(store.elements.find(e => e.id === 'e')!.textColor).toBeUndefined();
     });
 });

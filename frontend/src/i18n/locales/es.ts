@@ -24,6 +24,7 @@ export const es: Dictionary = {
         'tool-artboard': 'Herramienta mesa de trabajo',
         'action-new-artboard': 'Nueva mesa de trabajo…',
         'tool-type-on-path': 'Texto en trazado',
+        'action-detach-text': 'Separar texto de la forma',
         'action-undo': 'Deshacer',
         'action-redo': 'Rehacer',
         'action-group': 'Agrupar selección',

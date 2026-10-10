@@ -46,6 +46,7 @@ export const fr: Dictionary = {
         'tool-artboard': 'Outil Plan de travail',
         'action-new-artboard': 'Nouveau plan de travail…',
         'tool-type-on-path': 'Texte curviligne',
+        'action-detach-text': 'Détacher le texte de la forme',
         'action-undo': 'Annuler',
         'action-redo': 'Rétablir',
         'action-group': 'Grouper la sélection',

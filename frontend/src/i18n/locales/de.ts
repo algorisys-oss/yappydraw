@@ -24,6 +24,7 @@ export const de: Dictionary = {
         'tool-artboard': 'Zeichenflächen-Werkzeug',
         'action-new-artboard': 'Neue Zeichenfläche…',
         'tool-type-on-path': 'Text auf Pfad',
+        'action-detach-text': 'Text von Form lösen',
         'action-undo': 'Rückgängig',
         'action-redo': 'Wiederholen',
         'action-group': 'Auswahl gruppieren',

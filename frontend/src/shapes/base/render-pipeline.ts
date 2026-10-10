@@ -877,7 +877,9 @@ export class RenderPipeline {
                 renderer.save();
                 renderer.font = getFontString(el);
                 renderer.fillStyle = this.adjustColor(curvedTextColor(el), isDarkMode);
-                drawTextAlongPath(renderer, textStr, tp.points, fontSize, textPathOptionsFor(el, fontSize, tp.closed));
+                const tpOpts = textPathOptionsFor(el, fontSize, tp.closed);
+                if (tpOpts.stroke) tpOpts.stroke = { ...tpOpts.stroke, color: this.adjustColor(tpOpts.stroke.color, isDarkMode) };
+                drawTextAlongPath(renderer, textStr, tp.points, fontSize, tpOpts);
                 renderer.restore();
                 return;
             }

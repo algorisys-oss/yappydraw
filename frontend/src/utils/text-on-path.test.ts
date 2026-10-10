@@ -5,7 +5,7 @@
  * WHERE each character landed and which way it faces, which is the whole feature.
  */
 import { describe, it, expect } from 'bun:test';
-import { drawTextAlongPath, getElementTextPath, pathElementPolyline, reversePath, textPathOptionsFor } from './text-on-path';
+import { drawTextAlongPath, getElementTextPath, layoutTextAlongPath, pathElementPolyline, reversePath, textPathOptionsFor } from './text-on-path';
 import type { DrawingElement } from '../types';
 
 type Glyph = { ch: string; x: number; y: number; angle: number };
@@ -126,6 +126,29 @@ describe('drawTextAlongPath options', () => {
         for (const g of glyphs) expect(Math.cos(g.angle)).toBeGreaterThan(0.9); // not upside-down
     });
 
+    /** Where each glyph's centre really lands: the path point plus the side offset, rotated. */
+    const glyphCentres = (text: string, opts: any) => {
+        const out: { x: number; y: number }[] = [];
+        const { r } = fakeRenderer(10);
+        let tx = 0, ty = 0, rot = 0;
+        r.translate = (x: number, y: number) => { tx = x; ty = y; };
+        r.rotate = (a: number) => { rot = a; };
+        r.fillText = (_c: string, x: number, y: number) =>
+            out.push({ x: tx + x * Math.cos(rot) - y * Math.sin(rot), y: ty + x * Math.sin(rot) + y * Math.cos(rot) });
+        drawTextAlongPath(r, text, circle, 16, opts);
+        return out;
+    };
+
+    it('text long enough to wrap round the loop stays on ONE side of the outline (no stray glyphs inside)', () => {
+        // 60 glyphs x 10px = 600px of a ~628px circumference: past both sides and the bottom.
+        const text = 'X'.repeat(60);
+        for (const opts of [{ closed: true }, { closed: true, align: 'center' }, { closed: true, startOffset: 0.17 }, { closed: true, sideOffset: 6 }]) {
+            const radii = glyphCentres(text, opts).map(g => Math.hypot(g.x, g.y));
+            const outside = radii.map(rr => rr > 100);
+            expect(outside.every(o => o === outside[0])).toBe(true);
+        }
+    });
+
     it('flip on an open path moves the text to the other side, still readable', () => {
         // Capture the baseline offset fillText gets, in the glyph's rotated frame.
         const offsets = (flip: boolean) => {
@@ -193,5 +216,70 @@ describe('getOutlinePath — the outline the shape actually draws', () => {
         expect(pts).toContainEqual({ x: 80, y: 50 });
         expect(pts).not.toContainEqual({ x: 0, y: 0 });
         expect(pts[0]).toEqual({ x: 60, y: 0 });                         // middle of the top edge
+    });
+});
+
+describe('layoutTextAlongPath — position, distance, overflow', () => {
+    const circle = Array.from({ length: 144 }, (_, i) => {
+        const a = -Math.PI / 2 + (Math.PI * 2 * i) / 144;
+        return { x: 100 * Math.cos(a), y: 100 * Math.sin(a) };
+    });
+    const ten = () => 10;
+    const centreRadius = (opts: any) => {
+        const g = layoutTextAlongPath(ten, 'AB', circle, 20, { closed: true, ...opts }).glyphs[0];
+        return Math.hypot(g.x - g.side * Math.sin(g.angle), g.y + g.side * Math.cos(g.angle));
+    };
+
+    it('outside / inside / centred sit where they say, at the given distance', () => {
+        // Glyph half-height is 0.35em = 7px at 20px.
+        expect(centreRadius({ position: 'outside', distance: 0 })).toBeCloseTo(107, 0);
+        expect(centreRadius({ position: 'outside', distance: 10 })).toBeCloseTo(117, 0);
+        expect(centreRadius({ position: 'inside', distance: 0 })).toBeCloseTo(93, 0);
+        expect(centreRadius({ position: 'center' })).toBeCloseTo(100, 0);
+    });
+
+    it('outside stays outside when the run is flipped (bottom of a badge)', () => {
+        expect(centreRadius({ position: 'outside', distance: 5, flip: true, startOffset: 0.5 })).toBeCloseTo(112, 0);
+        expect(centreRadius({ position: 'inside', distance: 5, flip: true, startOffset: 0.5 })).toBeCloseTo(88, 0);
+    });
+
+    it('outside means outside on a counter-clockwise loop too', () => {
+        const ccw = reversePath(circle, true);
+        const g = layoutTextAlongPath(ten, 'A', ccw, 20, { closed: true, position: 'outside', distance: 0 }).glyphs[0];
+        expect(Math.hypot(g.x - g.side * Math.sin(g.angle), g.y + g.side * Math.cos(g.angle))).toBeCloseTo(107, 0);
+    });
+
+    it('a loop shows at most one turn of text; the rest is overset (Illustrator)', () => {
+        // Circumference ~628px → 62 glyphs of 10px fit.
+        const r = layoutTextAlongPath(ten, 'X'.repeat(100), circle, 20, { closed: true });
+        expect(r.glyphs.length).toBe(62);
+        expect(r.hidden).toBe(38);
+    });
+
+    it('an open path drops glyphs past either end instead of piling them on the end point', () => {
+        const line = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+        const r = layoutTextAlongPath(ten, 'ABCDEFGHIJKL', line, 20, { startOffset: 0.5 });
+        expect(r.glyphs.length).toBe(5);       // 50px left → 5 glyphs
+        expect(r.hidden).toBe(7);
+        expect(new Set(r.glyphs.map(g => Math.round(g.x))).size).toBe(5);
+    });
+
+    it('legacy documents keep their old offset until Position or Distance is touched', () => {
+        const legacy = textPathOptionsFor({ textPathSide: 'outside' } as any, 20, true);
+        expect(legacy.sideOffset).toBe(8);
+        expect(legacy.position).toBeUndefined();
+        const modern = textPathOptionsFor({ textPathSide: 'outside', textPathDistance: 4 } as any, 20, true);
+        expect(modern).toMatchObject({ position: 'outside', distance: 4 });
+    });
+
+    it("draws the text's own outline when Text Outline is on", () => {
+        const calls: string[] = [];
+        const r: any = {
+            measureText: () => ({ width: 10 }), save() { }, restore() { }, translate() { }, rotate() { },
+            fillText: () => calls.push('fill'), strokeText: () => calls.push('stroke'),
+        };
+        const opts = textPathOptionsFor({ textStrokeEnabled: true, textStrokeWidth: 3, textColor: 'transparent' } as any, 20, true);
+        drawTextAlongPath(r, 'A', circle, 20, opts);
+        expect(calls).toEqual(['stroke']); // outline only — fill is transparent
     });
 });

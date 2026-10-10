@@ -1279,6 +1279,36 @@ export const properties: PropertyConfig[] = [
         defaultValue: undefined // defaults to stroke color in renderer
     },
     {
+        // The text's OWN stroke — on curved text it never touches the shape or path it follows.
+        key: 'textStrokeEnabled',
+        label: 'Text Outline',
+        type: 'toggle',
+        group: 'text',
+        applicableTo: ['text', ...TEXT_PATH_TARGETS],
+        defaultValue: false,
+    },
+    {
+        key: 'textStrokeColor',
+        label: 'Outline Color',
+        type: 'color',
+        group: 'text',
+        applicableTo: ['text', ...TEXT_PATH_TARGETS],
+        defaultValue: '#000000',
+        dependsOn: 'textStrokeEnabled',
+    },
+    {
+        key: 'textStrokeWidth',
+        label: 'Outline Width',
+        type: 'slider',
+        min: 0.5,
+        max: 20,
+        step: 0.5,
+        group: 'text',
+        applicableTo: ['text', ...TEXT_PATH_TARGETS],
+        defaultValue: 2,
+        dependsOn: 'textStrokeEnabled',
+    },
+    {
         key: 'textHighlightEnabled',
         label: 'Text Highlight',
         type: 'toggle',
@@ -1328,16 +1358,32 @@ export const properties: PropertyConfig[] = [
         defaultValue: false,
     },
     {
-        key: 'textPathSide',
-        label: 'Text Position',
+        // Replaces the old 'On the line / Outside' (textPathSide), whose "Outside" put text
+        // INSIDE a clockwise loop. Legacy documents keep rendering through textPathSide until
+        // either of these two is touched (see textPathOptionsFor).
+        key: 'textPathPosition',
+        label: 'Position',
         type: 'select',
         options: [
-            { label: 'On the line', value: 'on' },
-            { label: 'Outside', value: 'outside' },
+            { label: 'Outside / above', value: 'outside' },
+            { label: 'Centred on the line', value: 'center' },
+            { label: 'Inside / below', value: 'inside' },
         ],
         group: 'text',
         applicableTo: TEXT_PATH_TARGETS,
-        defaultValue: 'on',
+        defaultValue: 'outside',
+        dependsOn: { key: 'curvedText', value: true },
+    },
+    {
+        key: 'textPathDistance',
+        label: 'Distance from Path',
+        type: 'slider',
+        min: -50,
+        max: 200,
+        step: 1,
+        group: 'text',
+        applicableTo: TEXT_PATH_TARGETS, // px between the path and the letters; 0 = touching
+        defaultValue: 0,
         dependsOn: { key: 'curvedText', value: true },
     },
     {

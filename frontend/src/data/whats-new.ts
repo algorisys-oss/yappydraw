@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.282', date: '2026-10-10', items: [
+        'Text on a shape is now its own object, like in Illustrator. Click its letters to select it, drag it on its own, and give it its own colour and outline. Restyling the shape never changes the text.',
+        'Move curved text closer to a shape or further away with Distance from Path, and put it outside, on, or inside the outline.',
+        'Long text runs all the way round a circle now, with no stray letters inside the shape. Text that doesn\u2019t fit is hidden instead of printing over itself.',
+        'Flip Horizontal on a rotated shape now mirrors it left to right, instead of what looked like a vertical flip.',
+        'Older drawings: right-click a shape \u2192 Detach Text from Shape to make its text a separate object, with every letter left exactly where it was.',
+    ] },
     { version: '0.8.281', date: '2026-10-10', items: [
         'Resize an artboard to fit your selection exactly: select the artwork and press Ctrl+Shift+R. A 1280 px circle gives a 1280 \u00d7 1280 artboard that touches it on every side.',
         'The New Artboard dialog can lock the aspect ratio: click the lock, type one side, and the other follows.',

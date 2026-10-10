@@ -27,7 +27,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, openDistortDialog, setShowPathfinderBar, togglePathfinderBar, toggleTeachingMode, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, openDistortDialog, setShowPathfinderBar, togglePathfinderBar, toggleTeachingMode, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, putTextOnOutline, detachTextFromShape, isOutlineTextShape, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -741,6 +741,11 @@ export const YappyAPI = {
         }
 
         addElement(element);
+        // Curved text on a closed shape is its own Type-on-Path object (Illustrator's model) —
+        // the shape keeps the returned id, the text goes onto a path that traces its outline.
+        if (element.curvedText && element.containerText && isOutlineTextShape(element)) {
+            putTextOnOutline(id, undefined, undefined, { history: false, select: false });
+        }
         return id;
     },
 
@@ -5424,9 +5429,21 @@ export const YappyAPI = {
      * `{ flip: true, align: 'center', offset: 0.5 }` puts it across the bottom, reading
      * left-to-right. Returns false when the id is unknown or the element can't carry text.
      */
-    attachTextToPath(id: string, text: string, opts?: { align?: 'start' | 'center'; offset?: number; flip?: boolean; side?: 'on' | 'outside'; spacing?: number }): boolean {
+    attachTextToPath(id: string, text: string, opts?: { align?: 'start' | 'center'; offset?: number; flip?: boolean; side?: 'on' | 'outside'; position?: 'outside' | 'center' | 'inside'; distance?: number; spacing?: number }): string | false {
         return attachTextToPath(id, text, opts);
     },
+    /**
+     * Put text on a closed shape's outline as its own Type-on-Path object (Illustrator's model):
+     * selectable by its letters, movable and strokable on its own, never coloured by the shape.
+     * `text` defaults to the shape's label. Returns the new object's id, or null.
+     * @example const t = Yappy.putTextOnOutline(circleId, 'BOSTON BREWING CO', { position: 'outside', distance: 12 })
+     */
+    putTextOnOutline(shapeId: string, text?: string, opts?: { align?: 'start' | 'center'; offset?: number; flip?: boolean; position?: 'outside' | 'center' | 'inside'; distance?: number; spacing?: number }) {
+        return putTextOnOutline(shapeId, text, opts);
+    },
+    /** Move curved text that is still part of a shape (older documents) onto its own object,
+     *  keeping its look. Defaults to the selection. Returns the new ids. */
+    detachTextFromShape(ids?: string[]) { return detachTextFromShape(ids ?? [...store.selection]); },
     /** Exit all blocking tool-mode overlays. */
     exitAllToolModes() { exitAllToolModes(); },
     /** Set a per-glyph transform (dx, dy, scale, rot) and/or colour on a text element. */

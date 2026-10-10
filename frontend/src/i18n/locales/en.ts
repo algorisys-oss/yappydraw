@@ -31,6 +31,7 @@ export const en = {
         'tool-artboard': 'Artboard tool',
         'action-new-artboard': 'New Artboard…',
         'tool-type-on-path': 'Type on Path',
+        'action-detach-text': 'Detach Text from Shape',
         'action-undo': 'Undo',
         'action-redo': 'Redo',
         'action-group': 'Group Selection',

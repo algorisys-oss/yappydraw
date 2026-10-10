@@ -17,6 +17,7 @@ import {
 import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { isFocusInert } from './mindmap-focus';
+import { hitTestCurvedText, isBareTypeOnPath } from './curved-text-hit';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
 import { PathUtils, anchorsToPathData, getPathSubpaths } from './math/path-utils';
@@ -74,6 +75,12 @@ export function hitTestElement(
     // Focus mode dims everything outside the focused branch to 12%. Dimmed is not hidden, so
     // this is the only thing stopping a click or drag from grabbing geometry you cannot see.
     if (isFocusInert(el.id)) return false;
+    // Curved text is hit by its letters, which can sit well outside the element's box. Checked
+    // before the JS/WASM geometry split so both engines agree. A Type-on-Path object whose
+    // guide path is unpainted is ONLY its letters — clicking the invisible ring would steal
+    // clicks meant for the shape it was made from.
+    if (el.curvedText && hitTestCurvedText(el, x, y, threshold)) return true;
+    if (isBareTypeOnPath(el)) return false;
     if (!hitTestGeometry(el, x, y, threshold)) return false;
 
     // Hole-aware: a non-destructive erase mask punches holes into the shape.

@@ -34,10 +34,28 @@ export interface TextPathOptions {
     startOffset?: number;
     /** Extra spacing between glyphs, in px (can be negative to tighten). */
     letterSpacing?: number;
-    /** Perpendicular baseline offset off the path. Default -fontSize*0.8 (just above). */
+    /**
+     * Raw perpendicular offset of each glyph's centre, in the glyph's frame (negative = left of
+     * the direction of travel). The LEGACY control: it is what `textPathSide` mapped to before
+     * `position`/`distance` existed, and documents that never touched the new controls keep
+     * rendering through it unchanged. Ignored when `position` is set.
+     */
     sideOffset?: number;
-    /** Keep glyphs upright (flip 180° when they'd be upside-down). Default = `closed`,
-     *  forced off by `flip`. */
+    /**
+     * Which side of the path the text sits on. On a closed loop `outside` / `inside` mean the
+     * shape's outside / inside whichever way the loop runs (and stay true under `flip`); on an
+     * open path they mean above / below the reading direction.
+     */
+    position?: 'outside' | 'center' | 'inside';
+    /** Gap in px between the path and the near edge of the letters (`center`: shift outward).
+     *  0 = touching. Negative pulls the text across the line. */
+    distance?: number;
+    /** Turn each glyph 180° where it would be upside-down. Default OFF, and forced off by
+     *  `flip`. It was the default on loops, and it is wrong there: a glyph turned over on its
+     *  own also lands on the other side of the outline (the side offset is in its rotated
+     *  frame) and reads backwards, so any run reaching the sides or bottom of a circle
+     *  scattered letters inside the shape. Illustrator doesn't do it either; bottom-of-badge
+     *  text is what `flip` is for. */
     upright?: boolean;
     /** 'center' = `startOffset` marks the middle of the text rather than its first glyph. */
     align?: 'start' | 'center';
@@ -54,18 +72,34 @@ export interface TextPathOptions {
      * handles which way it runs, so "other side" here just means below instead of above.
      */
     flip?: boolean;
+    /** Outline each glyph (the text's own stroke — never the carrying shape's). */
+    stroke?: { color: string; width: number };
+    /** Skip the glyph fill (outline-only text). */
+    noFill?: boolean;
 }
+
+/** Half the visual height of a capital, as a fraction of the font size — the distance from a
+ *  glyph's centre (textBaseline 'middle') to its top or bottom edge. */
+const HALF_GLYPH = 0.35;
 
 /** The TextPathOptions an element's curved-text props ask for — shared by every renderer so a
  *  new option can't reach one element type and not another. */
 export function textPathOptionsFor(el: DrawingElement, fontSize: number, closed: boolean): TextPathOptions {
+    // New controls (Position + Distance) win as soon as either is set; an element that never
+    // touched them keeps its legacy offset, so existing documents render exactly as before.
+    const modern = el.textPathPosition !== undefined || el.textPathDistance !== undefined;
+    const strokeOn = !!el.textStrokeEnabled && (el.textStrokeWidth ?? 2) > 0;
     return {
         closed,
         startOffset: el.textPathOffset,
         letterSpacing: el.textPathSpacing,
-        sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
+        ...(modern
+            ? { position: el.textPathPosition ?? 'outside', distance: el.textPathDistance ?? 0 }
+            : { sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined }),
         align: el.textPathAlign,
         flip: !!el.textPathFlip,
+        ...(strokeOn ? { stroke: { color: el.textStrokeColor || curvedTextColor(el), width: el.textStrokeWidth ?? 2 } } : {}),
+        ...(el.textColor === 'transparent' ? { noFill: true } : {}),
     };
 }
 
@@ -87,6 +121,16 @@ export function curvedTextColor(el: DrawingElement): string {
 export function reversePath(points: PathPoint[], closed: boolean): PathPoint[] {
     if (!closed) return points.slice().reverse();
     return points.length ? [points[0], ...points.slice(1).reverse()] : [];
+}
+
+/** Shoelace sum: > 0 for a loop that runs clockwise on screen (y down). */
+export function signedArea(points: PathPoint[]): number {
+    let a = 0;
+    for (let i = 0; i < points.length; i++) {
+        const p = points[i], q = points[(i + 1) % points.length];
+        a += p.x * q.y - q.x * p.y;
+    }
+    return a / 2;
 }
 
 interface ArcTable { pts: PathPoint[]; cum: number[]; total: number; }
@@ -122,29 +166,36 @@ function locateAtDistance(table: ArcTable, d: number): { x: number; y: number; a
     };
 }
 
+/** One placed glyph: drawn at `(x, y)` rotated by `angle`, then offset `side` along its own y. */
+export interface PlacedGlyph { ch: string; x: number; y: number; angle: number; side: number; width: number; }
+
 /**
- * Render `text` glyph-by-glyph along `points` (absolute coords). The caller is
- * responsible for setting font / fillStyle on the renderer beforehand.
+ * Where every glyph of `text` goes along `points` — the single layout used for drawing,
+ * export and hit-testing, so what you click is what you see.
+ *
+ * Overflow works like Illustrator's overset text: what doesn't fit is not drawn. On a loop
+ * the run stops after one full turn (it used to wrap round and print over itself); on an
+ * open path glyphs past either end are dropped (they used to pile up on the end point).
+ * `hidden` counts them.
  */
-export function drawTextAlongPath(
-    renderer: IRenderer,
+export function layoutTextAlongPath(
+    measure: (ch: string) => number,
     text: string,
     points: PathPoint[],
     fontSize: number,
     opts: TextPathOptions = {},
-): void {
-    if (!text || !points || points.length < 2) return;
+): { glyphs: PlacedGlyph[]; hidden: number } {
+    if (!text || !points || points.length < 2) return { glyphs: [], hidden: 0 };
     const closed = !!opts.closed;
     const reverseLoop = !!opts.flip && closed;
-    const table = buildArcTable(reverseLoop ? reversePath(points, closed) : points, closed);
-    if (table.total < 1) return;
+    const pathPts = reverseLoop ? reversePath(points, closed) : points;
+    const table = buildArcTable(pathPts, closed);
+    if (table.total < 1) return { glyphs: [], hidden: 0 };
 
-    const chars = [...text];
-    const widths = chars.map(c => renderer.measureText(c).width);
-    const baseSide = opts.sideOffset ?? -fontSize * 0.8;
-    const sideOffset = opts.flip && !closed ? -baseSide : baseSide;
+    const chars = [...text].filter(c => c !== '\n' && c !== '\r');
+    const widths = chars.map(c => measure(c));
     const letterSpacing = opts.letterSpacing ?? 0;
-    const upright = reverseLoop ? false : (opts.upright ?? closed);
+    const upright = reverseLoop ? false : (opts.upright ?? false);
 
     // Open paths: flip the whole run so text reads left-to-right when the path
     // runs right-to-left (matches the original curved-text behaviour).
@@ -156,34 +207,88 @@ export function drawTextAlongPath(
     const order = flip ? chars.slice().reverse() : chars;
     const w = flip ? widths.slice().reverse() : widths;
 
-    // Start at the requested fraction of the path (default 0 = path start / top
-    // of a loop). The caller centers by passing startOffset accordingly.
+    // Perpendicular offset of each glyph centre, in the glyph frame (+y = right of travel).
+    let sideOffset: number;
+    if (opts.position) {
+        // "Outside" in glyph-frame terms: on a loop running clockwise on screen, the right of
+        // travel is the inside, so outside is −y; a counter-clockwise loop (or one `flip`
+        // reversed) is the mirror. On an open path, above the reading direction is −y.
+        let outward = -1;
+        if (closed) outward = signedArea(pathPts) > 0 ? -1 : 1;
+        else if (opts.flip) outward = 1;
+        const gap = fontSize * HALF_GLYPH + (opts.distance ?? 0);
+        sideOffset = opts.position === 'center' ? outward * (opts.distance ?? 0)
+            : opts.position === 'outside' ? outward * gap : -outward * gap;
+    } else {
+        const baseSide = opts.sideOffset ?? -fontSize * 0.8;
+        sideOffset = opts.flip && !closed ? -baseSide : baseSide;
+    }
+
+    // Start at the requested fraction of the path (default 0 = path start / top of a loop).
+    // On a loop the run is capped at one turn; centring uses the part that fits.
+    let n = order.length;
+    if (closed) {
+        let len = 0;
+        for (let i = 0; i < order.length; i++) {
+            const next = len + w[i] + (i ? letterSpacing : 0);
+            if (next > table.total + 1e-6) { n = i; break; }
+            len = next;
+        }
+    }
     let curDist = (opts.startOffset ?? 0) * table.total;
     if (opts.align === 'center') {
-        const runLength = w.reduce((a, b) => a + b, 0) + letterSpacing * Math.max(0, w.length - 1);
+        const runLength = w.slice(0, n).reduce((a, b) => a + b, 0) + letterSpacing * Math.max(0, n - 1);
         curDist -= runLength / 2;
     }
 
-    renderer.textAlign = 'center';
-    renderer.textBaseline = 'middle';
-
-    for (let i = 0; i < order.length; i++) {
+    const glyphs: PlacedGlyph[] = [];
+    let hidden = order.length - n;
+    for (let i = 0; i < n; i++) {
         curDist += w[i] / 2;
         let d = curDist;
+        const fits = closed || (d - w[i] / 2 >= -1e-6 && d + w[i] / 2 <= table.total + 1e-6);
+        if (!fits) { hidden++; curDist += w[i] / 2 + letterSpacing; continue; }
         if (closed) d = ((d % table.total) + table.total) % table.total;
         const loc = locateAtDistance(table, d);
         let angle = loc.angle;
         if (flip) angle += Math.PI;
         if (upright && (angle > Math.PI / 2 || angle < -Math.PI / 2)) angle += Math.PI;
-
-        renderer.save();
-        renderer.translate(loc.x, loc.y);
-        renderer.rotate(angle);
-        renderer.fillText(order[i], 0, sideOffset);
-        renderer.restore();
-
+        glyphs.push({ ch: order[i], x: loc.x, y: loc.y, angle, side: sideOffset, width: w[i] });
         curDist += w[i] / 2 + letterSpacing;
     }
+    return { glyphs, hidden };
+}
+
+/**
+ * Render `text` glyph-by-glyph along `points` (absolute coords). The caller is
+ * responsible for setting font / fillStyle on the renderer beforehand. Returns how many
+ * glyphs did not fit (overset).
+ */
+export function drawTextAlongPath(
+    renderer: IRenderer,
+    text: string,
+    points: PathPoint[],
+    fontSize: number,
+    opts: TextPathOptions = {},
+): number {
+    const { glyphs, hidden } = layoutTextAlongPath(c => renderer.measureText(c).width, text, points, fontSize, opts);
+    if (!glyphs.length) return hidden;
+    renderer.textAlign = 'center';
+    renderer.textBaseline = 'middle';
+    if (opts.stroke) {
+        renderer.strokeStyle = opts.stroke.color;
+        renderer.lineWidth = opts.stroke.width;
+        renderer.lineJoin = 'round';
+    }
+    for (const g of glyphs) {
+        renderer.save();
+        renderer.translate(g.x, g.y);
+        renderer.rotate(g.angle);
+        if (opts.stroke) renderer.strokeText(g.ch, 0, g.side);
+        if (!opts.noFill) renderer.fillText(g.ch, 0, g.side);
+        renderer.restore();
+    }
+    return hidden;
 }
 
 // ─── Path extraction ────────────────────────────────────────────────────────

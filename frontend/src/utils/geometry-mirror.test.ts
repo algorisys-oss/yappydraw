@@ -237,3 +237,34 @@ describe("mirrorGeometry — world-space control points", () => {
         expect(mirrorGeometry(el, 'vertical', 25).controlPoints).toEqual([{ x: 25, y: 45 }]);
     });
 });
+
+describe("mirrorGeometry — rotated elements flip across the SCREEN axis", () => {
+    // World position of a box-local point (renderer: rotate about the box centre, then flip
+    // flags mirror inside the box).
+    const toWorld = (el: any, px: number, py: number) => {
+        const lx = el.flipX ? el.width - px : px, ly = el.flipY ? el.height - py : py;
+        const dx = lx - el.width / 2, dy = ly - el.height / 2, a = el.angle || 0;
+        return { x: el.x + el.width / 2 + dx * Math.cos(a) - dy * Math.sin(a), y: el.y + el.height / 2 + dx * Math.sin(a) + dy * Math.cos(a) };
+    };
+    const corner = { px: 0, py: 100 }; // a distinctive corner of a 200×100 box
+
+    for (const angle of [Math.PI / 4, -Math.PI / 6, 2]) {
+        for (const dir of ['horizontal', 'vertical'] as const) {
+            it(`${dir} flip at ${angle.toFixed(2)} rad reflects every point across the screen axis`, () => {
+                const el: MirrorableElement = { x: 300, y: 100, width: 200, height: 100, angle };
+                const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+                const after = { ...el, ...mirrorGeometry(el, dir, dir === 'horizontal' ? cx : cy) };
+                const before = toWorld(el, corner.px, corner.py);
+                // The same material point after the flip (box-local coordinates unchanged —
+                // the flag / angle carry the mirror).
+                const moved = toWorld(after, corner.px, corner.py);
+                if (dir === 'horizontal') { expect(moved.x).toBeCloseTo(2 * cx - before.x, 9); expect(moved.y).toBeCloseTo(before.y, 9); }
+                else { expect(moved.y).toBeCloseTo(2 * cy - before.y, 9); expect(moved.x).toBeCloseTo(before.x, 9); }
+            });
+        }
+    }
+
+    it("an unrotated element gets no angle update", () => {
+        expect(mirrorGeometry({ x: 0, y: 0, width: 10, height: 10 }, 'horizontal', 5)).not.toHaveProperty('angle');
+    });
+});

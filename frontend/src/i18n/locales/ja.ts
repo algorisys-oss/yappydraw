@@ -24,6 +24,7 @@ export const ja: Dictionary = {
         'tool-artboard': 'アートボードツール',
         'action-new-artboard': '新規アートボード…',
         'tool-type-on-path': 'パス上文字',
+        'action-detach-text': 'テキストをシェイプから切り離す',
         'action-undo': '取り消し',
         'action-redo': 'やり直し',
         'action-group': '選択範囲をグループ化',

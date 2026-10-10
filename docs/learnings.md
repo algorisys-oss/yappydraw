@@ -2,6 +2,24 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Logo review: mirrors, glyph frames and who owns the text (Oct 10 2026)
+
+- **A flip of a rotated object is two operations.** Mirroring inside the box keeps the tilted axis.
+  A screen flip is the local mirror *and* a negated angle. Test it with world positions of a known
+  point, not by looking at flags.
+- **An offset applied after a rotation turns with it.** Turning a glyph 180° to keep it upright
+  also moves its side offset to the other side of the path. Any "flip for readability" has to be
+  decided for the whole run, not per glyph.
+- **Name sides by geometry, not by sign.** "Outside" as `+0.4em` meant inside on a clockwise loop.
+  Work out outward from the loop's winding (shoelace sign) after any reversal.
+- **Text welded to a shape can't be designed with.** Selection, dragging, stroke and colour all
+  belonged to the shape. The fix that holds is Illustrator's: the text is its own object on a path
+  that traces the outline. Converting old documents is only safe if it is checked glyph by glyph.
+- **An invisible carrier must not be clickable as a shape**, or it steals clicks from the shape
+  under it. Hit it by its glyphs only, in the `hitTestElement` wrapper so JS and WASM agree.
+- **The selection's exact centre is the rotation-pivot handle.** A test that clicks there tests the
+  pivot, not the object.
+
 ## Artboard review: global element selectors outrank component classes (Oct 10 2026)
 
 - **`button:active` beats `.my-button`.** A type selector plus a pseudo-class (0,1,1) outranks one

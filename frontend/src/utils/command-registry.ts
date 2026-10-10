@@ -17,7 +17,7 @@ import {
     toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
     toggleNodeTool, exitAllToolModes,
     applyFeather, applyGlow, setExtrude, toggleRevolve, setTransformEffect,
-    isDevMode, toggleArtboardTool, openArtboardDialog, toggleTypeOnPath
+    isDevMode, toggleArtboardTool, openArtboardDialog, toggleTypeOnPath, detachTextFromShape
 } from "../store/app-store";
 import { togglePrintPreview, printPreviewError, printPreviewActive } from './print-preview';
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
@@ -279,6 +279,7 @@ export const getCommands = (): Command[] => {
         { id: 'tool-artboard', label: t('commands.tool-artboard'), category: 'Tools', action: () => toggleArtboardTool(true), shortcut: 'Shift+O' },
         { id: 'action-new-artboard', label: t('commands.action-new-artboard'), category: 'Actions', action: () => openArtboardDialog() },
         { id: 'tool-type-on-path', label: t('commands.tool-type-on-path'), category: 'Tools', action: () => { exitAllToolModes(); toggleTypeOnPath(true); }, shortcut: 'Alt+T' },
+        { id: 'action-detach-text', label: t('commands.action-detach-text'), category: 'Actions', action: () => detachTextFromShape([...store.selection]) },
 
         // Actions
         { id: 'action-undo', label: t('commands.action-undo'), category: 'Actions', action: () => undo(), shortcut: 'Ctrl+Z' },

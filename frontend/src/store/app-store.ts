@@ -73,7 +73,7 @@ import { loadStrokeFont, layoutStrokeText, strokesToSubpaths, strokesBounds, isS
 import { abortDsAlgorithm } from "../utils/ds-operations";
 import { getImage } from "../utils/image-cache";
 import { defaultPaletteId } from "../config/color-palettes";
-import { getElementTextPath } from "../utils/text-on-path";
+import { getElementTextPath, isClosedShapeForText, signedArea, type PathPoint } from "../utils/text-on-path";
 
 export type Theme = 'light' | 'dark' | 'focus' | 'system';
 export type ResolvedTheme = 'light' | 'dark' | 'focus';
@@ -2015,6 +2015,20 @@ export const updateElement = (id: string, updates: Partial<DrawingElement>, reco
     // the swatch id is being set in the same patch, i.e. applySwatch).
     if ('backgroundColor' in updates && !('fillSwatchId' in updates)) updates = { ...updates, fillSwatchId: undefined };
     if ('strokeColor' in updates && !('strokeSwatchId' in updates)) updates = { ...updates, strokeSwatchId: undefined };
+
+    // A shape's text with no colour of its own is drawn in the shape's stroke colour, so restyling
+    // the shape used to recolour its text too ("fill and stroke should not affect the fonts").
+    // Pin the text to the colour it shows right now, the moment the stroke changes; after that
+    // only the text colour control moves it. Text elements are excluded: for them strokeColor IS
+    // the text colour.
+    if ('strokeColor' in updates && !('textColor' in updates)) {
+        const el = store.elements.find(e => e.id === id);
+        const hasText = !!el && (!!el.containerText || !!(el.richContainerText && el.richContainerText.length));
+        if (el && hasText && el.type !== 'text' && el.type !== 'richtext'
+            && !paintedColor(el.textColor) && el.strokeColor !== updates.strokeColor) {
+            updates = { ...updates, textColor: paintedColor(el.strokeColor) ? el.strokeColor : '#000000' };
+        }
+    }
 
     // Re-fit a text element's box when its font metrics change or its auto-size mode flips
     // (keeps the selection/hit rect matched to the rendered glyphs).
@@ -7259,18 +7273,199 @@ export const exitAllToolModes = () => {
     exitGroupIsolationAll();
 };
 
-/** Type on Path — flow `text` along a line/curve/freehand element (sets curvedText + containerText). */
+type TextPathOpts = {
+    align?: 'start' | 'center'; offset?: number; flip?: boolean; spacing?: number;
+    /** Legacy placement ('on' just above / 'outside' 0.4em right of travel). Prefer `position`. */
+    side?: 'on' | 'outside';
+    position?: 'outside' | 'center' | 'inside';
+    distance?: number;
+};
+
+const applyTextPathOpts = (patch: Partial<DrawingElement>, opts?: TextPathOpts) => {
+    if (opts?.align !== undefined) patch.textPathAlign = opts.align;
+    if (opts?.offset !== undefined) patch.textPathOffset = Math.max(0, Math.min(1, opts.offset));
+    if (opts?.flip !== undefined) patch.textPathFlip = opts.flip;
+    if (opts?.side !== undefined) patch.textPathSide = opts.side;
+    if (opts?.position !== undefined) patch.textPathPosition = opts.position;
+    if (opts?.distance !== undefined && Number.isFinite(opts.distance)) patch.textPathDistance = opts.distance;
+    if (opts?.spacing !== undefined) patch.textPathSpacing = opts.spacing;
+};
+
+/** A closed shape (not a Pen path) — the kind whose text moves to its own Type-on-Path object. */
+export const isOutlineTextShape = (el: DrawingElement | undefined): boolean =>
+    !!el && el.type !== 'path' && isClosedShapeForText(el.type);
+
+/** Arc-length fraction (0..1) of the point on closed polyline `pts` nearest to `q`. */
+const loopFractionNearest = (pts: PathPoint[], q: PathPoint): number => {
+    const ring = [...pts, pts[0]];
+    let total = 0, best = Infinity, bestAt = 0;
+    for (let i = 0; i + 1 < ring.length; i++) {
+        const a = ring[i], b = ring[i + 1];
+        const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+        const t = len ? Math.max(0, Math.min(1, ((q.x - a.x) * dx + (q.y - a.y) * dy) / (len * len))) : 0;
+        const d = Math.hypot(a.x + dx * t - q.x, a.y + dy * t - q.y);
+        if (d < best) { best = d; bestAt = total + len * t; }
+        total += len;
+    }
+    return total ? bestAt / total : 0;
+};
+
+/** Run a closed anchor list the other way round, keeping its first anchor (handles swap). */
+const reverseLoopAnchors = (anchors: PathAnchor[]): PathAnchor[] => {
+    const swap = (a: PathAnchor): PathAnchor => {
+        const { inX, inY, outX, outY, ...rest } = a;
+        return { ...rest, ...(outX !== undefined ? { inX: outX } : {}), ...(outY !== undefined ? { inY: outY } : {}),
+            ...(inX !== undefined ? { outX: inX } : {}), ...(inY !== undefined ? { outY: inY } : {}) } as PathAnchor;
+    };
+    return anchors.length ? [swap(anchors[0]), ...anchors.slice(1).reverse().map(swap)] : [];
+};
+
+const paintedColor = (c?: string | null) => !!c && c !== 'transparent' && c !== 'none';
+
+/**
+ * Put text on a closed shape's outline the Illustrator way: as its OWN Type-on-Path object — an
+ * unpainted path tracing the outline that carries the text — not as a label welded to the shape.
+ * The text then selects (by its letters), moves, nudges closer and takes its own outline
+ * independently of the shape, and the shape's fill and stroke never touch it.
+ *
+ * `text` defaults to the shape's existing label. A shape that already carried curved text keeps
+ * its exact layout (the start position is re-measured onto the new path, so nothing moves) —
+ * that is Detach Text from Shape. Returns the new object's id, or null.
+ */
+export const putTextOnOutline = (
+    shapeId: string, text?: string, opts?: TextPathOpts,
+    { history = true, select = true }: { history?: boolean; select?: boolean } = {},
+): string | null => {
+    const shape = store.elements.find(e => e.id === shapeId);
+    if (!shape || !isOutlineTextShape(shape)) return null;
+    const conv = shapeToPath(shape);
+    const oldPath = getElementTextPath(shape);
+    if (!conv || !conv.closed || conv.anchors.length < 2 || !oldPath) return null;
+
+    // Run the new path the same way round as the outline the text was laid out on, then find
+    // where the old start point sits on it, so offsets keep meaning the same place.
+    const asPath = (anchors: PathAnchor[]) => getElementTextPath({ ...shape, type: 'path', pathAnchors: anchors, pathClosed: true, pathSubpaths: undefined } as DrawingElement);
+    let anchors = conv.anchors;
+    let np = asPath(anchors);
+    if (!np || np.points.length < 3) return null;
+    if (signedArea(np.points) * signedArea(oldPath.points) < 0) {
+        anchors = reverseLoopAnchors(anchors);
+        np = asPath(anchors)!;
+    }
+    const startFrac = loopFractionNearest(np.points, oldPath.points[0]);
+
+    const fontSize = shape.fontSize || 28;
+    const wasCurved = !!shape.curvedText;
+    const flip = opts?.flip ?? (wasCurved ? !!shape.textPathFlip : false);
+    const baseOffset = opts?.offset ?? (wasCurved ? (shape.textPathOffset ?? 0) : 0);
+    // A flipped run walks the loop backwards from its start, so the old start is at 1 − frac.
+    const offset = (((flip ? baseOffset + 1 - startFrac : baseOffset + startFrac) % 1) + 1) % 1;
+    const textColor = paintedColor(shape.textColor) ? shape.textColor!
+        : paintedColor(shape.strokeColor) ? shape.strokeColor : '#000000';
+
+    const batchIds = new Set(store.elements.map(e => e.id));
+    const id = generateId('path', batchIds);
+    const carrier: DrawingElement = {
+        id, type: 'path',
+        x: shape.x, y: shape.y, width: shape.width, height: shape.height, angle: shape.angle || 0,
+        pathAnchors: anchors, pathClosed: true,
+        strokeColor: 'transparent', backgroundColor: 'transparent', fillStyle: 'solid',
+        strokeWidth: shape.strokeWidth, strokeStyle: 'solid', roughness: 0, opacity: shape.opacity,
+        renderStyle: shape.renderStyle, seed: Math.floor(Math.random() * 2 ** 31), roundness: null,
+        locked: false, link: null,
+        layerId: shape.layerId, groupIds: shape.groupIds ? [...shape.groupIds] : [],
+        fontFamily: shape.fontFamily, fontSize, fontWeight: shape.fontWeight, fontStyle: shape.fontStyle,
+        fontStretch: shape.fontStretch, textColor,
+        textStrokeEnabled: shape.textStrokeEnabled, textStrokeColor: shape.textStrokeColor, textStrokeWidth: shape.textStrokeWidth,
+        containerText: text ?? shape.containerText ?? '',
+        curvedText: true, typeOnPath: true,
+        textPathAlign: wasCurved ? shape.textPathAlign : 'center',
+        textPathOffset: offset, textPathFlip: flip,
+        textPathSpacing: shape.textPathSpacing,
+        // A layout that already existed keeps rendering exactly as it did, legacy side
+        // included. New text sits just clear of the shape's stroke.
+        ...(wasCurved
+            ? { textPathSide: shape.textPathSide, textPathPosition: shape.textPathPosition, textPathDistance: shape.textPathDistance }
+            : { textPathPosition: 'outside' as const,
+                textPathDistance: Math.round((paintedColor(shape.strokeColor) ? (shape.strokeWidth || 0) / 2 : 0) + fontSize * 0.1) }),
+    } as DrawingElement;
+    const patch: Partial<DrawingElement> = {};
+    applyTextPathOpts(patch, opts);
+    delete patch.textPathOffset; delete patch.textPathFlip; // already folded in above
+    Object.assign(carrier, patch);
+
+    if (history) pushToHistory();
+    setStore('elements', list => {
+        const i = list.findIndex(e => e.id === shapeId);
+        const next = list.map(e => e.id === shapeId
+            ? { ...e, containerText: undefined, curvedText: false, richContainerText: undefined } : e);
+        next.splice(i + 1, 0, carrier); // just above the shape
+        return next;
+    });
+    if (select) setStore('selection', [id]);
+    bumpDirtyRevision();
+    return id;
+};
+
+/**
+ * Turn Text on Path on or off for `ids` (the panel / quick-toolbar toggle). On a closed shape,
+ * "on" means a separate Type-on-Path object (`putTextOnOutline`) — the shape keeps no curved
+ * label. Lines, connectors, strokes and Pen paths still carry their own text along themselves.
+ * One undo step. Returns the ids now carrying the text.
+ */
+export const setCurvedText = (ids: string[], on: boolean): string[] => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (!els.length) return [];
+    pushToHistory();
+    const out: string[] = [];
+    const made: string[] = [];
+    for (const el of els) {
+        if (on && isOutlineTextShape(el)) {
+            const nid = putTextOnOutline(el.id, el.containerText || 'Text on a path', undefined, { history: false, select: false });
+            if (nid) { out.push(nid); made.push(nid); }
+        } else {
+            setStore('elements', e => e.id === el.id, { curvedText: on } as any);
+            out.push(el.id);
+        }
+    }
+    if (made.length) {
+        setStore('selection', made);
+        showToast(made.length === 1 ? 'Text put on the outline as its own object' : `${made.length} text objects put on outlines`, 'success');
+    }
+    bumpDirtyRevision();
+    return out;
+};
+
+/**
+ * Detach Text from Shape — move a shape's curved label (an older document, or one built through
+ * the API) onto its own Type-on-Path object, keeping its exact look. Returns the new ids.
+ */
+export const detachTextFromShape = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && isOutlineTextShape(e) && e.curvedText && e.containerText);
+    if (!targets.length) { showToast('Select a shape with text on its outline', 'info'); return []; }
+    pushToHistory();
+    const made = targets.map(t => putTextOnOutline(t.id, undefined, undefined, { history: false, select: false })).filter(Boolean) as string[];
+    if (made.length) setStore('selection', made);
+    showToast(made.length === 1 ? 'Text detached — it is its own object now' : `Detached text from ${made.length} shapes`, 'success');
+    return made;
+};
+
 /**
  * Flow `text` along a path-like element. The first time an element gets curved text, the text is
  * centred on the path — at the top of a closed loop, mid-way along an open one — since that is
  * what a badge or an arc label wants and "starts at the first anchor" rarely is. An element that
  * already carries curved text keeps its layout; explicit `opts` always win.
+ *
+ * A closed SHAPE gets a separate Type-on-Path object instead (Illustrator's model, see
+ * `putTextOnOutline`). Returns the id of the element now carrying the text, or false.
  */
-export const attachTextToPath = (
-    id: string, text: string,
-    opts?: { align?: 'start' | 'center'; offset?: number; flip?: boolean; side?: 'on' | 'outside'; spacing?: number },
-): boolean => {
+export const attachTextToPath = (id: string, text: string, opts?: TextPathOpts): string | false => {
     const el = store.elements.find(e => e.id === id);
+    if (el && isOutlineTextShape(el)) {
+        const nid = putTextOnOutline(id, text, opts);
+        if (nid) showToast('Text put on the outline as its own object', 'success');
+        return nid ?? false;
+    }
     // Whatever the layout engine can walk is what can carry text — one definition, not a list.
     const tp = el ? getElementTextPath(el) : null;
     if (!el || !tp) return false;
@@ -7279,16 +7474,12 @@ export const attachTextToPath = (
         patch.textPathAlign = 'center';
         patch.textPathOffset = tp.closed ? 0 : 0.5;
     }
-    if (opts?.align !== undefined) patch.textPathAlign = opts.align;
-    if (opts?.offset !== undefined) patch.textPathOffset = Math.max(0, Math.min(1, opts.offset));
-    if (opts?.flip !== undefined) patch.textPathFlip = opts.flip;
-    if (opts?.side !== undefined) patch.textPathSide = opts.side;
-    if (opts?.spacing !== undefined) patch.textPathSpacing = opts.spacing;
+    applyTextPathOpts(patch, opts);
     pushToHistory();
     setStore('elements', e => e.id === id, patch as any);
     bumpDirtyRevision();
     showToast('Text attached to path', 'success');
-    return true;
+    return id;
 };
 export const toggleSliceTool = (active?: boolean) => setStore('sliceToolActive', v => active ?? !v);
 export const toggleSymbolism = (active?: boolean) => setStore('symbolismActive', v => active ?? !v);

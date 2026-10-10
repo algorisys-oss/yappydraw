@@ -1,5 +1,57 @@
 # Bug Fixes Log
 
+## 2026-10-10 — Logo review (Anshika): flip, text on shapes
+
+### 437. Flip Horizontal on a rotated shape looked like a vertical flip
+
+**Symptom:** a triangle rotated 45° and flipped horizontally landed in the other half of its
+diamond-shaped box, which reads as a vertical flip.
+
+**Cause:** `mirrorGeometry` mirrored the shape inside its own box (flag or baked anchors) but kept
+`angle`, so the mirror axis was the shape's tilted local axis.
+
+**Fix:** a screen reflection is the local mirror plus the reversed rotation (S·R(θ) = R(−θ)·S on
+either axis), so `mirrorGeometry` now negates `angle`. Flip and Mirror Copy both go through it. Six
+new `geometry-mirror.test.ts` cases check real world positions; they fail without the fix.
+
+### 438. Text round a circle scattered letters inside it
+
+**Symptom:** a long label on a circle, or one started lower down, put stray letters inside the
+circle ("B … Y"), and **Outside** with a start position gave reversed, garbled text inside the
+shape.
+
+**Cause:** on loops `drawTextAlongPath` turned each glyph 180° on its own wherever the tangent
+passed vertical (`upright`). The side offset is applied in the glyph's rotated frame, so a turned
+glyph also jumped to the other side of the outline, and the run read backwards. Separately, the old
+**Outside** (`+0.4em`, right of travel) put text inside a clockwise loop.
+
+**Fix:** no per-glyph flip; **Flip to Other Side** handles bottom-of-badge text, as in Illustrator.
+New **Position** (Outside / Centred / Inside, true for either loop direction and under flip) and
+**Distance from Path** replace the old setting. Documents that never touch them render through the
+old offset unchanged. Text that doesn't fit is overset like Illustrator's: one turn on a loop,
+nothing past the ends of an open path (it used to overprint itself or pile up on the end point).
+
+### 439. A shape's text was part of the shape, and took the shape's stroke colour
+
+**Symptom:** curved text on a circle selected and moved with the circle, couldn't be moved closer
+to it or given its own outline, and changing the circle's stroke recoloured it. The colour part
+applied to every shape label with no text colour of its own.
+
+**Fix:** Illustrator's model. Text on a closed shape is now its own Type-on-Path object
+(`putTextOnOutline`): an unpainted path tracing the outline (`shapeToPath`, run the same way round,
+start position re-measured so nothing moves) carrying the text. It is hit-tested by its glyphs
+(`curved-text-hit.ts`, checked before the JS/WASM split), and its unpainted guide path is not
+clickable, so the shape under it stays selectable. The Text on Path switch, Alt+T, `attachTextToPath`
+and create-time `curvedText` all route through it. **Detach Text from Shape** converts old
+documents; 20 store tests check each glyph lands within 2.5px of where it was. A new **Text Outline**
+control strokes the letters. `updateElement` pins a label's text colour to the stroke colour it was
+showing when the stroke changes.
+
+Tests: `text-on-path.test.ts` (position, distance, overset, outline, one-side-of-loop),
+`curved-text-hit.test.ts`, `artboard-variations.test.ts` (new model, detach equivalence, colour
+pin, one undo step), `tests/text-on-outline.spec.ts` (click letters vs shape, drag text alone,
+restyle shape, detach).
+
 ## 2026-10-10 — Artboard review (Anshika)
 
 ### 435. Accent buttons went near-white on hover and on press ("Create turns completely white")

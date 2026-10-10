@@ -38,6 +38,8 @@ export interface MirrorableElement {
     controlPoints?: Pt[];
     flipX?: boolean;
     flipY?: boolean;
+    /** Rotation in radians, about the box centre. */
+    angle?: number;
 }
 
 export type MirrorDirection = 'horizontal' | 'vertical';
@@ -143,6 +145,12 @@ export function mirrorGeometry(
         // the only mechanism available, and is exactly right for these.
         updates[flagKey] = !alreadyMirrored;
     }
+
+    // A rotated element: the steps above mirror it across its OWN (tilted) axis. A screen
+    // reflection is that local mirror with the rotation reversed — S·R(θ) = R(−θ)·S for both
+    // axes — so negate the angle. Without it, Flip Horizontal on a shape rotated 45° mirrored
+    // it along the diagonal and it looked flipped vertically (Anshika's review).
+    if (el.angle && Number.isFinite(el.angle)) updates.angle = -el.angle;
 
     // World-space control points reflect about the axis itself.
     if (el.controlPoints?.length) {
