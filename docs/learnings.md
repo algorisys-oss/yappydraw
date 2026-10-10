@@ -2,6 +2,23 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Artboard review: global element selectors outrank component classes (Oct 10 2026)
+
+- **`button:active` beats `.my-button`.** A type selector plus a pseudo-class (0,1,1) outranks one
+  class (0,1,0), so a global "default button" tint repaints every coloured button on hover and on
+  press. Global defaults for elements belong in `:where(...)`, which has zero specificity, so any
+  component rule wins. Fixing one dialog would have left 28 other buttons broken.
+- **`mouse.down()` is not `:active` in headless Chromium.** A probe built on a synthetic press said
+  "not reproduced" for a bug that was real. To test interaction states, force them with CDP
+  `CSS.forcePseudoState`. A "can't reproduce" from a synthetic event is a fact about the harness,
+  not about the bug.
+- **"Fit to selection" means the visual box.** The raw x/y/w/h box ignores rotation and stroke, so
+  a frame fitted to it clips the artwork on export. Use `utils/element-bounds.ts`, the same bounds
+  that export crops to.
+- **Lock a ratio once and keep it.** Re-deriving width/height from rounded values on every
+  keystroke drifts (1000×333 → 1001 → …). Capture the ratio when the lock goes on
+  (`followLockedSide`), invert it on swap, and take it from the preset when one is picked.
+
 ## Model-based undo: measure what a passing property exercised (Oct 9 2026)
 
 VectorCraft review 2, pick #2: `tests/command-model.spec.ts` (fast-check) and junk params on every

@@ -112,3 +112,4 @@
     cursor: pointer;
 }
 .dsd-create:hover { filter: brightness(1.08); }
+.dsd-create:active { filter: brightness(0.92); }

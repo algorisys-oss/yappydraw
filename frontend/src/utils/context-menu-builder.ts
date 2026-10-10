@@ -13,7 +13,7 @@ import { replaceImageOn } from './image-actions';
 import { saveMindmapOutline } from './mindmap-outline';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard, openArtboardDialog, duplicateArtboard,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard, openArtboardDialog, duplicateArtboard, fitArtboardToSelection,
     blendShapes, blendAlongPath, blendShapesMorph,
     toggleRecolorPanel, toggleBehaviorsPanel, isDevMode,
     toggleShapeBuilder,
@@ -1331,6 +1331,7 @@ function buildContextMenuItems(
                     { label: 'Symbol', icon: '◈', onClick: () => createSymbol([...store.selection]) },
                     { label: 'Pattern from Selection', icon: '▦', onClick: () => createPatternFromSelection([...store.selection]) },
                     { label: 'Artboard from Selection', icon: '▭', onClick: () => addArtboard('selection') },
+                    ...(store.artboards.length ? [{ label: 'Resize Artboard to Selection', icon: '⤢', shortcut: 'Ctrl+Shift+R', onClick: () => fitArtboardToSelection() }] : []),
                     { label: 'Graphic Style', icon: '🎨', onClick: () => createGraphicStyle([...store.selection]) },
                 ],
             });

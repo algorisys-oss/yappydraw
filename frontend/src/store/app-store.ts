@@ -8,6 +8,7 @@ import { assertReadableVersion, setDocumentExtras } from "../utils/migration";
 import { setPanelOpen, isPanelOpen, panelState, toggleCollapse as toggleDockCollapse } from "./dock-layout";
 import type { DrawingElement, ViewState, ToolType, Layer, BlendMode, GridSettings, AppMode, ElementType, Guide } from "../types";
 import { registerLayerBlendResolver } from "../utils/layer-blend";
+import { elementsBounds } from "../utils/element-bounds";
 import { normalizedLayers, subtreeCopyOrders, keepContentsSurvivor } from "./layer-order";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
@@ -3740,9 +3741,10 @@ export const ARTBOARD_PRESETS: Record<string, [number, number]> = {
 export const addArtboard = (preset?: string, x?: number, y?: number): string => {
     let w = 1080, h = 1080;
     if (preset === 'selection' && store.selection.length) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for (const e of store.elements) if (store.selection.includes(e.id)) { minX = Math.min(minX, e.x); minY = Math.min(minY, e.y); maxX = Math.max(maxX, e.x + e.width); maxY = Math.max(maxY, e.y + e.height); }
-        x = minX - 20; y = minY - 20; w = (maxX - minX) + 40; h = (maxY - minY) + 40;
+        // Tight to what you see (Inkscape's Ctrl+Shift+R) — this used to add 20px a side, so a
+        // 1280 circle got a 1320 frame.
+        const b = artworkBounds(store.elements.filter(e => store.selection.includes(e.id)));
+        if (b) { x = b.minX; y = b.minY; w = b.maxX - b.minX; h = b.maxY - b.minY; }
     } else if (preset && ARTBOARD_PRESETS[preset]) { [w, h] = ARTBOARD_PRESETS[preset]; }
     const ax = x ?? (store.artboards.length ? Math.max(...store.artboards.map(a => a.x + a.width)) + 40 : 0);
     const ay = y ?? 0;
@@ -3895,28 +3897,73 @@ export const duplicateArtboard = (id?: string, gap = 40, count = 1): string | nu
 };
 
 /**
- * Fit an artboard to its artwork bounds (Illustrator's "Fit to Artwork Bounds"
- * preset). Resizes the artboard to the bbox of the elements on it, plus padding.
+ * Visual bounds of `els` (rotation, stroke, effects — utils/element-bounds), or null when there is
+ * nothing with a finite, non-empty box to fit to.
  */
-export const fitArtboardToArtwork = (id?: string, pad = 20): boolean => {
-    const ab = store.artboards.find(a => a.id === (id ?? store.activeArtboardId ?? store.artboards[0]?.id));
-    if (!ab) { showToast('No artboard selected', 'error'); return false; }
-    const inside = store.elements.filter(e => {
-        const cx = e.x + e.width / 2, cy = e.y + e.height / 2;
-        return cx >= ab.x && cx <= ab.x + ab.width && cy >= ab.y && cy <= ab.y + ab.height;
-    });
-    if (inside.length === 0) { showToast('Artboard has no artwork to fit', 'info'); return false; }
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const e of inside) {
-        minX = Math.min(minX, e.x, e.x + e.width); minY = Math.min(minY, e.y, e.y + e.height);
-        maxX = Math.max(maxX, e.x, e.x + e.width); maxY = Math.max(maxY, e.y, e.y + e.height);
-    }
+const artworkBounds = (els: DrawingElement[]) => {
+    if (els.length === 0) return null;
+    const b = elementsBounds(els);
+    return b.maxX > b.minX || b.maxY > b.minY ? b : null;
+};
+
+/** Resize/move artboard `ab` onto bounds `b` grown by `pad`. One undo step. */
+const setArtboardToBounds = (ab: Artboard, b: { minX: number; minY: number; maxX: number; maxY: number }, pad: number) => {
+    const p = Math.max(0, Number.isFinite(pad) ? pad : 0);
     pushToHistory();
     setStore('artboards', (a: Artboard) => a.id === ab.id, () => ({
-        x: minX - pad, y: minY - pad, width: (maxX - minX) + pad * 2, height: (maxY - minY) + pad * 2,
+        x: b.minX - p, y: b.minY - p,
+        width: Math.max(1, (b.maxX - b.minX) + p * 2), height: Math.max(1, (b.maxY - b.minY) + p * 2),
     }));
     bumpDirtyRevision();
+};
+
+/** Elements whose centre sits on artboard `ab` — "its artwork". */
+const elementsOnArtboard = (ab: Artboard) => store.elements.filter(e => {
+    const cx = e.x + e.width / 2, cy = e.y + e.height / 2;
+    return cx >= ab.x && cx <= ab.x + ab.width && cy >= ab.y && cy <= ab.y + ab.height;
+});
+
+/**
+ * Fit an artboard to its artwork bounds (Illustrator's "Fit to Artwork Bounds"). Tight by
+ * default — Illustrator adds no margin; pass `pad` for one.
+ */
+export const fitArtboardToArtwork = (id?: string, pad = 0): boolean => {
+    const ab = store.artboards.find(a => a.id === (id ?? store.activeArtboardId ?? store.artboards[0]?.id));
+    if (!ab) { showToast('No artboard selected', 'error'); return false; }
+    const b = artworkBounds(elementsOnArtboard(ab));
+    if (!b) { showToast('Artboard has no artwork to fit', 'info'); return false; }
+    setArtboardToBounds(ab, b, pad);
     showToast('Artboard fit to artwork', 'success');
+    return true;
+};
+
+/**
+ * Resize Artboard to Selection — Inkscape's Ctrl+Shift+R ("Resize page to drawing or
+ * selection"). The artboard snaps exactly onto the selection's visual bounds (stroke included,
+ * so nothing is clipped on export), with `pad` extra a side if asked. Nothing selected → fits
+ * the artboard's own artwork instead, as Inkscape does.
+ *
+ * Which artboard: `id` if given, else the one under the selection's centre, else the active one.
+ * No artboard at all → one is created at the selection, so the shortcut never just fails.
+ */
+export const fitArtboardToSelection = (id?: string, pad = 0): boolean => {
+    const sel = store.elements.filter(e => store.selection.includes(e.id));
+    if (sel.length === 0) return fitArtboardToArtwork(id, pad);
+    const b = artworkBounds(sel);
+    if (!b) { showToast('Selection has no size to fit', 'info'); return false; }
+    const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2;
+    const ab = (id ? store.artboards.find(a => a.id === id) : undefined)
+        ?? store.artboards.find(a => cx >= a.x && cx <= a.x + a.width && cy >= a.y && cy <= a.y + a.height)
+        ?? store.artboards.find(a => a.id === store.activeArtboardId)
+        ?? store.artboards[0];
+    if (!ab) {
+        if (id) { showToast('No such artboard', 'error'); return false; }
+        addArtboard('selection');
+        return true;
+    }
+    setArtboardToBounds(ab, b, pad);
+    setStore('activeArtboardId', ab.id);
+    showToast(`Artboard resized to selection (${Math.round(ab.width)} × ${Math.round(ab.height)})`, 'success');
     return true;
 };
 

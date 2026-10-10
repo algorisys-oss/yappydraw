@@ -3,7 +3,7 @@ id: artboards
 name: Artboards
 icon: "▭"
 category: Design
-description: "Named export-region frames: Artboard tool (Shift+O), custom sizes, side-by-side variations, move/resize/delete, and per-region PNG export"
+description: "Named export-region frames: Artboard tool (Shift+O), custom sizes with aspect lock, resize to selection (Ctrl+Shift+R), side-by-side variations, move/resize/delete, and per-region PNG export"
 ---
 
 # Artboards
@@ -25,15 +25,30 @@ Artboards are a layout/export aid, not containers — objects aren’t “inside
 - **Drag** on the canvas to draw an artboard of exactly that size. Hold **Shift** for a square. The live size shows next to the pointer.
 - **Click** empty canvas to open the **New Artboard** dialog, with the frame placed where you clicked.
 
-**New Artboard dialog** — pick a preset (Logo square / horizontal, App icon, Favicon, Web 1280, plus every social, video, presentation and print size) or type your own **width × height** in px (the ⇄ button swaps them for portrait/landscape). Set a **Count** to create several identical frames in a row, with a **Gap** between them — ready for side-by-side variations. Also on right-click empty canvas → **Artboards** → **New Artboard…**, and in the command palette.
+**New Artboard dialog** — pick a preset (Logo square / horizontal, App icon, Favicon, Web 1280, plus every social, video, presentation and print size) or type your own **width × height** in px (the ⇄ button swaps them for portrait/landscape). Click the **lock** next to it to keep the aspect ratio: type one side and the other follows. Picking a preset while locked takes that preset's ratio. Set a **Count** to create several identical frames in a row, with a **Gap** between them — ready for side-by-side variations. Also on right-click empty canvas → **Artboards** → **New Artboard…**, and in the command palette.
 
-Right-click empty canvas → **Artboards** also has one-click presets (Square 1080, A4 Portrait, Instagram Story, Web 1280), and right-click a selection → **Create** → **Artboard from Selection** fits a frame around it. New artboards without a position go to the right of existing ones in the same row, never on top of them.
+Right-click empty canvas → **Artboards** also has one-click presets (Square 1080, A4 Portrait, Instagram Story, Web 1280), and right-click a selection → **Create** → **Artboard from Selection** puts a new frame exactly around it, with no margin. New artboards without a position go to the right of existing ones in the same row, never on top of them.
 
 :::shortcuts
 Shift+O | Artboard tool — drag a frame, click for the New Artboard dialog
 Shift+drag | Square artboard (with the Artboard tool)
 Esc | Leave the Artboard tool
+Ctrl+Shift+R | Resize Artboard to Selection — the artboard snaps exactly onto the selection
 :::
+
+## Resize an artboard to the selection
+
+Select the artwork that should define the frame, for example a circle, and press **Ctrl+Shift+R**. The artboard under it resizes to **exactly** the selection's bounds: a 1280 px circle gives a 1280 × 1280 artboard that touches it on all four sides. This is Inkscape's *Resize page to drawing or selection*. It's also in the command palette and under right-click → **Create** → **Resize Artboard to Selection**.
+
+- **The stroke counts.** A 10 px stroke reaches 5 px past the outline, and the frame includes it, so nothing is clipped on export. Rotated shapes fit their rotated outline.
+- **Which artboard:** the one under the selection, otherwise the active one. With no artboards yet, one is created.
+- **Nothing selected:** the artboard fits the artwork on it instead (like **Fit to Artwork**).
+- One undo step (**Ctrl+Z**) puts the frame back.
+
+```
+Y.fitArtboardToSelection();         // artboard under the selection, tight
+Y.fitArtboardToSelection(id, 40);   // a specific artboard, with a 40px margin
+```
 
 ## Variations side by side
 
@@ -83,7 +98,7 @@ API: `addArtboard(preset?, x?, y?)`, `renameArtboard(id, name)`, ` updateArtboar
 
 ## Rearrange, duplicate & fit
 
-**Rearrange All** lays every artboard out in a tidy grid (auto columns, or pass a count + gap). **Duplicate** copies a frame *and the artwork on it* to the right. **Fit to Artwork** shrink-wraps a frame to the content sitting on it — perfect for a logo lock-up with even clear space. **Paste on All Artboards** drops the selection onto every other artboard at the same relative position (great for a watermark or logo).
+**Rearrange All** lays every artboard out in a tidy grid (auto columns, or pass a count + gap). **Duplicate** copies a frame *and the artwork on it* to the right. **Fit to Artwork** shrink-wraps a frame to the content sitting on it, with no margin from the command palette. Pass a padding in the API for even clear space around a logo lock-up. **Paste on All Artboards** drops the selection onto every other artboard at the same relative position (great for a watermark or logo).
 
 ```
 Y.rearrangeArtboards(3, 40);   // 3 columns, 40px gap (omit args = auto grid)
@@ -125,6 +140,7 @@ Y.deleteArtboard(id);            // remove one frame
 | `deleteArtboard(id)` | Remove a frame. |
 | `rearrangeArtboards(cols?, gap?)` | Lay every frame out in a grid. |
 | `duplicateArtboard(id?, gap?, count?)` | Copy a frame and its artwork — `count` copies side by side. |
-| `fitArtboardToArtwork(id?, pad?)` | Shrink-wrap a frame to its content. |
+| `fitArtboardToArtwork(id?, pad?)` | Shrink-wrap a frame to its content (`pad` defaults to 20). |
+| `fitArtboardToSelection(id?, pad?)` | Resize a frame exactly to the selection (Ctrl+Shift+R); `pad` defaults to 0. |
 | `listArtboards()` | Return all frames as plain objects. |
 | `exportArtboard(id, scale?)` | Download a PNG of just that region. |

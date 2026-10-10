@@ -1,5 +1,45 @@
 # Bug Fixes Log
 
+## 2026-10-10 — Artboard review (Anshika)
+
+### 435. Accent buttons went near-white on hover and on press ("Create turns completely white")
+
+**Symptom:** pressing **Create** in the New Artboard dialog turned the button light grey behind its
+white label. Hovering did the same (`rgb(249,249,249)`); nobody noticed because the press is what
+you look at.
+
+**Cause:** `index.css` styles every button's hover/press tint with `button:hover` / `button:active`,
+specificity (0,1,1). Any single-class rule (0,1,0) such as `.dsd-create { background: accent }`
+loses to it, so a button that paints itself took the default grey. A scan found 29 accent-on-white
+classes with no `:active` of their own, so this was not one dialog's bug.
+
+**Fix:** the default tints are now `:where(button:hover)` / `:where(button:active)` (zero
+specificity): unstyled buttons still get them, buttons that set a background keep it. Of 169
+transparent-background classes, 143 define their own `:hover`; the default hover was never what
+they showed. `.dsd-create` gets its own pressed state (`brightness(0.92)`), `.abd-cancel` a hover.
+
+**Testing gotcha:** a Playwright `mouse.down()` did not put headless Chromium into `:active`, so the
+first probe reported "not reproduced". Forcing the state over CDP (`CSS.forcePseudoState`)
+reproduced it at once; the spec does the same.
+
+### 436. Resize Artboard to Selection was 40px too big (1280 circle → 1320 frame)
+
+**Symptom:** Inkscape's Ctrl+Shift+R fits the page exactly to the selection. Yappy's **Artboard from
+Selection** added 20px on every side, and **Fit Artboard to Artwork** did the same. Both also used the
+raw x/y/width/height box, so a rotated shape or a thick stroke ended up clipped at the frame edge.
+
+**Fix:** new `fitArtboardToSelection` (Ctrl+Shift+R, command palette, right-click → Create; API
+`Yappy.fitArtboardToSelection(id?, pad = 0)`) resizes the artboard under the selection onto its
+visual bounds, with stroke and rotation included. With nothing selected it fits the artboard's
+artwork, and with no artboard it creates one, which is Inkscape's behaviour. Artboard from Selection
+and the palette's Fit to Artwork are tight now. The bounds code (`elementsBounds`) moved from
+`export.ts` to `utils/element-bounds.ts` so the store can use it without an import cycle.
+`Yappy.fitArtboardToArtwork` keeps its `pad = 20` default for existing SDK callers.
+
+Tests: `tests/artboard-fit-selection.spec.ts` (tangent 1280 circle, stroke spill, Ctrl+Shift+R plus
+undo, tight Artboard from Selection, aspect lock, button colour under forced hover/press);
+`tests/next-batch.spec.ts` fit test now uses stroke 0 (it was asserting the raw box).
+
 ## 2026-10-09 — Found by the model-based command test
 
 ### 434. The print-preview overlay became "the canvas" for rulers and tool overlays (v0.8.279)

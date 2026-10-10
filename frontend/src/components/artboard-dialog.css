@@ -24,6 +24,7 @@
 }
 .abd-swap svg { flex-shrink: 0; }
 .abd-swap:hover { color: var(--text-primary); border-color: var(--accent-color, #6366f1); }
+.abd-lock.on { color: var(--accent-color, #6366f1); border-color: var(--accent-color, #6366f1); }
 .abd-label-inline { color: var(--text-secondary); font-size: 13px; margin-left: 8px; }
 .abd-note { margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
 .abd-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
@@ -33,6 +34,7 @@
     padding: 6px 14px; border: 1px solid var(--border-color); border-radius: 6px;
     background: transparent; color: var(--text-primary); font-size: 13px; cursor: pointer;
 }
+.abd-cancel:hover { background: var(--btn-hover); }
 @media (max-width: 420px) {
     .abd-row { grid-template-columns: 1fr; gap: 4px; }
     .abd-size input { width: 70px; }

@@ -118,6 +118,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'editor-flipVertical', keys: 'Shift+V' },
             { key: 'editor-mirrorCopyRepeat', keys: 'Right-click → Repeat & Mirror' },
             { key: 'editor-createOutlines', keys: 'Ctrl+Shift+O' },
+            { key: 'editor-fitArtboardToSelection', keys: 'Ctrl+Shift+R' },
             { key: 'editor-simplifyPath', keys: 'Ctrl+L' },
             { key: 'editor-smoothPath', keys: 'Right-click → Path → Smooth' },
             { key: 'editor-lockUnlockSelected', keys: 'Ctrl+Shift+L' },

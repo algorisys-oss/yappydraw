@@ -1,7 +1,7 @@
 import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode, toggleOutlineView, toggleTrimView,
     swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
-    duplicateArtboard, fitArtboardToArtwork, shuffleSelectionColors,
+    duplicateArtboard, fitArtboardToArtwork, fitArtboardToSelection, shuffleSelectionColors,
     convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel, toggleElementsPanel,
     selectAllGuides, removeSelectedGuides, toggleGuidesLocked, toggleGuidesVisible, updateGridSettings, setGridOriginToSelection,
@@ -315,6 +315,7 @@ export const getCommands = (): Command[] => {
         { id: 'action-paste-all-artboards', label: t('commands.action-paste-all-artboards'), category: 'Actions', action: () => pasteOnAllArtboards() },
         { id: 'action-duplicate-artboard', label: t('commands.action-duplicate-artboard'), category: 'Actions', action: () => duplicateArtboard() },
         { id: 'action-fit-artboard', label: t('commands.action-fit-artboard'), category: 'Actions', action: () => fitArtboardToArtwork() },
+        { id: 'action-fit-artboard-selection', label: t('commands.action-fit-artboard-selection'), category: 'Actions', action: () => fitArtboardToSelection(), shortcut: 'Ctrl+Shift+R' },
         { id: 'action-shuffle-colors', label: t('commands.action-shuffle-colors'), category: 'Actions', action: () => shuffleSelectionColors() },
         // Illustrator effects (tier 1)
         { id: 'fx-convert-rect', label: t('commands.fx-convert-rect'), category: 'Actions', action: () => convertToShape([...store.selection], 'rectangle') },

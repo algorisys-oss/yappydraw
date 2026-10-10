@@ -12,7 +12,7 @@ import {
   bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, toggleGuidesVisible, toggleGuidesLocked, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
-  transformAgain, recordTransform, convertTextToOutlines, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
+  transformAgain, recordTransform, convertTextToOutlines, fitArtboardToSelection, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
   toggleNodeTool, exitAllToolModes, toggleTypeOnPath, toggleArtboardTool
 } from './store/app-store';
 import { showToast } from './components/toast';
@@ -787,6 +787,12 @@ const App: Component = () => {
           e.preventDefault();
           const n = unlockAllElements();
           showToast(n ? `Unlocked ${n} object${n === 1 ? '' : 's'}` : 'Nothing is locked', n ? 'success' : 'info');
+        } else if ((key === 'r' || code === 'KeyR') && e.shiftKey && !e.altKey && (store.selection.length > 0 || store.artboards.length > 0)) {
+          // Ctrl+Shift+R = Resize Artboard to Selection (Inkscape's "resize page to drawing or
+          // selection"). Only taken when there is something to fit — otherwise the key stays the
+          // browser's hard reload.
+          e.preventDefault();
+          fitArtboardToSelection();
         } else if (key === 'o' && e.shiftKey) {
           // Create Outlines — convert selected text into editable vector paths.
           e.preventDefault();

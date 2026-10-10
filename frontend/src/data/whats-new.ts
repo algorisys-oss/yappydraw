@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.281', date: '2026-10-10', items: [
+        'Resize an artboard to fit your selection exactly: select the artwork and press Ctrl+Shift+R. A 1280 px circle gives a 1280 \u00d7 1280 artboard that touches it on every side.',
+        'The New Artboard dialog can lock the aspect ratio: click the lock, type one side, and the other follows.',
+        'Artboard from Selection fits the selection exactly now, with no extra margin.',
+        'Fixed: the Create button (and other coloured buttons) turned almost white when you hovered or clicked it.',
+    ] },
     { version: '0.8.280', date: '2026-10-09', items: [
         'PDF/X-4 files now check themselves before they\u2019re saved. If something would make a print shop reject the file, Yappy tells you what it is instead of saving it.',
         'Semi-transparent artwork in a PDF/X-4 now blends the way a press prints it, in CMYK.',

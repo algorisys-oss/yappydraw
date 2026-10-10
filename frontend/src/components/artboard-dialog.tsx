@@ -1,9 +1,10 @@
 import { type Component, Show, For, createSignal, createEffect } from "solid-js";
 import { Portal } from "solid-js/web";
-import { X, ArrowLeftRight } from "lucide-solid";
+import { X, ArrowLeftRight, Lock, LockOpen } from "lucide-solid";
 import { store, createArtboards, duplicateArtboard, closeArtboardDialog } from "../store/app-store";
 import { PAGE_SIZE_PRESETS, PAGE_PRESET_CATEGORIES } from "../config/page-size-presets";
 import { onEscapeKey } from "../utils/use-escape";
+import { followLockedSide } from "../utils/aspect-lock";
 import { t } from "../i18n";
 import "./design-size-dialog.css";
 import "./artboard-dialog.css";
@@ -38,6 +39,10 @@ const ArtboardDialog: Component = () => {
     const [name, setName] = createSignal('');
     const [count, setCount] = createSignal(1);
     const [gap, setGap] = createSignal(40);
+    // Aspect lock: `ratio` (w / h) is taken when the lock goes on and kept fixed while it's on, so
+    // typing one side never drifts the shape (see followLockedSide).
+    const [locked, setLocked] = createSignal(false);
+    const [ratio, setRatio] = createSignal(1);
 
     // The artboard this dialog was opened FOR (clicked with the tool, or its menu's "Duplicate
     // as Variations…") — not the live selection, which the click into this dialog clears.
@@ -54,13 +59,22 @@ const ArtboardDialog: Component = () => {
     const applyPreset = (id: string) => {
         setPresetId(id);
         const p = ALL_PRESETS.find(x => x.id === id);
-        if (p) { setW(p.width); setH(p.height); }
+        if (p) { setW(p.width); setH(p.height); setRatio(p.width / p.height); }
     };
     const editSize = (which: 'w' | 'h', v: number) => {
         (which === 'w' ? setW : setH)(v);
+        if (locked()) {
+            const other = followLockedSide(which, v, ratio());
+            if (other !== null) (which === 'w' ? setH : setW)(other);
+        }
         setPresetId('custom');
     };
-    const swap = () => { const a = w(); setW(h()); setH(a); setPresetId('custom'); };
+    const toggleLock = () => {
+        // Locking a half-typed size (0 / empty) would capture a useless ratio — fall back to 1:1.
+        if (!locked()) setRatio(w() > 0 && h() > 0 ? w() / h() : 1);
+        setLocked(!locked());
+    };
+    const swap = () => { const a = w(); setW(h()); setH(a); setRatio(r => 1 / r); setPresetId('custom'); };
 
     const valid = () => {
         const n = count();
@@ -123,6 +137,10 @@ const ArtboardDialog: Component = () => {
                                         <input type="number" min={1} max={100000} value={w()} data-testid="artboard-dialog-width"
                                             onInput={(e) => editSize('w', Number(e.currentTarget.value))} aria-label={t('artboardDialog.width')} />
                                         <button type="button" class="abd-swap" onClick={swap} title={t('artboardDialog.swap')} aria-label={t('artboardDialog.swap')}><ArrowLeftRight size={14} /></button>
+                                        <button type="button" class={`abd-swap abd-lock ${locked() ? 'on' : ''}`} data-testid="artboard-dialog-lock" onClick={toggleLock}
+                                            aria-pressed={locked()} title={t('artboardDialog.lockRatio')} aria-label={t('artboardDialog.lockRatio')}>
+                                            {locked() ? <Lock size={14} /> : <LockOpen size={14} />}
+                                        </button>
                                         <input type="number" min={1} max={100000} value={h()} data-testid="artboard-dialog-height"
                                             onInput={(e) => editSize('h', Number(e.currentTarget.value))} aria-label={t('artboardDialog.height')} />
                                         <span class="dsd-unit">px</span>

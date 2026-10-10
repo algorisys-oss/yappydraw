@@ -16,7 +16,7 @@ import {
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection, addTextureOverlay,
     addPatternSwatchFromSelection, savePatternSwatchFromElement, applyPatternSwatch, updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
-    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, createArtboards, openArtboardDialog, toggleArtboardTool, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, setPaintColor, currentPaintColor, resetPaintToDefaults, setActivePaint, type PaintChannel, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
+    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, createArtboards, openArtboardDialog, toggleArtboardTool, fitArtboardToArtwork, fitArtboardToSelection, toggleOutlineView, toggleTrimView, swapFillStroke, setPaintColor, currentPaintColor, resetPaintToDefaults, setActivePaint, type PaintChannel, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     setSymmetryMode, toggleSymmetry, toggleSymmetryAxis, setRadialCount,
     setSymmetryRings, setSymmetryRingSpacing,
@@ -2801,8 +2801,17 @@ export const YappyAPI = {
     openArtboardDialog(opts?: { x?: number; y?: number; sourceId?: string }) { openArtboardDialog(opts); },
     /** Artboard tool (Shift+O): drag to draw a frame, click for the dialog. */
     toggleArtboardTool(active?: boolean) { toggleArtboardTool(active); },
-    /** Resize an artboard to fit the artwork on it, plus padding. */
+    /** Resize an artboard to fit the artwork on it, plus padding. (The API keeps its 20px
+     *  default for existing callers; the command-palette action is tight, like Illustrator.) */
     fitArtboardToArtwork(id?: string, pad = 20) { return fitArtboardToArtwork(id, pad); },
+    /**
+     * Resize Artboard to Selection (Ctrl+Shift+R, Inkscape's "resize page to selection"): the
+     * artboard lands exactly on the selection's visual bounds — rotation and stroke included —
+     * plus `pad` a side. `id` picks the artboard; default is the one under the selection, else
+     * the active one. Nothing selected → fits the artboard's own artwork; no artboard → creates
+     * one. Returns whether anything changed.
+     */
+    fitArtboardToSelection(id?: string, pad = 0) { return fitArtboardToSelection(id, pad); },
     /** Toggle Outline (wireframe) view — path outlines only, no fills. */
     toggleOutlineView(on?: boolean) { toggleOutlineView(on); },
     /**
