@@ -4,6 +4,7 @@ import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints, cubicBezier } from "../../utils/render-element";
 import { connectorGeometry, type ElbowCommand } from "../../utils/connector-geometry";
+import { connectorLabelPlacement } from "../../utils/connector-labels";
 import { resolveFontFamily } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
 import { drawTextAlongPath, getElementTextPath, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
@@ -70,11 +71,6 @@ export class ConnectorRenderer extends ShapeRenderer {
             }
         }
 
-        // Label anchor: the midpoint OF THE PATH, from the same shared derivation as the
-        // stroke and the arrowheads. This was the last inline copy of the control-point
-        // maths in this file (see connector-geometry.ts).
-        const { x: midX, y: midY } = connectorGeometry(el).mid;
-
         // Draw text with background for readability
         const fontSize = el.fontSize || 14;
         const fontFamily = resolveFontFamily(el.fontFamily);
@@ -88,6 +84,12 @@ export class ConnectorRenderer extends ShapeRenderer {
         const lineHeight = fontSize * 1.3;
         const totalHeight = lines.length * lineHeight;
         const maxLineWidth = Math.max(...lines.map(l => renderer.measureText(l).width));
+
+        // Label anchor: the centre of a straight run on an elbow (never a bend), the
+        // midpoint on a straight line or curve, moved to Label Position, and slid clear of
+        // the labels of neighbouring connectors — see connector-labels.ts. Export uses the
+        // same function with an estimated text size.
+        const { x: midX, y: midY } = connectorLabelPlacement(el, () => ({ w: maxLineWidth, h: totalHeight }));
 
         // Background highlight
         const padX = el.textHighlightPadding ?? 6;

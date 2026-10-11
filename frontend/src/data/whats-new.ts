@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.289', date: '2026-10-11', items: [
+        'Connector labels sit on a straight run of an elbow, never on a bend, and labels of neighbouring connectors no longer pile up: the later one slides clear. Label Position (start / middle / end) now works.',
+        'Dragging an elbow’s segment or bend snaps it to other connectors’ runs, to shape edges and centre lines, and to the grid, with a guide line. Hold Shift to drag freely.',
+    ] },
     { version: '0.8.288', date: '2026-10-11', items: [
         'Line jumps: where two connectors cross, the one on top hops over the other with a small arc, so a crossing never looks like a junction. On by default; turn it off per drawing under Canvas properties → Line Jumps.',
     ] },

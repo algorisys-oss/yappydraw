@@ -113,6 +113,10 @@ An elbow (orthogonal) connector finds its own way between two shapes. Whether yo
 
 New elbow connectors bend with an 8px rounded corner. **Corner Radius** in the Properties panel (shown when Line Type is *Smart (Elbow)*) sets it per connector, 0 for sharp bends, up to 40. Scripts use `elbowRadius`. The radius never exceeds half of a bend's shorter leg, so short jogs stay tidy, and the first and last segments stay straight so arrowheads keep their angle. Connectors from before this option have sharp bends until you give them a radius.
 
+### Labels
+
+A connector's label (its **Label** in the Properties panel) sits on the line. On an elbow it sits at the centre of a straight run, never on a bend: the run under the path's midpoint when the text fits there, otherwise the longest run. **Label Position** moves it to the start, middle or end of the path. When two connectors would put their labels on top of each other, the later one slides along its run, or onto a lane beside the line, until it is clear. SVG export places labels the same way.
+
 ### Line jumps
 
 Where one connector crosses another, the one on top draws a small arc over the other, so a crossing never reads as a junction. It applies to straight connectors and to elbow runs; curves are left alone. Of the two lines at a crossing the newer one jumps, the arc is 6px, and it is never placed within a few pixels of a bend or an arrowhead. SVG export draws the same arcs.
@@ -136,6 +140,8 @@ From a script: `Yappy.autoLayout(ids?, { direction: 'TB' | 'LR' | 'BT' | 'RL', n
 ### Adjusting an elbow by hand
 
 Select an elbow and drag any of its segments sideways, or drag a bend point, to put a run exactly where you want it. The elbow stays orthogonal: dragging a bend slides the two segments it joins, and dragging the first or last segment leaves a short stub at the shape so the connector still leaves it square.
+
+While you drag, the run **snaps** to the parallel runs of other connectors, to the edges and centre lines of nearby shapes, and to the grid when Snap to Grid is on; a guide line shows what it snapped to. Hold <kbd>Shift</kbd> to drag freely.
 
 Once you have done that, the elbow is **yours**: when either shape moves, the ends follow the shapes but your bends stay where you put them, instead of being re-routed. To hand it back to automatic routing, right-click it and choose **Re-route automatically**; changing its curve style, or re-attaching an end to a different shape, does the same. Scripts read and set this as the `manualRoute` property.
 

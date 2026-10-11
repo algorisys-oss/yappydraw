@@ -20,6 +20,7 @@ import { confirmAndReparent } from '../reparent';
 import { isPointInPolygon, rotatePoint } from '../geometry';
 import { refreshConnectors } from '../binding-logic';
 import { simplifyElbowPath } from '../routing';
+import { snapWaypoint } from '../waypoint-snap';
 import { getWarpGrid, defaultWarpGrid } from '../envelope-warp';
 import { cylinderCapRatioForDistance } from '../shape-geometry';
 import { getSnappingGuides, type SnappingGuide } from '../object-snapping';
@@ -1612,9 +1613,9 @@ function handleResize(
     const { x: newX, y: newY, width: newWidth, height: newHeight } = resized;
 
     if (pState.draggingHandle && pState.draggingHandle.startsWith('segment-')) {
-        handleSegmentDrag(x, y, id, pState);
+        handleSegmentDrag(x, y, id, pState, e, signals);
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('polypoint-')) {
-        handlePolypointDrag(x, y, id, pState);
+        handlePolypointDrag(x, y, id, pState, e, signals);
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('control-')) {
         handleControlPointDrag(x, y, id, pState, helpers);
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('path-')) {
@@ -1842,6 +1843,8 @@ function handlePolypointDrag(
     y: number,
     id: string,
     pState: PointerState,
+    e?: PointerEvent,
+    signals?: PointerSignals,
 ): void {
     const index = parseInt(pState.draggingHandle!.replace('polypoint-', ''), 10);
     const element = store.elements.find(e => e.id === id);
@@ -1849,7 +1852,13 @@ function handlePolypointDrag(
 
     const pts = normalizePoints(element.points).map(p => ({ x: p.x, y: p.y }));
     if (index < 0 || index >= pts.length) return;
-    const nx = x - element.x, ny = y - element.y;
+    // A bend snaps on both axes; the guide shown is the last axis that snapped.
+    const sx = snapWaypoint('x', x, element, store.elements, { threshold: 6 / (store.viewState.scale || 1), grid: store.gridSettings });
+    const sy = snapWaypoint('y', y, element, store.elements, { threshold: 6 / (store.viewState.scale || 1), grid: store.gridSettings });
+    const shift = !!e?.shiftKey;
+    const guides = shift ? [] : [sx.guide, sy.guide].filter((g): g is NonNullable<typeof g> => !!g);
+    signals?.setSnappingGuides(guides);
+    const nx = (shift ? x : sx.value) - element.x, ny = (shift ? y : sy.value) - element.y;
 
     // An unbound polyline is a free shape: the point just moves.
     const bound = !!(element.startBinding || element.endBinding);
@@ -2114,11 +2123,24 @@ export function insertPathAnchorAt(id: string, wx: number, wy: number, scale: nu
 
 // ─── Elbow Segment Dragging ─────────────────────────────────────────
 
+/**
+ * Snap one world coordinate of a dragged waypoint (Shift bypasses), and show the guide.
+ * Candidates: other connectors' parallel runs, shape edges and centre lines, the grid.
+ */
+function snapDraggedCoordinate(axis: 'x' | 'y', value: number, el: DrawingElement, e: PointerEvent | undefined, signals: PointerSignals | undefined): number {
+    if (e?.shiftKey) { signals?.setSnappingGuides([]); return value; }
+    const r = snapWaypoint(axis, value, el, store.elements, { threshold: 6 / (store.viewState.scale || 1), grid: store.gridSettings });
+    signals?.setSnappingGuides(r.guide ? [r.guide] : []);
+    return r.value;
+}
+
 function handleSegmentDrag(
     x: number,
     y: number,
     id: string,
     pState: PointerState,
+    e?: PointerEvent,
+    signals?: PointerSignals,
 ): void {
     let segIdx = parseInt(pState.draggingHandle!.replace('segment-', ''), 10);
     const element = store.elements.find(e => e.id === id);
@@ -2156,11 +2178,11 @@ function handleSegmentDrag(
     const p2 = pts[segIdx + 1];
     const isHoriz = Math.abs(p1.y - p2.y) < 1;
     if (isHoriz) {
-        const newY = y - element.y;
+        const newY = snapDraggedCoordinate('y', y, element, e, signals) - element.y;
         pts[segIdx].y = newY;
         pts[segIdx + 1].y = newY;
     } else {
-        const newX = x - element.x;
+        const newX = snapDraggedCoordinate('x', x, element, e, signals) - element.x;
         pts[segIdx].x = newX;
         pts[segIdx + 1].x = newX;
     }
@@ -2168,9 +2190,10 @@ function handleSegmentDrag(
 }
 
 /** Pointer-up after a segment/bend drag: drop zero-length and collinear leftovers. */
-function finishElbowEdit(pState: PointerState): void {
+function finishElbowEdit(pState: PointerState, signals?: PointerSignals): void {
     const h = pState.draggingHandle;
     if (!h || !(h.startsWith('segment-') || h.startsWith('polypoint-'))) return;
+    signals?.setSnappingGuides([]);
     if (store.selection.length !== 1) return;
     const el = store.elements.find(e => e.id === store.selection[0]);
     if (!el || el.curveType !== 'elbow' || !el.points) return;
@@ -3060,7 +3083,7 @@ export function selectionOnUp(
     }
 
     pState.isDragging = false;
-    finishElbowEdit(pState);
+    finishElbowEdit(pState, signals);
     pState.draggingHandle = null;
     pState.initialPositions.clear();
     pState.initial3DViewAngle = undefined;

@@ -11216,3 +11216,15 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Check the thing in the render, not the thumbnail.** The "missing" diagonal arc was under
   a box label at the crossing; the path string from the live module had it all along.
 
+## Label lanes and waypoint snapping (2026-10-11)
+
+- **A panel property nobody reads is a bug waiting to be reported.** `labelPosition` had a
+  Properties control and a migration entry and no renderer. Grep every property key against
+  the renderers before adding a new one next to it.
+- **Place labels where the geometry is straight.** The path midpoint of an elbow is a bend
+  as often as not; the centre of a run is always readable. Same scene-registration pattern
+  as line jumps keeps canvas and export identical.
+- **Snap one axis at a time.** A dragged segment only moves on one axis, so its snapping is a
+  1-D search over runs, edges, centre lines and grid; a bend is two of those. Simpler and
+  more predictable than reusing the 2-D shape snapper.
+

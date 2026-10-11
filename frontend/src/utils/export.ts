@@ -1,6 +1,7 @@
 import { BUILTIN_FONTS_CSS_URL } from "../config/builtin-fonts";
 import { arrowheadSize } from './arrowhead-size';
 import { setJumpScene } from './connector-jumps';
+import { setLabelScene, connectorLabelPlacement, estimateLabelSize } from './connector-labels';
 import { lineHeightPx } from './text-line-height';
 import { store, isLayerVisible, elementsInRenderOrder } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
@@ -532,6 +533,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
 
     let elements = exportScene().filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     setJumpScene(elements, store.globalSettings.connectorJumps !== false); // line jumps, same as the canvas
+    setLabelScene(elements);                                                  // label lanes, same as the canvas
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -1623,8 +1625,9 @@ export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptio
                centre; for a curve the two differ. See docs/connector-anchor-direction-spec.md. */
             const isConnector = el.type === 'line' || el.type === 'arrow' || el.type === 'bezier';
             const connGeom = isConnector ? connectorGeometry(el) : null;
-            const cx = connGeom ? connGeom.mid.x : el.x + el.width / 2;
-            const cy = connGeom ? connGeom.mid.y : el.y + el.height / 2;
+            const labelAt = isConnector ? connectorLabelPlacement(el, estimateLabelSize) : null;
+            const cx = labelAt ? labelAt.x : el.x + el.width / 2;
+            const cy = labelAt ? labelAt.y : el.y + el.height / 2;
             const maxWidth = connGeom ? Infinity : el.width - 20;
 
             // Curved text: the canvas lays glyphs along the path (text-on-path.ts); this block
