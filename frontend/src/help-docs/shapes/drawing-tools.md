@@ -234,6 +234,8 @@ As in Illustrator, putting text on a **closed shape** (with Alt+T or the Text on
 - **Style the letters from the Text settings only:** Text Color, Text Outline (outline colour and width), font and size. The shape's fill and stroke never change the text. Changing a shape's stroke no longer recolours any text inside it either.
 - **Bring it closer or push it away** with **Distance from Path**.
 
+**The shape's own Text settings still work.** Switching **Text on Path** on in the Properties panel or quick toolbar keeps the **shape** selected — its Stroke and Background stay where they were — and from then on the shape's **Text** group shows and edits its outline text: Label, Font, Size, Text Color, Position, Start Position and the rest all go to the text object. Selecting the shape later shows the same thing, with Text on Path still on. You only need to click the letters when you want to move, stroke or delete the text on its own. Switching Text on Path **off** on the shape (or on the text) brings the text back as the shape's plain label, keeping its font, size and colour, and removes the text object. The **Type on Path tool** (Alt+T) and `attachTextToPath` select the new text object instead, since there the text is what you came to make.
+
 Documents made before 0.8.282 can still have text attached to the shape itself. Right-click the shape → **Detach Text from Shape** (also in the command palette) moves it onto its own object without moving a single letter.
 
 Lines, connectors, pen strokes and Pen paths still carry their own text along themselves.

@@ -74,6 +74,30 @@ Additional Action items :
 - **Render-style parity: BOTH `sketch` and `architectural` drawing styles must work for every shape/feature.** A shape must render correctly (fill **and** stroke) in both modes. Sketch goes through rough.js (`renderSketchGeometry` → `rc.path`/`rc.polygon`/…); architectural goes through the clean canvas path (`renderArchitectural` → `RenderPipeline.renderGeometry` + `fill()`/`stroke()`). Gotcha: SVG-`path` geometry is a self-contained `Path2D` — it must be filled via `renderer.fillPath(d)` and stroked via `renderer.strokePath(d)`, because the `beginPath()+renderGeometry()+fill()/stroke()` pattern only works for geometries that append to the current path (rect/ellipse/points). When adding or changing a shape, verify it visually in **both** styles (a path-geometry shape that only sets up fill will silently lose its stroke in architectural mode).
 - WASM parity: When modifying JS code in `utils/geometry.ts`, `utils/hit-testing.ts`, `utils/routing.ts`, or `utils/object-snapping.ts`, ensure the corresponding WASM AssemblyScript module (`wasm/assemblyscript/assembly/`) and bridge (`wasm/bridge/`) stay in sync. The WASM path must produce identical results to the JS fallback.
 
+## Docs are verified for every feature — not assumed
+
+A feature is not done until its documentation has been **checked against what shipped**. This applies
+to every new or changed feature, shape, attribute, panel, command, shortcut, API method or default,
+and to bug fixes that change visible behaviour. "The doc probably covers it" is not a check.
+
+For each change:
+1. **Find every page that mentions it.** Grep the help docs (`frontend/src/help-docs/`) and
+   `articles/` for the feature's name, its UI labels, its API method and its property keys
+   (e.g. `grep -rn -i "text on path\|attachTextToPath\|textPathSide" frontend/src/help-docs articles`).
+   A behaviour change usually leaves stale wording on a page you didn't think of.
+2. **Make each page match the new behaviour:** steps, UI labels exactly as the app shows them,
+   defaults, hotkeys, API signature and return value, limitations. Remove or correct the old
+   description; don't just append the new one.
+3. **Keep the other surfaces in sync:** `api.ts` doc comments, the hotkey list in
+   `components/help-dialog.tsx`, `frontend/src/data/whats-new.ts`, and the release note.
+4. **Add a section if none fits.** A feature users can't find in Help doesn't exist for them.
+5. **After a release, check the live pages.** Once `npm run verify:deploy` reports the new version,
+   `curl` the affected `https://yappydraw.com/help/<page>/` pages and grep them for a phrase from
+   the new text. The prerendered help is a separate part of the deploy; the editor can be current
+   while the docs are not.
+
+When you report a feature as done, say which doc pages you checked and changed.
+
 ## Tests
 
 `npm test` runs the whole unit suite — `bun test frontend scripts`. Use it rather than a bare

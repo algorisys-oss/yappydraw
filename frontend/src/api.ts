@@ -27,7 +27,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, openDistortDialog, setShowPathfinderBar, togglePathfinderBar, toggleTeachingMode, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, putTextOnOutline, detachTextFromShape, isOutlineTextShape, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, openDistortDialog, setShowPathfinderBar, togglePathfinderBar, toggleTeachingMode, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, putTextOnOutline, detachTextFromShape, textPathObjectOf, isOutlineTextShape, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -5444,6 +5444,13 @@ export const YappyAPI = {
     /** Move curved text that is still part of a shape (older documents) onto its own object,
      *  keeping its look. Defaults to the selection. Returns the new ids. */
     detachTextFromShape(ids?: string[]) { return detachTextFromShape(ids ?? [...store.selection]); },
+    /**
+     * The Type-on-Path object carrying a shape's outline text (its `textPathHostId` is the shape),
+     * or undefined. The shape's Text controls in the Properties panel and quick toolbar read and
+     * write this object, so `getElement(shapeId)` shows no label while this one holds the text.
+     * @example const text = Yappy.textPathObjectOf(circleId); Yappy.updateElement(text.id, { fontSize: 32 })
+     */
+    textPathObjectOf(shapeId: string) { return textPathObjectOf(shapeId); },
     /** Exit all blocking tool-mode overlays. */
     exitAllToolModes() { exitAllToolModes(); },
     /** Set a per-glyph transform (dx, dy, scale, rot) and/or colour on a text element. */

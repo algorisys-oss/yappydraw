@@ -1,5 +1,27 @@
 # Bug Fixes Log
 
+## 2026-10-11 — Text on Path: the shape's panel read as reset
+
+### 440. Switching Text on Path on a shape made the Properties panel look reset
+
+**Symptom:** with a circle selected, turning on **Text on Path** in the Properties panel left the
+panel showing a transparent stroke and fill and a different set of rows; selecting the circle again
+and opening **Text** showed Label empty and Text on Path off. Everything the user had set looked
+wiped. (Reported as "select the path, select the Text property, the property panel gets reset".)
+
+**Cause:** since v0.8.282 text on a closed shape is its own Type-on-Path object. `setCurvedText`
+moved the selection to that new, unpainted object, so the panel silently switched to describing
+it. Nothing linked the object back to its shape, so the shape's own Text group had no way to show
+or edit the text it had just been given.
+
+**Fix:** the text object now records its shape (`textPathHostId`, read through
+`textPathObjectOf(shapeId)`). The panel and quick-toolbar toggle keep the shape selected, and the
+shape's Text controls read and write the text object (`TEXT_PROPERTY_KEYS` routes them, including
+the font hover-preview and `dependsOn` so the layout rows appear). Toggling off, from either end,
+brings the text back as the shape's plain label with its font, size and colour, and removes the
+object. The Type on Path tool and `attachTextToPath` still select the new object. Covered by
+`artboard-variations.test.ts` (five store cases) and two tests in `tests/text-on-outline.spec.ts`.
+
 ## 2026-10-10 — Logo review (Anshika): flip, text on shapes
 
 ### 437. Flip Horizontal on a rotated shape looked like a vertical flip

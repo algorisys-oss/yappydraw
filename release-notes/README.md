@@ -27,6 +27,9 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.283](0.8.283.md) — Switching Text on Path on no longer "resets" the Properties panel: the shape stays selected and its Text group shows and edits the text on its outline; off brings the label back (#440)
+- [0.8.282](0.8.282.md) — Text on a shape is its own object (Illustrator's model), Position and Distance from Path, text all the way round a circle, Detach Text from Shape; flip fixed for rotated shapes (#437–#439)
+- [0.8.281](0.8.281.md) — Resize artboard to selection (Ctrl+Shift+R), aspect lock in the New Artboard dialog, coloured buttons keep their colour (#435, #436)
 - [0.8.280](0.8.280.md) — PDF/X-4 that checks itself: CMYK transparency groups, and a self-check that refuses to save a non-conforming file (#433). Fixes #434 — the print-preview overlay canvas, added in 0.8.279, was found as "the canvas" by rulers and tool overlays. Plus a model-based undo test (fast-check) and junk-params sweeps
 - [0.8.279](0.8.279.md) — Print-ready PDF. PDF export is vector (sharp shapes, selectable embedded-font text), with a CMYK mode separated through real press profiles (FOGRA39 / GRACoL via LittleCMS), exact swatch inks, spot colours on their own plate, PDF/X-4, and an on-screen print preview. Plus #431 (shadows the wrong size in 2×/3× exports and at any zoom) and #432 (SVG export ignored masks)
 - [0.8.278](0.8.278.md) — Documentation. The command registry shipped in 0.8.276 with no help page at all; `workspace.md` had mentioned the Command Palette a dozen times without ever explaining it

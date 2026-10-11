@@ -5,7 +5,8 @@
  */
 
 import { type Component, Show, For, createSignal, createMemo, createEffect, onCleanup } from "solid-js";
-import { store, updateElement, pushToHistory, applyMindmapStyling, setCurvedText } from "../store/app-store";
+import { store, updateElement, pushToHistory, applyMindmapStyling, setCurvedText, textPathObjectOf } from "../store/app-store";
+import { TEXT_PROPERTY_KEYS } from "../config/properties";
 import { getElementPreviewBaseState, isElementAnimating } from "../utils/animation/element-animator";
 import { replaceImageOn } from "../utils/image-actions";
 import { Palette, SlidersHorizontal, Image as ImageIcon, Type } from "lucide-solid";
@@ -134,6 +135,11 @@ const ToolbarContainer: Component<{
         const el = selId ? store.elements.find(e => e.id === selId) : null;
         if (!el) return;
         const id = el.id;
+        // A shape's outline text is its own object: its Text controls edit that object (#440).
+        if (key !== 'curvedText' && TEXT_PROPERTY_KEYS.has(key)) {
+            const carrier = textPathObjectOf(id);
+            if (carrier) { updateElement(carrier.id, { [key]: value } as any, false); return; }
+        }
         // Sync lane arrays when lane count changes
         if (el.type === 'bpmnPool' && key === 'bpmnLaneCount') {
             const newCount = Number(value);
@@ -264,8 +270,13 @@ const ToolbarContainer: Component<{
                                             {(propDef) => (
                                                 <QuickControl
                                                     def={propDef}
-                                                    value={() => (el() as any)[propDef.key]}
-                                                    fontFamily={() => (el() as any).fontFamily}
+                                                    value={() => {
+                                                        // Text controls on a shape show its text object's values (#440).
+                                                        const c = TEXT_PROPERTY_KEYS.has(propDef.key) ? textPathObjectOf(el().id) : undefined;
+                                                        if (!c) return (el() as any)[propDef.key];
+                                                        return propDef.key === 'curvedText' ? true : (c as any)[propDef.key];
+                                                    }}
+                                                    fontFamily={() => ((textPathObjectOf(el().id) ?? el()) as any).fontFamily}
                                                     openKey={props.activePopover}
                                                     setOpenKey={props.setActivePopover}
                                                     onSlideStart={handlePropertyStart}

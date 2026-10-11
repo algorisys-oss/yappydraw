@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.283', date: '2026-10-11', items: [
+        'Switching Text on Path on a shape no longer looks like the Properties panel reset. The shape stays selected, and its Text settings now show and edit the text on its outline — label, font, size, colour and position.',
+        'Select the shape later and its text is still there under Text, with Text on Path on. Click the letters only when you want to move or style the text on its own.',
+        'Switch Text on Path off and the text comes back as the shape’s plain label, keeping its font, size and colour.',
+    ] },
     { version: '0.8.282', date: '2026-10-10', items: [
         'Text on a shape is now its own object, like in Illustrator. Click its letters to select it, drag it on its own, and give it its own colour and outline. Restyling the shape never changes the text.',
         'Move curved text closer to a shape or further away with Distance from Path, and put it outside, on, or inside the outline.',

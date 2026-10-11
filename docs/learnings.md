@@ -2,6 +2,22 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Text on Path: a model change needs a path back to the panel (Oct 11 2026)
+
+- **"The panel got reset" was a selection jump.** Nothing in the panel reset; the toggle moved the
+  selection to a new, unpainted object, so the panel described that instead. When a report says
+  a panel resets, diff `store.selection` before and after, not the panel's DOM.
+- **Splitting one thing into two objects breaks every control that assumed one.** v0.8.282 made
+  shape text its own object, which was right for selecting and dragging, but the shape's Text
+  group (Label, Text on Path, fonts) then described an object that no longer had any text. A
+  model split needs a link back (`textPathHostId`) and a proxy at the UI (`TEXT_PROPERTY_KEYS`),
+  or the old entry points go silently dead.
+- **Reproduce by scripting the exact UI, not the API.** `attachTextToPath` never changed the
+  panel; only the panel's own toggle did. Three probes through the API found nothing; the first
+  probe that clicked the checkbox found it.
+- **Playwright `hasText` is a case-insensitive substring match.** `{ hasText: 'STROKE' }` can
+  land on another group; when a check depends on the exact title, select by it in `evaluate`.
+
 ## Logo review: mirrors, glyph frames and who owns the text (Oct 10 2026)
 
 - **A flip of a rotated object is two operations.** Mirroring inside the box keeps the tilted axis.

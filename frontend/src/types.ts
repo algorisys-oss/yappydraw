@@ -980,6 +980,9 @@ export interface DrawingElement {
      *  itself is an unpainted guide; you select it by its letters, and its text is styled only by
      *  the text controls. Created when text is put on a shape's outline. */
     typeOnPath?: boolean;
+    /** On a Type-on-Path object made from a shape's outline: that shape's id. The shape's Text
+     *  controls read and write this object, and Text on Path off there brings the text back. */
+    textPathHostId?: string;
     textPathAlign?: 'start' | 'center'; // 'center' = textPathOffset marks the MIDDLE of the text (default 'start')
     textPathFlip?: boolean;           // run the text the other way round the path, on the other side (bottom-of-a-badge text)
 

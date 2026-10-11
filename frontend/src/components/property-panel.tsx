@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index, batch, onCleanup } from "solid-js";
-import { store, moveMindmapNode, setFocusBranch, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile, setCurvedText } from "../store/app-store";
+import { store, moveMindmapNode, setFocusBranch, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile, setCurvedText, textPathObjectOf } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
 import { saveMindmapOutline } from "../utils/mindmap-outline";
 import { MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS } from "../utils/symmetry";
@@ -39,7 +39,7 @@ import {
     Play, Square
 } from "lucide-solid";
 import "./property-panel.css";
-import { properties, fontCapabilities, type PropertyConfig } from "../config/properties";
+import { properties, fontCapabilities, TEXT_PROPERTY_KEYS, type PropertyConfig } from "../config/properties";
 import { COLOR_PALETTES, getColorPalette } from "../config/color-palettes";
 import { getGradientPreset } from "../config/gradient-presets";
 import { getImageFilterPreset } from "../config/image-filter-presets";
@@ -1430,6 +1430,24 @@ const PropertyPanel: Component = () => {
     // Derived state for the active target (selection or defaults)
     const activeTarget = createMemo(() => propertyPanelTarget());
 
+    /**
+     * A shape whose outline text lives on its own Type-on-Path object (`textPathObjectOf`):
+     * every control in its Text group shows and edits THAT object. Before this, switching Text
+     * on Path on moved the selection to the new, unpainted object, and selecting the shape
+     * again showed Label empty and Text on Path off — the panel looked reset (bug #440).
+     */
+    const textObjectForTarget = (): DrawingElement | undefined => {
+        const t = activeTarget();
+        return t?.type === 'element' && t.data?.id ? textPathObjectOf(t.data.id) : undefined;
+    };
+    /** `[true, value]` when `key` is a Text-group control read from the shape's text object. */
+    const textProxyRead = (key: string): [true, any] | [false] => {
+        if (!TEXT_PROPERTY_KEYS.has(key)) return [false];
+        const c = textObjectForTarget();
+        if (!c) return [false];
+        return [true, key === 'curvedText' ? true : (c as any)[key]];
+    };
+
     const activeProperties = createMemo(() => {
         const target = activeTarget();
         if (!target) return [];
@@ -1545,7 +1563,8 @@ const PropertyPanel: Component = () => {
                 let currentValue: any;
 
                 if (target.type === 'element') {
-                    currentValue = (target.data as any)[depKey];
+                    const proxied = textProxyRead(depKey);
+                    currentValue = proxied[0] ? proxied[1] : (target.data as any)[depKey];
                 } else if (target.type === 'defaults') {
                     currentValue = (store.defaultElementStyles as any)[depKey];
                 } else if (target.type === 'slide') {
@@ -1631,6 +1650,21 @@ const PropertyPanel: Component = () => {
         // If targetType is provided, ensure it matches current target's type
         if (targetType && target.type !== targetType) {
             return;
+        }
+
+        // A shape's outline text is its own object: its Text controls edit that object, so the
+        // shape never reads as if its text was reset (see `textObjectForTarget`).
+        if (target.type === 'element' && key !== 'curvedText' && TEXT_PROPERTY_KEYS.has(key)) {
+            const carrier = textObjectForTarget();
+            if (carrier) {
+                if (key === 'textEffect') {
+                    const preset = getTextEffectPreset(value);
+                    if (preset) updateElement(carrier.id, preset.patch(carrier), history);
+                    return;
+                }
+                updateElement(carrier.id, { [key]: value } as any, history);
+                return;
+            }
         }
 
         // Text on Path on a closed shape makes a separate Type-on-Path object (Illustrator's
@@ -1981,6 +2015,8 @@ const PropertyPanel: Component = () => {
             return firstVal;
         }
         if (target.type === 'element') {
+            const proxied = textProxyRead(prop.key);
+            if (proxied[0]) return proxied[1];
             const val = (target.data as any)[prop.key];
             if (prop.key === 'roundness') return !!val; // Convert to boolean for toggle
             return val;
@@ -2161,7 +2197,7 @@ const PropertyPanel: Component = () => {
                 let previewSnap: { style: { weight: number; italic: boolean }; els: { id: string; saved: Record<string, any> }[] } | null = null;
                 const previewTargets = (): string[] => {
                     const target = activeTarget();
-                    if (target?.type === 'element') return target.data?.id ? [target.data.id] : [];
+                    if (target?.type === 'element') return target.data?.id ? [(textObjectForTarget() ?? target.data).id!] : [];
                     if (target?.type === 'multi') return supportedSelection('fontFamily');
                     return [];
                 };

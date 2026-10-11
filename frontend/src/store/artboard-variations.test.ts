@@ -35,7 +35,7 @@ global.document = {
     addEventListener: () => { }, removeEventListener: () => { },
 } as any;
 
-const { store, setStore, createArtboards, duplicateArtboard, attachTextToPath, putTextOnOutline, setCurvedText, detachTextFromShape, updateElement, undo } = await import("./app-store");
+const { store, setStore, createArtboards, duplicateArtboard, attachTextToPath, putTextOnOutline, setCurvedText, detachTextFromShape, textPathObjectOf, updateElement, undo } = await import("./app-store");
 const { getElementTextPath, layoutTextAlongPath, textPathOptionsFor } = await import("../utils/text-on-path");
 
 const base = (id: string, over: any = {}): any => ({
@@ -192,6 +192,57 @@ describe('Text on Path toggle and shape colours', () => {
         undo();
         expect(store.elements.map(e => e.id)).toEqual(['c']);
         expect(store.elements[0].containerText).toBe('LOGO');
+    });
+
+    // #440: the shape's panel looked reset after the toggle — the selection had jumped to the new
+    // unpainted object, and the shape itself showed Label empty / Text on Path off.
+    it('the toggle keeps the shape selected and links the text object back to it', () => {
+        setStore('elements', [base('c', { type: 'circle', width: 100, height: 100, containerText: 'LOGO', fontSize: 30 })]);
+        setStore('selection', ['c']);
+        const [id] = setCurvedText(['c'], true);
+        expect(store.selection).toEqual(['c']);
+        const text = textPathObjectOf('c')!;
+        expect(text.id).toBe(id);
+        expect(text).toMatchObject({ typeOnPath: true, textPathHostId: 'c', containerText: 'LOGO', fontSize: 30 });
+        expect(store.elements.find(e => e.id === 'c')!.containerText).toBeUndefined();
+    });
+
+    it('toggling on again does not make a second object', () => {
+        setStore('elements', [base('c', { type: 'circle', width: 100, height: 100, containerText: 'LOGO' })]);
+        const [first] = setCurvedText(['c'], true);
+        const [again] = setCurvedText(['c'], true);
+        expect(again).toBe(first);
+        expect(store.elements.filter(e => e.typeOnPath)).toHaveLength(1);
+    });
+
+    it('toggling off brings the text home as the plain label, styling included, and removes the object', () => {
+        setStore('elements', [base('c', { type: 'circle', width: 100, height: 100, containerText: 'LOGO', fontSize: 30 })]);
+        setStore('selection', ['c']);
+        const [tid] = setCurvedText(['c'], true);
+        updateElement(tid, { containerText: 'BREW', fontSize: 44, textColor: '#ff0000' });
+        const [back] = setCurvedText(['c'], false);
+        expect(back).toBe('c');
+        expect(store.elements.map(e => e.id)).toEqual(['c']);
+        expect(store.elements[0]).toMatchObject({ containerText: 'BREW', fontSize: 44, textColor: '#ff0000', curvedText: false });
+        expect(textPathObjectOf('c')).toBeUndefined();
+        expect(store.selection).toEqual(['c']);
+    });
+
+    it('toggling off from the text object itself also welds back, and the shape takes the selection', () => {
+        setStore('elements', [base('c', { type: 'circle', width: 100, height: 100, containerText: 'LOGO' })]);
+        const [tid] = setCurvedText(['c'], true);
+        setStore('selection', [tid]);
+        setCurvedText([tid], false);
+        expect(store.elements.map(e => e.id)).toEqual(['c']);
+        expect(store.elements[0].containerText).toBe('LOGO');
+        expect(store.selection).toEqual(['c']);
+    });
+
+    it('a Pen path still carries its own text, with no object made', () => {
+        setStore('elements', [base('p', { type: 'path', pathAnchors: [{ x: 0, y: 0 }, { x: 100, y: 0 }], containerText: 'ALONG' })]);
+        expect(setCurvedText(['p'], true)).toEqual(['p']);
+        expect(store.elements).toHaveLength(1);
+        expect(store.elements[0].curvedText).toBe(true);
     });
 
     it("changing a shape's stroke no longer recolours its text", () => {

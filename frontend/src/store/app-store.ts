@@ -7295,6 +7295,19 @@ const applyTextPathOpts = (patch: Partial<DrawingElement>, opts?: TextPathOpts) 
 export const isOutlineTextShape = (el: DrawingElement | undefined): boolean =>
     !!el && el.type !== 'path' && isClosedShapeForText(el.type);
 
+/**
+ * The Type-on-Path object carrying `shapeId`'s outline text, if there is one. The link is what
+ * lets the shape's own Text controls show and edit that text: without it, putting text on a
+ * shape made the shape's panel read as reset — Label empty, Text on Path off — because the text
+ * had moved to an object the panel knew nothing about (bug #440).
+ */
+export const textPathObjectOf = (shapeId: string): DrawingElement | undefined =>
+    store.elements.find(e => e.typeOnPath && e.textPathHostId === shapeId);
+
+/** The text styling a Type-on-Path object carries back onto its shape when Text on Path is turned off. */
+const TEXT_STYLE_KEYS = ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontStretch', 'textColor',
+    'textStrokeEnabled', 'textStrokeColor', 'textStrokeWidth', 'containerText', 'richContainerText'] as const;
+
 /** Arc-length fraction (0..1) of the point on closed polyline `pts` nearest to `q`. */
 const loopFractionNearest = (pts: PathPoint[], q: PathPoint): number => {
     const ring = [...pts, pts[0]];
@@ -7378,7 +7391,7 @@ export const putTextOnOutline = (
         fontStretch: shape.fontStretch, textColor,
         textStrokeEnabled: shape.textStrokeEnabled, textStrokeColor: shape.textStrokeColor, textStrokeWidth: shape.textStrokeWidth,
         containerText: text ?? shape.containerText ?? '',
-        curvedText: true, typeOnPath: true,
+        curvedText: true, typeOnPath: true, textPathHostId: shapeId,
         textPathAlign: wasCurved ? shape.textPathAlign : 'center',
         textPathOffset: offset, textPathFlip: flip,
         textPathSpacing: shape.textPathSpacing,
@@ -7409,28 +7422,49 @@ export const putTextOnOutline = (
 
 /**
  * Turn Text on Path on or off for `ids` (the panel / quick-toolbar toggle). On a closed shape,
- * "on" means a separate Type-on-Path object (`putTextOnOutline`) — the shape keeps no curved
- * label. Lines, connectors, strokes and Pen paths still carry their own text along themselves.
- * One undo step. Returns the ids now carrying the text.
+ * "on" means a separate Type-on-Path object (`putTextOnOutline`) linked back to the shape —
+ * the shape keeps no curved label, but it STAYS SELECTED, and its Text controls read and write
+ * the new object (`textPathObjectOf`), so the panel never looks as if it was reset. "Off" on a
+ * shape with such an object (or on the object itself) brings the text back as the shape's plain
+ * label, styling included, and removes the object. Lines, connectors, strokes and Pen paths
+ * still carry their own text along themselves. One undo step. Returns the ids now carrying the
+ * text.
  */
 export const setCurvedText = (ids: string[], on: boolean): string[] => {
     const els = store.elements.filter(e => ids.includes(e.id));
     if (!els.length) return [];
     pushToHistory();
     const out: string[] = [];
-    const made: string[] = [];
+    let made = 0;
+    const done = new Set<string>();
     for (const el of els) {
-        if (on && isOutlineTextShape(el)) {
-            const nid = putTextOnOutline(el.id, el.containerText || 'Text on a path', undefined, { history: false, select: false });
-            if (nid) { out.push(nid); made.push(nid); }
+        if (done.has(el.id)) continue;
+        // Resolve the shape ↔ text-object pair from either end.
+        const shape = isOutlineTextShape(el) ? el
+            : el.typeOnPath && el.textPathHostId ? store.elements.find(e => e.id === el.textPathHostId && isOutlineTextShape(e)) : undefined;
+        const carrier = shape ? textPathObjectOf(shape.id) : undefined;
+        if (shape && on) {
+            if (carrier) { out.push(carrier.id); done.add(carrier.id); continue; }
+            const nid = putTextOnOutline(shape.id, shape.containerText || 'Text on a path', undefined, { history: false, select: false });
+            if (nid) { out.push(nid); made++; }
+        } else if (shape && carrier) {
+            // Off: the text comes home as the shape's plain label; the object goes.
+            const back: Partial<DrawingElement> = { curvedText: false };
+            for (const k of TEXT_STYLE_KEYS) if ((carrier as any)[k] !== undefined) (back as any)[k] = (carrier as any)[k];
+            if (shape.containerText) back.containerText = shape.containerText;
+            setStore('elements', list => list.filter(e => e.id !== carrier.id).map(e => e.id === shape.id ? { ...e, ...back } : e));
+            if (store.selection.includes(carrier.id)) {
+                setStore('selection', s => [...new Set(s.map(id => id === carrier.id ? shape.id : id))]);
+            }
+            out.push(shape.id); done.add(carrier.id);
         } else {
             setStore('elements', e => e.id === el.id, { curvedText: on } as any);
             out.push(el.id);
         }
     }
-    if (made.length) {
-        setStore('selection', made);
-        showToast(made.length === 1 ? 'Text put on the outline as its own object' : `${made.length} text objects put on outlines`, 'success');
+    if (made) {
+        showToast(made === 1 ? 'Text put on the outline as its own object — click the letters to select it on its own'
+            : `${made} text objects put on outlines`, 'success');
     }
     bumpDirtyRevision();
     return out;

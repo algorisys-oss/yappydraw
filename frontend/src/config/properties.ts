@@ -2205,6 +2205,9 @@ export const properties: PropertyConfig[] = [
     }
 ];
 
+/** Keys of every control in the Text group — the ones a shape forwards to its Type-on-Path object. */
+export const TEXT_PROPERTY_KEYS: ReadonlySet<string> = new Set(properties.filter(p => p.group === 'text').map(p => p.key));
+
 export const getPropertiesForType = (type: ElementType) => {
     return properties.filter(p => p.applicableTo === 'all' || p.applicableTo.includes(type));
 }
