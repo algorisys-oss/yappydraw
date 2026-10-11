@@ -1,4 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index, batch, onCleanup } from "solid-js";
+import { bumpDirtyRevision } from "../store/app-store";
 import { store, moveMindmapNode, setFocusBranch, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile, setCurvedText, textPathObjectOf } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
 import { saveMindmapOutline } from "../utils/mindmap-outline";
@@ -1925,6 +1926,7 @@ const PropertyPanel: Component = () => {
             else if (key === 'canvasTexture') setCanvasTexture(value);
             else if (key === 'renderStyle') updateGlobalSettings({ renderStyle: value });
             else if (key === 'showQuickToolbar') updateGlobalSettings({ showQuickToolbar: value });
+            else if (key === 'connectorJumps') { updateGlobalSettings({ connectorJumps: value }); bumpDirtyRevision(); }
             else if (key === 'showPathfinderBar') updateGlobalSettings({ showPathfinderBar: value });
             else if (key === 'colorPalette') updateGlobalSettings({ colorPalette: value });
             else if (key === 'docType') setDocType(value);
@@ -1973,6 +1975,7 @@ const PropertyPanel: Component = () => {
             if (prop.key === 'maxLayers') return store.maxLayers;
             if (prop.key === 'renderStyle') return store.globalSettings.renderStyle;
             if (prop.key === 'showQuickToolbar') return store.globalSettings.showQuickToolbar;
+            if (prop.key === 'connectorJumps') return store.globalSettings.connectorJumps !== false;
             if (prop.key === 'colorPalette') return store.globalSettings.colorPalette ?? 'default';
             if (prop.key === 'docType') return store.docType;
             return (store as any)[prop.key];

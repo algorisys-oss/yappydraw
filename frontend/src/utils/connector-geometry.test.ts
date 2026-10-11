@@ -216,9 +216,9 @@ describe("connectorGeometry — degenerate control points", () => {
 });
 
 describe("connectorGeometry — straight", () => {
-    it("angles are the chord and the path is left to the caller", () => {
+    it("angles are the chord, and the path is the plain chord when nothing crosses it", () => {
         const g = connectorGeometry(arrow({ width: 100, height: 100, curveType: 'straight' }));
-        expect(g.d).toBeNull();
+        expect(g.d).toBe('M 0 0 L 100 100');
         expect(sameAngle(g.endAngle, 45)).toBe(true);
         expect(sameAngle(g.startAngle, -135)).toBe(true);
     });

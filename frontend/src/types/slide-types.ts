@@ -112,6 +112,8 @@ export interface GlobalSettings {
     reducedMotion?: boolean;    // Accessibility preference
     renderStyle?: 'sketch' | 'architectural'; // Default style for new elements
     showQuickToolbar?: boolean; // Toggle floating quick toolbar
+    /** Draw a small arc where a connector crosses another (default true). */
+    connectorJumps?: boolean;
     showDimensions?: boolean;   // Live W×H / X,Y badge under the selection (default OFF)
     colorPalette?: string;      // ID of the active color palette (see config/color-palettes.ts)
     smartShape?: boolean;       // Hold-to-correct: dwell at end of a pen stroke snaps it to a clean shape (default on)

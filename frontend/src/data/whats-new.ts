@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.288', date: '2026-10-11', items: [
+        'Line jumps: where two connectors cross, the one on top hops over the other with a small arc, so a crossing never looks like a junction. On by default; turn it off per drawing under Canvas properties → Line Jumps.',
+    ] },
     { version: '0.8.287', date: '2026-10-11', items: [
         'Auto Layout: select a diagram, right-click → Arrange → Auto Layout (or Alt+Shift+A) and it arranges itself in layers, top to bottom or left to right, with every connector re-routed. Frames and pools keep their contents and are resized around them.',
         'Elbow connectors now bend with rounded corners. Corner Radius in the Properties panel sets it per connector; 0 brings back sharp bends.',

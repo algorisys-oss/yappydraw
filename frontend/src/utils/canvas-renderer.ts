@@ -10,6 +10,7 @@ import type { SnappingGuide } from './object-snapping';
 import type { SpacingGuide } from './spacing';
 import type { MeasureSegment } from './measure-gap';
 import { isLayerVisible, store } from '../store/app-store';
+import { setJumpScene } from './connector-jumps';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
 import { hasTransformEffect, transformEffectRenderCopies } from './transform-effect';
@@ -850,6 +851,10 @@ export function renderLayersAndElements(
     rc: any,
     params: RenderElementsParams
 ): number {
+    // Line jumps: every connector of the pass is visible to connectorGeometry while it
+    // renders; cached per dirty revision so a quiet frame costs nothing.
+    setJumpScene(params.elements, store.globalSettings.connectorJumps !== false, store.dirtyRevision);
+
     const {
         elements, layers, slides, docType, activeSlideIndex,
         selection, selectedTool, animatedStates, viewportBounds: vp,

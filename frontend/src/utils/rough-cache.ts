@@ -1,4 +1,5 @@
 import type { RoughCanvas } from 'roughjs/bin/canvas';
+import { lineJumpsFor } from './connector-jumps';
 import type { Drawable } from 'roughjs/bin/core';
 import type { DrawingElement } from '../types';
 import { rawOf } from './store-raw';
@@ -253,6 +254,15 @@ export function computeElementHash(el: DrawingElement): string {
 
     // Double border
     if (el.drawInnerBorder) h += `|ib${el.innerBorderColor || ''}${el.innerBorderDistance || 0}`;
+
+    // Connector shape that is not in the element's own fields: rounded bends, and the
+    // line jumps other connectors put on it (a jumper's fields don't change when something
+    // crosses it, so without this its cached sketch would keep the old crossings).
+    if (el.elbowRadius) h += `|er${el.elbowRadius}`;
+    if (el.type === 'line' || el.type === 'arrow') {
+        const j = lineJumpsFor(el);
+        if (j.length) h += `|jp${j.map(p => `${p.seg}:${p.t.toFixed(4)}`).join(',')}`;
+    }
 
     // Connector/arrow points
     if (el.points && (el as any).points.length > 0) {

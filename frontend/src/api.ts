@@ -3149,6 +3149,8 @@ export const YappyAPI = {
 
     /** Keep the drawing tool selected after each shape instead of reverting to Select (default true). */
     setKeepToolActive(on: boolean) { updateGlobalSettings({ keepToolActive: on }); },
+    /** Line jumps: draw a small arc where a connector crosses another (default on). */
+    setConnectorJumps(on: boolean) { updateGlobalSettings({ connectorJumps: on }); bumpDirtyRevision(); },
     getKeepToolActive() { return store.globalSettings.keepToolActive !== false; },
     /** Canvas cursor while a drawing tool is active: 'crosshair' (default) | 'circle' | 'arrow'. */
     setPointerStyle(style: 'crosshair' | 'circle' | 'arrow') { updateGlobalSettings({ pointerStyle: style }); },

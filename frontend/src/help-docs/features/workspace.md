@@ -171,7 +171,7 @@ Two dots, two meanings: **blue** means there are release notes you have not read
 Press **Alt+Enter** (or the sliders button in the top bar) to toggle the **Properties** panel, which docks to the right edge. It shows the controls for whatever is selected — fill, stroke, size, text, effects, animation — or, when nothing is selected, **the defaults for the drawing tool you have picked**, filtered to what that tool can actually draw. Choose the Polygon tool and *Polygon Sides* is there before you draw anything; choose Star and you get *Star Points* instead. Tools that select rather than draw — Select, Pan, Lasso, Crop — show the slide or canvas properties instead, since they create nothing to set defaults for.
 
 :::tip
-With **nothing selected** and the Select tool active, Alt+Enter opens **Canvas properties** (background, grid, texture, page size) — the same thing you get from *right-click → Canvas Settings*. Clicking an empty spot on the canvas dismisses it.
+With **nothing selected** and the Select tool active, Alt+Enter opens **Canvas properties** (background, grid, texture, page size, Line Jumps for connectors) — the same thing you get from *right-click → Canvas Settings*. Clicking an empty spot on the canvas dismisses it.
 :::
 
 The panel **never opens by itself**. Picking a drawing tool leaves it exactly as you left it, so a long brainstorming session isn't interrupted by a panel sliding in on every tool switch. Open it deliberately with Alt+Enter, the sliders button, or by **right-clicking a tool group** in the toolbar (which opens the panel on that tool's defaults) — and once it's open it stays docked while you work.

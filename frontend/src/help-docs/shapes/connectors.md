@@ -113,6 +113,12 @@ An elbow (orthogonal) connector finds its own way between two shapes. Whether yo
 
 New elbow connectors bend with an 8px rounded corner. **Corner Radius** in the Properties panel (shown when Line Type is *Smart (Elbow)*) sets it per connector, 0 for sharp bends, up to 40. Scripts use `elbowRadius`. The radius never exceeds half of a bend's shorter leg, so short jogs stay tidy, and the first and last segments stay straight so arrowheads keep their angle. Connectors from before this option have sharp bends until you give them a radius.
 
+### Line jumps
+
+Where one connector crosses another, the one on top draws a small arc over the other, so a crossing never reads as a junction. It applies to straight connectors and to elbow runs; curves are left alone. Of the two lines at a crossing the newer one jumps, the arc is 6px, and it is never placed within a few pixels of a bend or an arrowhead. SVG export draws the same arcs.
+
+Turn it off for the whole drawing under **Canvas properties → Line Jumps** (Alt+Enter with nothing selected, or right-click → Canvas Settings). Scripts: `Yappy.setConnectorJumps(false)`.
+
 ### Auto layout
 
 Select the shapes of a diagram (or nothing, to take the whole layer) and choose **right-click → Arrange → Auto Layout: Top to Bottom** (<kbd>Alt+Shift+A</kbd>), or *Left to Right*, *Bottom to Top*, *Right to Left*. The command palette has the same entries.

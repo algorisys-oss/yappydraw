@@ -27,10 +27,14 @@
  */
 
 import { normalizePoints } from './points';
+import { lineJumpsFor, JUMP_RADIUS, type JumpPoint } from './connector-jumps';
 
 export interface Pt { x: number; y: number }
 
 export interface ConnectorGeometry {
+    /** Drawing commands for elbow and straight connectors (rounded bends, line jumps);
+     *  `d` is their serialisation. Null for curves. */
+    commands: ElbowCommand[] | null;
     /** Tip position for the start arrowhead. */
     start: Pt;
     /** Tip position for the end arrowhead. */
@@ -130,7 +134,7 @@ export function connectorGeometry(el: any): ConnectorGeometry {
         : { x: el.x + el.width, y: el.y + el.height };
 
     const chordMid: Pt = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
-    const base = { start, end, cp1: null, cp2: null, quadratic: false, points: null, d: null, mid: chordMid };
+    const base = { start, end, cp1: null, cp2: null, quadratic: false, points: null, d: null, commands: null, mid: chordMid };
 
     // ── Elbow: a polyline through the waypoints, or a synthesised mid-jog ────────────
     if (el.curveType === 'elbow') {
@@ -153,14 +157,13 @@ export function connectorGeometry(el: any): ConnectorGeometry {
             mid = polylineMidpoint(clean);
         }
         const radius = typeof el.elbowRadius === 'number' && el.elbowRadius > 0 ? el.elbowRadius : 0;
+        const commands = elbowPathCommands(clean, radius, lineJumpsFor(el));
         return {
             ...base,
             points: clean,
             mid,
-            d: radius > 0
-                ? elbowCommandsToPath(elbowPathCommands(clean, radius))
-                : `M ${fmt(clean[0].x)} ${fmt(clean[0].y)} ` +
-                    clean.slice(1).map(p => `L ${fmt(p.x)} ${fmt(p.y)}`).join(' '),
+            commands,
+            d: elbowCommandsToPath(commands),
             // Angles come from the first and last non-degenerate segment.
             startAngle: outwardAngle(clean[0], [clean[1], clean[2], end]),
             endAngle: outwardAngle(clean[n - 1], [clean[n - 2], clean[n - 3], start]),
@@ -202,8 +205,12 @@ export function connectorGeometry(el: any): ConnectorGeometry {
     }
 
     // ── Straight: the chord IS the path, so the chord is the correct angle ───────────
+    // Commands carry the line jumps, if any; without jumps `d` is the plain chord.
+    const straightCommands = elbowPathCommands([start, end], 0, lineJumpsFor(el));
     return {
         ...base,
+        commands: straightCommands,
+        d: elbowCommandsToPath(straightCommands),
         startAngle: outwardAngle(start, [end]),
         endAngle: outwardAngle(end, [start]),
     };
@@ -323,32 +330,66 @@ export function defaultControlPoints(
 export type ElbowCommand =
     | { c: 'M'; x: number; y: number }
     | { c: 'L'; x: number; y: number }
-    | { c: 'Q'; cx: number; cy: number; x: number; y: number };
+    | { c: 'Q'; cx: number; cy: number; x: number; y: number }
+    | { c: 'C'; x1: number; y1: number; x2: number; y2: number; x: number; y: number };
 
-export function elbowPathCommands(points: Pt[], radius: number): ElbowCommand[] {
+/**
+ * Emit the straight run A→B as line commands, with a jump arc at each crossing on it.
+ * The arc is a half-circle-ish cubic of radius JUMP_RADIUS bulging to the left of the
+ * direction of travel, which is "up" for a left-to-right run and "right" for a downward
+ * one — the convention most diagram tools use.
+ */
+function runWithJumps(out: ElbowCommand[], a: Pt, b: Pt, jumps: JumpPoint[]): void {
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 1e-6 || jumps.length === 0) { out.push({ c: 'L', x: b.x, y: b.y }); return; }
+    const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+    const nx = uy, ny = -ux;                                   // left normal (screen y down)
+    const r = JUMP_RADIUS, k = r * 4 / 3;                      // cubic half-circle handle
+    for (const j of jumps) {
+        const along = Math.hypot(j.x - a.x, j.y - a.y);
+        if (along - r <= 0 || along + r >= len) continue;
+        const s = { x: a.x + ux * (along - r), y: a.y + uy * (along - r) };
+        const e = { x: a.x + ux * (along + r), y: a.y + uy * (along + r) };
+        out.push({ c: 'L', x: s.x, y: s.y });
+        out.push({ c: 'C', x1: s.x + nx * k, y1: s.y + ny * k, x2: e.x + nx * k, y2: e.y + ny * k, x: e.x, y: e.y });
+    }
+    out.push({ c: 'L', x: b.x, y: b.y });
+}
+
+export function elbowPathCommands(points: Pt[], radius: number, jumps: JumpPoint[] = []): ElbowCommand[] {
     const out: ElbowCommand[] = [];
     if (points.length === 0) return out;
     out.push({ c: 'M', x: points[0].x, y: points[0].y });
     const r = Math.max(0, radius || 0);
+    const jumpsOn = (seg: number) => jumps.filter(j => j.seg === seg);
+    // The straight part of each run, after the corner cuts at either end.
+    let runStart: Pt = points[0];
     for (let i = 1; i < points.length - 1; i++) {
         const p0 = points[i - 1], p1 = points[i], p2 = points[i + 1];
         const l1 = Math.hypot(p1.x - p0.x, p1.y - p0.y);
         const l2 = Math.hypot(p2.x - p1.x, p2.y - p1.y);
         const cut = Math.min(r, l1 / 2, l2 / 2);
-        if (cut < 0.5) { out.push({ c: 'L', x: p1.x, y: p1.y }); continue; }
+        if (cut < 0.5) {
+            runWithJumps(out, runStart, p1, jumpsOn(i - 1));
+            runStart = p1;
+            continue;
+        }
         const a = { x: p1.x - ((p1.x - p0.x) / l1) * cut, y: p1.y - ((p1.y - p0.y) / l1) * cut };
         const b = { x: p1.x + ((p2.x - p1.x) / l2) * cut, y: p1.y + ((p2.y - p1.y) / l2) * cut };
-        out.push({ c: 'L', x: a.x, y: a.y });
+        runWithJumps(out, runStart, a, jumpsOn(i - 1));
         out.push({ c: 'Q', cx: p1.x, cy: p1.y, x: b.x, y: b.y });
+        runStart = b;
     }
-    if (points.length > 1) { const e = points[points.length - 1]; out.push({ c: 'L', x: e.x, y: e.y }); }
+    if (points.length > 1) runWithJumps(out, runStart, points[points.length - 1], jumpsOn(points.length - 2));
     return out;
 }
 
 export function elbowCommandsToPath(cmds: ElbowCommand[]): string {
-    return cmds.map(k => k.c === 'Q'
-        ? `Q ${fmt(k.cx)} ${fmt(k.cy)}, ${fmt(k.x)} ${fmt(k.y)}`
-        : `${k.c} ${fmt(k.x)} ${fmt(k.y)}`).join(' ');
+    return cmds.map(k => {
+        if (k.c === 'Q') return `Q ${fmt(k.cx)} ${fmt(k.cy)}, ${fmt(k.x)} ${fmt(k.y)}`;
+        if (k.c === 'C') return `C ${fmt(k.x1)} ${fmt(k.y1)}, ${fmt(k.x2)} ${fmt(k.y2)}, ${fmt(k.x)} ${fmt(k.y)}`;
+        return `${k.c} ${fmt(k.x)} ${fmt(k.y)}`;
+    }).join(' ');
 }
 
 /** The three-segment jog an elbow falls back to when it carries no waypoints. */

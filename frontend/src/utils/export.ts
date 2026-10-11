@@ -1,5 +1,6 @@
 import { BUILTIN_FONTS_CSS_URL } from "../config/builtin-fonts";
 import { arrowheadSize } from './arrowhead-size';
+import { setJumpScene } from './connector-jumps';
 import { lineHeightPx } from './text-line-height';
 import { store, isLayerVisible, elementsInRenderOrder } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
@@ -530,6 +531,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     }
 
     let elements = exportScene().filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
+    setJumpScene(elements, store.globalSettings.connectorJumps !== false); // line jumps, same as the canvas
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));

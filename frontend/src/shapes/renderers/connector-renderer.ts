@@ -3,7 +3,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints, cubicBezier } from "../../utils/render-element";
-import { connectorGeometry, elbowPathCommands } from "../../utils/connector-geometry";
+import { connectorGeometry, type ElbowCommand } from "../../utils/connector-geometry";
 import { resolveFontFamily } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
 import { drawTextAlongPath, getElementTextPath, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
@@ -197,9 +197,10 @@ export class ConnectorRenderer extends ShapeRenderer {
             rc.polygon(drawPoints, options);
         } else {
             options = { ...options, fill: undefined };
-            if ((el.elbowRadius ?? 0) > 0 && drawPoints.length > 2) {
-                // Rounded bends: stroke the shared path (rough.js sketches a path as well as it does a polyline).
-                rc.path(connectorGeometry(el).d!, options);
+            const g = connectorGeometry(el);
+            if (this.hasCurves(g.commands)) {
+                // Rounded bends / line jumps: stroke the shared path (rough.js sketches a path as well as it does a polyline).
+                rc.path(g.d!, options);
             } else {
                 rc.linearPath(drawPoints, options);
             }
@@ -235,7 +236,8 @@ export class ConnectorRenderer extends ShapeRenderer {
         const { rc, element: el } = context;
         const g = connectorGeometry(el);
 
-        rc.line(g.start.x, g.start.y, g.end.x, g.end.y, options);
+        if (this.hasCurves(g.commands)) rc.path(g.d!, options);      // line jumps
+        else rc.line(g.start.x, g.start.y, g.end.x, g.end.y, options);
         // Both angles are already outward, so the start head no longer needs `+ π`.
         if (el.startArrowhead) this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, arrowheadSize(el, 'start'));
         if (el.endArrowhead) this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, arrowheadSize(el, 'end'));
@@ -495,19 +497,27 @@ export class ConnectorRenderer extends ShapeRenderer {
             } else {
                 renderer.bezierCurveTo(g.cp1!.x, g.cp1!.y, g.cp2!.x, g.cp2!.y, g.end.x, g.end.y);
             }
-        } else if (el.curveType === 'elbow') {
-            // The same commands connectorGeometry puts in `d` (rounded bends included),
-            // replayed onto the renderer so canvas and export cannot differ.
-            const g = connectorGeometry(el);
-            for (const k of elbowPathCommands(g.points ?? [start, end], el.elbowRadius || 0)) {
-                if (k.c === 'M') renderer.moveTo(k.x, k.y);
-                else if (k.c === 'L') renderer.lineTo(k.x, k.y);
-                else renderer.quadraticCurveTo(k.cx, k.cy, k.x, k.y);
-            }
         } else {
-            renderer.moveTo(start.x, start.y);
-            renderer.lineTo(end.x, end.y);
+            // Elbow and straight: the same commands connectorGeometry puts in `d` (rounded
+            // bends and line jumps included), replayed onto the renderer so canvas and
+            // export cannot differ.
+            const g = connectorGeometry(el);
+            this.replay(renderer, g.commands ?? [{ c: 'M', x: start.x, y: start.y }, { c: 'L', x: end.x, y: end.y }]);
         }
+    }
+
+    private replay(renderer: IRenderer, cmds: ElbowCommand[]): void {
+        for (const k of cmds) {
+            if (k.c === 'M') renderer.moveTo(k.x, k.y);
+            else if (k.c === 'L') renderer.lineTo(k.x, k.y);
+            else if (k.c === 'Q') renderer.quadraticCurveTo(k.cx, k.cy, k.x, k.y);
+            else renderer.bezierCurveTo(k.x1, k.y1, k.x2, k.y2, k.x, k.y);
+        }
+    }
+
+    /** True when the path has a curve in it (a rounded bend or a jump), so a polyline won't do. */
+    private hasCurves(cmds: ElbowCommand[] | null): boolean {
+        return !!cmds && cmds.some(k => k.c === 'Q' || k.c === 'C');
     }
 
     estimatePathLength(element: any): number {

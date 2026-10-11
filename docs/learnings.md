@@ -11204,3 +11204,15 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   with a doc comment that mentions imports in prose. Insert at line 1 or after the last real
   import statement.
 
+## Line jumps (2026-10-11)
+
+- **A per-element cache must key on everything that shapes the element, including other
+  elements.** The sketch drawable cache hashed a connector's own fields; a jump arc depends
+  on *another* connector's position, so moving the crossed line left the jumper's old arc
+  behind. The jump list (and `elbowRadius`) are now part of the hash.
+- **The geometry helper gets its scene from the caller, not the store.** `setJumpScene`
+  before a render pass or an export keeps `connectorGeometry` pure enough for tests while
+  canvas and SVG see the same crossings.
+- **Check the thing in the render, not the thumbnail.** The "missing" diagonal arc was under
+  a box label at the crossing; the path string from the live module had it all along.
+

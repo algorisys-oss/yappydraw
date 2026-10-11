@@ -696,6 +696,7 @@ const initialState: AppState = {
         reducedMotion: false,
         renderStyle: 'architectural',
         showQuickToolbar: true, // Default to showing the toolbar
+        connectorJumps: true,   // line jumps where connectors cross
         showDimensions: readShowDimensions(),
         teachingMode: readTeachingMode(),
         devMode: readDevMode(),

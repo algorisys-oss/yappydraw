@@ -113,6 +113,14 @@ export const properties: PropertyConfig[] = [
         defaultValue: true
     },
     {
+        key: 'connectorJumps',
+        label: 'Line Jumps',
+        type: 'toggle',
+        group: 'canvas',
+        applicableTo: ['canvas'],
+        defaultValue: true
+    },
+    {
         key: 'showPathfinderBar',
         label: 'Pathfinder Strip',
         type: 'toggle',
