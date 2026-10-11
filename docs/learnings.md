@@ -11228,3 +11228,20 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   1-D search over runs, edges, centre lines and grid; a bend is two of those. Simpler and
   more predictable than reusing the 2-D shape snapper.
 
+
+## Stroke Text in the Command Palette (2026-10-11)
+
+- **An API-only feature is invisible to most users.** `Yappy.strokeText` shipped in v0.8.274
+  with a help section and nine Playwright tests, and no way to reach it from the UI. The
+  question "how do I test Hershey fonts?" had the answer "open the console". A feature
+  users can only find by reading the help page needs at least a palette entry.
+- **Make the choice the command.** One palette entry per face ("Stroke Text: Hershey
+  Script…") means typing "hershey" lists the faces and picking one is the font choice; a
+  single entry would have needed a second prompt or a dialog for something a list already does.
+- **Lay out before you place.** `createStrokeText` takes a top-left; centring on the view
+  needs the block size first. `layoutStrokeText` is pure and cheap, so the helper lays out
+  once to measure and lets `createStrokeText` lay out again, rather than shifting elements
+  after the fact with a second store write.
+- **A native `prompt()` command belongs on the sweep's skip list.** Playwright dismisses
+  dialogs, so a sweep would only ever exercise the cancel path while reporting the command
+  covered; the skip list states the reason and asserts the id still exists.

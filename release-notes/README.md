@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.290](0.8.290.md) — Stroke Text (Hershey single-line fonts) in the Command Palette: one entry per face, prompt for the words, centred and selected. Reachable without the console for the first time since it shipped in 0.8.274
 - [0.8.283](0.8.283.md) — Switching Text on Path on no longer "resets" the Properties panel: the shape stays selected and its Text group shows and edits the text on its outline; off brings the label back (#440)
 - [0.8.282](0.8.282.md) — Text on a shape is its own object (Illustrator's model), Position and Distance from Path, text all the way round a circle, Detach Text from Shape; flip fixed for rotated shapes (#437–#439)
 - [0.8.281](0.8.281.md) — Resize artboard to selection (Ctrl+Shift+R), aspect lock in the New Artboard dialog, coloured buttons keep their colour (#435, #436)

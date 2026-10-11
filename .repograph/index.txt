@@ -1969,7 +1969,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 1017 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 1020 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2090,11 +2090,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1438 |
-frontend/src/i18n/locales/en.ts | typescript | 1470 | Dictionary:1470
-frontend/src/i18n/locales/es.ts | typescript | 1437 |
-frontend/src/i18n/locales/fr.ts | typescript | 1459 | de:115
-frontend/src/i18n/locales/ja.ts | typescript | 1437 |
+frontend/src/i18n/locales/de.ts | typescript | 1442 |
+frontend/src/i18n/locales/en.ts | typescript | 1474 | Dictionary:1474
+frontend/src/i18n/locales/es.ts | typescript | 1441 |
+frontend/src/i18n/locales/fr.ts | typescript | 1463 | de:115
+frontend/src/i18n/locales/ja.ts | typescript | 1441 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 621 |
@@ -2322,7 +2322,7 @@ frontend/src/utils/color-management.test.ts | typescript | 122 | ColorEngine:5
 frontend/src/utils/color-management.ts | typescript | 215 | PrintProfileId:19 PrintProfileInfo:21 Cmyk:51 Rgb:53 ColorEngine:55{rgbToCmyk:59 cmykToRgb:60 proof:62 imageToCmyk:67 proofLut:73} Lcms:77 createColorEngine:83 parseRgb:162 loadColorEngine:196
 frontend/src/utils/color-utils.test.ts | typescript | 107 |
 frontend/src/utils/color-utils.ts | typescript | 227 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82 gammaEncode:92 gammaDecode:99
-frontend/src/utils/command-registry.ts | typescript | 593 | ShapeKey:39 Command:49
+frontend/src/utils/command-registry.ts | typescript | 628 | ShapeKey:40 Command:50
 frontend/src/utils/connector-geometry.test.ts | typescript | 305 | deg:4 sameAngle:6 arrow:13 bind:60 departure:68 arrivalAway:69
 frontend/src/utils/connector-geometry.ts | typescript | 400 | JumpPoint:30 Pt:32 ConnectorGeometry:34 polylineMidpoint:68 outwardAngle:102 dedupe:112 connectorGeometry:126 AnchorEdge:220 anchorEdge:249 defaultControlPoints:282 ElbowCommand:330 runWithJumps:342 elbowPathCommands:359 elbowCommandsToPath:387 synthesiseElbow:396
 frontend/src/utils/connector-jumps.test.ts | typescript | 88 | conn:7
@@ -2818,7 +2818,7 @@ tests/grid-customization.spec.ts | typescript | 205 | boot:13
 tests/group-isolation.spec.ts | typescript | 172 | makeGroup:23 get:37 get:62 get:113
 tests/help-doc-recovery.spec.ts | typescript | 53 |
 tests/help-docs.spec.ts | typescript | 23 |
-tests/helpers/command-skip.ts | typescript | 28 |
+tests/helpers/command-skip.ts | typescript | 34 |
 tests/history-panel.spec.ts | typescript | 44 | survives:21
 tests/history-transactions.spec.ts | typescript | 221 |
 tests/hotkeys.spec.ts | typescript | 385 |
@@ -2940,7 +2940,7 @@ tests/stick-figure-drop-position.spec.ts | typescript | 74 | Window:16 dropAndMe
 tests/stick-rig-smoke.spec.ts | typescript | 86 | Window:6
 tests/storage-failure.spec.ts | typescript | 102 | stubIndexedDB:26
 tests/stroke-gradient-batch3.spec.ts | typescript | 76 |
-tests/stroke-text.spec.ts | typescript | 199 | settle:168 ink:173
+tests/stroke-text.spec.ts | typescript | 250 | settle:168 ink:173
 tests/svg-element-ids.spec.ts | typescript | 56 |
 tests/svg-export-theme.spec.ts | typescript | 109 |
 tests/svg-import-elements.spec.ts | typescript | 98 | Window:6

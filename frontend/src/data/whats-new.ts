@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.290', date: '2026-10-11', items: [
+        'Single-line (pen-plotter) text from the Command Palette: press Ctrl/Cmd+K, type "Hershey", pick a face (Simplex, Duplex, Sans, Script or Gothic) and enter the words. They land centred and selected, one editable path per letter, ready for Draw In handwriting or an SVG export a plotter can follow.',
+    ] },
     { version: '0.8.289', date: '2026-10-11', items: [
         'Connector labels sit on a straight run of an elbow, never on a bend, and labels of neighbouring connectors no longer pile up: the later one slides clear. Label Position (start / middle / end) now works.',
         'Dragging an elbow’s segment or bend snaps it to other connectors’ runs, to shape edges and centre lines, and to the grid, with a guide line. Hold Shift to drag freely.',

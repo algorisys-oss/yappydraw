@@ -1,4 +1,5 @@
 import { autoLayout } from './auto-layout';
+import { STROKE_FONTS, loadStrokeFont, layoutStrokeText } from './stroke-fonts';
 import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode, toggleOutlineView, toggleTrimView,
     swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
@@ -18,7 +19,7 @@ import {
     toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
     toggleNodeTool, exitAllToolModes,
     applyFeather, applyGlow, setExtrude, toggleRevolve, setTransformEffect,
-    isDevMode, toggleArtboardTool, openArtboardDialog, toggleTypeOnPath, detachTextFromShape
+    isDevMode, toggleArtboardTool, openArtboardDialog, toggleTypeOnPath, detachTextFromShape, createStrokeText
 } from "../store/app-store";
 import { togglePrintPreview, printPreviewError, printPreviewActive } from './print-preview';
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
@@ -270,6 +271,31 @@ const shapeToolCatalog: { type: ToolType & ShapeKey; group: string }[] = [
     { type: 'slider', group: 'Wireframe' },
 ];
 
+/**
+ * Command Palette route to `strokeText`: ask for the words, write them in the given face
+ * centred in the drawing area (cap height 48px, which reads at 100% zoom) and selected.
+ * `window.prompt` is what the other quick inserts (chart values, frame labels) use. The
+ * block is laid out first so it can be centred; `createStrokeText` lays it out again, which
+ * is cheap (the face is cached after the first load).
+ */
+const insertStrokeText = async (font: string) => {
+    const text = window.prompt(t('commands.insert-stroke-text-prompt'), t('commands.insert-stroke-text-default'));
+    if (text === null || !text.trim()) return;
+    const fontSize = 48;
+    const s = store.viewState;
+    const c = canvasCenterClient(); // drawing-area centre, not window centre
+    const cx = (c.x - s.panX) / s.scale;
+    const cy = (c.y - s.panY) / s.scale;
+    try {
+        const face = await loadStrokeFont(font);
+        const box = layoutStrokeText(face, text, { fontSize });
+        await createStrokeText(cx - box.width / 2, cy - box.height / 2, text, { font, fontSize });
+    } catch (err) {
+        console.error('[insert-stroke-text]', err);
+        showToast(t('commands.insert-stroke-text-failed'), 'error', 4000);
+    }
+};
+
 export const getCommands = (): Command[] => {
     const commands: Command[] = [
         // Tools
@@ -375,6 +401,15 @@ export const getCommands = (): Command[] => {
         { id: 'action-mirror-v', label: t('commands.action-mirror-v'), category: 'Actions', action: () => mirrorCopy('vertical') },
         { id: 'action-repeat', label: t('commands.action-repeat'), category: 'Actions', action: () => openRepeatDialog() },
         { id: 'insert-mandala', label: t('commands.insert-mandala'), category: 'Tools', action: () => openMandalaDialog() },
+        // Single-line (Hershey) text: one entry per face, so typing "Hershey" or "stroke text"
+        // lists the faces and picking one IS the font choice. The word lands centred in the
+        // drawing area and is selected, like any other insert.
+        ...STROKE_FONTS.map(face => ({
+            id: `insert-stroke-text-${face.id.replace(/^hershey-/, '')}`,
+            label: t('commands.insert-stroke-text', { face: face.name }),
+            category: 'Tools' as const,
+            action: () => { void insertStrokeText(face.id); },
+        })),
         // Doodles: Dev Mode only while the generator set is being built out.
         ...(isDevMode()
             ? [{ id: 'insert-doodle', label: t('commands.insert-doodle'), category: 'Tools' as const, action: () => openDoodleDialog() }]
