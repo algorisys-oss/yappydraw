@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.287', date: '2026-10-11', items: [
+        'Auto Layout: select a diagram, right-click → Arrange → Auto Layout (or Alt+Shift+A) and it arranges itself in layers, top to bottom or left to right, with every connector re-routed. Frames and pools keep their contents and are resized around them.',
+        'Elbow connectors now bend with rounded corners. Corner Radius in the Properties panel sets it per connector; 0 brings back sharp bends.',
+        'From a script: Yappy.autoLayout(ids, { direction: \'LR\' }).',
+    ] },
     { version: '0.8.286', date: '2026-10-11', items: [
         'Arrowheads now match the line they sit on: thin diagram lines get small heads, heavy sketch lines keep big ones. Several connectors arriving at one box no longer run their heads together. Set Start Size / End Size yourself to override.',
     ] },

@@ -109,6 +109,24 @@ An elbow (orthogonal) connector finds its own way between two shapes. Whether yo
 - **It re-routes when a shape lands on it.** Move or resize a shape onto an elbow's path — by dragging, with the arrow keys, from a script, or by undo — and that elbow re-routes, even though the shape isn't connected to it. Connectors that then find themselves sharing a lane with the re-routed one move too.
 - **Dense diagrams route too.** A long hop across a grid of 40–50 services finds a clear path rather than giving up and cutting straight through; a full re-route of ~100 elbows takes well under 100ms.
 
+### Rounded corners
+
+New elbow connectors bend with an 8px rounded corner. **Corner Radius** in the Properties panel (shown when Line Type is *Smart (Elbow)*) sets it per connector, 0 for sharp bends, up to 40. Scripts use `elbowRadius`. The radius never exceeds half of a bend's shorter leg, so short jogs stay tidy, and the first and last segments stay straight so arrowheads keep their angle. Connectors from before this option have sharp bends until you give them a radius.
+
+### Auto layout
+
+Select the shapes of a diagram (or nothing, to take the whole layer) and choose **right-click → Arrange → Auto Layout: Top to Bottom** (<kbd>Alt+Shift+A</kbd>), or *Left to Right*, *Bottom to Top*, *Right to Left*. The command palette has the same entries.
+
+Yappy reads the connectors between the selected shapes as a graph and arranges it in layers: sources on top (or left), each connector pointing to a later layer, shapes ordered within a layer to reduce crossings, and parents centred over their children. Everything then re-routes.
+
+- **Containers stay containers.** A frame, pool or any box that encloses other selected shapes is laid out as one unit: its children are arranged inside it, it is resized around them, and it takes its place in the outer diagram as a single node. Nested containers work the same way.
+- **Shapes with no connectors** go in their own row beside the graph; disconnected groups are laid out side by side.
+- **Cycles are fine** (A → B → C → A): one edge is treated as pointing backwards for the layout only.
+- **Hand-routed elbows** are reset to automatic routing, since their bends belonged to the old positions.
+- The result stays where the diagram was (its top-left corner is kept), animates into place, and is a single Undo step.
+
+From a script: `Yappy.autoLayout(ids?, { direction: 'TB' | 'LR' | 'BT' | 'RL', nodeGap, layerGap, animate })` returns `{ moved, containers, direction }`, or `null` when fewer than two shapes apply.
+
 ### Adjusting an elbow by hand
 
 Select an elbow and drag any of its segments sideways, or drag a bend point, to put a run exactly where you want it. The elbow stays orthogonal: dragging a bend slides the two segments it joins, and dragging the first or last segment leaves a short stub at the shape so the connector still leaves it square.
@@ -150,6 +168,7 @@ L or 4 | Line tool
 A or 5 | Arrow tool
 B or 0 | Bezier curve
 Shift+Drag | Constrain to 45° angles
+Alt+Shift+A | Auto Layout the selection (top to bottom)
 :::
 
 ## Scripting (API)

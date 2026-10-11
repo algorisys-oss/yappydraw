@@ -122,6 +122,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'editor-simplifyPath', keys: 'Ctrl+L' },
             { key: 'editor-smoothPath', keys: 'Right-click → Path → Smooth' },
             { key: 'editor-lockUnlockSelected', keys: 'Ctrl+Shift+L' },
+            { key: 'editor-autoLayout', keys: 'Alt+Shift+A' },
             { key: 'editor-unlockAllObjects', keys: 'Ctrl+Alt+2' },
             { key: 'editor-unlockAspectRatio', keys: 'Shift+Drag' },
             { key: 'editor-penVectorPathAddPointDragTo', keys: 'P or Toolbar (pen-nib)' },

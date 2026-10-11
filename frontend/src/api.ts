@@ -1,3 +1,4 @@
+import { autoLayout as autoLayoutSelection } from './utils/auto-layout';
 import {
     store, addElement, updateElement, deleteElements, setViewState, rotateView, resetRotation, pushToHistory, setStore, zoomToFit,
     undo, redo, withoutHistory, withCommandHistory, undoLabel, redoLabel, getHistoryEntries, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
@@ -235,6 +236,9 @@ interface ElementOptions {
     /** Arrowhead length in px (1–100). Unset = 6 + 5 × strokeWidth, clamped to 10–28. */
     startArrowheadSize?: number;
     endArrowheadSize?: number;
+    /** Elbow connectors: corner radius in px at each bend (0 = sharp). `connect()` and the
+     *  tool default to 8. */
+    elbowRadius?: number;
     seed?: number;
     layerId?: string;
     curveType?: 'straight' | 'bezier' | 'elbow';
@@ -2801,6 +2805,17 @@ export const YappyAPI = {
     deleteArtboard(id: string) { deleteArtboard(id); },
     renameArtboard(id: string, name: string) { renameArtboard(id, name); },
     updateArtboard(id: string, patch: any) { updateArtboard(id, patch); },
+    /**
+     * Arrange shapes as a layered graph of their connectors (Arrange → Auto Layout).
+     * `ids` default to the current selection (two or more shapes) or the whole active layer.
+     * Shapes that enclose others (frames, pools) are kept as containers and resized around
+     * their children. Connectors re-route themselves; hand-routed bends are reset.
+     * Returns `{ moved, containers, direction }`, or null when fewer than two shapes apply.
+     */
+    autoLayout(ids?: string[], options: { direction?: 'TB' | 'LR' | 'BT' | 'RL'; nodeGap?: number; layerGap?: number; componentGap?: number; animate?: boolean; containerPadding?: number } = {}) {
+        return autoLayoutSelection({ ids, ...options });
+    },
+
     /** Rearrange All Artboards into a grid (auto columns ≈ √n when omitted). */
     rearrangeArtboards(columns = 0, gap = 40) { rearrangeArtboards(columns, gap); },
     /** Copy a frame and the artwork on it, `count` copies side by side (variations). Each copy
@@ -3022,6 +3037,8 @@ export const YappyAPI = {
         const endFy = target.height ? (endP.y - target.y) / target.height : 0.5;
 
         const id = this.createElement(type as ElementType, startP.x, startP.y, endP.x - startP.x, endP.y - startP.y, {
+            // Rounded bends by default on elbows (8px), like the tool.
+            ...(curveType === 'elbow' && restOptions.elbowRadius === undefined ? { elbowRadius: 8 } : {}),
             ...restOptions,
             curveType,
             startBinding: { elementId: sourceId, focus: 0, gap: 5, anchorFractionX: startFx, anchorFractionY: startFy },

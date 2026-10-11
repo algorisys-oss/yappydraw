@@ -690,6 +690,9 @@ export interface DrawingElement {
      *  shapes moving re-attach the ends and keep the waypoints instead of re-routing;
      *  "Re-route automatically" (context menu) or `manualRoute: false` clears it. */
     manualRoute?: boolean;
+    /** Elbow only: radius (px) of the rounded corner at each bend; 0 / unset = sharp. New
+     *  elbows get 8 from the tool defaults and `connect()`; older drawings keep sharp bends. */
+    elbowRadius?: number;
     constrained?: boolean; // Keep proportions
     autoResize?: boolean; // Auto-resize based on text
     flipX?: boolean; // Mirror horizontally

@@ -11185,3 +11185,22 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **The live demo is a review.** Nothing in the audits measured arrowheads; a human looking
   at the real screen did, in one glance.
 
+## Auto layout and rounded elbows (2026-10-11)
+
+- **Layered layout in-house, not dagre/ELK.** ~300 lines cover cycle breaking, longest-path
+  layers, barycenter ordering, dummy nodes and a cheap priority placement; adding a dependency
+  would have cost bundle size and, with the `--no-save` repo-map tool, another eviction trap.
+  Decision recorded in `utils/graph-layout/layered-layout.ts`.
+- **Containers must be compound, not flat.** The first version laid out a VPC's services and
+  the clients outside it as one graph and then wrapped the frame around its original children,
+  which by then were interleaved with everything else: the frame ended up around the whole
+  diagram. Each container is now its own sub-layout and one node of the outer graph.
+- **Re-routing came for free.** Because the canvas effect diffs every shape's box, the layout
+  only moves shapes; every connector re-routes itself, including ones the layout did not touch.
+- **Rounded corners live in the shared geometry.** One `elbowPathCommands` feeds the canvas
+  (both styles), export and the architectural path, so the three cannot disagree; `points`
+  stay a polyline, so hit-testing, routing and arrowhead angles are untouched.
+- **Inserting an import "after the first line with `import`" is a trap** when the file opens
+  with a doc comment that mentions imports in prose. Insert at line 1 or after the last real
+  import statement.
+

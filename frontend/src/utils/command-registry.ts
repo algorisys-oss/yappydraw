@@ -1,3 +1,4 @@
+import { autoLayout } from './auto-layout';
 import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode, toggleOutlineView, toggleTrimView,
     swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
@@ -284,6 +285,8 @@ export const getCommands = (): Command[] => {
         // Actions
         { id: 'action-undo', label: t('commands.action-undo'), category: 'Actions', action: () => undo(), shortcut: 'Ctrl+Z' },
         { id: 'action-redo', label: t('commands.action-redo'), category: 'Actions', action: () => redo(), shortcut: 'Ctrl+Y' },
+        { id: 'action-auto-layout', label: t('commands.action-auto-layout'), category: 'Actions', action: () => { autoLayout({ direction: 'TB' }); }, shortcut: 'Alt+Shift+A' },
+        { id: 'action-auto-layout-lr', label: t('commands.action-auto-layout-lr'), category: 'Actions', action: () => { autoLayout({ direction: 'LR' }); } },
         { id: 'action-group', label: t('commands.action-group'), category: 'Actions', action: () => groupSelected(), shortcut: 'Ctrl+G' },
         { id: 'action-ungroup', label: t('commands.action-ungroup'), category: 'Actions', action: () => ungroupSelected(), shortcut: 'Ctrl+Shift+G' },
         { id: 'action-front', label: t('commands.action-front'), category: 'Actions', action: () => bringToFront(store.selection), shortcut: 'Ctrl+Shift+]' },

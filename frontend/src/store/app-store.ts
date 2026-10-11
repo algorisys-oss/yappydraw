@@ -661,6 +661,7 @@ const initialState: AppState = {
             // until the user sets one. A stored 28 here used to pin every hand-drawn arrow.
             startArrowheadSize: undefined,
             endArrowheadSize: undefined,
+            elbowRadius: 8,
             autoResize: false,
             flowColor: undefined,
             seed: 0,

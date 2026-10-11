@@ -3,7 +3,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints, cubicBezier } from "../../utils/render-element";
-import { connectorGeometry } from "../../utils/connector-geometry";
+import { connectorGeometry, elbowPathCommands } from "../../utils/connector-geometry";
 import { resolveFontFamily } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
 import { drawTextAlongPath, getElementTextPath, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
@@ -197,7 +197,12 @@ export class ConnectorRenderer extends ShapeRenderer {
             rc.polygon(drawPoints, options);
         } else {
             options = { ...options, fill: undefined };
-            rc.linearPath(drawPoints, options);
+            if ((el.elbowRadius ?? 0) > 0 && drawPoints.length > 2) {
+                // Rounded bends: stroke the shared path (rough.js sketches a path as well as it does a polyline).
+                rc.path(connectorGeometry(el).d!, options);
+            } else {
+                rc.linearPath(drawPoints, options);
+            }
         }
 
         // Draw vertex dots at polyline joints to cover roughjs gaps
@@ -491,13 +496,13 @@ export class ConnectorRenderer extends ShapeRenderer {
                 renderer.bezierCurveTo(g.cp1!.x, g.cp1!.y, g.cp2!.x, g.cp2!.y, g.end.x, g.end.y);
             }
         } else if (el.curveType === 'elbow') {
-            const drawPoints = (pts && pts.length > 0)
-                ? pts.map(p => ({ x: el.x + p.x, y: el.y + p.y }))
-                : [start, end];
-
-            renderer.moveTo(drawPoints[0].x, drawPoints[0].y);
-            for (let i = 1; i < drawPoints.length; i++) {
-                renderer.lineTo(drawPoints[i].x, drawPoints[i].y);
+            // The same commands connectorGeometry puts in `d` (rounded bends included),
+            // replayed onto the renderer so canvas and export cannot differ.
+            const g = connectorGeometry(el);
+            for (const k of elbowPathCommands(g.points ?? [start, end], el.elbowRadius || 0)) {
+                if (k.c === 'M') renderer.moveTo(k.x, k.y);
+                else if (k.c === 'L') renderer.lineTo(k.x, k.y);
+                else renderer.quadraticCurveTo(k.cx, k.cy, k.x, k.y);
             }
         } else {
             renderer.moveTo(start.x, start.y);

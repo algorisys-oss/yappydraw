@@ -152,12 +152,15 @@ export function connectorGeometry(el: any): ConnectorGeometry {
         } else {
             mid = polylineMidpoint(clean);
         }
+        const radius = typeof el.elbowRadius === 'number' && el.elbowRadius > 0 ? el.elbowRadius : 0;
         return {
             ...base,
             points: clean,
             mid,
-            d: `M ${fmt(clean[0].x)} ${fmt(clean[0].y)} ` +
-                clean.slice(1).map(p => `L ${fmt(p.x)} ${fmt(p.y)}`).join(' '),
+            d: radius > 0
+                ? elbowCommandsToPath(elbowPathCommands(clean, radius))
+                : `M ${fmt(clean[0].x)} ${fmt(clean[0].y)} ` +
+                    clean.slice(1).map(p => `L ${fmt(p.x)} ${fmt(p.y)}`).join(' '),
             // Angles come from the first and last non-degenerate segment.
             startAngle: outwardAngle(clean[0], [clean[1], clean[2], end]),
             endAngle: outwardAngle(clean[n - 1], [clean[n - 2], clean[n - 3], start]),
@@ -305,6 +308,47 @@ export function defaultControlPoints(
         startEdge ? along(start, startEdge) : fbStart,
         endEdge ? along(end, endEdge) : fbEnd,
     ];
+}
+
+/**
+ * Path commands for an elbow polyline with rounded bends.
+ *
+ * Each interior corner is cut back by `radius` (capped at half the shorter adjacent
+ * segment, so a short jog never overshoots) and bridged with a quadratic curve whose
+ * control point is the corner itself. The first and last segments keep their straight
+ * ends, so the arrowhead angles — derived from `points` — stay exactly right. One
+ * derivation for the canvas (both styles), SVG export and anything else that strokes an
+ * elbow, like every other connector shape in this file.
+ */
+export type ElbowCommand =
+    | { c: 'M'; x: number; y: number }
+    | { c: 'L'; x: number; y: number }
+    | { c: 'Q'; cx: number; cy: number; x: number; y: number };
+
+export function elbowPathCommands(points: Pt[], radius: number): ElbowCommand[] {
+    const out: ElbowCommand[] = [];
+    if (points.length === 0) return out;
+    out.push({ c: 'M', x: points[0].x, y: points[0].y });
+    const r = Math.max(0, radius || 0);
+    for (let i = 1; i < points.length - 1; i++) {
+        const p0 = points[i - 1], p1 = points[i], p2 = points[i + 1];
+        const l1 = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+        const l2 = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        const cut = Math.min(r, l1 / 2, l2 / 2);
+        if (cut < 0.5) { out.push({ c: 'L', x: p1.x, y: p1.y }); continue; }
+        const a = { x: p1.x - ((p1.x - p0.x) / l1) * cut, y: p1.y - ((p1.y - p0.y) / l1) * cut };
+        const b = { x: p1.x + ((p2.x - p1.x) / l2) * cut, y: p1.y + ((p2.y - p1.y) / l2) * cut };
+        out.push({ c: 'L', x: a.x, y: a.y });
+        out.push({ c: 'Q', cx: p1.x, cy: p1.y, x: b.x, y: b.y });
+    }
+    if (points.length > 1) { const e = points[points.length - 1]; out.push({ c: 'L', x: e.x, y: e.y }); }
+    return out;
+}
+
+export function elbowCommandsToPath(cmds: ElbowCommand[]): string {
+    return cmds.map(k => k.c === 'Q'
+        ? `Q ${fmt(k.cx)} ${fmt(k.cy)}, ${fmt(k.x)} ${fmt(k.y)}`
+        : `${k.c} ${fmt(k.x)} ${fmt(k.y)}`).join(' ');
 }
 
 /** The three-segment jog an elbow falls back to when it carries no waypoints. */

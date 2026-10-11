@@ -1507,6 +1507,17 @@ export const properties: PropertyConfig[] = [
         applicableTo: ['arrow', 'line'],
         defaultValue: 'straight'
     },
+    {
+        key: 'elbowRadius',
+        label: 'Corner Radius',
+        type: 'number',
+        min: 0,
+        max: 40,
+        group: 'style',
+        applicableTo: ['arrow', 'line'],
+        defaultValue: 0,
+        dependsOn: { key: 'curveType', value: 'elbow' }
+    },
 
     // Numeric Transform (position & size). Routed through setElementTransform in the
     // panel so W/H scale relative geometry (pen points, path anchors) like a handle drag.

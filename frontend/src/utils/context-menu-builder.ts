@@ -51,6 +51,7 @@ import { openDoodleDialog, selectedDoodleId } from '../components/doodle-dialog'
 import { YappyAPI } from '../api';
 import { t } from '../i18n';
 import { refreshConnectors } from './binding-logic';
+import { autoLayout, autoLayoutCandidates } from './auto-layout';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
 import { rasterizeSelection } from './rasterize';
 import { shapeToPath } from './shape-to-path';
@@ -1484,6 +1485,13 @@ function buildContextMenuItems(
         items.push(
             {
                 label: 'Arrange', icon: '⤒', submenu: [
+                    ...(autoLayoutCandidates(store.selection.length >= 2 ? [...store.selection] : undefined).length >= 2 ? [
+                        { label: 'Auto Layout: Top to Bottom', shortcut: 'Alt+Shift+A', onClick: () => { autoLayout({ direction: 'TB' }); requestAnimationFrame(redrawFn); } },
+                        { label: 'Auto Layout: Left to Right', onClick: () => { autoLayout({ direction: 'LR' }); requestAnimationFrame(redrawFn); } },
+                        { label: 'Auto Layout: Bottom to Top', onClick: () => { autoLayout({ direction: 'BT' }); requestAnimationFrame(redrawFn); } },
+                        { label: 'Auto Layout: Right to Left', onClick: () => { autoLayout({ direction: 'RL' }); requestAnimationFrame(redrawFn); } },
+                        { separator: true },
+                    ] : []),
                     { label: 'Bring to Front', shortcut: 'Ctrl+Shift+]', onClick: () => bringToFront(store.selection) },
                     { label: 'Bring Forward', shortcut: 'Ctrl+]', onClick: () => moveSelectionZIndex(store.selection, 'forward') },
                     { label: 'Send Backward', shortcut: 'Ctrl+[', onClick: () => moveSelectionZIndex(store.selection, 'backward') },
