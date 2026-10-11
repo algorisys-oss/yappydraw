@@ -1,14 +1,16 @@
 import type { DrawingElement, Point } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmCalculateSmartElbowRoute } from "../wasm/bridge/routing-bridge";
-import { CONNECTOR_PENALTY, collectConnectorSegments, collectShapeObstacles, routeBounds, segmentsCollinearOverlap } from "./connector-obstacles";
+import { CONNECTOR_PENALTY, collectConnectorSegments, collectShapeObstacles, mergeGridCoords, routeBounds, segmentBounds, segmentsCollinearOverlap } from "./connector-obstacles";
 
 // Connector-body obstacles live in their own module to avoid a routing <-> bridge
 // import cycle; re-exported here so existing importers keep working.
 export {
     CONNECTOR_PENALTY,
+    GRID_MERGE,
     collectConnectorSegments,
     collectShapeObstacles,
+    mergeGridCoords,
     segmentsCollinearOverlap,
     type Seg,
 } from "./connector-obstacles";
@@ -17,13 +19,15 @@ export {
  * A* expansion budget. Must match MAX_ITERATIONS in
  * wasm/assemblyscript/assembly/routing.ts.
  *
- * Was 800. A 48-node grid with the connector-lane coordinates added is ~56×37 cells,
- * and a hop across it needs more than 800 pops once turn and lane penalties flatten
- * the heuristic — so the long edges in exactly the diagrams that need routing most
- * were the ones that fell back to the naive elbow and ran straight through six
- * boxes. With a heap the extra pops cost well under a millisecond.
+ * Was 800, then 4000. A 48-node grid with the connector-lane coordinates added is
+ * ~56×37 cells, and a hop across it needs more than 800 pops once turn and lane
+ * penalties flatten the heuristic — so the long edges in exactly the diagrams that
+ * need routing most were the ones that fell back to the naive elbow and ran straight
+ * through six boxes. A 52-box platform diagram with 160 avoided bodies builds grids of
+ * ~140×150 cells, where a few routes needed more than 4000. With a heap the pops are
+ * cheap; the budget is a ceiling on pathological cases, not a target.
  */
-export const MAX_ROUTE_ITERATIONS = 4000;
+export const MAX_ROUTE_ITERATIONS = 8000;
 
 /**
  * How close (px) a route segment may pass to a shape it is not attached to. Smaller
@@ -32,6 +36,11 @@ export const MAX_ROUTE_ITERATIONS = 4000;
  * wasm/assemblyscript/assembly/routing.ts.
  */
 export const OBSTACLE_CLEARANCE = 10;
+
+/** A straight run shorter than this (px) between two turns is a jog. Mirrored in WASM. */
+export const MIN_RUN = 12;
+/** Extra cost of turning onto a jog, on top of the turn itself. Mirrored in WASM. */
+export const JOG_PENALTY = 400;
 
 /**
  * Calculates a simple orthogonal path (elbow) between two points.
@@ -170,13 +179,6 @@ export const calculateSmartElbowRoute = (
     const MARGIN = 15;
     const GRID_OFFSET = 20;
 
-    const obstacles = collectShapeObstacles(start, end, allElements, startElement, endElement);
-
-    // If no obstacles, use simple elbow
-    if (obstacles.length === 0) {
-        return calculateElbowRoute(start, end, startPos, endPos);
-    }
-
     // Bodies of already-routed lower-priority connectors to avoid running along.
     // Clipped to the route's neighbourhood and capped, so a busy document can't
     // explode the A* grid (which would silently degrade routing to a naive elbow).
@@ -184,15 +186,23 @@ export const calculateSmartElbowRoute = (
         ? collectConnectorSegments(selfLine, allElements, routeBounds(start, end))
         : [];
 
+    // Their lanes are grid lines too, so the obstacle region must reach them.
+    const obstacles = collectShapeObstacles(start, end, allElements, startElement, endElement, segmentBounds(connectorSegs));
+
+    // If no obstacles, use simple elbow
+    if (obstacles.length === 0) {
+        return calculateElbowRoute(start, end, startPos, endPos);
+    }
+
     // 1. Build a sparse grid
     const xCoords = new Set<number>([start.x, end.x]);
     const yCoords = new Set<number>([start.y, end.y]);
 
-    // Grid lines along (and one lane either side of) each connector body, so the
-    // router has an adjacent lane to escape onto instead of overlapping.
+    // One lane either side of each connector body, so the router has an adjacent lane
+    // to escape onto instead of overlapping. The body's own line is deliberately NOT a
+    // grid line: it only invited running along it, and with 160 bodies it doubled the
+    // grid, which is what exhausted the search budget on dense diagrams.
     connectorSegs.forEach(s => {
-        xCoords.add(s.x1); xCoords.add(s.x2);
-        yCoords.add(s.y1); yCoords.add(s.y2);
         if (Math.abs(s.y1 - s.y2) < 0.1) {          // horizontal → offer lanes above/below
             yCoords.add(s.y1 - MARGIN); yCoords.add(s.y1 + MARGIN);
         }
@@ -228,8 +238,8 @@ export const calculateSmartElbowRoute = (
     addBuffer(start, startPos);
     addBuffer(end, endPos);
 
-    const sortedX = Array.from(xCoords).sort((a, b) => a - b);
-    const sortedY = Array.from(yCoords).sort((a, b) => a - b);
+    const sortedX = mergeGridCoords(Array.from(xCoords).sort((a, b) => a - b), start.x, end.x);
+    const sortedY = mergeGridCoords(Array.from(yCoords).sort((a, b) => a - b), start.y, end.y);
 
     const startIdxX = sortedX.findIndex(x => Math.abs(x - start.x) < 0.1);
     const startIdxY = sortedY.findIndex(y => Math.abs(y - start.y) < 0.1);
@@ -252,6 +262,7 @@ export const calculateSmartElbowRoute = (
     const fScore = new Float64Array(N);
     const parent = new Int32Array(N).fill(-1);
     const dirOf = new Int8Array(N);          // 0 none, 1 horizontal, 2 vertical
+    const runLen = new Float64Array(N);      // length of the straight run that reached the node
     const closed = new Uint8Array(N);
     const heap: number[] = [];
     const push = (idx: number) => {
@@ -309,10 +320,12 @@ export const calculateSmartElbowRoute = (
             // The connector's own shapes, and any shape next to the segment that leaves
             // the start / arrives at the end, only block a segment heading INTO them: a
             // route is legitimately within clearance of its own shape right at the port.
+            // (A stricter "no run along an own edge" rule was tried and measured: it cut
+            // one 1px skim — which the 2px grid merge removes anyway — and more than
+            // doubled lane overlaps in tight corridors. Not worth it.)
             const own = el.id === startElement?.id || el.id === endElement?.id;
             if (own || lenient) {
-                return mx > el.x + 3 && mx < el.x + el.width - 3 &&
-                    my > el.y + 3 && my < el.y + el.height - 3;
+                return mx > el.x + 3 && mx < el.x + el.width - 3 && my > el.y + 3 && my < el.y + el.height - 3;
             }
             return mx > el.x - OBSTACLE_CLEARANCE && mx < el.x + el.width + OBSTACLE_CLEARANCE &&
                 my > el.y - OBSTACLE_CLEARANCE && my < el.y + el.height + OBSTACLE_CLEARANCE;
@@ -372,7 +385,13 @@ export const calculateSmartElbowRoute = (
             if (isObstacleSegment(xPrev, yPrev, xNext, yNext, touchesEnds)) continue;
 
             const dist = Math.abs(xNext - xPrev) + Math.abs(yNext - yPrev);
-            const turnPenalty = (curDir !== 0 && curDir !== nb.dir) ? 100 : 0;
+            const turning = curDir !== 0 && curDir !== nb.dir;
+            // A turn right after a short straight run is a jog — the 5px zigzag a route
+            // makes to dodge a lane for a few pixels. Judged on the run BEHIND the node:
+            // a short step that continues straight (two lanes 5px apart feeding the same
+            // port) merges into one segment and is not a jog. Priced above an overlap.
+            const jog = turning && runLen[current] > 0 && runLen[current] < MIN_RUN;
+            const turnPenalty = turning ? (jog ? 100 + JOG_PENALTY : 100) : 0;
             // Prefer points outside obstacles
             const obstacleAvoidancePenalty = isInsideAny(xNext, yNext) ? 500 : 0;
             // Soft-avoid running along another connector's body (collinear overlap).
@@ -387,6 +406,7 @@ export const calculateSmartElbowRoute = (
                 fScore[nIdx] = newG + Math.abs(xNext - end.x) + Math.abs(yNext - end.y);
                 parent[nIdx] = current;
                 dirOf[nIdx] = nb.dir;
+                runLen[nIdx] = turning || curDir === 0 ? dist : runLen[current] + dist;
                 push(nIdx);
             }
         }

@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.285', date: '2026-10-11', items: [
+        'Elbow connectors on big diagrams: a 50-box architecture with 60+ connectors now routes every elbow clear of every box — no more routes cutting through a shape just outside their own neighbourhood, and connectors that detour no longer get run along by others.',
+        'Ports that land a pixel off a corner attach to the right side, and routes no longer take 1px or 5px side-steps.',
+    ] },
     { version: '0.8.284', date: '2026-10-11', items: [
         'Elbow connectors in architecture diagrams route properly now. Inside a frame, pool or cluster box they go round the other shapes instead of straight through them, leave and arrive square to the side they are attached to, and keep clear of other shapes and of each other.',
         'Drag any shape onto an elbow’s path — or resize it, nudge it, move it from a script, or undo onto it — and the elbow re-routes, even though the shape isn’t connected to it.',

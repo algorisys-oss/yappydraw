@@ -108,22 +108,35 @@ describe("refreshConnectors — cascade", () => {
         expect(elbowsCrossing([{ x1: 240, y1: 400, x2: 260, y2: 420 }], [A, B, c])).toEqual([]);
     });
 
-    it("re-routes a higher-id elbow that the refreshed one now runs along", () => {
-        // Two shapes stacked, two routes side by side between them. A blocker forces the
-        // grid router. Routing c1 first drops it onto the lane c9 occupies; the cascade
-        // must then move c9 off it.
+    it("re-routes a higher-id elbow whose drawn route meets the refreshed one", () => {
+        // c9's stored route sweeps across the whole area between the shapes, so wherever
+        // the router puts c1, c9's route box meets it. Nothing bound to c9 moved, and it
+        // was not asked for — the cascade alone must refresh it.
         const A = node("A", 0, 0, 100, 60);
         const B = node("B", 0, 300, 100, 60);
         const C = node("C", 300, 0, 100, 60);
         const D = node("D", 300, 300, 100, 60);
         const blocker = node("M", 150, 120, 100, 120);
         const c1 = routed("c1", A, D, [[100, 30], [120, 30], [120, 330], [300, 330]]);
-        const c9 = routed("c9", C, B, [[300, 30], [280, 30], [280, 330], [100, 330]]);
+        const c9 = routed("c9", C, B, [[300, 30], [120, 30], [120, 330], [100, 330]]);
         const els = [A, B, C, D, blocker, c1, c9];
         const updates: Record<string, any> = {};
         const update = (id: string, upd: any) => { updates[id] = upd; Object.assign(els.find(e => e.id === id)!, upd); };
         refreshConnectors(["c1"], () => els, update);
         expect(updates.c1).toBeDefined();
-        expect(updates.c9).toBeDefined(); // not asked for, not bound to anything that moved — cascaded
+        expect(updates.c9).toBeDefined();
+    });
+
+    it("leaves a lower-id elbow alone (it is the one others avoid)", () => {
+        const A = node("A", 0, 0, 100, 60);
+        const D = node("D", 300, 300, 100, 60);
+        const c0 = routed("c0", A, D, [[100, 30], [120, 30], [120, 330], [300, 330]]);
+        const c5 = routed("c5", A, D, [[100, 40], [130, 40], [130, 340], [300, 340]]);
+        const els = [A, D, c0, c5];
+        const updates: Record<string, any> = {};
+        refreshConnectors(["c5"], () => els, (id, upd) => { updates[id] = upd; Object.assign(els.find(e => e.id === id)!, upd); });
+        // c0 shares A and D with c5, so it is in the port group and refreshed for that
+        // reason; the cascade itself never reaches below the lowest refreshed id.
+        expect(Object.keys(updates).sort()).toEqual(["c0", "c5"]);
     });
 });

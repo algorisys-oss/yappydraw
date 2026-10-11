@@ -4,7 +4,7 @@
 
 import type { DrawingElement, Point } from '../../types';
 import { getWasmExports } from './wasm-loader';
-import { collectConnectorSegments, collectShapeObstacles, routeBounds } from '../../utils/connector-obstacles';
+import { collectConnectorSegments, collectShapeObstacles, mergeGridCoords, routeBounds, segmentBounds } from '../../utils/connector-obstacles';
 import {
   getPointBufferPtr,
   getResultBufferPtr,
@@ -60,17 +60,17 @@ export function wasmCalculateSmartElbowRoute(
   const segBuf = getSegmentBuffer();
   if (!pointBuf || !elemBuf || !segBuf) return null;
 
-  // --- Obstacles: the SAME filter the JS router uses (containers excluded) ---
-  const obstacles = collectShapeObstacles(start, end, allElements, startElement, endElement);
-
-  // No obstacles → let JS use simple elbow
-  if (obstacles.length === 0) return null;
-
   // Bodies of already-routed lower-priority connectors to avoid running along.
   // Same helper the JS router uses, so both paths see an identical obstacle set.
   const connectorSegs = selfLine
     ? collectConnectorSegments(selfLine, allElements, routeBounds(start, end)).slice(0, MAX_SEGMENT_COUNT)
     : [];
+
+  // --- Obstacles: the SAME filter the JS router uses (containers excluded, region grown to the lanes) ---
+  const obstacles = collectShapeObstacles(start, end, allElements, startElement, endElement, segmentBounds(connectorSegs));
+
+  // No obstacles → let JS use simple elbow
+  if (obstacles.length === 0) return null;
 
   // --- Build sparse grid ---
   const xSet = new Set<number>([start.x, end.x]);
@@ -90,8 +90,6 @@ export function wasmCalculateSmartElbowRoute(
   // the JS router so WASM and JS produce identical routes.
   for (let i = 0; i < connectorSegs.length; i++) {
     const s = connectorSegs[i];
-    xSet.add(s.x1); xSet.add(s.x2);
-    ySet.add(s.y1); ySet.add(s.y2);
     if (Math.abs(s.y1 - s.y2) < 0.1) { ySet.add(s.y1 - MARGIN); ySet.add(s.y1 + MARGIN); }
     if (Math.abs(s.x1 - s.x2) < 0.1) { xSet.add(s.x1 - MARGIN); xSet.add(s.x1 + MARGIN); }
   }
@@ -106,8 +104,8 @@ export function wasmCalculateSmartElbowRoute(
   if (endPos === 'left')     xSet.add(end.x - GRID_OFFSET);
   if (endPos === 'right')    xSet.add(end.x + GRID_OFFSET);
 
-  const sortedX = Array.from(xSet).sort((a, b) => a - b);
-  const sortedY = Array.from(ySet).sort((a, b) => a - b);
+  const sortedX = mergeGridCoords(Array.from(xSet).sort((a, b) => a - b), start.x, end.x);
+  const sortedY = mergeGridCoords(Array.from(ySet).sort((a, b) => a - b), start.y, end.y);
 
   if (sortedX.length > MAX_GRID || sortedY.length > MAX_GRID) return null;
 

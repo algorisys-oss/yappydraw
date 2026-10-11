@@ -11153,3 +11153,23 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **The in-browser audit must check coordinates, not pixels.** Screenshots looked fine while
   13 of 20 connectors were unrouted chords; the coordinate audit found them in one line.
 
+## Elbow routing, third pass — the 52-box diagram (2026-10-11)
+
+- **Test on the diagram the user described, on the live site.** The 20-box audit and the
+  48-node grid were clean; a 52-box platform diagram with zones and 64 connectors found five
+  new defects in one run. The harness that mattered was built *after* the release.
+- **A grid that reaches further than the obstacle set is a hole.** Lanes and margins extend the
+  grid beyond the start→end neighbourhood; every shape the grid can reach must be an obstacle,
+  or the route goes exactly there. Grow the region to a fixpoint.
+- **Reject by what is drawn, not by what is stored.** A connector's chord box is not where its
+  route is. Any proximity filter on connectors has to use the waypoints.
+- **Penalise the pattern, not the symptom.** "Turn onto a short segment" punished a legitimate
+  5px lane step that merges away; "turn after a short run" is the zigzag. The first version
+  made the metric it targeted worse, which only the coordinate audit showed.
+- **Measure a rule before keeping it.** The own-edge clearance rule looked right and fixed the
+  example that motivated it; A/B on the harness showed it doubled corridor overlaps. Keep the
+  harness runnable in seconds so every heuristic gets measured, not argued.
+- **Import cycles show up as hangs under `mock.module`.** routing → bridge → routing (for one
+  helper) deadlocked the audit instead of failing. Helpers both sides need go in the module
+  both already import.
+

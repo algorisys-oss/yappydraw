@@ -1,5 +1,65 @@
 # Bug Fixes Log
 
+## 2026-10-11 — Elbow routing on a 52-box platform diagram (v0.8.285)
+
+Drawing a realistic 52-box, 64-connector architecture on the live v0.8.284 site exposed five
+flags among 54 elbows: one 1px stub, two routes through shapes, two overlaps. All from the
+same session's second pass.
+
+### 450. Routes cut through shapes just outside the ±100px neighbourhood
+
+**Symptom:** Orders → Kafka detoured sideways and ran straight through Shipping, Notifications
+and Media service; Fulfilment → Shipping through Search indexer.
+
+**Cause:** obstacles were collected within 100px of the start→end box, but the grid also
+contained connector lanes and obstacle margins beyond that box, so a route could travel where
+no shape was known. The grid grew; the obstacle set did not.
+
+**Fix:** `collectShapeObstacles` grows its region by every shape it includes (plus the
+connector lanes the caller passes in) until it settles, so every shape the grid can reach is
+an obstacle. Shared by the JS router and the WASM bridge.
+
+### 451. A connector's detour was invisible to the connectors that ran along it
+
+**Symptom:** Inventory → Kafka and Scheduler → Recommendations shared a 220px vertical run.
+
+**Cause:** the body-avoidance collector rejected other connectors by their start→end chord
+box. A detour lies outside that box by definition, so precisely the segments another route
+was about to run along were dropped.
+
+**Fix:** reject by the drawn route's box (every waypoint). Also: the connector bodies' own
+lines are no longer added as grid lines — only the lanes 15px either side — which halved the
+grid and ended the budget exhaustion on this diagram (budget now 8000, mirrored in WASM).
+
+### 452. A port 1px off a corner was treated as being on the wrong side
+
+**Symptom:** Catalog → Catalog DB ended with a 1px vertical stub: the connector arrived from
+above at a point on the left edge.
+
+**Cause:** `api.connect()` clips to the box with a 1px tolerance, so an endpoint can sit 1px
+above the top-left corner yet on the left edge line; `sideFacing` called it "top".
+
+**Fix:** `routingSide` takes the edge the point lies on (within 2px) before falling back to
+`sideFacing`. Grid coordinates within 2px of each other are merged (`mergeGridCoords`, kept
+in `connector-obstacles.ts` because both the router and the WASM bridge need it — importing
+it from the router created a routing ↔ bridge import cycle that deadlocked the test mock).
+
+### 453. Five-pixel zigzags, and a penalty that made them worse
+
+**Symptom:** a route stepped 5px sideways for a 45px stretch to avoid a lane, then back.
+
+**Cause / fix:** a jog penalty on "a turn onto a short segment" was tried first and
+*increased* overlaps: a 5px step between two lanes that continues straight into a port is not
+a jog, but it was priced as one, so the clean lane lost to the overlapping one on a tie. The
+penalty now applies to a turn **after** a straight run shorter than 12px (run length is
+tracked per node, in both routers). A stricter "never run along an own edge" rule was also
+measured and rejected: it removed one skim the grid merge already removes and doubled
+corridor overlaps.
+
+Measured on the 52-box diagram, built incrementally through the real refresh path: 0
+fallbacks, 0 through-shape, 0 along-edge, 2 overlaps (both in a 25px corridor shared by
+three connectors); 0.8.284 had 3 fallbacks, 2 through, 1 stub, 2 overlaps.
+
 ## 2026-10-11 — Elbow connectors in architecture diagrams
 
 ### 445. Elbows ran along the border of a shape they were passing

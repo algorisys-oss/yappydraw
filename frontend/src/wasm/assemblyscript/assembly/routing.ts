@@ -20,9 +20,11 @@ const MAX_GRID: i32 = 256;            // max coords per axis
 const MAX_NODES: i32 = 65536;         // 256 * 256
 const MAX_OPEN: i32 = 65536;
 const MAX_OUTPUT: i32 = 128;
-const MAX_ITERATIONS: i32 = 4000;         // must match MAX_ROUTE_ITERATIONS in utils/routing.ts
+const MAX_ITERATIONS: i32 = 8000;         // must match MAX_ROUTE_ITERATIONS in utils/routing.ts
 const OBSTACLE_CLEARANCE: f64 = 10.0;  // must match OBSTACLE_CLEARANCE in utils/routing.ts
 const TURN_PENALTY: f64 = 100.0;
+const MIN_RUN: f64 = 12.0;             // must match MIN_RUN in utils/routing.ts
+const JOG_PENALTY: f64 = 400.0;        // must match JOG_PENALTY in utils/routing.ts
 const OBSTACLE_PENALTY: f64 = 500.0;
 const OBSTACLE_FIELDS: i32 = 6;       // x, y, w, h, isStartEl, isEndEl
 // Soft cost for running along another connector's body. MUST match
@@ -37,6 +39,7 @@ const gScore = new Float64Array(MAX_NODES);
 const fScore = new Float64Array(MAX_NODES);
 const parentIdx = new Int32Array(MAX_NODES);
 const dirArr = new Int32Array(MAX_NODES);
+const runLen = new Float64Array(MAX_NODES);   // straight run length that reached the node
 const generation = new Int32Array(MAX_NODES);  // generation counter for lazy reset
 let currentGen: i32 = 0;
 
@@ -179,6 +182,7 @@ function isObstacleSegment(
 ): bool {
   const mx = (x1 + x2) * 0.5;
   const my = (y1 + y2) * 0.5;
+  const lenient: bool = touchesStart || touchesEnd;
   for (let i: i32 = 0; i < obstCount; i++) {
     const base = i * OBSTACLE_FIELDS;
     const ox = unchecked(obstBuf[base]);
@@ -186,7 +190,7 @@ function isObstacleSegment(
     const ow = unchecked(obstBuf[base + 2]);
     const oh = unchecked(obstBuf[base + 3]);
     const own = unchecked(obstBuf[base + 4]) != 0.0 || unchecked(obstBuf[base + 5]) != 0.0;
-    if (own || touchesStart || touchesEnd) {
+    if (own || lenient) {
       if (mx > ox + 3.0 && mx < ox + ow - 3.0 &&
           my > oy + 3.0 && my < oy + oh - 3.0) return true;
       continue;
@@ -363,6 +367,7 @@ export function calculateSmartElbowRoute(
   unchecked(fScore[startIdx] = Math.abs(startX - endX) + Math.abs(startY - endY));
   unchecked(parentIdx[startIdx] = -1);
   unchecked(dirArr[startIdx] = DIR_NONE);
+  unchecked(runLen[startIdx] = 0.0);
   heapPush(startIdx);
 
   // Neighbor offsets: dx, dy, dir
@@ -455,7 +460,10 @@ export function calculateSmartElbowRoute(
 
       // Cost calculation
       const dist = Math.abs(nextX - curX) + Math.abs(nextY - curY);
-      const turnPen: f64 = (curDir != DIR_NONE && curDir != ndir) ? TURN_PENALTY : 0.0;
+      const turning: bool = curDir != DIR_NONE && curDir != ndir;
+      const curRun = unchecked(runLen[curIdx]);
+      const jog: bool = turning && curRun > 0.0 && curRun < MIN_RUN;
+      const turnPen: f64 = turning ? (jog ? TURN_PENALTY + JOG_PENALTY : TURN_PENALTY) : 0.0;
       const obstPen: f64 = isInsideAny(nextX, nextY, obstBuf, obstCount) ? OBSTACLE_PENALTY : 0.0;
       // Soft-avoid running along another connector's body (collinear overlap).
       const connPen: f64 = (segCount > 0 &&
@@ -470,6 +478,7 @@ export function calculateSmartElbowRoute(
         unchecked(fScore[nIdx] = newG + Math.abs(nextX - endX) + Math.abs(nextY - endY));
         unchecked(parentIdx[nIdx] = curIdx);
         unchecked(dirArr[nIdx] = ndir);
+        unchecked(runLen[nIdx] = (turning || curDir == DIR_NONE) ? dist : curRun + dist);
         heapPush(nIdx);
       }
     }

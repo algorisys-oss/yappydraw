@@ -78,8 +78,23 @@ export function routingSide(node: DrawingElement, p: Pt, storedPos?: string): Si
     const stored = storedPos && CARDINAL.has(storedPos) ? (storedPos as Side) : undefined;
     if (node.angle && Math.abs(node.angle) > 1e-3) return stored;
     if (!Number.isFinite(node.width) || !Number.isFinite(node.height) || !(node.width > 0) || !(node.height > 0)) return stored;
+    // A point ON the box boundary is on that edge, full stop — sideFacing's aspect
+    // comparison can call a point 1px above a box's top-left corner, but on its left
+    // edge line, "top", and the router then arrives from above with a 1px stub.
+    const dl = Math.abs(p.x - node.x), dr = Math.abs(p.x - (node.x + node.width));
+    const dt = Math.abs(p.y - node.y), db = Math.abs(p.y - (node.y + node.height));
+    const nearest = Math.min(dl, dr, dt, db);
+    if (nearest <= EDGE_TOLERANCE) {
+        if (nearest === dl) return 'left';
+        if (nearest === dr) return 'right';
+        if (nearest === dt) return 'top';
+        return 'bottom';
+    }
     return sideFacing(node, p);
 }
+
+/** How close (px) to a box edge a resolved endpoint must be to count as sitting on it. */
+const EDGE_TOLERANCE = 2;
 
 /** Point at fraction `f` along `side` of `node`, honouring node rotation (`angle`, radians). */
 export function sidePoint(node: DrawingElement, side: Side, f: number): Pt {

@@ -249,7 +249,7 @@ describe("calculateSmartElbowRoute — budget on a dense grid", () => {
     });
 
     it("exposes the budget shared with the WASM twin", () => {
-        expect(MAX_ROUTE_ITERATIONS).toBe(4000);
+        expect(MAX_ROUTE_ITERATIONS).toBe(8000);
     });
 });
 

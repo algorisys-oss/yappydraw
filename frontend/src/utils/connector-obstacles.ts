@@ -75,21 +75,62 @@ export const collectShapeObstacles = (
     allElements: DrawingElement[],
     startElement?: DrawingElement,
     endElement?: DrawingElement,
+    extra?: Bounds,
 ): DrawingElement[] => {
-    const b = routeBounds(start, end);
-    const out: DrawingElement[] = [];
+    const b0 = routeBounds(start, end);
+    // The region the route may use: its own neighbourhood, plus whatever the caller
+    // already knows the grid reaches (connector lanes), grown below.
+    const b: Bounds = extra
+        ? { minX: Math.min(b0.minX, extra.minX), maxX: Math.max(b0.maxX, extra.maxX), minY: Math.min(b0.minY, extra.minY), maxY: Math.max(b0.maxY, extra.maxY) }
+        : { ...b0 };
+    const candidates: DrawingElement[] = [];
     for (const el of allElements) {
         if (CONNECTOR_TYPES.has(el.type) || el.type === 'text') continue;
-        if (el.x > b.maxX || el.x + el.width < b.minX || el.y > b.maxY || el.y + el.height < b.minY) continue;
         const isEndpointShape = (startElement && el.id === startElement.id) || (endElement && el.id === endElement.id);
         if (!isEndpointShape) {
             const holdsStart = startElement ? enclosesElement(el, startElement) : enclosesPoint(el, start);
             const holdsEnd = endElement ? enclosesElement(el, endElement) : enclosesPoint(el, end);
             if (holdsStart || holdsEnd) continue;
         }
-        out.push(el);
+        candidates.push(el);
+    }
+    // Every obstacle adds grid lines MARGIN outside its box, so the route can travel
+    // there — where a shape just beyond the original neighbourhood would be unknown
+    // and get cut through. Grow the region by each included shape until it settles
+    // (a few passes at most), so every shape the grid can reach is an obstacle.
+    const out: DrawingElement[] = [];
+    const taken = new Set<string>();
+    for (let pass = 0; pass < 4; pass++) {
+        let grew = false;
+        for (const el of candidates) {
+            if (taken.has(el.id)) continue;
+            if (el.x > b.maxX || el.x + el.width < b.minX || el.y > b.maxY || el.y + el.height < b.minY) continue;
+            taken.add(el.id);
+            out.push(el);
+            const x1 = el.x - OBSTACLE_REACH, x2 = el.x + el.width + OBSTACLE_REACH;
+            const y1 = el.y - OBSTACLE_REACH, y2 = el.y + el.height + OBSTACLE_REACH;
+            if (x1 < b.minX) { b.minX = x1; grew = true; }
+            if (x2 > b.maxX) { b.maxX = x2; grew = true; }
+            if (y1 < b.minY) { b.minY = y1; grew = true; }
+            if (y2 > b.maxY) { b.maxY = y2; grew = true; }
+        }
+        if (!grew) break;
     }
     return out;
+};
+
+/** How far outside a shape the router lays grid lines (its MARGIN); the region grows by it. */
+const OBSTACLE_REACH = 15;
+
+/** The box around a set of connector body segments (the lanes the grid will contain). */
+export const segmentBounds = (segs: Seg[]): Bounds | undefined => {
+    if (segs.length === 0) return undefined;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const s of segs) {
+        minX = Math.min(minX, s.x1, s.x2); maxX = Math.max(maxX, s.x1, s.x2);
+        minY = Math.min(minY, s.y1, s.y2); maxY = Math.max(maxY, s.y1, s.y2);
+    }
+    return { minX: minX - OBSTACLE_REACH, maxX: maxX + OBSTACLE_REACH, minY: minY - OBSTACLE_REACH, maxY: maxY + OBSTACLE_REACH };
 };
 
 /** Read a connector's stored points (flat number[] or {x,y}[]) as world-space {x,y}. */
@@ -130,19 +171,18 @@ export const collectConnectorSegments = (
         // Priority: only avoid lower-id connectors → strict DAG, no oscillation.
         if (!(el.id < selfLine.id)) continue;
 
-        // Cheap bbox reject before touching points: a connector far from this route
-        // can never affect it, and including it would only bloat the A* grid.
-        if (bounds) {
-            const bx1 = Math.min(el.x, el.x + el.width), bx2 = Math.max(el.x, el.x + el.width);
-            const by1 = Math.min(el.y, el.y + el.height), by2 = Math.max(el.y, el.y + el.height);
+        // Bbox reject before collecting: a connector far from this route can never
+        // affect it, and including it would only bloat the A* grid. The box is the
+        // DRAWN route's (every waypoint), not the start→end chord's: a detour runs
+        // outside the chord box by definition, and testing the chord box dropped
+        // exactly the connectors whose detours this route was about to run along.
+        const pts = connectorWorldPoints(el);
+        if (bounds && pts.length) {
+            let bx1 = Infinity, bx2 = -Infinity, by1 = Infinity, by2 = -Infinity;
+            for (const p of pts) { bx1 = Math.min(bx1, p.x); bx2 = Math.max(bx2, p.x); by1 = Math.min(by1, p.y); by2 = Math.max(by2, p.y); }
             if (bx1 > bounds.maxX || bx2 < bounds.minX || by1 > bounds.maxY || by2 < bounds.minY) continue;
         }
 
-        // NOTE: filter at connector level only — never per segment. A connector's
-        // detour segments deliberately leave its own start→end box (that is what a
-        // detour is), so clipping segment-by-segment would drop precisely the
-        // segments this route needs to avoid.
-        const pts = connectorWorldPoints(el);
         for (let i = 0; i + 1 < pts.length; i++) {
             segs.push({ x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y });
             if (segs.length >= MAX_CONNECTOR_SEGMENTS) return segs; // bounded: protects the grid
@@ -178,3 +218,26 @@ export const segmentsCollinearOverlap = (
     }
     return false;
 };
+
+/**
+ * Collapse grid coordinates closer than GRID_MERGE (2px) to one line. Two rows a pixel apart
+ * (a port at 336, a lane at 337) made the router step 1px at the very end — a visible
+ * stub. The start and end values survive untouched (they are looked up exactly); any
+ * other value within GRID_MERGE of a kept one is dropped. Lives here, not in
+ * routing.ts, because the WASM bridge needs it too and routing imports the bridge.
+ */
+export const GRID_MERGE = 2;
+export const mergeGridCoords = (sorted: number[], ...keep: number[]): number[] => {
+    const out: number[] = [];
+    const isKept = (v: number) => keep.some(k => Math.abs(k - v) < 0.1);
+    for (const v of sorted) {
+        const last = out[out.length - 1];
+        if (last !== undefined && v - last < GRID_MERGE) {
+            if (isKept(v) && !isKept(last)) out[out.length - 1] = v;   // prefer the exact port value
+            continue;
+        }
+        out.push(v);
+    }
+    return out;
+};
+

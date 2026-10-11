@@ -1969,7 +1969,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 998 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 1002 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2307,7 +2307,7 @@ frontend/src/utils/animation/tinyfly-document.test.ts | typescript | 140 | of:11
 frontend/src/utils/animation/tinyfly-document.ts | typescript | 266 | TinyflyElement:16 TinyflyCanvas:18 TinyflyFile:20 withTrackIds:36 readCanvas:48 readTinyflyFile:59 tinyflyFontToYappy:115 TinyflyShape:126 paint:146 strokeOf:163 tinyflyElementToShape:173 tinyflyPlacementOffset:249
 frontend/src/utils/aspect-lock.test.ts | typescript | 33 |
 frontend/src/utils/aspect-lock.ts | typescript | 15 | followLockedSide:10
-frontend/src/utils/binding-logic.test.ts | typescript | 129 | node:5 apiElbow:10
+frontend/src/utils/binding-logic.test.ts | typescript | 142 | node:5 apiElbow:10
 frontend/src/utils/binding-logic.ts | typescript | 531 | checkBinding:17 Cand:65 refreshLinePoints:111 reattachManualRoute:180 normalizePointList:203 elbowRouteBounds:215 elbowsCrossing:241 refreshConnectors:271 expandToPortGroups:312 computeAnchorFractions:336 resolveBindingPoint:355 refreshBoundLine:430
 frontend/src/utils/canvas-renderer.ts | typescript | 1523 | omScratch:35 adjScratch:46 renderAdjustmentLayer:60 ensureLumFilter:97 renderOpacityMasked:110 elementWorldAABB:144 ViewportBounds:162 RenderElementsParams:171 SelectionOverlayParams:194 ConnectionAnchorParams:220 computeViewportBounds:232 cullElementsForAnimation:247 decayLaserTrail:299 renderWorkspaceBackground:316 renderSlideBackground:334 renderSlideBoundaries:449 isColorDark:534 renderCanvasTexture:549 renderGrid:647 toOutlineElement:794 drawBleedAndCropMarks:817 renderLayersAndElements:848 renderSelectionOverlays:1230 renderTableColumnDropIndicator:1334 renderTableCellSelection:1378 renderConnectionAnchors:1423 renderLaserTrail:1482
 frontend/src/utils/click-outside.ts | typescript | 23 | clickOutside:3 JSX:18 Directives:19
@@ -2322,9 +2322,9 @@ frontend/src/utils/color-utils.ts | typescript | 227 | OKLCH:5 RGB:11 oklchToP3:
 frontend/src/utils/command-registry.ts | typescript | 590 | ShapeKey:38 Command:48
 frontend/src/utils/connector-geometry.test.ts | typescript | 305 | deg:4 sameAngle:6 arrow:13 bind:60 departure:68 arrivalAway:69
 frontend/src/utils/connector-geometry.ts | typescript | 315 | Pt:31 ConnectorGeometry:33 polylineMidpoint:64 outwardAngle:98 dedupe:108 connectorGeometry:122 AnchorEdge:210 anchorEdge:239 defaultControlPoints:272 synthesiseElbow:311
-frontend/src/utils/connector-obstacles.ts | typescript | 180 | Seg:14 Bounds:34
+frontend/src/utils/connector-obstacles.ts | typescript | 243 | Seg:14 Bounds:34
 frontend/src/utils/connector-routing.test.ts | typescript | 247 | node:7 conn:12
-frontend/src/utils/connector-routing.ts | typescript | 228 | Pt:26 Side:27 sideFacing:41 routingSide:77 sidePoint:85 oppositePoint:102 projectOntoSide:118 Member:133 allocatePort:146
+frontend/src/utils/connector-routing.ts | typescript | 243 | Pt:26 Side:27 sideFacing:41 routingSide:77 sidePoint:100 oppositePoint:117 projectOntoSide:133 Member:148 allocatePort:161
 frontend/src/utils/context-menu-builder.ts | typescript | 1986 | MergedCellRegion:66 buildSelectByTypeMenu:82 buildSelectBySamePropertyMenu:161 buildUnlockMenuItems:201 buildContextMenuItems:243 buildFormatMenuItems:1802 buildBorderMenuItems:1897 getContextMenuItems:1977
 frontend/src/utils/corner-radius.test.ts | typescript | 116 | rect:15
 frontend/src/utils/corner-radius.ts | typescript | 79 | CornerRadii:17 RadiusSource:19 hasPerCornerRadius:33 uniformRadiusPx:41 cornerRadiiPx:51 roundRectRadii:61 roundedRectPath:71
@@ -2492,7 +2492,7 @@ frontend/src/utils/rotated-bbox.ts | typescript | 48 | BBox:23 keepRotatedGeomet
 frontend/src/utils/rough-cache.test.ts | typescript | 96 | anchors:11 path:17
 frontend/src/utils/rough-cache.ts | typescript | 324 | CacheEntry:9 generateDrawable:32 beginElement:44 endElement:59 clearRoughCache:71 createCachedRc:77 stringDigest:131 keyOf:137 feed:157 feedGeometry:207 digestElement:221 computeElementHash:235
 frontend/src/utils/routing.test.ts | typescript | 285 | Seg:7 node:10 elbow:15 crosses:146
-frontend/src/utils/routing.ts | typescript | 396 | Seg:13
+frontend/src/utils/routing.ts | typescript | 416 | Seg:15
 frontend/src/utils/safe-storage.ts | typescript | 48 | readJson:16 readJsonArray:35 writeJson:41
 frontend/src/utils/save-file.ts | typescript | 84 | SaveOpts:17
 frontend/src/utils/scribble.test.ts | typescript | 59 | inside:9 segments:23
@@ -2616,7 +2616,7 @@ frontend/src/wasm/assemblyscript/assembly/batch-renderer.ts | typescript | 434 |
 frontend/src/wasm/assemblyscript/assembly/geometry.ts | typescript | 250 | isPointInPolygon:7 distanceToSegment:30 cubicBezier:65 cubicBezierAngle:72 rotatePoint:90 isPointInEllipse:104 isPointNearEllipseStroke:125 isPointOnPolyline:147 getBezierPoints:171 isPointOnBezier:193 getOrganicBranchPolygon:210
 frontend/src/wasm/assemblyscript/assembly/hit-testing.ts | typescript | 145 | hitTestSingle:22 batchBroadPhase:92 getCandidateAt:142
 frontend/src/wasm/assemblyscript/assembly/index.ts | typescript | 74 | add:5
-frontend/src/wasm/assemblyscript/assembly/routing.ts | typescript | 492 | isVisited:53 markVisited:58 getG:63 getF:69 isClosed:75 markClosed:86 getDir:92 heapPush:99 heapPop:120 isInsideAny:155 isObstacleSegment:175 overlapsConnector:206 isAllowedStartMove:255 isAllowedEndMove:266 cleanPath:276 calculateSmartElbowRoute:329 getRoutePointX:483 getRoutePointY:489
+frontend/src/wasm/assemblyscript/assembly/routing.ts | typescript | 501 | isVisited:56 markVisited:61 getG:66 getF:72 isClosed:78 markClosed:89 getDir:95 heapPush:102 heapPop:123 isInsideAny:158 isObstacleSegment:178 overlapsConnector:210 isAllowedStartMove:259 isAllowedEndMove:270 cleanPath:280 calculateSmartElbowRoute:333 getRoutePointX:492 getRoutePointY:498
 frontend/src/wasm/assemblyscript/assembly/shape-paths.ts | typescript | 340 | writePoint:39 randomSeeded:46 computeShapePath:65
 frontend/src/wasm/assemblyscript/assembly/sketch-engine.ts | typescript | 960 | prngInit:49 prngNext:54 emit:65 emitOpSetHeader:72 emitMove:77 emitBCurve:83 emitLineTo:93 emitEnd:99 _offset:106 _offsetOpt:112 _line:118 _doubleLine:183 _doubleLineFill:194 _linearPathOps:204 _solidFill:234 sortEdges:278 straightHachureLines:309 hachureLines:399 emitHachureFill:441 emitCrossHatchFill:472 emitZigzagFill:501 emitFill:541 computeEllipsePoints:567 emitCurve:658 sketchRectangle:698 sketchPolygon:755 sketchLine:813 sketchEllipse:828 sketchLinearPath:928 getSketchCmd:957
 frontend/src/wasm/assemblyscript/assembly/snapping.ts | typescript | 236 | computeSnappingGuides:26 getSnappingDeltaX:215 getSnappingDeltaY:219 getGuideElementIndex:223 getGuideCoordinate:228 getGuideType:233
@@ -2626,7 +2626,7 @@ frontend/src/wasm/bridge/batch-renderer-bridge.ts | typescript | 168 | getShapeE
 frontend/src/wasm/bridge/geometry-bridge.ts | typescript | 111 | WasmExports:5 exports:8 isPointInPolygon:12 distanceToSegment:20 isPointInEllipse:26 isPointNearEllipseStroke:34 isPointOnPolyline:42 isPointOnBezier:50 getBezierPoints:63 getOrganicBranchPolygon:83 rotatePoint:103
 frontend/src/wasm/bridge/hit-testing-bridge.ts | typescript | 187 | getShapeTypeEnum:28 wasmHitTestElement:56 jsNarrowPhase:109
 frontend/src/wasm/bridge/memory-pool.ts | typescript | 173 | Point:38 initMemoryPool:47 writePoints:88 readPoints:104 getPointBufferPtr:118 getResultBufferPtr:123 getElementBufferPtr:128 getPointBuffer:133 getElementBuffer:138 getSegmentBufferPtr:143 getSegmentBuffer:148 refreshViews:156
-frontend/src/wasm/bridge/routing-bridge.ts | typescript | 188 | posToEnum:32 wasmCalculateSmartElbowRoute:45
+frontend/src/wasm/bridge/routing-bridge.ts | typescript | 186 | posToEnum:32 wasmCalculateSmartElbowRoute:45
 frontend/src/wasm/bridge/shape-paths-bridge.ts | typescript | 120 | getShapeEnum:38 wasmGetShapeGeometry:71
 frontend/src/wasm/bridge/sketch-engine-bridge.ts | typescript | 223 | getFillStyleEnum:25 parseCommandBuffer:39 isWasmSketchMethod:104 wasmGenerateDrawable:116
 frontend/src/wasm/bridge/snapping-bridge.ts | typescript | 108 | wasmGetSnappingGuides:17
