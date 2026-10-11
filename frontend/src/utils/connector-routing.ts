@@ -56,6 +56,31 @@ export function sideFacing(node: DrawingElement, opp: Pt): Side {
     return dy >= 0 ? 'bottom' : 'top';
 }
 
+const CARDINAL: ReadonlySet<string> = new Set(['top', 'right', 'bottom', 'left']);
+
+/**
+ * The side of `node` an elbow should leave from / arrive at, given the RESOLVED
+ * endpoint `p` — the direction the router is told to exit and enter square to.
+ *
+ * Derived from the point, not from the binding's stored `position`, because the stored
+ * name is unreliable in three common cases: `api.connect()` and the DSL never write
+ * one (they store anchor fractions only), the arrow tool writes `'edge'` or a corner
+ * name when the drop wasn't on a side midpoint, and after a port allocation or a
+ * dynamic re-face the endpoint has moved to another side while the name still says
+ * the old one. In every one of those the router either got no constraint and slid the
+ * first segment along the shape's own border, or got the wrong constraint and routed
+ * out through the shape.
+ *
+ * Rotated nodes have no world-axis side, so for them the stored name is used when it
+ * is cardinal and nothing otherwise — the pre-existing behaviour.
+ */
+export function routingSide(node: DrawingElement, p: Pt, storedPos?: string): Side | undefined {
+    const stored = storedPos && CARDINAL.has(storedPos) ? (storedPos as Side) : undefined;
+    if (node.angle && Math.abs(node.angle) > 1e-3) return stored;
+    if (!Number.isFinite(node.width) || !Number.isFinite(node.height) || !(node.width > 0) || !(node.height > 0)) return stored;
+    return sideFacing(node, p);
+}
+
 /** Point at fraction `f` along `side` of `node`, honouring node rotation (`angle`, radians). */
 export function sidePoint(node: DrawingElement, side: Side, f: number): Pt {
     let x: number, y: number;

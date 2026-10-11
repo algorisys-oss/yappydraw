@@ -20,7 +20,8 @@ const MAX_GRID: i32 = 256;            // max coords per axis
 const MAX_NODES: i32 = 65536;         // 256 * 256
 const MAX_OPEN: i32 = 65536;
 const MAX_OUTPUT: i32 = 128;
-const MAX_ITERATIONS: i32 = 800;
+const MAX_ITERATIONS: i32 = 4000;         // must match MAX_ROUTE_ITERATIONS in utils/routing.ts
+const OBSTACLE_CLEARANCE: f64 = 10.0;  // must match OBSTACLE_CLEARANCE in utils/routing.ts
 const TURN_PENALTY: f64 = 100.0;
 const OBSTACLE_PENALTY: f64 = 500.0;
 const OBSTACLE_FIELDS: i32 = 6;       // x, y, w, h, isStartEl, isEndEl
@@ -167,8 +168,13 @@ function isInsideAny(
   return false;
 }
 
+// Mirrors isObstacleSegment in utils/routing.ts: a segment is blocked within
+// OBSTACLE_CLEARANCE of a shape. The connector's own shapes (isStart/isEnd), and any
+// shape beside the segment leaving the start / arriving at the end, block only a
+// segment heading into them.
 function isObstacleSegment(
   x1: f64, y1: f64, x2: f64, y2: f64,
+  touchesStart: bool, touchesEnd: bool,
   obstBuf: Float64Array, obstCount: i32
 ): bool {
   const mx = (x1 + x2) * 0.5;
@@ -179,11 +185,14 @@ function isObstacleSegment(
     const oy = unchecked(obstBuf[base + 1]);
     const ow = unchecked(obstBuf[base + 2]);
     const oh = unchecked(obstBuf[base + 3]);
-    const isStartEnd = unchecked(obstBuf[base + 4]) != 0.0 ||
-                       unchecked(obstBuf[base + 5]) != 0.0;
-    const margin: f64 = isStartEnd ? 3.0 : 1.0;
-    if (mx > ox + margin && mx < ox + ow - margin &&
-        my > oy + margin && my < oy + oh - margin) return true;
+    const own = unchecked(obstBuf[base + 4]) != 0.0 || unchecked(obstBuf[base + 5]) != 0.0;
+    if (own || touchesStart || touchesEnd) {
+      if (mx > ox + 3.0 && mx < ox + ow - 3.0 &&
+          my > oy + 3.0 && my < oy + oh - 3.0) return true;
+      continue;
+    }
+    if (mx > ox - OBSTACLE_CLEARANCE && mx < ox + ow + OBSTACLE_CLEARANCE &&
+        my > oy - OBSTACLE_CLEARANCE && my < oy + oh + OBSTACLE_CLEARANCE) return true;
   }
   return false;
 }
@@ -440,7 +449,9 @@ export function calculateSmartElbowRoute(
       const nextY = unchecked(yGrid[ny]);
 
       // Check if segment midpoint is inside an obstacle
-      if (isObstacleSegment(curX, curY, nextX, nextY, obstBuf, obstCount)) continue;
+      const touchesStart: bool = curIdx == startIdx || nIdx == startIdx;
+      const touchesEnd: bool = curIdx == endIdx || nIdx == endIdx;
+      if (isObstacleSegment(curX, curY, nextX, nextY, touchesStart, touchesEnd, obstBuf, obstCount)) continue;
 
       // Cost calculation
       const dist = Math.abs(nextX - curX) + Math.abs(nextY - curY);

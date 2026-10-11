@@ -4,7 +4,7 @@
 
 import type { DrawingElement, Point } from '../../types';
 import { getWasmExports } from './wasm-loader';
-import { collectConnectorSegments, routeBounds } from '../../utils/connector-obstacles';
+import { collectConnectorSegments, collectShapeObstacles, routeBounds } from '../../utils/connector-obstacles';
 import {
   getPointBufferPtr,
   getResultBufferPtr,
@@ -60,19 +60,8 @@ export function wasmCalculateSmartElbowRoute(
   const segBuf = getSegmentBuffer();
   if (!pointBuf || !elemBuf || !segBuf) return null;
 
-  // --- Filter obstacles (same logic as JS) ---
-  const minX = Math.min(start.x, end.x) - 100;
-  const maxX = Math.max(start.x, end.x) + 100;
-  const minY = Math.min(start.y, end.y) - 100;
-  const maxY = Math.max(start.y, end.y) + 100;
-
-  const obstacles: DrawingElement[] = [];
-  for (let i = 0; i < allElements.length; i++) {
-    const el = allElements[i];
-    if (el.type === 'line' || el.type === 'arrow' || el.type === 'text') continue;
-    if (el.x > maxX || el.x + el.width < minX || el.y > maxY || el.y + el.height < minY) continue;
-    obstacles.push(el);
-  }
+  // --- Obstacles: the SAME filter the JS router uses (containers excluded) ---
+  const obstacles = collectShapeObstacles(start, end, allElements, startElement, endElement);
 
   // No obstacles → let JS use simple elbow
   if (obstacles.length === 0) return null;

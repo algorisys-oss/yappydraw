@@ -235,6 +235,10 @@ interface ElementOptions {
     seed?: number;
     layerId?: string;
     curveType?: 'straight' | 'bezier' | 'elbow';
+    /** Elbow connectors: `true` keeps the current `points` as hand-placed waypoints — moving a
+     *  bound shape re-attaches the ends but does not re-route. Set automatically when the user
+     *  drags a bend or segment; set `false` (or use "Re-route automatically") to route again. */
+    manualRoute?: boolean;
     arrowAnchorAlign?: 'top' | 'middle' | 'bottom';
     startBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
     endBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;

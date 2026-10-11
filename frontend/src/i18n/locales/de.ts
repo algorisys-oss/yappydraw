@@ -963,6 +963,8 @@ export const de: Dictionary = {
 
 
     menu: {
+        rerouteConnector: 'Automatisch neu verlegen',
+        rerouteConnectorTooltip: 'Die von Hand gesetzten Knicke verwerfen und den Verbinder seinen Weg wieder selbst finden lassen',
         teachingMode: 'Unterrichtsmodus',
         teachingModeOn: 'Unterrichtsmodus ist aktiv — klicken, um alle Werkzeuge wiederherzustellen',
         teachingModeOff: 'Unterrichtsmodus — nur die gängigen Zeichenwerkzeuge anzeigen',

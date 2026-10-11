@@ -962,6 +962,8 @@ export const ja: Dictionary = {
     },
 
     menu: {
+        rerouteConnector: '自動で再ルーティング',
+        rerouteConnectorTooltip: '手動で置いた曲がり角を破棄し、コネクタに再び経路を探させます',
         teachingMode: '授業モード',
         teachingModeOn: '授業モードがオンです — クリックすると全ツールに戻ります',
         teachingModeOff: '授業モード — よく使う描画ツールだけを表示します',

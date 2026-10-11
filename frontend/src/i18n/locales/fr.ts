@@ -976,6 +976,8 @@ export const fr: Dictionary = {
      * Top bar and the hamburger menu.
      */
     menu: {
+        rerouteConnector: 'Re-router automatiquement',
+        rerouteConnectorTooltip: 'Abandonne les coudes placés à la main et laisse le connecteur retrouver son chemin tout seul',
         teachingMode: 'Mode Enseignement',
         teachingModeOn: 'Le mode Enseignement est activé — cliquez pour rétablir tous les outils',
         teachingModeOff: 'Mode Enseignement — n’afficher que les outils de dessin courants',

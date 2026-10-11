@@ -962,6 +962,8 @@ export const es: Dictionary = {
     },
 
     menu: {
+        rerouteConnector: 'Volver a trazar automáticamente',
+        rerouteConnectorTooltip: 'Descarta los codos colocados a mano y deja que el conector encuentre su propio camino',
         teachingMode: 'Modo enseñanza',
         teachingModeOn: 'El modo enseñanza está activo — haz clic para restaurar todas las herramientas',
         teachingModeOff: 'Modo enseñanza — mostrar solo las herramientas de dibujo habituales',

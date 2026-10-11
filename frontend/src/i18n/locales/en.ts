@@ -975,6 +975,8 @@ export const en = {
      * these are the Teaching Mode strings, added with the feature.
      */
     menu: {
+        rerouteConnector: 'Re-route automatically',
+        rerouteConnectorTooltip: 'Discard the hand-placed bends and let the elbow find its own path again',
         teachingMode: 'Teaching Mode',
         teachingModeOn: 'Teaching Mode is on — click to restore the full tool set',
         teachingModeOff: 'Teaching Mode — show only the common drawing tools',

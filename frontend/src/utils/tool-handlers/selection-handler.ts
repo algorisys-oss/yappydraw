@@ -18,7 +18,8 @@ import { getDescendants } from '../hierarchy';
 import { gridSnap, gridSnapDelta } from '../grid-lattice';
 import { confirmAndReparent } from '../reparent';
 import { isPointInPolygon, rotatePoint } from '../geometry';
-import { expandToPortGroups } from '../binding-logic';
+import { refreshConnectors } from '../binding-logic';
+import { simplifyElbowPath } from '../routing';
 import { getWarpGrid, defaultWarpGrid } from '../envelope-warp';
 import { cylinderCapRatioForDistance } from '../shape-geometry';
 import { getSnappingGuides, type SnappingGuide } from '../object-snapping';
@@ -1846,12 +1847,35 @@ function handlePolypointDrag(
     const element = store.elements.find(e => e.id === id);
     if (!element || !element.points) return;
 
-    const pts = normalizePoints(element.points);
+    const pts = normalizePoints(element.points).map(p => ({ x: p.x, y: p.y }));
     if (index < 0 || index >= pts.length) return;
+    const nx = x - element.x, ny = y - element.y;
 
-    const newPoints = [...pts];
-    newPoints[index] = { x: x - element.x, y: y - element.y };
-    updateElement(id, { points: newPoints }, false);
+    // An unbound polyline is a free shape: the point just moves.
+    const bound = !!(element.startBinding || element.endBinding);
+    if (!bound || element.curveType !== 'elbow' || index === 0 || index === pts.length - 1) {
+        pts[index] = { x: nx, y: ny };
+        updateElement(id, { points: pts }, false);
+        return;
+    }
+
+    // A bend of a bound elbow stays a right angle: the two segments it joins slide with
+    // it. A neighbour that is a bound END cannot slide, so a new bend is inserted beside
+    // it instead, keeping that end's segment on its original axis (square to the side).
+    const prevVertical = Math.abs(pts[index - 1].x - pts[index].x) < 1;
+    const nextVertical = Math.abs(pts[index + 1].x - pts[index].x) < 1;
+    let i = index;
+    if (i - 1 === 0 && element.startBinding) {
+        pts.splice(1, 0, prevVertical ? { x: pts[0].x, y: ny } : { x: nx, y: pts[0].y });
+        i++;
+    } else if (prevVertical) pts[i - 1].x = nx; else pts[i - 1].y = ny;
+    const last = pts.length - 1;
+    if (i + 1 === last && element.endBinding) {
+        pts.splice(last, 0, nextVertical ? { x: pts[last].x, y: ny } : { x: nx, y: pts[last].y });
+    } else if (nextVertical) pts[i + 1].x = nx; else pts[i + 1].y = ny;
+    pts[i] = { x: nx, y: ny };
+    pState.draggingHandle = `polypoint-${i}`;   // the bend may have shifted index
+    commitElbowPoints(element, pts);
 }
 
 // ─── Vector Path Node Dragging (anchor move / handle reshape) ────────
@@ -2096,30 +2120,79 @@ function handleSegmentDrag(
     id: string,
     pState: PointerState,
 ): void {
-    const segIdx = parseInt(pState.draggingHandle!.replace('segment-', ''), 10);
+    let segIdx = parseInt(pState.draggingHandle!.replace('segment-', ''), 10);
     const element = store.elements.find(e => e.id === id);
     if (!element || !element.points) return;
 
-    const pts = normalizePoints(element.points);
+    const pts = normalizePoints(element.points).map(p => ({ x: p.x, y: p.y }));
     if (segIdx < 0 || segIdx >= pts.length - 1) return;
+
+    // A bound end stays on its shape. Dragging the first or last segment of a bound
+    // elbow therefore grows a short stub out of the anchor, in the segment's own
+    // direction, and the dragged segment moves beyond it — the exit stays square to the
+    // side. (On an unbound polyline the end simply moves with its segment.)
+    const stubFrom = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const reach = Math.min(ELBOW_STUB, len / 2);
+        return { x: a.x + (dx / len) * reach, y: a.y + (dy / len) * reach };
+    };
+    // Each stub is two points: the stub's far end, and a copy of it that becomes the
+    // dragged segment's new corner. Moving a single inserted point would tilt the stub.
+    if (segIdx === 0 && element.startBinding) {
+        const stub = stubFrom(pts[0], pts[1]);
+        pts.splice(1, 0, stub, { ...stub });
+        segIdx = 2;
+    }
+    if (segIdx === pts.length - 2 && element.endBinding) {
+        const n = pts.length;
+        const stub = stubFrom(pts[n - 1], pts[n - 2]);
+        pts.splice(n - 1, 0, { ...stub }, stub);
+    }
+    // The drag continues on the SAME segment next move — which is now at a new index.
+    pState.draggingHandle = `segment-${segIdx}`;
 
     const p1 = pts[segIdx];
     const p2 = pts[segIdx + 1];
     const isHoriz = Math.abs(p1.y - p2.y) < 1;
-
-    const newPoints = pts.map(p => ({ x: p.x, y: p.y }));
     if (isHoriz) {
-        // Drag horizontal segment vertically
         const newY = y - element.y;
-        newPoints[segIdx].y = newY;
-        newPoints[segIdx + 1].y = newY;
+        pts[segIdx].y = newY;
+        pts[segIdx + 1].y = newY;
     } else {
-        // Drag vertical segment horizontally
         const newX = x - element.x;
-        newPoints[segIdx].x = newX;
-        newPoints[segIdx + 1].x = newX;
+        pts[segIdx].x = newX;
+        pts[segIdx + 1].x = newX;
     }
-    updateElement(id, { points: newPoints }, false);
+    commitElbowPoints(element, pts);
+}
+
+/** Pointer-up after a segment/bend drag: drop zero-length and collinear leftovers. */
+function finishElbowEdit(pState: PointerState): void {
+    const h = pState.draggingHandle;
+    if (!h || !(h.startsWith('segment-') || h.startsWith('polypoint-'))) return;
+    if (store.selection.length !== 1) return;
+    const el = store.elements.find(e => e.id === store.selection[0]);
+    if (!el || el.curveType !== 'elbow' || !el.points) return;
+    const clean = simplifyElbowPath(normalizePoints(el.points).map(p => ({ x: p.x, y: p.y })));
+    updateElement(el.id, { points: clean.flatMap(p => [p.x, p.y]) }, false);
+}
+
+/** Length of the stub left at a bound end when its segment is dragged away (px, world). */
+const ELBOW_STUB = 20;
+
+/**
+ * Store hand-edited elbow points: flat and relative — the one storage format every
+ * reader of connector points expects — and, when the elbow is bound, marked
+ * `manualRoute` so the next shape move keeps them. Not tidied here: merging collinear
+ * points mid-drag would renumber the segment being dragged. `finishElbowEdit` tidies
+ * once on pointer-up.
+ */
+function commitElbowPoints(element: DrawingElement, pts: { x: number; y: number }[]): void {
+    const bound = !!(element.startBinding || element.endBinding);
+    const updates: Partial<DrawingElement> = { points: pts.flatMap(p => [p.x, p.y]) };
+    if (bound && element.curveType === 'elbow' && !element.manualRoute) updates.manualRoute = true;
+    updateElement(element.id, updates, false);
 }
 
 // ─── Apply Resize (Single or Group) ─────────────────────────────────
@@ -2565,10 +2638,9 @@ function handleMove(
                 });
             }
         });
-        // Expand to the full port group: ports depend on every endpoint sharing a node
-        // side, so peers bound to the far shapes must be recomputed too — otherwise they
-        // keep ports sized for a stale group and can end up on the same point.
-        expandToPortGroups(toRefresh, store.elements).forEach(id => helpers.refreshBoundLine(id));
+        // Port groups, id order and the avoidance cascade all live in refreshConnectors.
+        // (Elbows the dragged shapes now sit on are picked up by the canvas effect.)
+        refreshConnectors(toRefresh, () => store.elements, (id, upd) => updateElement(id, upd, false));
     });
 
     // Detect reparent drop target during drag
@@ -2785,7 +2857,9 @@ export function selectionOnUp(
                     position: binding.position
                 };
 
-                updateElement(elId, isStart ? { startBinding: bindingData } : { endBinding: bindingData });
+                // A freshly attached end gets an automatic route; hand-placed bends were
+                // for the old pair of shapes.
+                updateElement(elId, isStart ? { startBinding: bindingData, manualRoute: false } : { endBinding: bindingData, manualRoute: false });
 
                 const target = store.elements.find(e => e.id === binding.elementId);
                 if (target) {
@@ -2986,6 +3060,7 @@ export function selectionOnUp(
     }
 
     pState.isDragging = false;
+    finishElbowEdit(pState);
     pState.draggingHandle = null;
     pState.initialPositions.clear();
     pState.initial3DViewAngle = undefined;

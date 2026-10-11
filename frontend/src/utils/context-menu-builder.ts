@@ -49,6 +49,8 @@ import { openRepeatDialog } from '../components/repeat-dialog';
 import { openMandalaDialog } from '../components/mandala-dialog';
 import { openDoodleDialog, selectedDoodleId } from '../components/doodle-dialog';
 import { YappyAPI } from '../api';
+import { t } from '../i18n';
+import { refreshConnectors } from './binding-logic';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
 import { rasterizeSelection } from './rasterize';
 import { shapeToPath } from './shape-to-path';
@@ -1212,11 +1214,27 @@ function buildContextMenuItems(
                         tooltip: getCurveTypeTooltip(ct),
                         onClick: () => {
                             pushToHistory();
-                            connectorsInSelection.forEach(el => updateElement(el.id, { curveType: ct as any }, false));
+                            // A new curve style starts from an automatic route again.
+                            connectorsInSelection.forEach(el => updateElement(el.id, { curveType: ct as any, manualRoute: false }, false));
                             requestAnimationFrame(redrawFn);
                         }
                     })),
                     gridColumns: 3
+                });
+            }
+
+            // An elbow whose bends the user has dragged keeps them until asked to re-route.
+            const handRouted = connectorsInSelection.filter(el => el.curveType === 'elbow' && el.manualRoute);
+            if (handRouted.length > 0) {
+                items.push({
+                    label: t('menu.rerouteConnector'),
+                    tooltip: t('menu.rerouteConnectorTooltip'),
+                    onClick: () => {
+                        pushToHistory();
+                        handRouted.forEach(el => updateElement(el.id, { manualRoute: false }, false));
+                        refreshConnectors(handRouted.map(el => el.id), () => store.elements, (id, upd) => updateElement(id, upd, false));
+                        requestAnimationFrame(redrawFn);
+                    }
                 });
             }
         }

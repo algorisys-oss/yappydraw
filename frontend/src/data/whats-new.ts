@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.284', date: '2026-10-11', items: [
+        'Elbow connectors in architecture diagrams route properly now. Inside a frame, pool or cluster box they go round the other shapes instead of straight through them, leave and arrive square to the side they are attached to, and keep clear of other shapes and of each other.',
+        'Drag any shape onto an elbow’s path — or resize it, nudge it, move it from a script, or undo onto it — and the elbow re-routes, even though the shape isn’t connected to it.',
+        'Adjust an elbow by hand: drag a segment or a bend and it stays where you put it when the shapes move. Right-click → Re-route automatically hands it back.',
+        'Long connectors across big diagrams (40–50 boxes) find a clear path instead of giving up and cutting through.',
+    ] },
     { version: '0.8.283', date: '2026-10-11', items: [
         'Switching Text on Path on a shape no longer looks like the Properties panel reset. The shape stays selected, and its Text settings now show and edit the text on its outline — label, font, size, colour and position.',
         'Select the shape later and its text is still there under Text, with Text on Path on. Click the letters only when you want to move or style the text on its own.',

@@ -210,3 +210,38 @@ describe("rotation (sideFacing / sidePoint)", () => {
         expect(p.y).toBeCloseTo(200, 6);
     });
 });
+
+import { routingSide } from "./connector-routing";
+
+describe("routingSide", () => {
+    const N = node("N", 200, 200, 100, 100); // centre (250,250)
+
+    it("names the side the resolved endpoint sits on", () => {
+        expect(routingSide(N, { x: 300, y: 230 })).toBe("right");
+        expect(routingSide(N, { x: 250, y: 200 })).toBe("top");
+        expect(routingSide(N, { x: 200, y: 280 })).toBe("left");
+        expect(routingSide(N, { x: 240, y: 300 })).toBe("bottom");
+    });
+
+    it("trusts the point over a stale or non-cardinal stored position", () => {
+        expect(routingSide(N, { x: 300, y: 250 }, "top")).toBe("right");   // re-faced / port-moved
+        expect(routingSide(N, { x: 250, y: 300 }, "edge")).toBe("bottom"); // arrow tool 'edge'
+        expect(routingSide(N, { x: 250, y: 300 }, undefined)).toBe("bottom"); // api.connect()
+    });
+
+    it("puts an outline point of a circle on the side its angle faces", () => {
+        const C = { ...N, type: "circle" } as unknown as DrawingElement;
+        const a = (30 * Math.PI) / 180;
+        expect(routingSide(C, { x: 250 + 50 * Math.cos(a), y: 250 + 50 * Math.sin(a) })).toBe("right");
+        expect(routingSide(C, { x: 250, y: 300 })).toBe("bottom");
+    });
+
+    it("falls back to the stored cardinal for rotated or degenerate nodes", () => {
+        const R = node("R", 200, 200, 100, 100, Math.PI / 4);
+        expect(routingSide(R, { x: 300, y: 250 }, "top")).toBe("top");
+        expect(routingSide(R, { x: 300, y: 250 }, "edge")).toBeUndefined();
+        const Z = node("Z", 200, 200, 0, 100);
+        expect(routingSide(Z, { x: 200, y: 250 }, "left")).toBe("left");
+        expect(routingSide(Z, { x: 200, y: 250 })).toBeUndefined();
+    });
+});

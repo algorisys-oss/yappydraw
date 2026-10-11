@@ -1,16 +1,37 @@
 import type { DrawingElement, Point } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmCalculateSmartElbowRoute } from "../wasm/bridge/routing-bridge";
-import { CONNECTOR_PENALTY, collectConnectorSegments, routeBounds, segmentsCollinearOverlap } from "./connector-obstacles";
+import { CONNECTOR_PENALTY, collectConnectorSegments, collectShapeObstacles, routeBounds, segmentsCollinearOverlap } from "./connector-obstacles";
 
 // Connector-body obstacles live in their own module to avoid a routing <-> bridge
 // import cycle; re-exported here so existing importers keep working.
 export {
     CONNECTOR_PENALTY,
     collectConnectorSegments,
+    collectShapeObstacles,
     segmentsCollinearOverlap,
     type Seg,
 } from "./connector-obstacles";
+
+/**
+ * A* expansion budget. Must match MAX_ITERATIONS in
+ * wasm/assemblyscript/assembly/routing.ts.
+ *
+ * Was 800. A 48-node grid with the connector-lane coordinates added is ~56×37 cells,
+ * and a hop across it needs more than 800 pops once turn and lane penalties flatten
+ * the heuristic — so the long edges in exactly the diagrams that need routing most
+ * were the ones that fell back to the naive elbow and ran straight through six
+ * boxes. With a heap the extra pops cost well under a millisecond.
+ */
+export const MAX_ROUTE_ITERATIONS = 4000;
+
+/**
+ * How close (px) a route segment may pass to a shape it is not attached to. Smaller
+ * than the 15px lane offset the grid builds, so the lanes stay legal, and larger than
+ * zero so a run along a border is not. Must match OBSTACLE_CLEARANCE in
+ * wasm/assemblyscript/assembly/routing.ts.
+ */
+export const OBSTACLE_CLEARANCE = 10;
 
 /**
  * Calculates a simple orthogonal path (elbow) between two points.
@@ -90,8 +111,12 @@ export const calculateElbowRoute = (
 };
 
 /**
- * Removes duplicate points and simplifies collinear segments.
+ * Removes duplicate points and simplifies collinear segments. Exported as
+ * `simplifyElbowPath` for the manual bend/segment editing in the selection handler,
+ * so a hand-dragged elbow is tidied by the same rule as a routed one.
  */
+export const simplifyElbowPath = (points: Point[]): Point[] => cleanPath(points);
+
 const cleanPath = (points: Point[]): Point[] => {
     if (points.length < 2) return points;
     const result: Point[] = [points[0]];
@@ -145,17 +170,7 @@ export const calculateSmartElbowRoute = (
     const MARGIN = 15;
     const GRID_OFFSET = 20;
 
-    const obstacles = allElements.filter(el => {
-        if (el.type === 'line' || el.type === 'arrow' || el.type === 'text') return false;
-        // Optimization: only consider obstacles roughly between or near start/end
-        const minX = Math.min(start.x, end.x) - 100;
-        const maxX = Math.max(start.x, end.x) + 100;
-        const minY = Math.min(start.y, end.y) - 100;
-        const maxY = Math.max(start.y, end.y) + 100;
-
-        if (el.x > maxX || el.x + el.width < minX || el.y > maxY || el.y + el.height < minY) return false;
-        return true;
-    });
+    const obstacles = collectShapeObstacles(start, end, allElements, startElement, endElement);
 
     // If no obstacles, use simple elbow
     if (obstacles.length === 0) {
@@ -225,123 +240,154 @@ export const calculateSmartElbowRoute = (
         return calculateElbowRoute(start, end, startPos, endPos);
     }
 
-    interface Node {
-        gx: number; gy: number;
-        g: number; h: number;
-        parent: Node | null;
-        dir: 'h' | 'v' | null;
-    }
-
-    const openSet: Node[] = [{
-        gx: startIdxX, gy: startIdxY,
-        g: 0, h: Math.abs(start.x - end.x) + Math.abs(start.y - end.y),
-        parent: null, dir: null
-    }];
-    const closedSet = new Set<string>();
-
-    const isInsideAny = (x: number, y: number, excludeId?: string) => {
-        return obstacles.some(el => {
-            if (el.id === excludeId) return false;
-            // Small epsilon to allow touching boundary
-            return x > el.x + 1 && x < el.x + el.width - 1 &&
-                y > el.y + 1 && y < el.y + el.height - 1;
-        });
+    // ── A* over the sparse grid ─────────────────────────────────────────────────────
+    // Node = (gx, gy) flattened to gy*W+gx. Open set is a binary heap on f with lazy
+    // deletion (a stale entry is skipped when popped), the same shape as the WASM twin.
+    // The previous version re-sorted a plain array on every pop and linear-searched it
+    // on every relax, which is what made the 800-pop budget feel expensive.
+    const W = sortedX.length;
+    const H = sortedY.length;
+    const N = W * H;
+    const gScore = new Float64Array(N).fill(Infinity);
+    const fScore = new Float64Array(N);
+    const parent = new Int32Array(N).fill(-1);
+    const dirOf = new Int8Array(N);          // 0 none, 1 horizontal, 2 vertical
+    const closed = new Uint8Array(N);
+    const heap: number[] = [];
+    const push = (idx: number) => {
+        heap.push(idx);
+        let i = heap.length - 1;
+        while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (fScore[heap[p]] <= fScore[heap[i]]) break;
+            [heap[p], heap[i]] = [heap[i], heap[p]];
+            i = p;
+        }
+    };
+    const pop = (): number => {
+        const top = heap[0];
+        const last = heap.pop()!;
+        if (heap.length > 0) {
+            heap[0] = last;
+            let i = 0;
+            for (;;) {
+                const l = 2 * i + 1, r = l + 1;
+                let m = i;
+                if (l < heap.length && fScore[heap[l]] < fScore[heap[m]]) m = l;
+                if (r < heap.length && fScore[heap[r]] < fScore[heap[m]]) m = r;
+                if (m === i) break;
+                [heap[m], heap[i]] = [heap[i], heap[m]];
+                i = m;
+            }
+        }
+        return top;
     };
 
-    const isObstacleSegment = (x1: number, y1: number, x2: number, y2: number) => {
+    const startIdx = startIdxY * W + startIdxX;
+    const endIdx = endIdxY * W + endIdxX;
+    gScore[startIdx] = 0;
+    fScore[startIdx] = Math.abs(start.x - end.x) + Math.abs(start.y - end.y);
+    push(startIdx);
+
+    const isInsideAny = (x: number, y: number) =>
+        obstacles.some(el => x > el.x + 1 && x < el.x + el.width - 1 && y > el.y + 1 && y < el.y + el.height - 1);
+
+    // A grid segment is blocked when its midpoint comes within OBSTACLE_CLEARANCE of a
+    // shape — not only when it is inside one. "Inside" alone let a route run exactly
+    // along a box's border (the midpoint of a segment on the edge is not inside), which
+    // is what hugging a shape looks like. Exempt: the connector's own two shapes, and
+    // the segment that leaves the start point or arrives at the end point (a free end
+    // may sit right beside a shape); those are blocked only when heading into a shape.
+    // `lenient` = the segment touches the start or end CELL. Decided by grid index, not
+    // by comparing coordinates: the start/end rows are matched with a tolerance (a port
+    // at y=90.00000000000001 shares the row of a shape's midline at 90), and an exact
+    // comparison then missed the final approach and blocked it.
+    const isObstacleSegment = (x1: number, y1: number, x2: number, y2: number, lenient: boolean) => {
         const mx = (x1 + x2) / 2;
         const my = (y1 + y2) / 2;
         return obstacles.some(el => {
-            // For start/end elements, be more lenient so we can exit/enter them
-            const isStartEnd = el.id === startElement?.id || el.id === endElement?.id;
-            const margin = isStartEnd ? 3 : 1;
-
-            const isInside = mx > el.x + margin && mx < el.x + el.width - margin &&
-                my > el.y + margin && my < el.y + el.height - margin;
-            return isInside;
+            // The connector's own shapes, and any shape next to the segment that leaves
+            // the start / arrives at the end, only block a segment heading INTO them: a
+            // route is legitimately within clearance of its own shape right at the port.
+            const own = el.id === startElement?.id || el.id === endElement?.id;
+            if (own || lenient) {
+                return mx > el.x + 3 && mx < el.x + el.width - 3 &&
+                    my > el.y + 3 && my < el.y + el.height - 3;
+            }
+            return mx > el.x - OBSTACLE_CLEARANCE && mx < el.x + el.width + OBSTACLE_CLEARANCE &&
+                my > el.y - OBSTACLE_CLEARANCE && my < el.y + el.height + OBSTACLE_CLEARANCE;
         });
     };
 
-    let iterations = 0;
-    while (openSet.length > 0 && iterations < 800) {
-        iterations++;
-        openSet.sort((a, b) => (a.g + a.h) - (b.g + b.h));
-        const current = openSet.shift()!;
+    const isCardinal = (p?: string) => ['top', 'bottom', 'left', 'right'].includes(p || '');
+    const startConstrained = isCardinal(startPos);
+    const endRequired = isCardinal(endPos)
+        ? ({ top: 'bottom', bottom: 'top', left: 'right', right: 'left' } as const)[endPos as 'top' | 'bottom' | 'left' | 'right']
+        : null;
 
-        if (current.gx === endIdxX && current.gy === endIdxY) {
+    const neighbors = [
+        { dx: -1, dy: 0, dir: 1, name: 'left' },
+        { dx: 1, dy: 0, dir: 1, name: 'right' },
+        { dx: 0, dy: -1, dir: 2, name: 'top' },
+        { dx: 0, dy: 1, dir: 2, name: 'bottom' },
+    ] as const;
+
+    let iterations = 0;
+    while (heap.length > 0 && iterations < MAX_ROUTE_ITERATIONS) {
+        iterations++;
+        const current = pop();
+        if (closed[current]) continue;          // stale heap entry
+
+        if (current === endIdx) {
             const path: Point[] = [];
-            let curr: Node | null = current;
-            while (curr) {
-                path.push({ x: sortedX[curr.gx], y: sortedY[curr.gy] });
-                curr = curr.parent;
+            for (let c = current; c >= 0; c = parent[c]) {
+                path.push({ x: sortedX[c % W], y: sortedY[(c / W) | 0] });
             }
             return cleanPath(path.reverse());
         }
+        closed[current] = 1;
 
-        closedSet.add(`${current.gx},${current.gy}`);
-
-        const neighbors = [
-            { dx: -1, dy: 0, dir: 'h' as const, name: 'left' },
-            { dx: 1, dy: 0, dir: 'h' as const, name: 'right' },
-            { dx: 0, dy: -1, dir: 'v' as const, name: 'top' },
-            { dx: 0, dy: 1, dir: 'v' as const, name: 'bottom' }
-        ];
+        const cgx = current % W;
+        const cgy = (current / W) | 0;
+        const xPrev = sortedX[cgx];
+        const yPrev = sortedY[cgy];
+        const curDir = dirOf[current];
+        const curG = gScore[current];
 
         for (const nb of neighbors) {
-            const nx = current.gx + nb.dx;
-            const ny = current.gy + nb.dy;
+            const nx = cgx + nb.dx;
+            const ny = cgy + nb.dy;
+            if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+            const nIdx = ny * W + nx;
+            if (closed[nIdx]) continue;
 
-            if (nx < 0 || nx >= sortedX.length || ny < 0 || ny >= sortedY.length) continue;
-            if (closedSet.has(`${nx},${ny}`)) continue;
+            // Leave the start shape square to its side, and arrive at the end shape
+            // square to its side — only when the caller knows the side.
+            if (current === startIdx && startConstrained && nb.name !== startPos) continue;
+            if (nIdx === endIdx && endRequired && nb.name !== endRequired) continue;
 
-            // Constrain entry/exit directions - only if we have a clear cardinal direction
-            const isCardinal = (p?: string) => ['top', 'bottom', 'left', 'right'].includes(p || '');
-
-            if (current.gx === startIdxX && current.gy === startIdxY && isCardinal(startPos)) {
-                if (nb.name !== startPos) continue;
-            }
-
-            if (nx === endIdxX && ny === endIdxY && isCardinal(endPos)) {
-                const requiredMove = { 'top': 'bottom', 'bottom': 'top', 'left': 'right', 'right': 'left' }[endPos!];
-                if (nb.name !== requiredMove) continue;
-            }
-
-            const xPrev = sortedX[current.gx];
-            const yPrev = sortedY[current.gy];
             const xNext = sortedX[nx];
             const yNext = sortedY[ny];
-
-            // Obstacle check
-            if (isObstacleSegment(xPrev, yPrev, xNext, yNext)) continue;
+            const touchesEnds = current === startIdx || nIdx === startIdx || current === endIdx || nIdx === endIdx;
+            if (isObstacleSegment(xPrev, yPrev, xNext, yNext, touchesEnds)) continue;
 
             const dist = Math.abs(xNext - xPrev) + Math.abs(yNext - yPrev);
-            const turnPenalty = (current.dir && current.dir !== nb.dir) ? 100 : 0;
-
+            const turnPenalty = (curDir !== 0 && curDir !== nb.dir) ? 100 : 0;
             // Prefer points outside obstacles
             const obstacleAvoidancePenalty = isInsideAny(xNext, yNext) ? 500 : 0;
-
             // Soft-avoid running along another connector's body (collinear overlap).
             // Soft, so routing still succeeds when congestion leaves no clear lane.
             const connectorPenalty = connectorSegs.length > 0 &&
                 connectorSegs.some(s => segmentsCollinearOverlap(xPrev, yPrev, xNext, yNext, s))
                 ? CONNECTOR_PENALTY : 0;
+            const newG = curG + dist + turnPenalty + obstacleAvoidancePenalty + connectorPenalty;
 
-            const newG = current.g + dist + turnPenalty + obstacleAvoidancePenalty + connectorPenalty;
-
-            const existing = openSet.find(n => n.gx === nx && n.gy === ny);
-            if (existing) {
-                if (newG < existing.g) {
-                    existing.g = newG;
-                    existing.parent = current;
-                    existing.dir = nb.dir;
-                }
-            } else {
-                openSet.push({
-                    gx: nx, gy: ny,
-                    g: newG, h: Math.abs(xNext - end.x) + Math.abs(yNext - end.y),
-                    parent: current,
-                    dir: nb.dir
-                });
+            if (newG < gScore[nIdx]) {
+                gScore[nIdx] = newG;
+                fScore[nIdx] = newG + Math.abs(xNext - end.x) + Math.abs(yNext - end.y);
+                parent[nIdx] = current;
+                dirOf[nIdx] = nb.dir;
+                push(nIdx);
             }
         }
     }

@@ -93,6 +93,22 @@ Connectors space themselves out automatically — there is nothing to turn on:
 Spacing is applied while drawing and while dragging; it never changes your saved anchor points, so nothing is baked into the file. A lone connector is unaffected and attaches at the usual anchor.
 :::
 
+### Elbow routing
+
+An elbow (orthogonal) connector finds its own way between two shapes. Whether you drew it with the Elbow tool, dragged it from a connection handle, or created it with `Yappy.connect(a, b, { curveType: 'elbow' })` or the `=>` edge in the text DSL, the same rules apply:
+
+- **It leaves and arrives square to the side it is attached to.** A connector on the bottom of a box goes *down* first, one on the right goes *right* first, and it enters the target the same way. It never slides along a shape's own border, and when a port moves to another side — because you dragged the other shape round to that side, or several connectors share the side — the exit direction moves with it.
+- **It goes round other shapes, with room to spare.** Boxes between the two ends are detoured, and the route keeps at least 10px clear of every shape it is not attached to, so it never runs along a border. Containers don't count: a frame, pool, cluster or any box that *encloses* one of the two shapes (a VPC around your services, a swimlane) is treated as the space the route lives in, not as something to route around, so connectors inside a container still steer round their neighbours.
+- **It stays off other connectors.** Elbows take separate lanes rather than running along each other, including several connectors fanning out of or into the same shape. Lines still cross where a diagram needs them to.
+- **It re-routes when a shape lands on it.** Move or resize a shape onto an elbow's path — by dragging, with the arrow keys, from a script, or by undo — and that elbow re-routes, even though the shape isn't connected to it. Connectors that then find themselves sharing a lane with the re-routed one move too.
+- **Dense diagrams route too.** A long hop across a grid of 40–50 services finds a clear path rather than giving up and cutting straight through; a full re-route of ~100 elbows takes well under 100ms.
+
+### Adjusting an elbow by hand
+
+Select an elbow and drag any of its segments sideways, or drag a bend point, to put a run exactly where you want it. The elbow stays orthogonal: dragging a bend slides the two segments it joins, and dragging the first or last segment leaves a short stub at the shape so the connector still leaves it square.
+
+Once you have done that, the elbow is **yours**: when either shape moves, the ends follow the shapes but your bends stay where you put them, instead of being re-routed. To hand it back to automatic routing, right-click it and choose **Re-route automatically**; changing its curve style, or re-attaching an end to a different shape, does the same. Scripts read and set this as the `manualRoute` property.
+
 ## Styling Options
 
 | Property | Description |

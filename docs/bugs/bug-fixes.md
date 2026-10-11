@@ -1,5 +1,164 @@
 # Bug Fixes Log
 
+## 2026-10-11 — Elbow connectors in architecture diagrams
+
+### 445. Elbows ran along the border of a shape they were passing
+
+**Symptom:** once the router actually ran (#441), an App 1 → Monitor connector left App 1,
+turned at the Cache box and ran exactly along Cache's bottom edge for its whole width;
+CDN → Cache ran along the bottom of App 1. Two such routes shared the edge and each other.
+
+**Cause:** the obstacle test blocked a grid segment only when its midpoint lay strictly
+*inside* a shape. A segment on the edge has its midpoint on the edge, so a run along a
+border was as legal as a run through open space, and often shorter.
+
+**Fix:** a segment is blocked within `OBSTACLE_CLEARANCE` (10px) of any shape it is not
+attached to — mirrored in the AssemblyScript router. The connector's own two shapes, and
+the segment that leaves the start / arrives at the end, keep the old heading-inside test,
+because a route is legitimately within 10px of its own shape at the port. Getting that
+exemption right took two tries: first the clearance also applied to the connector's own
+start shape (a Worker 2 → DB route whose top port sat 3px under a lane coordinate could
+not take its second step), then the "touches the end" exemption compared coordinates
+exactly while the end *row* was matched with a tolerance (90 vs 90.00000000000001), so
+the final approach was blocked. Both are decided by grid index now, as the WASM twin does.
+
+### 446. Connectors sharing a shape merged into one trunk
+
+**Symptom:** three arrows fanning out of one box toward three targets ran along a single
+line until they split; A → B drawn twice shared a run.
+
+**Cause:** connector-vs-connector avoidance exempted connectors sharing a bound shape, on
+the theory that ports keep them apart. Ports separate the *ends*; nothing kept the runs
+apart. A second cause: the 48-segment cap on avoided bodies filled up with the short
+neighbour wires in a grid before the long hops were reached, so long hops never saw each
+other at all.
+
+**Fix:** no shared-shape exemption; cap raised to 160 segments. The 94-elbow grid went
+from 56 overlapping pairs to 0, the architecture diagram from 8 to 0.
+
+### 447. A re-routed elbow could land on a lane another elbow was using, and stay there
+
+**Symptom:** move a shape so one connector re-routes onto the run of a connector it is not
+bound to; the two overlapped until something bound to the *other* connector moved.
+
+**Cause:** avoidance is one-directional by design (a connector avoids only lower-id
+bodies, which is what keeps it deterministic), so the lower-id one re-routing onto the
+higher-id one's lane needs the higher-id one to be refreshed — and nothing was.
+
+**Fix:** every refresh goes through `refreshConnectors`: port groups, id order, then one
+cascade pass that re-routes any bound elbow with a higher id whose drawn route meets a
+refreshed one. The canvas, the selection handler and the arrow tool all use it.
+
+### 448. Dragging a bend or segment of a bound elbow was undone by the next shape move
+
+**Symptom:** adjust an elbow's run by hand; move either shape; the adjustment is gone.
+Also, dragging the *first* segment of a bound elbow pulled its end off the shape.
+
+**Cause:** every refresh re-ran the router over the stored points; nothing recorded that
+they were the user's. Segment and bend drags also moved the end points freely.
+
+**Fix:** a segment or bend drag on a bound elbow sets `manualRoute`; a refresh then keeps
+the interior bends and only re-attaches the ends, sliding the first/last segment so it
+stays on its axis. Dragging the first or last segment grows a 20px stub out of the port
+and moves the segment beyond it; a bend drag slides the two segments it joins and inserts
+a bend when a neighbour is a bound end. Points are tidied once on pointer-up (tidying
+per move renumbered the segment being dragged — the first attempt produced a staircase).
+The context menu's **Re-route automatically** clears the flag; so does changing the curve
+style or re-attaching an end. `manualRoute` is a documented element option.
+
+### 449. Elbows crossed by a resize, an API move or undo were not re-routed; a rebuilt diagram was never routed
+
+**Symptom:** #444 covered interactive moves only. Resizing a shape onto an elbow, moving
+one from a script, or undo left the elbow drawn through it. Separately, after Clear and
+rebuilding a diagram from a script, no connector got routed at all.
+
+**Cause:** the canvas effect that refreshes connectors watched only shapes that *had*
+connectors, and refreshed every bound connector in the document on any change — but knew
+nothing about shapes landing on routes. The first rewrite then remembered connector ids
+it had seen and never forgot them; Clear restarts the id generator, so a rebuilt diagram
+reused ids the effect thought it had already handled.
+
+**Fix:** the effect diffs the box of every shape against what it saw last time and
+refreshes the connectors bound to changed or new shapes plus every bound elbow whose route
+meets a changed box (old or new, padded by the 15px clearance). Both memories are pruned
+against the live element set. The selection handler's own sweep from #444 is gone — one
+place does it.
+
+Browser verification: `temp/elbow-visual2.mjs` builds the diagram in both render styles
+and checks, with coordinates not screenshots: no diagonal, no along-edge departure, no
+route through a shape, no overlap; then drags a box onto a route, moves and resizes one
+via the API, drags a segment and moves a shape (bend kept), uses Re-route automatically,
+and drags the first segment of a two-point elbow (stubs, ends unmoved).
+
+### 441. Elbow connectors inside a container ran straight through other shapes
+
+**Symptom:** in a system-design diagram with a frame or cluster box around the services (a VPC,
+a swimlane, a "backend" box), every elbow connector between shapes inside it was a plain
+mid-point jog — straight through whatever sat between its ends — while the same shapes with the
+frame deleted were routed round each other. Connectors from an outside shape *into* the box
+were affected too.
+
+**Cause:** the router treats every non-connector, non-text element as a solid obstacle, and
+the enclosing frame is one of them. A* rejects any move whose segment midpoint lies inside an
+obstacle, so with both ends inside the frame there was no legal first move: the search died on
+its first iteration and `calculateSmartElbowRoute` fell back to the naive `calculateElbowRoute`,
+which knows nothing about shapes. Measured on a 20-connector reference diagram: 20 of 20 routes
+fell back; 4 cut through a shape.
+
+**Fix:** obstacles now come from one shared filter, `collectShapeObstacles` in
+`connector-obstacles.ts` (used by the JS router *and* the WASM bridge, so the two see the same
+set). A shape that encloses the start shape or the end shape (or the bare point for an unbound
+end) is not an obstacle. Same diagram afterwards: 0 fallbacks, 0 through-shape routes.
+
+### 442. API/DSL elbows and re-faced elbows left a shape along its own edge
+
+**Symptom:** an elbow created with `Yappy.connect(a, b, { curveType: 'elbow' })` or the DSL's
+`=>` whose anchor sat on, say, the bottom of a box left the box *sideways*, running along the
+bottom edge before turning. The same happened to tool-drawn elbows after the far shape was
+dragged round to the other side: the endpoint hopped to the facing side (dynamic re-facing /
+port allocation) but the route still exited in the old direction, sometimes straight through
+its own shape. 10 of 20 connectors in the reference diagram departed along an edge.
+
+**Cause:** the router's exit/entry constraint only applies when the binding's stored `position`
+is one of `top|right|bottom|left`. `api.connect()` and the DSL never store one (fractions only),
+the arrow tool stores `'edge'` or a corner name when the drop isn't on a side midpoint, and
+after a re-face or port move the stored name is simply stale. In all those cases the first
+segment was unconstrained, and sliding along the edge (which A* doesn't count as "inside") was
+often the cheapest move.
+
+**Fix:** `refreshLinePoints` now derives both sides from where the resolved endpoint actually
+is on its shape (`routingSide` in `connector-routing.ts`, built on `sideFacing`, so circles and
+diamonds work too; rotated nodes keep the old stored-name behaviour). The naive fallback honours
+the same sides. 0 along-edge departures afterwards, in every scenario.
+
+### 443. Long elbows across a dense grid cut through six boxes
+
+**Symptom:** in a 6×8 grid of services with ~90 elbows, the long diagonal hops ran straight
+through every box in their row and column.
+
+**Cause:** the A* budget was 800 pops, the grid with connector-lane coordinates added was
+~56×37 cells, and the open set was a plain array re-sorted on every pop and linear-searched on
+every relax. The long hops hit the cap and fell back to the naive elbow.
+
+**Fix:** the open set is a binary heap with lazy deletion (the same shape as the WASM twin) and
+the budget is `MAX_ROUTE_ITERATIONS = 4000`, mirrored as `MAX_ITERATIONS` in
+`assembly/routing.ts`. Routing all 94 elbows of that grid went from ~140ms to ~85ms with no
+fallbacks.
+
+### 444. Dragging a shape onto an elbow left the elbow running through it
+
+**Symptom:** drag an unconnected box onto an elbow connector's path and the connector stayed
+where it was, drawn through the box, until one of its own shapes was moved.
+
+**Cause:** moves only refreshed connectors bound to the moved shapes (plus their port groups).
+
+**Fix:** the move handler also re-routes any bound elbow whose box (with the router's 15px
+clearance) meets a moved shape's box before or after the move. Live during the drag.
+
+Unit coverage for all four: `routing.test.ts` (containers, side constraints, dense-grid budget),
+`connector-routing.test.ts` (`routingSide`), `binding-logic.test.ts` (API-style and stale-side
+bindings through `refreshLinePoints`).
+
 ## 2026-10-11 — Text on Path: the shape's panel read as reset
 
 ### 440. Switching Text on Path on a shape made the Properties panel look reset

@@ -686,6 +686,10 @@ export interface DrawingElement {
     endBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
     arrowAnchorAlign?: 'top' | 'middle' | 'bottom'; // Bias left/right arrow anchors vertically
     curveType?: 'straight' | 'bezier' | 'elbow';
+    /** Elbow only: the user has dragged a bend or segment, so `points` are theirs. Bound
+     *  shapes moving re-attach the ends and keep the waypoints instead of re-routing;
+     *  "Re-route automatically" (context menu) or `manualRoute: false` clears it. */
+    manualRoute?: boolean;
     constrained?: boolean; // Keep proportions
     autoResize?: boolean; // Auto-resize based on text
     flipX?: boolean; // Mirror horizontally

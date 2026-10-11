@@ -16,7 +16,7 @@ import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
 import { getUIShapeDef } from '../../config/ui-shape-defs';
 import { hitTestPoolLane, assignToPoolLane } from '../pool-containment';
-import { computeAnchorFractions, expandToPortGroups } from '../binding-logic';
+import { computeAnchorFractions, refreshConnectors } from '../binding-logic';
 import { createStrokeStabilizer, finishStabilizer } from '../stroke-stabilizer';
 import { qrCodeDefaults } from '../qr-code';
 
@@ -570,8 +570,7 @@ export function drawOnUp(
                 // Adding a connector changes the port-group size on both sides, so all
                 // peers must re-lay-out. (The old same-shape-pair filter was correct for
                 // the pair-local spread this replaced, but misses hub fan-in peers.)
-                expandToPortGroups([pState.currentId], store.elements)
-                    .forEach(id => helpers.refreshBoundLine(id));
+                refreshConnectors([pState.currentId], () => store.elements, (id, upd) => updateElement(id, upd, false));
             } else if (updatedEl && el.curveType === 'elbow') {
                 const pts = helpers.refreshLinePoints(updatedEl);
                 if (pts) {

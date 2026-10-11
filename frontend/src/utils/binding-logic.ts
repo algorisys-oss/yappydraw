@@ -7,8 +7,8 @@
 import type { DrawingElement } from '../types';
 import { findClosestAnchor, getAnchorPoints } from './anchor-points';
 import { intersectElementWithLine } from './geometry';
-import { calculateSmartElbowRoute } from './routing';
-import { allocatePort } from './connector-routing';
+import { calculateSmartElbowRoute, simplifyElbowPath } from './routing';
+import { allocatePort, routingSide } from './connector-routing';
 
 /**
  * Find which shape element (if any) is near a given point, suitable for binding a line endpoint.
@@ -127,8 +127,21 @@ export function refreshLinePoints(
             return undefined;
         }
 
+        // Hand-edited waypoints are the user's: keep them and only re-attach the ends.
+        if (line.manualRoute) {
+            const kept = reattachManualRoute(line, { x: sx, y: sy }, { x: ex, y: ey });
+            if (kept) return kept;
+        }
+
         const startEl = elements.find(e => e.id === line.startBinding?.elementId);
         const endEl = elements.find(e => e.id === line.endBinding?.elementId);
+
+        // Exit/entry sides come from where the endpoint actually IS on its shape — the
+        // stored `position` is absent (API/DSL), non-cardinal ('edge', corners) or
+        // stale (ports, re-facing) often enough that routing on it hugged borders and
+        // cut through shapes. See routingSide.
+        const startSide = startEl ? routingSide(startEl, { x: sx, y: sy }, line.startBinding?.position) : undefined;
+        const endSide = endEl ? routingSide(endEl, { x: ex, y: ey }, line.endBinding?.position) : undefined;
 
         const rawPoints = calculateSmartElbowRoute(
             { x: sx, y: sy },
@@ -136,8 +149,8 @@ export function refreshLinePoints(
             elements,
             startEl,
             endEl,
-            line.startBinding?.position,
-            line.endBinding?.position,
+            startSide,
+            endSide,
             line   // selfLine: enables soft-avoidance of other connectors' bodies
         );
 
@@ -154,6 +167,129 @@ export function refreshLinePoints(
     }
 
     return undefined;
+}
+
+/**
+ * Move a hand-routed elbow's ends to their new anchor points without re-routing it.
+ *
+ * The first and last segments keep their axis: when the start moves, the second point
+ * slides so the first segment stays vertical or horizontal, likewise at the end. The
+ * interior bends stay exactly where the user put them. Returns the new flat, relative
+ * point list, or undefined when the stored points are unusable (caller re-routes).
+ */
+function reattachManualRoute(
+    line: DrawingElement,
+    start: { x: number; y: number },
+    end: { x: number; y: number }
+): number[] | undefined {
+    const rel = normalizePointList(line.points);
+    if (rel.length < 2) return undefined;
+    const pts = rel.map(p => ({ x: line.x + p.x, y: line.y + p.y }));
+    const n = pts.length;
+    if (n >= 3) {
+        const firstVertical = Math.abs(pts[0].x - pts[1].x) < 1;
+        if (firstVertical) pts[1].x = start.x; else pts[1].y = start.y;
+        const lastVertical = Math.abs(pts[n - 1].x - pts[n - 2].x) < 1;
+        if (lastVertical) pts[n - 2].x = end.x; else pts[n - 2].y = end.y;
+    }
+    pts[0] = { x: start.x, y: start.y };
+    pts[n - 1] = { x: end.x, y: end.y };
+    const clean = simplifyElbowPath(pts);
+    if (clean.length < 2) return undefined;
+    return clean.flatMap(p => [p.x - start.x, p.y - start.y]);
+}
+
+/** Read `points` (flat number[] or {x,y}[]) as {x,y}[] — relative to the element. */
+function normalizePointList(points: DrawingElement['points']): { x: number; y: number }[] {
+    if (!points || points.length < 2) return [];
+    if (typeof points[0] === 'number') {
+        const flat = points as number[];
+        const out: { x: number; y: number }[] = [];
+        for (let i = 0; i + 1 < flat.length; i += 2) out.push({ x: flat[i], y: flat[i + 1] });
+        return out;
+    }
+    return (points as { x: number; y: number }[]).map(p => ({ x: p.x, y: p.y }));
+}
+
+/** World-space box of an elbow's drawn route (its waypoints, not just its start→end box). */
+export function elbowRouteBounds(el: DrawingElement): { x1: number; y1: number; x2: number; y2: number } {
+    const rel = normalizePointList(el.points);
+    let x1 = Math.min(el.x, el.x + el.width), x2 = Math.max(el.x, el.x + el.width);
+    let y1 = Math.min(el.y, el.y + el.height), y2 = Math.max(el.y, el.y + el.height);
+    for (const p of rel) {
+        const wx = el.x + p.x, wy = el.y + p.y;
+        if (wx < x1) x1 = wx; if (wx > x2) x2 = wx;
+        if (wy < y1) y1 = wy; if (wy > y2) y2 = wy;
+    }
+    return { x1, y1, x2, y2 };
+}
+
+const boxesMeet = (a: { x1: number; y1: number; x2: number; y2: number }, b: { x1: number; y1: number; x2: number; y2: number }) =>
+    a.x1 <= b.x2 && a.x2 >= b.x1 && a.y1 <= b.y2 && a.y2 >= b.y1;
+
+/** The router keeps this much clear of a shape; crossing tests use the same margin. */
+export const ROUTE_CLEARANCE = 15;
+
+const isBoundElbow = (el: DrawingElement) =>
+    el.curveType === 'elbow' && !!(el.startBinding || el.endBinding) && PORT_GROUP_CONNECTOR_TYPES.has(el.type);
+
+/**
+ * Bound elbow connectors whose drawn route meets any of `boxes` (each already padded
+ * by the caller as needed). Used to re-route elbows a moved or resized shape now sits
+ * on, even though nothing they are bound to changed.
+ */
+export function elbowsCrossing(
+    boxes: { x1: number; y1: number; x2: number; y2: number }[],
+    elements: DrawingElement[],
+    exclude: ReadonlySet<string> = new Set()
+): string[] {
+    if (boxes.length === 0) return [];
+    const out: string[] = [];
+    for (const el of elements) {
+        if (!isBoundElbow(el) || exclude.has(el.id)) continue;
+        const b = elbowRouteBounds(el);
+        const padded = { x1: b.x1 - ROUTE_CLEARANCE, y1: b.y1 - ROUTE_CLEARANCE, x2: b.x2 + ROUTE_CLEARANCE, y2: b.y2 + ROUTE_CLEARANCE };
+        if (boxes.some(box => boxesMeet(padded, box))) out.push(el.id);
+    }
+    return out;
+}
+
+/**
+ * Refresh a set of connectors the way every caller should: expanded to their port
+ * groups, in ascending id order (each route then sees its lower-id dependencies'
+ * fresh geometry), and followed by ONE cascade pass.
+ *
+ * The cascade is what connector-vs-connector avoidance needs to actually hold after a
+ * move. Avoidance is one-directional — a connector steers clear only of LOWER-id
+ * bodies — so when a lower-id connector is re-routed onto a lane a higher-id one is
+ * using, the higher-id one has to be re-routed too, and nothing bound it to the move.
+ * After the main pass, every bound elbow with a higher id than some refreshed elbow
+ * whose route box it meets is refreshed as well. One level only: a second level would
+ * be the same work again for diminishing returns, and bounded work per frame matters
+ * more during a drag.
+ */
+export function refreshConnectors(
+    lineIds: string[],
+    getElements: () => DrawingElement[],
+    updateElementFn: (id: string, updates: any, pushHistory: boolean) => void
+): void {
+    if (lineIds.length === 0) return;
+    const first = expandToPortGroups(lineIds, getElements());
+    const done = new Set<string>();
+    for (const id of first) {
+        done.add(id);
+        refreshBoundLine(id, getElements, updateElementFn);
+    }
+
+    const elements = getElements();
+    const refreshedElbows = first
+        .map(id => elements.find(e => e.id === id))
+        .filter((e): e is DrawingElement => !!e && isBoundElbow(e));
+    if (refreshedElbows.length === 0) return;
+    const boxes = refreshedElbows.map(elbowRouteBounds);
+    const lowest = refreshedElbows.map(e => e.id).sort()[0];
+    const cascade = elbowsCrossing(boxes, elements, done).filter(id => id > lowest).sort();
+    for (const id of cascade) refreshBoundLine(id, getElements, updateElementFn);
 }
 
 const PORT_GROUP_CONNECTOR_TYPES = new Set(['line', 'arrow', 'bezier', 'organicBranch']);

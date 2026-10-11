@@ -25,7 +25,7 @@ export const CONNECTOR_PENALTY = 400;
  * above that), so an unbounded set would blow up the grid, exhaust the 800-iteration
  * A* budget and silently degrade routing to a naive elbow. Keep this well under that.
  */
-export const MAX_CONNECTOR_SEGMENTS = 48;
+export const MAX_CONNECTOR_SEGMENTS = 160;
 
 /** Padding around the start/end box used to decide which connectors are relevant.
  *  Matches the shape-obstacle filter in utils/routing.ts. */
@@ -40,6 +40,57 @@ export const routeBounds = (start: Point, end: Point): Bounds => ({
     minY: Math.min(start.y, end.y) - NEIGHBOURHOOD_PAD,
     maxY: Math.max(start.y, end.y) + NEIGHBOURHOOD_PAD,
 });
+
+/** Element types that are connectors — never obstacles for another connector. */
+const CONNECTOR_TYPES = new Set(['line', 'arrow', 'bezier', 'organicBranch']);
+
+/** `inner`'s box lies within `outer`'s (1px tolerance): `outer` is a container of it. */
+const enclosesElement = (outer: DrawingElement, inner: DrawingElement): boolean =>
+    inner.x >= outer.x - 1 && inner.y >= outer.y - 1 &&
+    inner.x + inner.width <= outer.x + outer.width + 1 &&
+    inner.y + inner.height <= outer.y + outer.height + 1;
+
+/** `p` lies strictly inside `el`'s box. */
+const enclosesPoint = (el: DrawingElement, p: Point): boolean =>
+    p.x > el.x + 1 && p.x < el.x + el.width - 1 && p.y > el.y + 1 && p.y < el.y + el.height - 1;
+
+/**
+ * The shapes an elbow route must steer around. ONE filter for the JS router and the
+ * WASM bridge, so both A* paths see the same obstacle set.
+ *
+ * Three rules:
+ * - Connectors and text are never obstacles.
+ * - Only shapes near the start→end box matter (`routeBounds`); the rest cannot
+ *   affect the route and would only bloat the grid.
+ * - **A container is not an obstacle.** A frame, pool, cluster box or any shape that
+ *   encloses the start or the end (its shape, or the bare point when an end is
+ *   unbound) is where the route LIVES, not something it goes around. Treated as a
+ *   solid, it hard-blocked every move out of the start cell, A* died on its first
+ *   iteration and every connector inside a VPC/swimlane silently got the naive
+ *   mid-point elbow — straight through whatever sat between its ends.
+ */
+export const collectShapeObstacles = (
+    start: Point,
+    end: Point,
+    allElements: DrawingElement[],
+    startElement?: DrawingElement,
+    endElement?: DrawingElement,
+): DrawingElement[] => {
+    const b = routeBounds(start, end);
+    const out: DrawingElement[] = [];
+    for (const el of allElements) {
+        if (CONNECTOR_TYPES.has(el.type) || el.type === 'text') continue;
+        if (el.x > b.maxX || el.x + el.width < b.minX || el.y > b.maxY || el.y + el.height < b.minY) continue;
+        const isEndpointShape = (startElement && el.id === startElement.id) || (endElement && el.id === endElement.id);
+        if (!isEndpointShape) {
+            const holdsStart = startElement ? enclosesElement(el, startElement) : enclosesPoint(el, start);
+            const holdsEnd = endElement ? enclosesElement(el, endElement) : enclosesPoint(el, end);
+            if (holdsStart || holdsEnd) continue;
+        }
+        out.push(el);
+    }
+    return out;
+};
 
 /** Read a connector's stored points (flat number[] or {x,y}[]) as world-space {x,y}. */
 const connectorWorldPoints = (el: DrawingElement): Point[] => {
@@ -58,16 +109,18 @@ const connectorWorldPoints = (el: DrawingElement): Point[] => {
 /**
  * Collect axis-aligned body segments of OTHER elbow connectors that `selfLine` should
  * avoid running along. Deterministic priority prevents A↔B oscillation: a connector
- * only avoids connectors with a smaller `id`, and never ones that share a bound
- * endpoint element (those converge at ports by design — Phases 1–2).
+ * only avoids connectors with a smaller `id`.
+ *
+ * Connectors that share a bound shape are NOT exempt (they used to be, on the theory
+ * that ports keep them apart). Ports separate their ENDPOINTS; their mid-runs were
+ * still free to collapse onto one trunk — three arrows fanning out of one box along a
+ * single line, which is the most common overlap in a system diagram.
  */
 export const collectConnectorSegments = (
     selfLine: DrawingElement,
     allElements: DrawingElement[],
     bounds?: Bounds
 ): Seg[] => {
-    const selfStart = selfLine.startBinding?.elementId;
-    const selfEnd = selfLine.endBinding?.elementId;
     const segs: Seg[] = [];
 
     for (const el of allElements) {
@@ -76,11 +129,6 @@ export const collectConnectorSegments = (
         if (el.curveType !== 'elbow') continue;
         // Priority: only avoid lower-id connectors → strict DAG, no oscillation.
         if (!(el.id < selfLine.id)) continue;
-        // Skip connectors sharing a bound endpoint with self (handled by port allocation).
-        const oStart = el.startBinding?.elementId;
-        const oEnd = el.endBinding?.elementId;
-        if (oStart && (oStart === selfStart || oStart === selfEnd)) continue;
-        if (oEnd && (oEnd === selfStart || oEnd === selfEnd)) continue;
 
         // Cheap bbox reject before touching points: a connector far from this route
         // can never affect it, and including it would only bloat the A* grid.

@@ -56,7 +56,7 @@ import { animPosedElements } from "../store/anim-ops";
 import { getPathSubpaths } from "../utils/math/path-utils";
 import { renderPenConstruction } from "../rendering/pen-construction";
 import type { MenuItem } from "./context-menu";
-import { checkBinding as checkBindingUtil, refreshLinePoints as refreshLinePointsUtil, refreshBoundLine as refreshBoundLineUtil } from "../utils/binding-logic";
+import { checkBinding as checkBindingUtil, refreshLinePoints as refreshLinePointsUtil, refreshBoundLine as refreshBoundLineUtil, refreshConnectors as refreshConnectorsUtil, elbowsCrossing, ROUTE_CLEARANCE } from "../utils/binding-logic";
 import {
     computeViewportBounds, cullElementsForAnimation, decayLaserTrail,
     renderWorkspaceBackground, renderSlideBoundaries, renderCanvasTexture,
@@ -842,32 +842,66 @@ const Canvas: Component = () => {
         untrack(() => reconcileTimelineElements());
     });
 
-    // Auto-refresh bound lines if bound elements move or hierarchy changes
+    // Auto-refresh connectors when shapes change.
+    //
+    // Tracks every non-connector box of every shape. On each run it diffs against the boxes
+    // it saw last time and refreshes (a) the connectors bound to shapes that moved or
+    // resized, or that it has not seen before, and (b) any bound elbow whose route meets
+    // the old or new box of a changed shape (padded by the router's clearance) — so a shape
+    // dragged, resized, nudged by the API or restored by undo onto the path of a connector
+    // re-routes that connector too. The previous version only watched shapes that had
+    // connectors and refreshed every bound connector in the document on any change.
+    //
+    // Everything about connectors themselves is read inside untrack: this effect writes
+    // connector points, and tracking them would re-trigger it on its own writes.
+    type Box = { x1: number; y1: number; x2: number; y2: number };
+    const CONNECTOR_TYPES = new Set(['line', 'arrow', 'bezier', 'organicBranch']);
+    const seenBoxes: Record<string, Box> = {};
+    function stringSet() { return new Set<string>(); }
+    const seenConnectors = stringSet();
     createEffect(() => {
         const pending: string[] = [];
+        const changedBoxes: Box[] = [];
+        const alive = stringSet();
+        const aliveConnectors = stringSet();
         store.elements.forEach(el => {
-            if (el.boundElements && el.boundElements.length > 0) {
-                // Reactive trigger: track moving node's geometry
-                el.x; el.y; el.width; el.height;
+            if (CONNECTOR_TYPES.has(el.type)) { aliveConnectors.add(el.id); return; }
+            alive.add(el.id);
+            // Reactive trigger: the geometry of this shape.
+            const box: Box = {
+                x1: Math.min(el.x, el.x + el.width), y1: Math.min(el.y, el.y + el.height),
+                x2: Math.max(el.x, el.x + el.width), y2: Math.max(el.y, el.y + el.height),
+            };
+            const prev = seenBoxes[el.id];
+            const moved = !prev || prev.x1 !== box.x1 || prev.y1 !== box.y1 || prev.x2 !== box.x2 || prev.y2 !== box.y2;
+            if (moved) {
+                seenBoxes[el.id] = box;
+                if (prev) changedBoxes.push(pad(prev), pad(box));
+            }
+            // Reactive trigger: which connectors are bound here.
+            const bound = el.boundElements;
+            if (bound && bound.length > 0) {
                 untrack(() => {
-                    el.boundElements?.forEach(b => pending.push(b.id));
+                    for (const b of bound) {
+                        if (moved || !seenConnectors.has(b.id)) pending.push(b.id);
+                        seenConnectors.add(b.id);
+                    }
                 });
             }
         });
+        // Prune both memories, or ids reused after Clear / New (the generators restart)
+        // would read as already seen and a rebuilt diagram would never get routed.
+        for (const id of Object.keys(seenBoxes)) if (!alive.has(id)) delete seenBoxes[id];
+        for (const id of seenConnectors) if (!aliveConnectors.has(id)) seenConnectors.delete(id);
         untrack(() => {
-            // Refresh once per connector, in ascending id order. Connector-vs-connector
-            // avoidance only looks at LOWER ids, so processing in id order makes each
-            // pass a fixpoint of the current shape positions — routes stop depending on
-            // which node happened to be visited first, and de-duping avoids the
-            // re-entrant refresh storm that repeated passes would cause.
-            const seen = new Set<string>();
-            for (const id of pending.sort()) {
-                if (seen.has(id)) continue;
-                seen.add(id);
-                refreshBoundLine(id);
-            }
+            const exclude = new Set(pending);
+            for (const id of elbowsCrossing(changedBoxes, store.elements, exclude)) pending.push(id);
+            if (pending.length) refreshConnectorsUtil(pending, () => store.elements, updateElement);
         });
     });
+    function pad(b: Box): Box {
+        return { x1: b.x1 - ROUTE_CLEARANCE, y1: b.y1 - ROUTE_CLEARANCE, x2: b.x2 + ROUTE_CLEARANCE, y2: b.y2 + ROUTE_CLEARANCE };
+    }
 
     // The viewport transform for screen↔world conversions, including the
     // rotation pivot (viewport centre, in canvas-local px). Rotation is read

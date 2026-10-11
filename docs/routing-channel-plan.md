@@ -154,10 +154,30 @@ endpoint fraction but keep their own handles).
    guard is now `members.length < 2` (a lone endpoint keeps its plain anchor). Phase 0
    (coordinated entry point) proved unnecessary: each per-connector refresh sees the
    full element set and derives the same deterministic allocation.
-3. **Phase 3 — TODO** soft edge obstacles: route mid-path segments to avoid running
-   over *other* connectors (JS A* penalty + WASM parity). This is where cross-pair
-   corridor sharing is solved.
+3. **✅ Phase 3 — DONE** soft edge obstacles (`utils/connector-obstacles.ts`): lower-id
+   elbow bodies feed A* as a `CONNECTOR_PENALTY` with lane coordinates ±15px, mirrored in
+   the AssemblyScript router. One-directional by design (a connector avoids only lower-id
+   ones), so a re-routed connector can land on a lane a lower-priority one already uses
+   — and `refreshConnectors` cascades one level to the higher-id connector it may have
+   landed on (2026-10-11 second pass).
 4. **Phase 4 — TODO** label lanes.
+
+### 2026-10-11 audit (architecture diagrams)
+
+Audited against a 20-connector VPC-style diagram and a 6×8 service grid (harness in
+`temp/elbow-audit.test.ts`). Found and fixed, see bug-fixes #441–#444: enclosing containers
+hard-blocked A* (every route inside a frame fell back to the naive elbow); exit/entry sides
+were taken from the stored `position`, which API/DSL bindings don't have and re-facing makes
+stale (`routingSide` now derives them from the resolved endpoint); the 800-pop budget failed
+long hops on a dense grid (heap + 4000); a shape dragged across an elbow didn't re-route it.
+Second pass the same day (#445–#449): 10px clearance from other shapes (no more
+border-hugging), the shared-shape exemption removed and the segment cap raised (0 overlaps
+on both test diagrams), a one-level cascade in `refreshConnectors` so a re-routed connector
+pushes the higher-id connector it landed on, `manualRoute` for hand-adjusted elbows with
+**Re-route automatically**, and a geometry-diffing canvas effect that re-routes elbows a
+shape lands on by any means. Deferred per-corridor lane *allocation* (§3 Phase 2 as
+originally specified) is no longer needed for the cases measured; revisit if a diagram
+shows overlaps the soft penalty cannot resolve.
 
 Phases 1–2 shipped the most-visible wins (fan-in + bundle de-overlap) as pure,
 deterministic functions with no engine/WASM risk. Remaining phases touch the A*

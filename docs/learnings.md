@@ -11097,3 +11097,59 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   unloaded weight shows up. The first version of the regression test used Inter and could never have failed.
 - **Check an API helper's defaults before asserting on them.** `createText` makes a fixed-width box
   from an estimate, so asserting that its width follows the font was wrong until `autoResize: true`.
+
+## Elbow routing audit (2026-10-11)
+
+- **Instrument the fallback, not the output.** The smart router returns *something* on every
+  call, and a naive elbow looks like a deliberate one. Only counting how often A* actually
+  succeeded (20 of 20 architecture routes were fallbacks) showed the router was effectively
+  switched off for any diagram with a frame around its shapes. A silent fallback is a feature
+  flag nobody set; log or count it.
+- **A container is not an obstacle.** Treating the enclosing frame as a solid meant there was no
+  legal first move out of the start cell. The fix is a rule about *what encloses the endpoints*,
+  not a type list — a plain rectangle used as a cluster box is the common case.
+- **Derive the side from the point, not from the stored name.** `position` was absent, non-cardinal
+  or stale in three independent code paths; every consumer that needs a side should compute it
+  from the resolved endpoint with one helper (`routingSide`).
+- **Share the filter, not the constant.** The JS router and the WASM bridge each had their own
+  copy of the obstacle filter with a comment saying "same logic as JS". The container rule would
+  have had to be written twice; now both call `collectShapeObstacles`, and parity is structural.
+- **Measure budgets against the grid they run on.** The 800-pop A* cap predates connector-lane
+  coordinates, which roughly doubled the grid. A budget is a property of the grid size; when the
+  grid grows, re-measure or the long routes degrade first and quietly.
+- **Audit harness lives in `temp/`:** `temp/elbow-audit.test.ts` builds an architecture diagram
+  and a 48-node grid against the real `refreshBoundLine`/router and reports fallbacks, along-edge
+  departures, through-shape routes and connector overlaps; `temp/elbow-visual.mjs` does the same
+  in the browser with drags and screenshots. Both found what the unit tests didn't.
+- **Headless harness trap:** API calls made in `page.evaluate` right after `window.Yappy` appears
+  were fine (bindings route before the canvas mounts), but calling `selectAll` before building
+  left the first batch unrouted in one run. Build on a clean `Yappy.clear()`, and keep a
+  `pageerror`/`console` listener on every Playwright script, or an effect that throws looks like
+  a routing bug.
+
+## Elbow routing, second pass (2026-10-11)
+
+- **"Inside" is not "clear of".** Blocking segments whose midpoint is inside a shape lets a
+  route run exactly along its border. Clearance has to be a distance, and the connector's
+  own shapes need a different rule than everyone else's.
+- **Floating point breaks identity tests between coordinate systems.** Grid rows are matched
+  with a tolerance; a "does this segment touch the end" test that compared raw coordinates
+  disagreed with the grid about which row was the end. Decide such things by index.
+- **An exemption written for one reason outlives it.** "Connectors sharing a shape don't
+  avoid each other" made sense before ports existed; afterwards it was the main source of
+  overlap. Re-read every exemption when the thing it compensated for changes.
+- **One-directional avoidance needs a cascade.** Priority by id keeps routing deterministic,
+  but then the lower-priority side has to be refreshed when the higher one moves. Put the
+  cascade in the one function every caller uses, not in each caller.
+- **Caps hide bugs by degree.** A 48-segment cap looked generous until a grid's short wires
+  consumed it before the long hops were reached; the long hops then overlapped without any
+  error. Measure what a cap drops, not just that it bounds work.
+- **Don't normalise mid-drag.** Tidying the point list on every pointer move renumbered the
+  segment being dragged, and the next move dragged a different one — a staircase. Normalise
+  once, on pointer-up.
+- **Memories keyed by id must be pruned.** Clear restarts the id generators, so an unpruned
+  "already seen" set silently disabled routing for every rebuilt diagram. The browser audit
+  caught it because it rebuilds the diagram twice.
+- **The in-browser audit must check coordinates, not pixels.** Screenshots looked fine while
+  13 of 20 connectors were unrouted chords; the coordinate audit found them in one line.
+
