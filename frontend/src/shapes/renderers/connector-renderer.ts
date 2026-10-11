@@ -8,6 +8,7 @@ import { resolveFontFamily } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
 import { drawTextAlongPath, getElementTextPath, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
 import { exportClockSeconds } from '../../utils/animation/scene-clock';
+import { arrowheadSize } from '../../utils/arrowhead-size';
 
 export class ConnectorRenderer extends ShapeRenderer {
     /**
@@ -143,10 +144,10 @@ export class ConnectorRenderer extends ShapeRenderer {
         // chord. See docs/arrowhead-orientation-spec.md.
         const g = connectorGeometry(el);
         if (el.startArrowhead) {
-            this.drawArrowheadArchitectural(renderer, g.start.x, g.start.y, g.startAngle, el.startArrowhead, el.startArrowheadSize || 28);
+            this.drawArrowheadArchitectural(renderer, g.start.x, g.start.y, g.startAngle, el.startArrowhead, arrowheadSize(el, 'start'));
         }
         if (el.endArrowhead) {
-            this.drawArrowheadArchitectural(renderer, g.end.x, g.end.y, g.endAngle, el.endArrowhead, el.endArrowheadSize || 28);
+            this.drawArrowheadArchitectural(renderer, g.end.x, g.end.y, g.endAngle, el.endArrowhead, arrowheadSize(el, 'end'));
         }
 
         renderer.restore();
@@ -177,8 +178,8 @@ export class ConnectorRenderer extends ShapeRenderer {
         // Path and angles from the same derivation — see connector-geometry.ts.
         const g = connectorGeometry(el);
         rc.path(g.d!, options);
-        if (el.startArrowhead) this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, el.startArrowheadSize || 28);
-        if (el.endArrowhead) this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, el.endArrowheadSize || 28);
+        if (el.startArrowhead) this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, arrowheadSize(el, 'start'));
+        if (el.endArrowhead) this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, arrowheadSize(el, 'end'));
     }
 
     private renderElbow(context: RenderContext, options: any) {
@@ -217,10 +218,10 @@ export class ConnectorRenderer extends ShapeRenderer {
         // this used to do inline (and which renderArchitectural's elbow branch skipped).
         const g = connectorGeometry(el);
         if (el.startArrowhead) {
-            this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, el.startArrowheadSize || 28);
+            this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, arrowheadSize(el, 'start'));
         }
         if (el.endArrowhead) {
-            this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, el.endArrowheadSize || 28);
+            this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, arrowheadSize(el, 'end'));
         }
     }
 
@@ -231,8 +232,8 @@ export class ConnectorRenderer extends ShapeRenderer {
 
         rc.line(g.start.x, g.start.y, g.end.x, g.end.y, options);
         // Both angles are already outward, so the start head no longer needs `+ π`.
-        if (el.startArrowhead) this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, el.startArrowheadSize || 28);
-        if (el.endArrowhead) this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, el.endArrowheadSize || 28);
+        if (el.startArrowhead) this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, arrowheadSize(el, 'start'));
+        if (el.endArrowhead) this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, arrowheadSize(el, 'end'));
     }
 
     private drawArrowhead(rc: any, x: number, y: number, angle: number, type: string, options: any, headLen: number = 28) {

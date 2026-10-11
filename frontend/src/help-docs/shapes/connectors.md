@@ -51,6 +51,12 @@ Customize arrow appearance with different head and tail styles:
 | **Diamond** | Diamond-shaped endpoint |
 | **None** | No arrowhead (plain line end) |
 
+### Arrowhead size
+
+An arrowhead is sized from the line it sits on: **6px plus 5× the stroke width, kept between 10px and 28px**. A 1.5px line in an architecture diagram gets a 14px head, the default 2px line a 16px head, and a 4.4px or heavier line the full 28px. Several connectors meeting one side of a box therefore no longer run their heads into each other.
+
+To fix a size yourself, set **Start Size** / **End Size** in the Properties panel (or `startArrowheadSize` / `endArrowheadSize` from a script, 1–100px). A size you set wins over the rule, and stays when you change the stroke width.
+
 ### Bidirectional Arrows
 
 Enable arrowheads on both ends for bidirectional relationships. Set both start and end styles to create two-way arrows.

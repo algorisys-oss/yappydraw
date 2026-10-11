@@ -1,4 +1,5 @@
 import { BUILTIN_FONTS_CSS_URL } from "../config/builtin-fonts";
+import { arrowheadSize } from './arrowhead-size';
 import { lineHeightPx } from './text-line-height';
 import { store, isLayerVisible, elementsInRenderOrder } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
@@ -1247,8 +1248,8 @@ export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptio
                 // of docs/arrowhead-orientation-spec.md.
                 const startAngle = geom.startAngle;
                 const angle = geom.endAngle;
-                const startHeadLen = el.startArrowheadSize || 28;
-                const endHeadLen = el.endArrowheadSize || 28;
+                const startHeadLen = arrowheadSize(el, 'start');
+                const endHeadLen = arrowheadSize(el, 'end');
 
                 const headStroke = el.strokeColor || '#000';
                 const headWidth = el.strokeWidth || 2;

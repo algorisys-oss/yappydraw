@@ -11173,3 +11173,15 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   helper) deadlocked the audit instead of failing. Helpers both sides need go in the module
   both already import.
 
+## Arrowhead size (2026-10-11)
+
+- **A "default" that is written into the element is not a default.** The tool styles stored
+  `startArrowheadSize: 28` on every arrow, so changing the renderer's fallback would have
+  fixed scripts and left every hand-drawn arrow as it was. Check who persists a value before
+  changing where it is read.
+- **Size things relative to the stroke they decorate.** A head that looks right on a 4px
+  sketch line is a spike on a 1.5px diagram line; one rule from the stroke width beats one
+  number.
+- **The live demo is a review.** Nothing in the audits measured arrowheads; a human looking
+  at the real screen did, in one glance.
+

@@ -52,6 +52,7 @@ import MathNumberInput from "./math-number-input";
 import { GridSettingsSection } from "./grid-settings-section";
 import { ColorPickerPro } from "./color-picker-pro";
 import { CANVAS_THEMES, matchCanvasTheme } from "../config/canvas-themes";
+import { defaultArrowheadSize } from "../utils/arrowhead-size";
 import { playSequence } from "../utils/animation/orchestrator";
 import { AnimationPanel } from "./animation-panel";
 import StickFaceControls from "./stick-face-controls";
@@ -1961,6 +1962,7 @@ const PropertyPanel: Component = () => {
         }
     };
 
+    const isArrowheadSizeKey = (key: string) => key === 'startArrowheadSize' || key === 'endArrowheadSize';
     const getPropertyValue = (prop: PropertyConfig) => {
         const target = activeTarget();
         if (!target) return undefined;
@@ -2012,6 +2014,7 @@ const PropertyPanel: Component = () => {
             });
             if (!allSame) return MIXED_VALUE;
             if (prop.key === 'roundness') return !!firstVal;
+            if (isArrowheadSizeKey(prop.key) && firstVal == null) return defaultArrowheadSize(elements[0].strokeWidth);
             return firstVal;
         }
         if (target.type === 'element') {
@@ -2019,6 +2022,8 @@ const PropertyPanel: Component = () => {
             if (proxied[0]) return proxied[1];
             const val = (target.data as any)[prop.key];
             if (prop.key === 'roundness') return !!val; // Convert to boolean for toggle
+            // An unset arrowhead size follows the stroke; show what is actually drawn.
+            if (isArrowheadSizeKey(prop.key) && val == null) return defaultArrowheadSize((target.data as any).strokeWidth);
             return val;
         }
         if (target.type === 'defaults') {
@@ -2028,6 +2033,7 @@ const PropertyPanel: Component = () => {
             }
             const val = (store.defaultElementStyles as any)[prop.key];
             if (prop.key === 'roundness') return !!val;
+            if (isArrowheadSizeKey(prop.key) && val == null) return defaultArrowheadSize(store.defaultElementStyles.strokeWidth);
             return val;
         }
         if (target.type === 'eraser') {

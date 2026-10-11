@@ -657,8 +657,10 @@ const initialState: AppState = {
             verticalAlign: 'middle',
             startArrowhead: null,
             endArrowhead: null,
-            startArrowheadSize: 28,
-            endArrowheadSize: 28,
+            // Unset on purpose: the size follows the stroke width (utils/arrowhead-size.ts)
+            // until the user sets one. A stored 28 here used to pin every hand-drawn arrow.
+            startArrowheadSize: undefined,
+            endArrowheadSize: undefined,
             autoResize: false,
             flowColor: undefined,
             seed: 0,

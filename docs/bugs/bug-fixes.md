@@ -1,5 +1,25 @@
 # Bug Fixes Log
 
+## 2026-10-11 — Arrowheads sized to the line (v0.8.286)
+
+### 454. Arrowheads were a fixed 28px whatever the stroke width
+
+**Symptom:** on a 1.5px architecture-diagram line every arrowhead was a 28px open chevron —
+nineteen line-widths long — and three of them landing on one 120px side overlapped into a
+saw-tooth. Spotted on the live elbow-routing demo ("isn't the arrow head too big?").
+
+**Cause:** every draw site fell back to `|| 28` when a connector carried no explicit size
+(canvas in both render styles, the draw-progress path, SVG export, the organic-branch
+renderer), and the tool defaults wrote an explicit `startArrowheadSize: 28` onto every
+hand-drawn arrow, so the stroke width never had a say.
+
+**Fix:** `utils/arrowhead-size.ts` — `defaultArrowheadSize(strokeWidth)` = 6 + 5·width,
+clamped to 10–28; `arrowheadSize(el, end)` prefers an explicit size. All eight renderer
+sites, export and the branch renderer use it; the tool defaults leave the size unset; the
+Properties panel shows the effective value until the user types one. Existing drawings with
+an explicit 28 (every arrow drawn with the tool before this release) are unchanged; arrows
+made by scripts or the DSL, which never had a size, get the new default on their next render.
+
 ## 2026-10-11 — Elbow routing on a 52-box platform diagram (v0.8.285)
 
 Drawing a realistic 52-box, 64-connector architecture on the live v0.8.284 site exposed five

@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.286', date: '2026-10-11', items: [
+        'Arrowheads now match the line they sit on: thin diagram lines get small heads, heavy sketch lines keep big ones. Several connectors arriving at one box no longer run their heads together. Set Start Size / End Size yourself to override.',
+    ] },
     { version: '0.8.285', date: '2026-10-11', items: [
         'Elbow connectors on big diagrams: a 50-box architecture with 60+ connectors now routes every elbow clear of every box — no more routes cutting through a shape just outside their own neighbourhood, and connectors that detour no longer get run along by others.',
         'Ports that land a pixel off a corner attach to the right side, and routes no longer take 1px or 5px side-steps.',

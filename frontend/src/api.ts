@@ -232,6 +232,9 @@ interface ElementOptions {
     verticalAlign?: VerticalAlign;
     startArrowhead?: ArrowHead;
     endArrowhead?: ArrowHead;
+    /** Arrowhead length in px (1–100). Unset = 6 + 5 × strokeWidth, clamped to 10–28. */
+    startArrowheadSize?: number;
+    endArrowheadSize?: number;
     seed?: number;
     layerId?: string;
     curveType?: 'straight' | 'bezier' | 'elbow';
