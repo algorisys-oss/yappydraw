@@ -1693,7 +1693,7 @@ function RS(e) {
   if (!t || t.baked) return null;
   const n = Fn(e);
   if (n.length === 0) return null;
-  const o = t.depthModel === "symmetry" ? t.axisX ?? wB(n, e.width / 2) : t.axisX ?? e.width / 2, r = t.cx ?? o, a = t.cy ?? e.height / 2, s = (t.yaw ?? 0) * Jw, i = (t.axis === "x" ? t.yaw ?? 0 : t.pitch ?? 0) * Jw, l = Math.cos(s), c = Math.sin(s), d = Math.cos(i), h = Math.sin(i), u = t.perspective ?? 0, f = xB(n, t, o), p = !!t.reveal && t.depthModel === "symmetry", g = [];
+  const o = t.depthModel === "symmetry" ? t.axisX ?? wB(n, e.width / 2) : t.axisX ?? e.width / 2, r = t.cx ?? o, a = t.cy ?? e.height / 2, s = (t.axis === "x" ? 0 : t.yaw ?? 0) * Jw, i = (t.axis === "x" ? t.yaw ?? 0 : t.pitch ?? 0) * Jw, l = Math.cos(s), c = Math.sin(s), d = Math.cos(i), h = Math.sin(i), u = t.perspective ?? 0, f = xB(n, t, o), p = !!t.reveal && t.depthModel === "symmetry", g = [];
   for (const b of n)
     p && g.push({ sub: b, sign: -1 }), g.push({ sub: b, sign: 1 });
   const y = g.map((b) => ({
@@ -1705,8 +1705,8 @@ function RS(e) {
     const b = (w) => {
       let v = 0;
       for (const k of w.srcAnchors) {
-        const x = k.x - r;
-        v += -x * c + w.srcSign * f(k.x) * l;
+        const M = -(k.x - r) * c + w.srcSign * f(k.x) * l;
+        v += (k.y - a) * h + M * d;
       }
       return v / Math.max(1, w.srcAnchors.length);
     };
@@ -27447,7 +27447,7 @@ const FP = () => {
   const n = m.states.find((o) => o.id === e);
   if (n)
     if (S("activeStateId", e), t) {
-      const { MorphAnimator: o } = await import("./morph-animator-BiNflF1I.js");
+      const { MorphAnimator: o } = await import("./morph-animator-CD-EWxCR.js");
       o.morphTo(n);
     } else
       Ee(() => {
@@ -28378,7 +28378,7 @@ const WE = () => pl, zE = (e) => {
   if (o.length >= m.layers.length)
     return $("Cannot delete every layer.", "error"), !1;
   if (t === void 0 && (s.length > 0 || a.length > 0)) {
-    const { askChoice: i } = await import("./choice-dialog-state-Di-0WRPy.js"), { t: l } = await Promise.resolve().then(() => lQ), c = await i(
+    const { askChoice: i } = await import("./choice-dialog-state-BxwyrXRG.js"), { t: l } = await Promise.resolve().then(() => lQ), c = await i(
       l("layerDelete.title", { name: n.name }),
       a.length > 0 ? l("layerDelete.bodyGroup", { layers: a.length, objects: s.length }) : l("layerDelete.bodyLayer", { objects: s.length }),
       [
@@ -38506,7 +38506,7 @@ const gk = (e, t) => {
     const w = Number(l.getAttribute("width")), v = Number(l.getAttribute("height"));
     u = [{ x: c - s, y: d - s, width: w + s * 2, height: v + s * 2, background: e ? zb() : null }];
   }
-  const { renderSvgPagesToPdf: f } = await import("./pdf-vector-CpQZPge5.js");
+  const { renderSvgPagesToPdf: f } = await import("./pdf-vector-BBxb3gRO.js");
   let p;
   if (o.colorMode === "cmyk" || a) {
     const [{ loadColorEngine: w }, { exactCmykFromSwatches: v, spotsFromSwatches: k }] = await Promise.all([import("./__vite-browser-external-BsdCVVos.js").then((x) => x.c), import("./pdf-cmyk-CqVZV2FF.js").then((x) => x.e)]);
@@ -57055,6 +57055,11 @@ const Xce = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty(
   isSupportOpen: zce,
   openSupport: Hce
 }, Symbol.toStringTag, { value: "Module" })), jce = [
+  { version: "0.8.291", date: "2026-10-29", items: [
+    "After using the Pan tool, the Pen, Rectangle and other tools show their own cursor again instead of the hand.",
+    "Connectors that route round other shapes no longer disappear while you pan the diagram.",
+    "Drawing a new arrow no longer moves an existing one. Dragging an arrow’s end onto empty canvas now cleanly detaches it from the shape it was on."
+  ] },
   { version: "0.8.290", date: "2026-10-11", items: [
     'Single-line (pen-plotter) text from the Command Palette: press Ctrl/Cmd+K, type "Hershey", pick a face (Simplex, Duplex, Sans, Script or Gothic) and enter the words. They land centred and selected, one editable path per letter, ready for Draw In handwriting or an SVG export a plotter can follow.'
   ] },
@@ -58082,7 +58087,7 @@ async function Vce() {
     window.location.reload();
   }
 }
-const EO = "0.8.290", IO = {
+const EO = "0.8.291", IO = {
   version: EO
 };
 var qce = /* @__PURE__ */ ze(`<div class=whatsnew-overlay><div class=whatsnew-modal role=dialog aria-modal=true aria-label="What's new"><div class=whatsnew-head><div class=whatsnew-title><span>What's new</span><span class=whatsnew-ver>v</span></div><button class=whatsnew-close aria-label=Close></button></div><div class=whatsnew-body></div><div class=whatsnew-foot><span class=whatsnew-foot-note>On the latest build? Reload to be sure.</span><button class=whatsnew-refresh title="Clear cache and reload the latest version"> Reload latest`), Kce = /* @__PURE__ */ ze("<div class=whatsnew-entry><div class=whatsnew-entry-head><span class=whatsnew-badge>v</span><span class=whatsnew-date></span></div><ul class=whatsnew-list>"), Qce = /* @__PURE__ */ ze("<li>");
@@ -65321,7 +65326,7 @@ const ue = {
   },
   /** Execute a CRUD operation on a DS element with animation */
   async dsOperation(e, t, n) {
-    const { executeDsOperation: o } = await import("./ds-operations-Igf-Ezy1.js");
+    const { executeDsOperation: o } = await import("./ds-operations-aFfgZej1.js");
     return o(e, t, n || {});
   },
   // --- Actions & Helpers ---
@@ -65723,7 +65728,8 @@ const ue = {
    * Live Turntable effect (Adobe Project Turntable) — rotate a vector path in pseudo-3D and
    * keep it fully editable. Non-path shapes are converted to a path first. Non-destructive.
    * Pass 2+ ids to spin them together as one shared rig (group turntable).
-   * @param tt `{ yaw (deg about vertical), pitch (deg tilt), depthModel ('flat'|'symmetry'),
+   * @param tt `{ axis ('y' default|'x'|'free'), yaw (deg; horizontal only for axis:'x'),
+   *   pitch (deg tilt; ignored for axis:'x'), depthModel ('flat'|'symmetry'),
    *   depthScale (0..1.5 bulge), reveal (symmetry back-face), perspective (0=ortho..1) }`
    */
   turntable(e, t) {
@@ -65751,7 +65757,7 @@ const ue = {
   async reconstructTurntableAI(e, t) {
     const n = t ?? m.selection[0];
     if (!n) return { success: !1, error: "No element selected" };
-    const o = await import("./turntable-ai-Bt947DwF.js"), r = { yaw: e?.yaw, pitch: e?.pitch };
+    const o = await import("./turntable-ai-cz89NMQ6.js"), r = { yaw: e?.yaw, pitch: e?.pitch };
     return e?.mode === "image" ? o.reconstructTurntableAIImage(n, r) : o.reconstructTurntableAI(n, r);
   },
   /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
@@ -67206,7 +67212,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   },
   /** Start (or replay) the first-visit onboarding tour. */
   startTour() {
-    import("./onboarding-tour-BcnCkhEN.js").then((e) => e.startTour());
+    import("./onboarding-tour-DpXkBcSr.js").then((e) => e.startTour());
   },
   /** Open the "What's new" popup (recent user-facing changes). */
   showWhatsNew() {
@@ -67382,11 +67388,11 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   /** Start the game (uses the stored script unless one is passed). The document
    *  is snapshotted and fully restored on stop. Returns false on script errors. */
   async startGame(e) {
-    return (await import("./game-runtime-7MQ8T2uP.js")).startGame(e);
+    return (await import("./game-runtime-CpvR1mdl.js")).startGame(e);
   },
   /** Stop a running game and restore the document. */
   async stopGame() {
-    (await import("./game-runtime-7MQ8T2uP.js")).stopGame();
+    (await import("./game-runtime-CpvR1mdl.js")).stopGame();
   },
   /** True while a game is running. */
   isGameRunning() {
@@ -67456,7 +67462,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   },
   /** Compile the blocks and play the resulting game (Play button). */
   async playBehaviorGame() {
-    const [e, t] = await Promise.all([Promise.resolve().then(() => Uk), import("./game-runtime-7MQ8T2uP.js")]), n = e.effectiveGameScript(m.elements, m.sceneBehaviors ?? [], m.gameScript, m.gameVars ?? [], m.blueprints, m.gameAuthoringMode);
+    const [e, t] = await Promise.all([Promise.resolve().then(() => Uk), import("./game-runtime-CpvR1mdl.js")]), n = e.effectiveGameScript(m.elements, m.sceneBehaviors ?? [], m.gameScript, m.gameVars ?? [], m.blueprints, m.gameAuthoringMode);
     return n ? t.startGame(n) : !1;
   },
   // Version history (local IndexedDB snapshots)
@@ -67485,31 +67491,31 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   // "My drawings" gallery — local multi-document library (IndexedDB, offline-first).
   /** Save the LIVE editor into the gallery (updates the open entry, or creates one). */
   async saveToGallery(e) {
-    return (await import("./drawings-store-CqCMmZgs.js")).saveCurrentToGallery(e ? { name: e } : {});
+    return (await import("./drawings-store-C2gQVOCO.js")).saveCurrentToGallery(e ? { name: e } : {});
   },
   /** Save the live editor as a NEW gallery drawing (never overwrites the open one). */
   async saveToGalleryAsNew(e) {
-    return (await import("./drawings-store-CqCMmZgs.js")).saveCurrentToGallery({ name: e, forceNew: !0 });
+    return (await import("./drawings-store-C2gQVOCO.js")).saveCurrentToGallery({ name: e, forceNew: !0 });
   },
   /** List saved-drawing metadata (newest first, no bodies loaded). */
   async listDrawings() {
-    return (await import("./drawings-store-CqCMmZgs.js")).listDrawings();
+    return (await import("./drawings-store-C2gQVOCO.js")).listDrawings();
   },
   /** Open a saved drawing into the editor by id. */
   async openDrawing(e) {
-    return (await import("./drawings-store-CqCMmZgs.js")).openDrawing(e);
+    return (await import("./drawings-store-C2gQVOCO.js")).openDrawing(e);
   },
   /** Rename a saved drawing. */
   async renameDrawing(e, t) {
-    return (await import("./drawings-store-CqCMmZgs.js")).renameDrawing(e, t);
+    return (await import("./drawings-store-C2gQVOCO.js")).renameDrawing(e, t);
   },
   /** Duplicate a saved drawing; returns the new entry's metadata. */
   async duplicateDrawing(e) {
-    return (await import("./drawings-store-CqCMmZgs.js")).duplicateDrawing(e);
+    return (await import("./drawings-store-C2gQVOCO.js")).duplicateDrawing(e);
   },
   /** Delete a saved drawing by id. */
   async deleteDrawing(e) {
-    return (await import("./drawings-store-CqCMmZgs.js")).deleteDrawing(e);
+    return (await import("./drawings-store-C2gQVOCO.js")).deleteDrawing(e);
   },
   /** Ask the browser to make local storage durable (dodges best-effort/ITP eviction). */
   async requestPersistentStorage() {
@@ -67594,7 +67600,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * skipped when 'photo' is out of scope or `includePhotos:false`.
    */
   searchElements(e, t) {
-    return import("./search-p8BrLf2Z.js").then((n) => n.searchElements(e, t));
+    return import("./search-B09o2eIz.js").then((n) => n.searchElements(e, t));
   },
   /**
    * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to drop it
@@ -68741,45 +68747,45 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   },
   /** Export the current scene as a self-contained HTML file (animated figures play in it). */
   async exportHtml(e = "animation") {
-    return (await import("./export-game-B2Af1Hbb.js")).exportSceneAsHtml(e);
+    return (await import("./export-game-vrAl7xq7.js")).exportSceneAsHtml(e);
   },
   // AI assists (Canva-style; keys from AI Settings)
   /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */
   async magicWrite(e = "rewrite", t, n) {
-    return (await import("./canva-ai-us059viy.js")).magicWrite(n ?? [...m.selection], e, t);
+    return (await import("./canva-ai-BFOytREO.js")).magicWrite(n ?? [...m.selection], e, t);
   },
   /** Generate an image from a prompt (OpenAI) and insert it on the active page. Returns the element id. */
   async generateImage(e, t) {
-    return (await import("./canva-ai-us059viy.js")).generateImage(e, t);
+    return (await import("./canva-ai-BFOytREO.js")).generateImage(e, t);
   },
   /** Remove the background of the selected (or given) image element via OpenAI image editing.
    *  Original pixels are preserved by default (AI output used only as an alpha mask);
    *  pass {preserveOriginal: false} to take the AI's regenerated image as-is. */
   async removeBackground(e, t) {
-    return (await import("./canva-ai-us059viy.js")).removeBackground(e, t);
+    return (await import("./canva-ai-BFOytREO.js")).removeBackground(e, t);
   },
   /** Generate a full design document from a text brief (any LLM provider):
    *  headline, subhead, bullets, CTA and palette laid out proportionally.
    *  Pass a preset id or {width, height} (default 1080×1080). */
   async generateDesign(e, t) {
-    const n = await import("./design-generator-CbwK0vZf.js"), o = typeof t == "string" ? $p(t) : t;
+    const n = await import("./design-generator-BGXMoviP.js"), o = typeof t == "string" ? $p(t) : t;
     return n.generateDesign(e, o ? { width: o.width, height: o.height } : void 0);
   },
   /** Magic Edit: repaint the selected (or given) image per an instruction, e.g.
    *  "remove the person on the left" (OpenAI image edits). */
   async magicEditImage(e, t) {
-    return (await import("./canva-ai-us059viy.js")).magicEditImage(t, e);
+    return (await import("./canva-ai-BFOytREO.js")).magicEditImage(t, e);
   },
   /** Replace Background: swap the background behind the subject of the selected
    *  (or given) image for a described scene, keeping the foreground untouched
    *  (OpenAI image edits). */
   async replaceBackground(e, t) {
-    return (await import("./canva-ai-us059viy.js")).replaceBackground(t, e);
+    return (await import("./canva-ai-BFOytREO.js")).replaceBackground(t, e);
   },
   /** Magic Expand: outpaint the selected (or given) image — margins are fractions
    *  of the source size (default 0.25 each side). The element grows to match. */
   async expandImage(e, t) {
-    return (await import("./canva-ai-us059viy.js")).expandImage(t, e);
+    return (await import("./canva-ai-BFOytREO.js")).expandImage(t, e);
   },
   // Font pairings
   /** List curated heading/body font pairings. */
@@ -69752,7 +69758,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param options.style3D - Render in the 3D concept-diagram style (pastel palette, solidBlock/perspectiveBlock containers, isometric cubes). Ignored when rocketMode is true.
    */
   async generateDiagram(e, t) {
-    const { generateDiagram: n } = await import("./drawing-engine-DMreXXcv.js");
+    const { generateDiagram: n } = await import("./drawing-engine-ChTNR20M.js");
     return n(e, t);
   },
   /**
@@ -69764,7 +69770,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param options.style3D - Render in the 3D concept-diagram style.
    */
   async generateDiagramFromSketch(e, t) {
-    const { generateDiagramFromSketch: n } = await import("./drawing-engine-DMreXXcv.js");
+    const { generateDiagramFromSketch: n } = await import("./drawing-engine-ChTNR20M.js");
     return n(e, t);
   },
   /**
@@ -69781,7 +69787,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param options.mode - 'quick' (single LLM call, fast) or 'deep' (2-stage agentic, richer content)
    */
   async generatePresentation(e, t) {
-    const { generatePresentation: n } = await import("./slide-generator-BRfDfwHh.js");
+    const { generatePresentation: n } = await import("./slide-generator-CyshVj2x.js");
     return n(e, { ...t, clearCanvas: !0 });
   },
   /**
@@ -69792,7 +69798,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param palette - Optional color palette name
    */
   async importMarkdownSlides(e, t) {
-    const { parseMarkdownToSlides: n } = await import("./markdown-to-slides-CxamCeQR.js"), { loadDocument: o } = await Promise.resolve().then(() => xj), r = n(e, t);
+    const { parseMarkdownToSlides: n } = await import("./markdown-to-slides-CZ_4B6Pe.js"), { loadDocument: o } = await Promise.resolve().then(() => xj), r = n(e, t);
     return o(r), { success: !0, slideCount: r.slides?.length || 0 };
   },
   // ─── Deploy to Rocket ──────────────────────────────────

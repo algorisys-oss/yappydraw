@@ -158,6 +158,7 @@ import { getPoolLaneRect } from './pool-containment';
 import { CanvasRenderer } from '../rendering/CanvasRenderer';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { syncElementBounds, wasmBatchViewportCull } from '../wasm/bridge/batch-renderer-bridge';
+import { cullBounds } from './cull-bounds';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -281,11 +282,12 @@ export function cullElementsForAnimation(
 
     // Infinite canvas: cull elements outside the viewport
     const primaryElements = elements.filter(el => {
-        const margin = Math.max(Math.abs(el.width), Math.abs(el.height)) * 0.5;
-        return !(el.x + el.width + margin < vp.minX - vp.bufferX ||
-            el.x - margin > vp.maxX + vp.bufferX ||
-            el.y + el.height + margin < vp.minY - vp.bufferY ||
-            el.y - margin > vp.maxY + vp.bufferY);
+        const b = cullBounds(el);
+        const margin = Math.max(b.width, b.height) * 0.5;
+        return !(b.x + b.width + margin < vp.minX - vp.bufferX ||
+            b.x - margin > vp.maxX + vp.bufferX ||
+            b.y + b.height + margin < vp.minY - vp.bufferY ||
+            b.y - margin > vp.maxY + vp.bufferY);
     });
 
     const centerIds = new Set(primaryElements.map(el => el.orbitCenterId).filter(Boolean));
@@ -927,8 +929,11 @@ export function renderLayersAndElements(
 
         // WASM batch viewport cull: pre-filter by AABB in one call
         let wasmVisibleSet: Set<number> | null = null;
+        // The WASM buffer holds at most 2048 elements; any past that are culled in JS
+        // below rather than read as "not visible".
+        let syncCount = 0;
         if (isWasmEnabled('batchRenderer') && !layer.isMaster) {
-            const syncCount = syncElementBounds(bucket);
+            syncCount = syncElementBounds(bucket);
             const visibleIndices = wasmBatchViewportCull(syncCount, vp, scale);
             if (visibleIndices) {
                 wasmVisibleSet = new Set(visibleIndices);
@@ -954,19 +959,19 @@ export function renderLayersAndElements(
                 && Math.abs(el.width) < 1 && Math.abs(el.height) < 1) return true;
 
             // Fast viewport check first (WASM batch or JS fallback)
-            if (wasmVisibleSet) {
+            if (wasmVisibleSet && idx < syncCount) {
                 if (!wasmVisibleSet.has(idx)) return false;
             } else {
-                // JS fallback: sub-pixel skip + AABB viewport check
-                const screenWidth = Math.abs(el.width) * scale;
-                const screenHeight = Math.abs(el.height) * scale;
-                if (screenWidth < 1 && screenHeight < 1) return false;
+                // JS fallback: sub-pixel skip + AABB viewport check, on the drawn extent
+                // (see cullBounds) — the same box syncElementBounds hands the WASM path.
+                const b = cullBounds(el);
+                if (b.width * scale < 1 && b.height * scale < 1) return false;
 
-                const margin = Math.max(Math.abs(el.width), Math.abs(el.height)) * 0.5;
-                if (el.x + el.width + margin < vp.minX - vp.bufferX ||
-                    el.x - margin > vp.maxX + vp.bufferX ||
-                    el.y + el.height + margin < vp.minY - vp.bufferY ||
-                    el.y - margin > vp.maxY + vp.bufferY) return false;
+                const margin = Math.max(b.width, b.height) * 0.5;
+                if (b.x + b.width + margin < vp.minX - vp.bufferX ||
+                    b.x - margin > vp.maxX + vp.bufferX ||
+                    b.y + b.height + margin < vp.minY - vp.bufferY ||
+                    b.y - margin > vp.maxY + vp.bufferY) return false;
             }
 
             // JS-only visibility checks on viewport-surviving elements

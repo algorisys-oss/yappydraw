@@ -23,7 +23,7 @@ const DEG = Math.PI / 180;
 /** True when the element carries a live (un-baked) turntable that changes its geometry. */
 export function hasTurntable(el: DrawingElement): boolean {
     const t = el.turntable;
-    return !!t && !t.baked && ((t.yaw ?? 0) !== 0 || (t.pitch ?? 0) !== 0);
+    return !!t && !t.baked && ((t.yaw ?? 0) !== 0 || (t.axis !== 'x' && (t.pitch ?? 0) !== 0));
 }
 
 /** Collect every x used by an anchor and its handles (absolute, origin-relative). */
@@ -172,7 +172,7 @@ export function applyTurntable(el: DrawingElement): PathSubpath[] | null {
     const cx = t.cx ?? mirrorX;
     const cy = t.cy ?? el.height / 2;
 
-    const yaw = (t.yaw ?? 0) * DEG;
+    const yaw = (t.axis === 'x' ? 0 : (t.yaw ?? 0)) * DEG;
     const pitch = (t.axis === 'x' ? (t.yaw ?? 0) : (t.pitch ?? 0)) * DEG;
     const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
     const cosP = Math.cos(pitch), sinP = Math.sin(pitch);
@@ -198,7 +198,8 @@ export function applyTurntable(el: DrawingElement): PathSubpath[] | null {
             let s = 0;
             for (const a of o.srcAnchors) {
                 const dx = a.x - cx;
-                s += -dx * sinY + o.srcSign * depthAt(a.x) * cosY;
+                const z1 = -dx * sinY + o.srcSign * depthAt(a.x) * cosY;
+                s += (a.y - cy) * sinP + z1 * cosP;
             }
             return s / Math.max(1, o.srcAnchors.length);
         };

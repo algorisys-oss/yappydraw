@@ -1,5 +1,68 @@
 # Bug Fixes Log
 
+## 2026-10-29 — Pan cursor, vanishing connectors, arrows pulled back (user reports)
+
+### 455. The Pan tool's hand cursor stayed on after switching to another tool
+
+**Symptom:** after using Pan, picking Pen or Rectangle still showed the hand on the canvas,
+until the Select tool was picked once.
+
+**Cause:** the pan handler writes `'grab'` into the canvas's cursor signal, and `canvasCursor()`
+lets any non-`'default'` value outrank the tool's own cursor. Only the Select tool's hover
+handler ever wrote `'default'` back.
+
+**Fix:** `components/canvas.tsx` resets the cursor signal whenever `selectedTool` changes, and
+Pan shows its hand straight away instead of after the first pointer move. Verified in the app:
+Pan → R / P / A gives a crosshair (it was `grab` before the fix).
+
+### 456. A routed connector vanished while its path was still on screen
+
+**Symptom:** panning a diagram so that only part of a long connector was in view made the
+connector disappear, depending on which way you panned.
+
+**Cause:** viewport culling (WASM batch path and its JS fallback alike) tested the element's
+`x/y/width/height`. For a connector that is only the start→end chord; an elbow routed round
+other shapes stores its path in `points`, which can run far outside the chord. Once the chord
+was off screen the whole connector was skipped. Negative widths/heights (connectors drawn
+right-to-left) were also read as the wrong edge.
+
+**Fix:** `utils/cull-bounds.ts` — `cullBounds(el)` returns a normalised box that, for
+connectors, includes the routed points and bezier control points. `syncElementBounds` feeds it to
+the WASM cull and the JS fallback uses it too, so both paths cull by the same box (the
+AssemblyScript module is unchanged). The animation pre-cull uses it as well. Also: a layer with more than the WASM buffer's
+2048 elements culled everything past index 2048 as invisible; those now fall back to the JS
+check. Verified in the app with a hand-routed elbow panned so only its detour shows (0 pixels
+drawn before the fix, drawn after); unit tests in `cull-bounds.test.ts`.
+
+### 457. Drawing a new arrow moved an existing arrow
+
+**Symptom:** on a flowchart, drawing a second arrow from a decision diamond to a box made an
+existing arrow, which ended on the diamond, jump: its tip moved onto the new arrow's target box.
+
+**Cause:** that arrow had been attached to the box first, and its end was later dragged to the
+diamond and dropped just outside the snap zone. The drop kept the old `endBinding`, so the
+arrow looked free but was still bound to the box. Drawing a new arrow into that box refreshes
+every connector bound to it, and the stale one was pulled back across the canvas.
+
+**Fix:** `tool-handlers/selection-handler.ts` — an end handle that is dragged and dropped
+without a snap target now lets go of its old binding and leaves the old shape's
+`boundElements`. Pressing a handle without moving it changes nothing. Reproduced and verified in the app
+(`temp/arrow-steal-repro.mjs`). Drawings saved before the fix still contain the stale binding:
+drag the affected arrow's end onto its shape again (or anywhere) to clear it.
+
+### 458. Turntable `axis: 'x'` turned the shape about both axes
+
+**Symptom:** `Yappy.turntable({ axis: 'x', yaw: 90 })` was meant to be a horizontal quarter turn,
+but the shape was also turned vertically by the same angle.
+
+**Cause:** `applyTurntable` fed `yaw` into the pitch rotation for `axis: 'x'` and still applied it
+as yaw as well. Separately, the depth key used to order overlapping subpaths ignored pitch, and
+`hasTurntable` counted a leftover `pitch` as live even though `axis: 'x'` ignores it.
+
+**Fix:** `utils/turntable.ts`: for `axis: 'x'` yaw is zero and the angle goes to pitch only; the
+depth key applies both rotations; `hasTurntable` ignores pitch on the x axis. `turntable.test.ts`
+(5 tests). API doc comment and Effects help updated.
+
 ## 2026-10-11 — Arrowheads sized to the line (v0.8.286)
 
 ### 454. Arrowheads were a fixed 28px whatever the stroke width

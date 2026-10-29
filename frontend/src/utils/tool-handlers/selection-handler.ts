@@ -2892,6 +2892,30 @@ export function selectionOnUp(
                     }
                 }
             }
+        } else if (!binding && store.selection.length === 1
+            && (pState.draggingHandle === 'tl' || pState.draggingHandle === 'br')) {
+            // An end dropped away from any shape is no longer attached, so let go of the old
+            // binding. Keeping it left the end visually free but still bound: the next
+            // refresh of the old shape's connectors (e.g. drawing another arrow into it)
+            // dragged the end back across the canvas.
+            const elId = store.selection[0];
+            const el = store.elements.find(e => e.id === elId);
+            const isStart = pState.draggingHandle === 'tl';
+            const old = el && (isStart ? el.startBinding : el.endBinding);
+            // Only an end that actually moved: pressing a handle and letting go is not a detach.
+            const moved = el && (isStart
+                ? Math.hypot(el.x - pState.initialElementX, el.y - pState.initialElementY)
+                : Math.hypot(el.x + el.width - (pState.initialElementX + pState.initialElementWidth),
+                    el.y + el.height - (pState.initialElementY + pState.initialElementHeight))) > 0.5;
+            if (el && old && moved) {
+                updateElement(elId, isStart ? { startBinding: undefined } : { endBinding: undefined });
+                const otherEnd = isStart ? el.endBinding : el.startBinding;
+                const prev = store.elements.find(e => e.id === old.elementId);
+                // A connector with both ends on one shape keeps its entry for the other end.
+                if (prev?.boundElements && otherEnd?.elementId !== prev.id) {
+                    updateElement(prev.id, { boundElements: prev.boundElements.filter(b => b.id !== elId) });
+                }
+            }
         }
         signals.setSuggestedBinding(null);
     }

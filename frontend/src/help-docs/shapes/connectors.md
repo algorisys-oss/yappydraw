@@ -37,6 +37,10 @@ Connectors can bind to shapes, automatically maintaining their connection when s
 Shapes have multiple binding points: center, top, bottom, left, and right edges. The connector will snap to the nearest point when you hover.
 :::
 
+### Moving or detaching an end
+
+Select a connector and drag either end handle. Drop it on a shape (the shape highlights) to attach it there. Drop it on empty canvas and that end is **detached**: it stays where you dropped it and no longer follows the shape it used to be attached to. Clicking an end handle without dragging changes nothing.
+
 ## Arrow Styles
 
 Customize arrow appearance with different head and tail styles:

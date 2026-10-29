@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.291', date: '2026-10-29', items: [
+        'After using the Pan tool, the Pen, Rectangle and other tools show their own cursor again instead of the hand.',
+        'Connectors that route round other shapes no longer disappear while you pan the diagram.',
+        'Drawing a new arrow no longer moves an existing one. Dragging an arrow’s end onto empty canvas now cleanly detaches it from the shape it was on.',
+    ] },
     { version: '0.8.290', date: '2026-10-11', items: [
         'Single-line (pen-plotter) text from the Command Palette: press Ctrl/Cmd+K, type "Hershey", pick a face (Simplex, Duplex, Sans, Script or Gothic) and enter the words. They land centred and selected, one editable path per letter, ready for Draw In handwriting or an SVG export a plotter can follow.',
     ] },

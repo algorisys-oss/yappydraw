@@ -2592,7 +2592,8 @@ export const YappyAPI = {
      * Live Turntable effect (Adobe Project Turntable) — rotate a vector path in pseudo-3D and
      * keep it fully editable. Non-path shapes are converted to a path first. Non-destructive.
      * Pass 2+ ids to spin them together as one shared rig (group turntable).
-     * @param tt `{ yaw (deg about vertical), pitch (deg tilt), depthModel ('flat'|'symmetry'),
+     * @param tt `{ axis ('y' default|'x'|'free'), yaw (deg; horizontal only for axis:'x'),
+     *   pitch (deg tilt; ignored for axis:'x'), depthModel ('flat'|'symmetry'),
      *   depthScale (0..1.5 bulge), reveal (symmetry back-face), perspective (0=ortho..1) }`
      */
     turntable(tt?: Partial<import("./types").Turntable>, ids?: string[]) { setTurntable(ids ?? [...store.selection], tt); },

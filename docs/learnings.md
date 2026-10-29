@@ -2,6 +2,25 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Cursor, culling and stale bindings: three reports, one shape (Oct 29 2026)
+
+- **State a handler sets belongs to the tool that set it.** The canvas cursor signal let any
+  non-default value win over the tool's cursor, and only one tool ever reset it, so Pan's `grab`
+  leaked into every other tool. Reset per-tool UI state on the tool switch, not in whichever
+  tool happens to clean up.
+- **For a connector, `x/y/width/height` is the chord, not the drawing.** Routed elbows,
+  polylines and beziers draw outside it. Anything that asks "where is this on screen?" (culling,
+  hit boxes, minimap) has to read the points. `cullBounds` is that for culling; it also
+  normalises negative widths, which the old edge tests misread.
+- **A binding must be cleared when the attachment ends, not only replaced when a new one
+  starts.** The drop code rebound on a snap target and did nothing otherwise, so an end dropped
+  in space stayed bound to the shape it had left. Nothing showed until some unrelated refresh of
+  that shape pulled it back, which is why the report blamed the new arrow.
+- **Reproduce the user's history, not just their last step.** Drawing the two arrows the way
+  the video showed worked fine. The bug needed an earlier step the video didn't show (end first
+  on the box, then dragged off). When the plain repro passes, ask what state the document must
+  already have been in.
+
 ## Text on Path: a model change needs a path back to the panel (Oct 11 2026)
 
 - **"The panel got reset" was a selection jump.** Nothing in the panel reset; the toggle moved the

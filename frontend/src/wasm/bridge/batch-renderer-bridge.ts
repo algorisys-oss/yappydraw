@@ -5,6 +5,7 @@ import type { DrawingElement } from '../../types';
 import type { ViewportBounds } from '../../utils/canvas-renderer';
 import { getWasmExports } from './wasm-loader';
 import { getElementBuffer, getElementBufferPtr } from './memory-pool';
+import { cullBounds } from '../../utils/cull-bounds';
 
 // ─── Element buffer layout ───
 // [x, y, w, h, angle, typeEnum] per element — 6 f64 fields
@@ -57,10 +58,13 @@ export function syncElementBounds(elements: DrawingElement[]): number {
   for (let i = 0; i < count; i++) {
     const el = elements[i];
     const base = i * ELEMENT_FIELDS;
-    buf[base]     = el.x;
-    buf[base + 1] = el.y;
-    buf[base + 2] = el.width;
-    buf[base + 3] = el.height;
+    // The drawn extent, not the raw x/y/width/height (a connector's routed points can
+    // leave its chord box) — same box the JS fallback culls by, so both paths agree.
+    const b = cullBounds(el);
+    buf[base]     = b.x;
+    buf[base + 1] = b.y;
+    buf[base + 2] = b.width;
+    buf[base + 3] = b.height;
     buf[base + 4] = el.angle || 0;
     buf[base + 5] = 0; // typeEnum (not used for viewport culling)
   }

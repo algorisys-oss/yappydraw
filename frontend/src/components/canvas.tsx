@@ -1,4 +1,4 @@
-import { type Component, onMount, createEffect, onCleanup, createSignal, Show, untrack, batch } from "solid-js";
+import { type Component, onMount, createEffect, onCleanup, createSignal, Show, untrack, batch, on } from "solid-js";
 import { printPreviewFrame, registerPrintPreviewOverlay, printPreviewActive, printPreviewProfile, setPrintPreview } from '../utils/print-preview';
 import { t } from '../i18n';
 import './print-preview.css';
@@ -326,6 +326,10 @@ const Canvas: Component = () => {
 
     // Cursor Management
     const [cursor, setCursor] = createSignal<string>('default');
+    // A handler-set cursor belongs to the tool that set it. Without this reset the Pan
+    // tool's 'grab' outlived the switch to Pen/Rectangle (canvasCursor lets any
+    // non-default value win), until the Select tool's hover happened to clear it.
+    createEffect(on(() => store.selectedTool, () => setCursor('default'), { defer: true }));
 
     // ── Canvas pointer style (Settings → Pen & Input) ──
     // A concentric-circle cursor, as an inline SVG data URI. Drawn as a CSS
@@ -365,6 +369,8 @@ const Canvas: Component = () => {
             if (store.penResumeHint) return penCursor('continue');
             if (store.penEditHint) return penCursor(store.penEditHint);
         }
+        // Pan shows its hand before the first pointer move, not just after it.
+        if (store.selectedTool === 'pan') return 'grab';
         if (POINTER_STYLE_EXEMPT.includes(store.selectedTool)) return c;
         const style = store.globalSettings.pointerStyle ?? 'crosshair';
         return style === 'circle' ? CIRCLE_CURSOR : style === 'arrow' ? 'default' : 'crosshair';

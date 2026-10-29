@@ -79,9 +79,15 @@ Spin a flat vector shape around as if it were a 3D object — Adobe's *Project T
 ```
 Yappy.turntable({ yaw: 35, pitch: 10, depthModel: 'symmetry', depthScale: 0.6, reveal: true });
 Yappy.turntable({ yaw: 40 }, [id1, id2, id3]);   // group rig: spin several together
+Yappy.turntable({ axis: 'x', yaw: 90, depthModel: 'flat' }); // horizontal quarter turn
 Yappy.bakeTurntable();   // freeze this viewpoint as editable path(s)
 Yappy.clearTurntable();
 ```
+
+From the API, `axis: 'x'` uses `yaw` as the horizontal rotation angle and
+does not add a vertical rotation; `pitch` is ignored in that mode. The
+default `axis: 'y'` and `axis: 'free'` use `yaw` vertically and `pitch` for
+horizontal tilt. Overlapping subpaths are ordered by depth after both rotations.
 
 **Animate the spin:** click **↻ Spin 360°** in the panel to auto-keyframe a full rotation across the timeline (one click — no manual keyframing). For finer control, **Turntable Yaw** and **Pitch** are also keyframable channels in the animation / dope-sheet panel. Either way it scrubs, plays, and exports to video/HTML like any other keyframed property. `Yappy.spinTurntable360()`.
 
