@@ -631,7 +631,7 @@ export const es: Dictionary = {
         'touchPen-penNodeDeleteConvert': 'Nodo de pluma: eliminar / convertir (menú)',
         'touchPen-penInsertPointOnAPath': 'Pluma: insertar un punto en un trazado',
         'touchPen-penConstrainHandles9045': 'Pluma: restringir manejadores a 90°/45°',
-        'touchPen-penStraightSegment': 'Pluma: segmento recto (pasos de 15°)',
+        'touchPen-penStraightSegment': 'Pluma: segmento recto (pasos de 45°)',
         'touchPen-setShapeFill': 'Definir el relleno de la forma (ColorDrop)',
         'touchPen-smartShapes': 'Formas inteligentes (mantén el lápiz para corregir)',
     },

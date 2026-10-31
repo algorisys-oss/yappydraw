@@ -23,6 +23,8 @@ On a **tablet** (no Alt key), use the on-screen **Merge / Delete** toggle in the
 It's built on the Pathfinder engine, so each result is a true boolean region producing an editable vector path. For precise set operations on exactly two shapes, the right-click **Pathfinder** (union / subtract / intersect / exclude) is also there. (`Yappy.toggleShapeBuilder()`.)
 :::
 
+Pathfinder copes with shapes whose edges nearly overlap. If it still can't combine them, it says so ("Couldn't combine these shapes…") and leaves your shapes exactly as they were. Run **Simplify** on them, or nudge one slightly, and try again.
+
 ### Compound Shapes — non-destructive booleans
 
 **Pathfinder** flattens and consumes the source shapes. When you want to keep them editable, use **Compound Shapes** instead: right-click ≥2 shapes → **Make Compound Shape ▸ Unite / Minus Front / Intersect / Exclude**. The result is one object that *retains its sources*, so you can:

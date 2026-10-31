@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint open pptx importPPTX potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
+keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint open pptx open powerpoint file drop pptx importPPTX table style pattern fill crop to shape potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
 ---
 
 # Workspace & Productivity
@@ -299,8 +299,8 @@ layer that makes no difference. `Yappy.setLayerBlendMode(layerId, 'multiply')`.
   once there are more than 8 others.
 - **Deleting a layer that has contents asks first**, and that includes a group whose artwork is
   on its child layers. You get three choices: **Delete everything** removes the layer and all it
-  contains; **Keep contents** deletes only the layer or group and lifts what was inside up into
-  whatever contained it; **Cancel** (or <kbd>Esc</kbd>) leaves everything as it was. Selecting a
+  contains; **Keep contents** deletes only the layer or group, lifts the layers that were inside it
+  up a level, and moves its own objects onto another layer that still exists; **Cancel** (or <kbd>Esc</kbd>) leaves everything as it was. Selecting a
   group and its children together asks once.
 - **Drag the grip** (⋮⋮) at the left of a row to restack. This works with a mouse, a trackpad **and a
   stylus** — the handle claims the gesture so a pen drag isn't mistaken for a scroll, and it has a
@@ -359,7 +359,7 @@ The grid has four styles, set with the buttons in Grid & Guides or from the Comm
 | Setting | What it does |
 | --- | --- |
 | **Spacing** + unit | The distance between lines, in **px, mm, cm or in** (96 px = 1 in). Switching the unit only changes how the number is shown, not the grid. |
-| **Major line every** | Draws every Nth line stronger, like graph paper. Set it to 0 to draw every line the same. |
+| **Major line every** | Draws every Nth line stronger, like graph paper. Set it to 0 or 1 to draw every line the same. |
 | **Rotation** | Turns the whole grid (−90° to 90° on the slider; type any angle). Snapping follows the rotation. |
 | **Colour / Opacity** | How the lines look. |
 | **Draw above objects** | Draws the grid over your artwork instead of behind it, so you can line things up against it on a filled shape. Selection handles still draw on top. |
@@ -627,7 +627,7 @@ The Lasso keeps its place, since it already selects.
 
 ## History panel
 
-Open it with **Alt+H** (or Menu → Panels → **History Panel**) to see the document's timeline — past states, the current state, and any redoable future states. **Click any row** to jump straight to that point (it undoes/redoes the difference for you). Each row shows its object count; the current state is highlighted and future states are dimmed.
+Open it with **Alt+H** (or Menu → Panels → **History Panel**) to see the document's timeline — past states, the current state, and any redoable future states. **Click any row** to jump straight to that point (it undoes/redoes the difference for you). Each row is named after the edit that made it — **Group**, **Delete** — (a few older actions still show **State 7**) and shows its object count; the current state is highlighted and future states are dimmed. Undo and redo also put back the selection you had at that point, so you keep your place.
 
 :::tip
 A faster way to scrub than tapping Undo/Redo repeatedly — jump back several steps, inspect, and jump forward again in one click.
@@ -664,6 +664,8 @@ My Drawings lives in this browser's storage — convenient, but not a backup. Fo
 ## Saving a file to your computer
 
 **Export / Save…** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) → **Save to disk** writes the drawing as a `.yappy` file (or **JSON** for the plain-text version). In Chrome, Edge and the desktop app the browser's own **Save** dialog opens, so you pick the file name and the folder, the same as for image exports; **Cancel** there saves nothing. Browsers without that dialog (Safari, Firefox) download the file under the name you typed, and on a phone the share sheet opens so you can save it to Files. Open it again with **Export / Save… → Load**.
+
+The file keeps everything in the drawing, including an animation's timeline, pattern swatches and symmetry settings. A file saved by a **newer version of Yappy** than the one you're running isn't opened as a blank page: you're told to reload the app to update, then open it again.
 
 ## Settings — Pen & Input
 
@@ -897,10 +899,9 @@ await Yappy.exportPPTX({ mode: 'pictures', scale: 3 }); // one sharp image per s
 const blob = await Yappy.exportPPTX({ download: false }); // just the file, as a Blob
 ```
 
-### Opening PowerPoint files (preview)
+### Opening PowerPoint files
 
-With **Dev Mode** on (Settings), **Open** also accepts **.pptx** (and .potx / .ppsx), and you can
-drop one on the canvas. The presentation opens as a **new slides document**, replacing the current
+**Open** accepts **.pptx** (and .potx / .ppsx), and you can also drop one on the canvas. The presentation opens as a **new slides document**, replacing the current
 one, exactly as opening a Yappy file does. Each slide becomes a page at the presentation's slide
 size.
 
@@ -918,17 +919,21 @@ size.
   each paragraph. They stay editable: Enter in a list continues it in the same style.
 - **SmartArt** comes in as the shapes PowerPoint last drew for it — boxes, arrows and labels you
   can edit one by one, grouped as the diagram. It is no longer a SmartArt diagram: adding an item
-  doesn't re-flow the others.
+  doesn't re-flow the others. A diagram saved without its drawing (some older files and other
+  apps do that) keeps its **text** as an outline in the diagram's frame.
 - **Connectors** become lines and arrows **bound** to the shapes they were glued to.
-- **Pictures** keep their crop and transparency; **tables** become groups of cells (PowerPoint's
-  default table style is reproduced); **groups** stay groups; the **slide master's own artwork**
-  (logo bars, decorations) is placed on every slide that shows it.
-- **Backgrounds** (colour, gradient, picture) and **transitions** (Fade, Push/Wipe/Cover → Slide,
-  Zoom) carry over.
+- **Pictures** keep their crop, transparency and grayscale; a picture **cropped to a shape** (an
+  oval photo) comes in clipped to that shape, as a clipping mask you can still edit.
+- **Tables** become groups of cells coloured by the deck's own **table style** (header row,
+  banded rows and columns, borders). **Pattern fills** become Yappy pattern fills in the same
+  colours. **Groups** stay groups; the **slide master's own artwork** (logo bars, decorations) is
+  placed on every slide that shows it.
+- **Backgrounds** (colour, gradient, picture — stretched or tiled, see-through ones included) and
+  **transitions** (Fade, Push/Wipe/Cover → Slide, Zoom) carry over.
 
 Not imported yet: **charts and embedded objects** come in as labelled frames;
-**EMF/WMF/TIFF pictures** (common in older decks) as placeholders; animations, speaker notes and
-audio/video are skipped. A message tells you how many items weren't imported exactly, and the
+**EMF/WMF/TIFF pictures** (common in older decks) as placeholders; **vertical text** comes in
+horizontal and **WordArt** text warps flat; animations, speaker notes and audio/video are skipped. A message tells you how many items weren't imported exactly, and the
 browser console lists them. A paragraph's own alignment shows on the canvas and in every
 export, but Yappy has no control for it yet: while you edit the text it shows the text box's
 alignment, and the toolbar's align buttons set the whole text box.

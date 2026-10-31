@@ -26,6 +26,10 @@ const INTENTIONAL_EDITS: Record<string, { now: string; why: string }> = {
         now: 'Pen: straight segment — constrain to 45° steps',
         why: 'v0.8.268: Pen Shift-constrain moved from 15° to 45° (Illustrator parity, Anshika review Phase 2)',
     },
+    'touchPen-penStraightSegment': {
+        now: 'Pen: straight segment (45° steps)',
+        why: 'Same v0.8.268 change as above; this Touch & Pen entry was missed then and kept saying 15° until v0.8.293',
+    },
     'editor-navigateMindmap': {
         now: 'Navigate Mindmap (follows the layout)',
         why: 'Mindmap arrow keys used to be hardcoded left=parent, which only described horizontal-right; they now resolve the relative from actual node positions, so the direction depends on the layout (bug #411/#417)',

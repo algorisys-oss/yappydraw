@@ -410,8 +410,8 @@ const Menu: Component = () => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
-        // PowerPoint (Dev Mode preview): opens as a new slides document.
-        if (/\.(pptx|potx|ppsx)$/i.test(file.name) && isDevMode()) {
+        // PowerPoint: opens as a new slides document.
+        if (/\.(pptx|potx|ppsx)$/i.test(file.name)) {
             const { openPptxFile } = await import('../utils/pptx/import');
             if (await openPptxFile(file)) setDrawingId(file.name.replace(/\.(pptx|potx|ppsx)$/i, ''));
             setIsMenuOpen(false);
@@ -626,7 +626,7 @@ const Menu: Component = () => {
                 type="file"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
-                accept={isDevMode() ? '.json,.yappy,.excalidraw,.pptx,.potx,.ppsx' : '.json,.yappy,.excalidraw'}
+                accept=".json,.yappy,.excalidraw,.pptx,.potx,.ppsx"
                 onChange={handleOpenJson}
             />
 

@@ -366,11 +366,9 @@ button {
   transform: translateY(1px);
 }
 
-button.active {
-  background-color: #e0efff;
-  border-color: #007acc;
-  color: #007acc;
-}
+/* (A second, light-only `button.active` used to sit here — #e0efff with #007acc text. Being later
+   than the themed rule above, it won in every theme: a light chip in dark/focus mode, and 1.06:1
+   where a component set light text on it. The themed rule is the only one now.) */
 
 input[type="text"] {
   border-radius: 6px;

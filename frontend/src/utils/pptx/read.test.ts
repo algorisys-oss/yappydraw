@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { zipSync, strToU8 } from "fflate";
+import { zipSync, unzipSync, strToU8 } from "fflate";
 import { DOMParser } from "@xmldom/xmldom";
 import { readPptx } from "./read";
 import { buildPptx } from "./write";
@@ -323,5 +323,114 @@ describe("readPptx: paragraph spacing", () => {
         const back = (read(buildPptx(deck)).deck.slides[0].items[0] as ShapeItem).text!.paragraphs[0];
         expect(back.spaceBefore).toBeCloseTo(16, 2);
         expect(back.spaceAfter).toBeCloseTo(4, 2);
+    });
+});
+
+// ── Fidelity fixes found by importing LibreOffice's PPTX test corpus (2026-10-31) ────────────
+
+const slideWith = (bg: string, inner: string) => `<p:sld ${NS}><p:cSld>${bg}${tree(inner)}</p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
+
+describe("readPptx: backgrounds", () => {
+    it("fills a useBgFill shape with the slide background", () => {
+        const sp = `<p:sp useBgFill="1"><p:nvSpPr><p:cNvPr id="4" name="Cutout"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(0, 0, 100, 100)}<a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom></p:spPr></p:sp>`;
+        const s = read(handBuilt(sp)).deck.slides[0].items.find(i => i.name === 'Cutout') as ShapeItem;
+        expect(s.fill).toEqual({ kind: 'solid', color: { hex: '#e7e6e6' } }); // the master's bgRef → bg2
+    });
+    it("is white when no level defines one, even under an inverted colour map", () => {
+        const master = `<p:sldMaster ${NS}><p:cSld>${tree('')}</p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:sldMaster>`;
+        const layout = `<p:sldLayout ${NS}><p:cSld>${tree('')}</p:cSld><p:clrMapOvr><a:overrideClrMapping bg1="dk1" tx1="lt1" bg2="dk2" tx2="lt2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sldLayout>`;
+        const bg = read(handBuilt('', { 'ppt/slideMasters/slideMaster1.xml': master, 'ppt/slideLayouts/slideLayout1.xml': layout })).deck.slides[0].background;
+        expect(bg).toEqual({ kind: 'solid', color: { hex: '#ffffff' } });
+    });
+    it("keeps a tiled picture's tile scale and opacity", () => {
+        const bg = `<p:bg><p:bgPr><a:blipFill><a:blip r:embed="rId9"><a:alphaModFix amt="51000"/></a:blip><a:tile sx="50000" sy="25000"/></a:blipFill></p:bgPr></p:bg>`;
+        const bytes = handBuilt('', {
+            'ppt/slides/slide1.xml': slideWith(bg, ''),
+            'ppt/slides/_rels/slide1.xml.rels': REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rId9', 'image', '../media/image1.png']]),
+        });
+        const withPng = zipSync({ ...unzipSync(bytes), 'ppt/media/image1.png': PNG_1x1 }); // the picture the background names
+        const back = read(withPng).deck.slides[0].background as any;
+        expect(back.kind).toBe('image');
+        expect(back.tile).toEqual({ sx: 0.5, sy: 0.25 });
+        expect(back.alpha).toBeCloseTo(0.51, 5);
+    });
+});
+
+describe("readPptx: pictures cropped to a shape", () => {
+    it("keeps the outline when it isn't a rectangle", () => {
+        const pic = (id: number, prst: string) => `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="P${prst}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId9"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr>${xfrm(0, 0, 200, 100)}<a:prstGeom prst="${prst}"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+        const bytes = zipSync({ ...unzipSync(handBuilt(pic(4, 'ellipse') + pic(5, 'rect'), {
+            'ppt/slides/_rels/slide1.xml.rels': REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rId9', 'image', '../media/image1.png']]),
+        })), 'ppt/media/image1.png': PNG_1x1 });
+        const items = read(bytes).deck.slides[0].items as PictureItem[];
+        expect(items.find(i => i.name === 'Pellipse')!.geom).toEqual({ kind: 'preset', prst: 'ellipse' });
+        expect(items.find(i => i.name === 'Prect')!.geom).toBeUndefined();
+    });
+    it("reads grayscale pictures", () => {
+        const pic = `<p:pic><p:nvPicPr><p:cNvPr id="4" name="Grey"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId9"><a:grayscl/></a:blip><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr>${xfrm(0, 0, 200, 100)}</p:spPr></p:pic>`;
+        const bytes = zipSync({ ...unzipSync(handBuilt(pic, {
+            'ppt/slides/_rels/slide1.xml.rels': REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rId9', 'image', '../media/image1.png']]),
+        })), 'ppt/media/image1.png': PNG_1x1 });
+        expect((read(bytes).deck.slides[0].items.find(i => i.name === 'Grey') as PictureItem).grayscale).toBe(true);
+    });
+});
+
+describe("readPptx: table styles defined in the file", () => {
+    const style = `<a:tblStyleLst ${NS} def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"><a:tblStyle styleId="{AAAA0000-0000-0000-0000-000000000001}" styleName="Custom">`
+        + `<a:wholeTbl><a:tcTxStyle><a:schemeClr val="dk1"/></a:tcTxStyle><a:tcStyle><a:tcBdr><a:insideH><a:ln w="12700"><a:solidFill><a:srgbClr val="00FF00"/></a:solidFill></a:ln></a:insideH></a:tcBdr><a:fill><a:solidFill><a:srgbClr val="EEEEEE"/></a:solidFill></a:fill></a:tcStyle></a:wholeTbl>`
+        + `<a:band1H><a:tcStyle><a:fill><a:solidFill><a:srgbClr val="CCCCCC"/></a:solidFill></a:fill></a:tcStyle></a:band1H>`
+        + `<a:firstRow><a:tcTxStyle b="on"><a:srgbClr val="FFFFFF"/></a:tcTxStyle><a:tcStyle><a:fill><a:solidFill><a:srgbClr val="C00000"/></a:solidFill></a:fill></a:tcStyle></a:firstRow>`
+        + `</a:tblStyle></a:tblStyleLst>`;
+    const cell = (t: string) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${t}</a:t></a:r></a:p></a:txBody><a:tcPr/></a:tc>`;
+    const row = (a: string) => `<a:tr h="${40 * 9525}">${cell(a)}${cell(a + '2')}</a:tr>`;
+    const frame = `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="4" name="T"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="${200 * 9525}" cy="${120 * 9525}"/></p:xfrm>`
+        + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"><a:tableStyleId>{AAAA0000-0000-0000-0000-000000000001}</a:tableStyleId></a:tblPr>`
+        + `<a:tblGrid><a:gridCol w="${100 * 9525}"/><a:gridCol w="${100 * 9525}"/></a:tblGrid>${row('h')}${row('a')}${row('b')}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+    const bytes = handBuilt(frame, {
+        'ppt/_rels/presentation.xml.rels': REL([['rId2', 'slide', 'slides/slide1.xml'], ['rId3', 'tableStyles', 'tableStyles.xml']]),
+        'ppt/tableStyles.xml': style,
+    });
+    const cells = (read(bytes).deck.slides[0].items.find(i => i.name === 'T') as GroupItem).children as ShapeItem[];
+    const fillOfRow = (ri: number) => (cells[ri * 2].fill as any).color.hex;
+    it("layers whole table, bands and header as PowerPoint does", () => {
+        expect(fillOfRow(0)).toBe('#c00000');   // header
+        expect(fillOfRow(1)).toBe('#cccccc');   // first band
+        expect(fillOfRow(2)).toBe('#eeeeee');   // second band falls back to the whole table
+    });
+    it("takes text colour, bold and rules from the style", () => {
+        expect(cells[0].text!.paragraphs[0].runs[0]).toMatchObject({ bold: true, color: { hex: '#ffffff' } });
+        expect(cells[2].text!.paragraphs[0].runs[0].bold).toBeUndefined();
+        expect(cells[2].line).toMatchObject({ color: { hex: '#00ff00' } });
+    });
+    it("draws the table background under unfilled cells, and theme-line borders", () => {
+        const themed = style.replace('styleName="Custom">', 'styleName="Custom"><a:tblBg><a:fillRef idx="1"><a:schemeClr val="accent2"/></a:fillRef></a:tblBg>')
+            .replace(/<a:insideH>.*?<\/a:insideH>/, '<a:insideH><a:lnRef idx="1"><a:schemeClr val="accent1"/></a:lnRef></a:insideH>');
+        const g = read(handBuilt(frame, {
+            'ppt/_rels/presentation.xml.rels': REL([['rId2', 'slide', 'slides/slide1.xml'], ['rId3', 'tableStyles', 'tableStyles.xml']]),
+            'ppt/tableStyles.xml': themed,
+        })).deck.slides[0].items.find(i => i.name === 'T') as GroupItem;
+        const [bg, ...rest] = g.children as ShapeItem[];
+        expect(bg.name).toBe('T background');
+        expect(bg.fill).toEqual({ kind: 'solid', color: { hex: '#ed7d31' } }); // theme fill 1 in accent2
+        expect([bg.w, bg.h]).toEqual([200, 120]);
+        expect(rest[2].line).toMatchObject({ color: { hex: '#4472c4' } });   // theme line 1 in accent1
+    });
+});
+
+describe("readPptx: SmartArt without a saved drawing", () => {
+    it("keeps the diagram's text as an outline", () => {
+        const frame = `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="4" name="D"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="${300 * 9525}" cy="${200 * 9525}"/></p:xfrm>`
+            + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/diagram"><dgm:relIds xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" r:dm="rId5"/></a:graphicData></a:graphic></p:graphicFrame>`;
+        const pt = (id: string, text: string) => `<dgm:pt modelId="${id}"><dgm:prSet/><dgm:spPr/><dgm:t><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${text}</a:t></a:r></a:p></dgm:t></dgm:pt>`;
+        const cxn = (src: string, dest: string, ord: number) => `<dgm:cxn modelId="c${dest}" srcId="${src}" destId="${dest}" srcOrd="${ord}" destOrd="0"/>`;
+        const data = `<dgm:dataModel xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" ${NS}><dgm:ptLst><dgm:pt modelId="0" type="doc"/>${pt('1', 'Plan')}${pt('2', 'Build')}${pt('3', 'Design')}`
+            + `<dgm:pt modelId="9" type="sibTrans"/></dgm:ptLst><dgm:cxnLst>${cxn('0', '2', 1)}${cxn('0', '1', 0)}${cxn('1', '3', 0)}<dgm:cxn modelId="x" type="presOf" srcId="1" destId="9"/></dgm:cxnLst></dgm:dataModel>`;
+        const { deck, warnings } = read(handBuilt(frame, {
+            'ppt/slides/_rels/slide1.xml.rels': REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rId5', 'diagramData', '../diagrams/data1.xml']]),
+            'ppt/diagrams/data1.xml': data,
+        }));
+        const box = deck.slides[0].items.find(i => i.name === 'D') as ShapeItem;
+        expect(box.text!.paragraphs.map(p => [p.runs[0].text, p.level, p.bullet ?? null])).toEqual([['Plan', 0, null], ['Design', 1, 'char'], ['Build', 0, null]]);
+        expect(warnings.join(' ')).toContain('its text was imported as a list');
     });
 });

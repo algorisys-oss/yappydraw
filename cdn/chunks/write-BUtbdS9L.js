@@ -1,4 +1,4 @@
-import { r as E, X as m, N as y, z as ae, e as $, E as c, a as V, p as P, b as le, c as se, f as re, R as o } from "./custgeom-DK60FLyH.js";
+import { r as E, X as m, N as y, z as ae, e as $, E as c, a as V, p as P, b as le, c as se, f as re, R as o } from "./custgeom-BeeylhzV.js";
 const k = 914400, I = 51206400, M = `xmlns:a="${y.a}" xmlns:r="${y.r}" xmlns:p="${y.p}"`, f = {
   presentation: "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
   slide: "application/vnd.openxmlformats-officedocument.presentationml.slide+xml",
@@ -23,18 +23,18 @@ const k = 914400, I = 51206400, M = `xmlns:a="${y.a}" xmlns:r="${y.r}" xmlns:p="
 }, H = (e) => {
   const t = String(e || "").replace("#", "").toLowerCase();
   return /^[0-9a-f]{6}$/.test(t) ? t.toUpperCase() : "000000";
-}, C = (e) => {
+}, b = (e) => {
   const t = e.alpha;
   return t !== void 0 && t < 1 ? `<a:srgbClr val="${H(e.hex)}"><a:alpha val="${P(t)}"/></a:srgbClr>` : `<a:srgbClr val="${H(e.hex)}"/>`;
 }, Y = (e) => {
   const t = [...e].sort((a, r) => a.pos - r.pos);
-  return "<a:gsLst>" + (t.length === 1 ? [{ ...t[0], pos: 0 }, { ...t[0], pos: 1 }] : t).map((a) => `<a:gs pos="${P(a.pos)}">${C(a.color)}</a:gs>`).join("") + "</a:gsLst>";
+  return "<a:gsLst>" + (t.length === 1 ? [{ ...t[0], pos: 0 }, { ...t[0], pos: 1 }] : t).map((a) => `<a:gs pos="${P(a.pos)}">${b(a.color)}</a:gs>`).join("") + "</a:gsLst>";
 };
 function W(e) {
   if (!e || e.kind === "none") return "<a:noFill/>";
   switch (e.kind) {
     case "solid":
-      return `<a:solidFill>${C(e.color)}</a:solidFill>`;
+      return `<a:solidFill>${b(e.color)}</a:solidFill>`;
     case "linear":
       return e.stops.length === 0 ? "<a:noFill/>" : `<a:gradFill rotWithShape="1">${Y(e.stops)}<a:lin ang="${V(e.angle)}" scaled="${e.scaled ? 1 : 0}"/></a:gradFill>`;
     case "radial":
@@ -43,12 +43,12 @@ function W(e) {
       return "<a:noFill/>";
     // import-only paint; the exporter never produces it
     case "pattern":
-      return `<a:pattFill prst="${$(e.preset)}"><a:fgClr>${C(e.color)}</a:fgClr><a:bgClr><a:srgbClr val="FFFFFF"><a:alpha val="0"/></a:srgbClr></a:bgClr></a:pattFill>`;
+      return `<a:pattFill prst="${$(e.preset)}"><a:fgClr>${b(e.color)}</a:fgClr><a:bgClr>${e.bg ? b(e.bg) : '<a:srgbClr val="FFFFFF"><a:alpha val="0"/></a:srgbClr>'}</a:bgClr></a:pattFill>`;
   }
 }
 function q(e, t) {
   if (!e || !(e.width > 0)) return "<a:ln><a:noFill/></a:ln>";
-  let a = `<a:ln w="${Math.max(0, Math.min(20116800, Math.round(e.width * t * c)))}"${e.cap ? ` cap="${e.cap}"` : ""}><a:solidFill>${C(e.color)}</a:solidFill>`;
+  let a = `<a:ln w="${Math.max(0, Math.min(20116800, Math.round(e.width * t * c)))}"${e.cap ? ` cap="${e.cap}"` : ""}><a:solidFill>${b(e.color)}</a:solidFill>`;
   e.dash && (a += `<a:prstDash val="${$(e.dash)}"/>`), e.join === "round" ? a += "<a:round/>" : e.join === "bevel" ? a += "<a:bevel/>" : e.join === "miter" && (a += '<a:miter lim="800000"/>');
   const r = (s, n) => n ? `<a:${s} type="${n.type}" w="${n.size ?? "med"}" len="${n.size ?? "med"}"/>` : "";
   return a += r("headEnd", e.head) + r("tailEnd", e.tail), a + "</a:ln>";
@@ -57,7 +57,7 @@ function z(e, t, l = "a:rPr") {
   const a = ['lang="en-US"'];
   e.size && a.push(`sz="${re(e.size * t)}"`), e.bold !== void 0 && a.push(`b="${e.bold ? 1 : 0}"`), e.italic !== void 0 && a.push(`i="${e.italic ? 1 : 0}"`), e.underline && a.push('u="sng"'), e.strike && a.push('strike="sngStrike"'), a.push('dirty="0"');
   let r = "";
-  if (e.color && (r += `<a:solidFill>${C(e.color)}</a:solidFill>`), e.font) {
+  if (e.color && (r += `<a:solidFill>${b(e.color)}</a:solidFill>`), e.font) {
     const s = $(e.font);
     r += `<a:latin typeface="${s}"/><a:ea typeface="${s}"/><a:cs typeface="${s}"/>`;
   }
@@ -72,7 +72,7 @@ function ce(e, t, l) {
   const n = (i, d) => d && d > 0 ? `<a:${i}><a:spcPts val="${Math.round(Math.min(1584, d * l * 0.75) * 100)}"/></a:${i}>` : "";
   if (s += n("spcBef", e.spaceBefore) + n("spcAft", e.spaceAfter), e.bullet) {
     const i = pe * l * c, d = e.marL !== void 0 ? e.marL * l * c : i * (a + 1), L = e.indent !== void 0 ? e.indent * l * c : -i, S = (h, g) => Math.round(Math.max(g, Math.min(51206400, h)));
-    if (r.push(`marL="${S(d, 0)}" indent="${S(L, -51206400)}"`), a && r.push(`lvl="${a}"`), e.bulletColor && (s += `<a:buClr>${C(e.bulletColor)}</a:buClr>`), e.bulletScale && Math.abs(e.bulletScale - 1) > 1e-3 && (s += `<a:buSzPct val="${Math.round(Math.max(0.25, Math.min(4, e.bulletScale)) * 1e5)}"/>`), e.bullet === "num") {
+    if (r.push(`marL="${S(d, 0)}" indent="${S(L, -51206400)}"`), a && r.push(`lvl="${a}"`), e.bulletColor && (s += `<a:buClr>${b(e.bulletColor)}</a:buClr>`), e.bulletScale && Math.abs(e.bulletScale - 1) > 1e-3 && (s += `<a:buSzPct val="${Math.round(Math.max(0.25, Math.min(4, e.bulletScale)) * 1e5)}"/>`), e.bullet === "num") {
       const h = e.numType && ie.test(e.numType) ? e.numType : "arabicPeriod", g = e.startAt && e.startAt > 1 ? ` startAt="${Math.min(32767, Math.round(e.startAt))}"` : "";
       s += `<a:buFont typeface="+mj-lt"/><a:buAutoNum type="${h}"${g}/>`;
     } else {
@@ -148,14 +148,14 @@ function ge(e, t) {
   const r = e.items.map((n) => J(n, t)).join(""), s = e.name ? ` name="${$(e.name)}"` : "";
   return m + `<p:sld ${M}><p:cSld${s}>${l}<p:spTree>${B}${r}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>${ue(e.transition)}</p:sld>`;
 }
-const A = (e, t = "") => `<a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">${t}<a:defRPr sz="${e}" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr>`, ye = m + `<a:theme xmlns:a="${y.a}" name="Yappy"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2><a:accent1><a:srgbClr val="4472C4"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2><a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4><a:accent5><a:srgbClr val="5B9BD5"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:tint val="50000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:shade val="80000"/></a:schemeClr></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:tint val="95000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:shade val="90000"/></a:schemeClr></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`, ve = m + `<p:sldMaster ${M}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>${B}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle>${A(4400)}</p:titleStyle><p:bodyStyle>${A(2800)}</p:bodyStyle><p:otherStyle>${A(1800)}</p:otherStyle></p:txStyles></p:sldMaster>`, Pe = m + `<p:sldLayout ${M} type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>${B}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`, Se = m + `<p:presentationPr ${M}/>`, be = m + `<p:viewPr ${M}><p:normalViewPr><p:restoredLeft sz="15620"/><p:restoredTop sz="94660"/></p:normalViewPr><p:gridSpacing cx="76200" cy="76200"/></p:viewPr>`, Ce = m + `<a:tblStyleLst xmlns:a="${y.a}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`, Me = (e, t) => m + `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${$(e)}</dc:title><dc:creator>YappyDraw</dc:creator><cp:lastModifiedBy>YappyDraw</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${t}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${t}</dcterms:modified></cp:coreProperties>`, Fe = (e) => m + `<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>YappyDraw</Application><Slides>${e}</Slides><PresentationFormat>Custom</PresentationFormat></Properties>`;
+const A = (e, t = "") => `<a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">${t}<a:defRPr sz="${e}" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr>`, ye = m + `<a:theme xmlns:a="${y.a}" name="Yappy"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2><a:accent1><a:srgbClr val="4472C4"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2><a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4><a:accent5><a:srgbClr val="5B9BD5"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:tint val="50000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:shade val="80000"/></a:schemeClr></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:tint val="95000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:shade val="90000"/></a:schemeClr></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`, ve = m + `<p:sldMaster ${M}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>${B}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle>${A(4400)}</p:titleStyle><p:bodyStyle>${A(2800)}</p:bodyStyle><p:otherStyle>${A(1800)}</p:otherStyle></p:txStyles></p:sldMaster>`, Pe = m + `<p:sldLayout ${M} type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>${B}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`, be = m + `<p:presentationPr ${M}/>`, Se = m + `<p:viewPr ${M}><p:normalViewPr><p:restoredLeft sz="15620"/><p:restoredTop sz="94660"/></p:normalViewPr><p:gridSpacing cx="76200" cy="76200"/></p:viewPr>`, Ce = m + `<a:tblStyleLst xmlns:a="${y.a}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`, Me = (e, t) => m + `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${$(e)}</dc:title><dc:creator>YappyDraw</dc:creator><cp:lastModifiedBy>YappyDraw</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${t}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${t}</dcterms:modified></cp:coreProperties>`, Fe = (e) => m + `<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>YappyDraw</Application><Slides>${e}</Slides><PresentationFormat>Custom</PresentationFormat></Properties>`;
 function we(e, t = {}) {
   const l = Math.max(1, e.width), a = Math.max(1, e.height), r = Math.max(l, a) * c, s = Math.min(l, a) * c, n = r > I ? I / r : s < k ? Math.min(k / s, I / r) : 1, x = Math.max(k, Math.min(I, Math.round(l * n * c))), u = Math.max(k, Math.min(I, Math.round(a * n * c))), p = /* @__PURE__ */ new Map(), F = [], i = /* @__PURE__ */ new Set();
   let d = 0;
   const L = e.slides.length ? e.slides : [{ items: [] }], S = [{ id: "rId1", type: o.slideMaster, target: "slideMasters/slideMaster1.xml" }];
   let h = "";
   L.forEach((v, X) => {
-    const b = X + 1, T = [{ id: "rId1", type: o.slideLayout, target: "../slideLayouts/slideLayout1.xml" }], N = /* @__PURE__ */ new Map(), _ = v.fit ?? { scale: 1, dx: 0, dy: 0 }, te = {
+    const C = X + 1, T = [{ id: "rId1", type: o.slideLayout, target: "../slideLayouts/slideLayout1.xml" }], N = /* @__PURE__ */ new Map(), _ = v.fit ?? { scale: 1, dx: 0, dy: 0 }, te = {
       s: _.scale * n,
       dx: _.dx * n,
       dy: _.dy * n,
@@ -170,9 +170,9 @@ function we(e, t = {}) {
         return T.push({ id: j, type: o.image, target: `../media/${G}` }), N.set(w, j), j;
       }
     };
-    p.set(`ppt/slides/slide${b}.xml`, ge(v, te)), p.set(`ppt/slides/_rels/slide${b}.xml.rels`, E(T)), F.push([`/ppt/slides/slide${b}.xml`, f.slide]);
-    const O = `rId${b + 1}`;
-    S.push({ id: O, type: o.slide, target: `slides/slide${b}.xml` }), h += `<p:sldId id="${255 + b}" r:id="${O}"/>`;
+    p.set(`ppt/slides/slide${C}.xml`, ge(v, te)), p.set(`ppt/slides/_rels/slide${C}.xml.rels`, E(T)), F.push([`/ppt/slides/slide${C}.xml`, f.slide]);
+    const O = `rId${C + 1}`;
+    S.push({ id: O, type: o.slide, target: `slides/slide${C}.xml` }), h += `<p:sldId id="${255 + C}" r:id="${O}"/>`;
   });
   const g = L.length + 2;
   S.push(
@@ -187,7 +187,7 @@ function we(e, t = {}) {
     { id: "rId2", type: o.theme, target: "../theme/theme1.xml" }
   ])), p.set("ppt/slideLayouts/slideLayout1.xml", Pe), p.set("ppt/slideLayouts/_rels/slideLayout1.xml.rels", E([
     { id: "rId1", type: o.slideMaster, target: "../slideMasters/slideMaster1.xml" }
-  ])), p.set("ppt/theme/theme1.xml", ye), p.set("ppt/presProps.xml", Se), p.set("ppt/viewProps.xml", be), p.set("ppt/tableStyles.xml", Ce);
+  ])), p.set("ppt/theme/theme1.xml", ye), p.set("ppt/presProps.xml", be), p.set("ppt/viewProps.xml", Se), p.set("ppt/tableStyles.xml", Ce);
   const Q = t.now ?? (/* @__PURE__ */ new Date()).toISOString().replace(/\.\d+Z$/, "Z");
   p.set("docProps/core.xml", Me(e.title || "YappyDraw presentation", Q)), p.set("docProps/app.xml", Fe(L.length)), p.set("_rels/.rels", E([
     { id: "rId1", type: o.officeDocument, target: "ppt/presentation.xml" },

@@ -11366,3 +11366,49 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   `pptxgenjs` pulled in `@types/node`, which `publish-oss.sh` deliberately strips from the OSS
   mirror as "server-only". This repo kept building (it lists `@types/node` directly); the mirror
   did not. Only `--verify` could see it, which is the whole case for always passing it.
+
+## PowerPoint import hardening against a real-world corpus (2026-10-31)
+
+- **LibreOffice's own test decks are the corpus to use.** `sd/qa/unit/data/pptx` in LibreOffice
+  core (a sparse, blobless clone is 24 MB) holds ~440 files attached to real bug reports, made to
+  break importers. Headless, all of them went through read + convert with no crash, no hang and
+  no non-finite coordinate; the two in `fail/` are fuzzer files, rejected or opened empty.
+- **Rank by pixels, then look.** Each deck rendered by LibreOffice (PDF → PNG) and by Yappy
+  (`exportPageToPng`), scored as mean luminance difference at 128×72. The ranking finds the
+  categories; the eye decides who is right.
+- **Every renderer is an opinion, so take a second one.** LibreOffice hides empty placeholders
+  and mis-reads one palette PNG's transparency; SlideModel's in-browser viewer
+  (slidemodel.com/tools/pptx-viewer, client-side, 15 free uses/day) ignores numbering schemes and
+  inherited placeholder fills. Where they disagree, the tie-breaker settles it; neither is PowerPoint.
+- **The harness lies before the importer does.** Three rounds of "missing picture" were the
+  harness exporting before images decoded: picture elements, then slide backgrounds, then shape
+  picture fills each need the wait. Exporting once to start the decodes, waiting, and exporting
+  again is what works.
+- **Findings, each now handled:** `useBgFill` ("fill with the slide background"); no `<p:bg>` at
+  any level means white, not `bg1` (an inverted layout colour map turned slides black); a shape's
+  own `p:style` outranks the "no fill" it inherits from its layout placeholder; an outline chain
+  must stop at an explicit "no line" (`??` skips `null`); table styles are defined in
+  `ppt/tableStyles.xml` (whole table, bands, first/last row and column, `tblBg`, `lnRef`
+  borders); SmartArt saved without its drawing still has its text in the data part; tiled and
+  stretched background pictures, `alphaModFix`, `a:grayscl` and pattern fills (`pattFill`
+  fg on bg) are laid out at import because Yappy has no equivalent setting; a picture cropped to
+  a shape becomes a clipping mask.
+- **Bake at import rather than add a setting.** Tiling, stretching and grayscale are drawn into a
+  slide-sized (or picture-sized) image during import. The document stays plain and editable,
+  and the hardening month stays free of new UI.
+
+## Triage of the long-failing specs (2026-10-31)
+
+- **"Pre-existing failure" is a label that stops people looking.** Of eight specs carried as known
+  failures for weeks, three were real app bugs (an unreachable Delete button, a panel field that
+  couldn't take math, contrast), four were specs left behind by deliberate changes, one was a spec
+  aiming at the wrong pixels. None was noise.
+- **Clipped is not covered.** `elementFromPoint` returning a neighbour over a button can mean the
+  button was cut off by an `overflow: hidden` parent. The tell: a flex child of that parent has
+  `min-width: auto`, so its own `overflow-x: auto` never engages.
+- **Two `button.active` rules, the later one hard-coded.** A legacy block after the themed rules
+  overrides them in every theme; the contrast sweep only found it where a component also set light
+  text. Search for a selector's second definition before restyling the first.
+- **Warm the dev server once instead of raising timeouts.** Cold Vite compiles are what blow
+  30–60 s boot waits under two workers; a `globalSetup` that boots the app once removes the cause.
+

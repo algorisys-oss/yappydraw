@@ -2491,7 +2491,7 @@ export const YappyAPI = {
 
     /**
      * Open a PowerPoint file (.pptx / .potx / .ppsx) as a new slides document, replacing the
-     * current one (like File ▸ Open). **Preview** — in the UI it is behind Dev Mode.
+     * current one (like File ▸ Open, or dropping the file on the canvas).
      *
      * Each slide becomes a page at the presentation's slide size. Rectangles, rounded rectangles,
      * ellipses, diamonds and triangles become those Yappy shapes; every other PowerPoint shape
@@ -2501,11 +2501,14 @@ export const YappyAPI = {
      * RichTextSpan `listMarker*` / `listNumber*` / `listIndent` / `paragraphSpaceBefore` fields), and a
      * paragraph aligned differently from its text box keeps that alignment (`paragraphAlign`);
      * theme colours, slide-master and layout placeholders and the master's own artwork are
-     * resolved. SmartArt becomes a group of the shapes PowerPoint last drew for it. Connectors
-     * become lines/arrows bound to the shapes they were glued to; pictures keep crop and
-     * transparency; tables become groups of cells; groups stay groups; backgrounds and
-     * transitions carry over. Charts and embedded objects become labelled frames, and
-     * EMF/WMF/TIFF pictures placeholders — listed in `warnings`.
+     * resolved. SmartArt becomes a group of the shapes PowerPoint last drew for it (a diagram
+     * saved without that drawing keeps its text as an outline). Connectors become lines/arrows
+     * bound to the shapes they were glued to; pictures keep crop, transparency and grayscale, and
+     * one cropped to a shape is clipped to it (a clipping mask); tables become groups of cells in
+     * the deck's own table style; pattern fills become pattern fills; groups stay groups;
+     * backgrounds (stretched or tiled pictures included) and transitions carry over. Charts and
+     * embedded objects become labelled frames, and EMF/WMF/TIFF pictures placeholders — listed
+     * in `warnings`.
      *
      *   const { stats, warnings } = await Yappy.importPPTX(file);   // a File, Blob or ArrayBuffer
      */

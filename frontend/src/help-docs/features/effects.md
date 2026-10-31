@@ -228,7 +228,7 @@ Y.shuffleSelectionColors();                       // randomise the order
 
 ## Swatch groups & swatch info sheet
 
-Organise global swatches into named **groups**, and generate a labelled **swatch info sheet** (colour chip + name + hex + RGB) for brand guidelines. **UI:** open the **Swatches** panel (<kbd>Alt + W</kbd>, or Menu → Panels → Swatches) to add, group and apply swatches; the info sheet drops onto the canvas.
+Organise global swatches into named **groups**, and generate a labelled **swatch info sheet** (colour chip + name + hex + RGB) for brand guidelines. **UI:** open the **Swatches** panel (<kbd>Alt + W</kbd>, or Menu → Panels → Swatches) to add, group and apply swatches. To save a colour combination, select the artwork and click **Group**: name the group and every colour in the selection becomes a swatch in it. To move one swatch, use its group dropdown (**New group…** makes one). The info sheet drops onto the canvas.
 
 ```
 Y.createSwatch('#112233', 'navy', 'Brand');   // colour, name, group

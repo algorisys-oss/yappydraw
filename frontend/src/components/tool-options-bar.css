@@ -13,6 +13,9 @@
     color: var(--text-primary);
     overflow-x: auto;
     scrollbar-width: none;
+    /* A flex item won't shrink below its content without this, so the bar never scrolled: the
+       centre slot just clipped whatever didn't fit (Delete, at 1200px in the node tool). */
+    min-width: 0;
 }
 .tool-options-bar::-webkit-scrollbar { height: 0; }
 

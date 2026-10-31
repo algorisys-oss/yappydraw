@@ -24,7 +24,8 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
-    opacity: 0.45;
+    /* Was 0.45 until hover/focus: the arrows read at 1.8:1, invisible to low vision (AA 4.5). */
+    opacity: 1;
     transition: opacity 0.12s;
 }
 .mni-wrap:hover .mni-spin,

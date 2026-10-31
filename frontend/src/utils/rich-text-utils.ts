@@ -440,8 +440,20 @@ export function listTextXWith(measure: (text: string, font: string) => number, s
     return span.listIndent === undefined ? Math.max(markerX + LIST_MARKER_WIDTH, clear) : clear;
 }
 
-function listTextX(ctx: IRenderer, span: RichTextSpan, defaults: { fontSize?: number; fontFamily?: string }): number {
-    return listTextXWith((text, font) => { ctx.font = font; return ctx.measureText(text).width; }, span, defaults);
+/**
+ * Text start for every list item of a rich text, so the items of one level line up: an item
+ * on Yappy's default indent takes the position its level's WIDEST marker needs ("10." and "1."
+ * alike), as PowerPoint gives a whole level one hanging indent. Explicit indents stay as set.
+ */
+export function listTextXResolver(measure: (text: string, font: string) => number, spans: RichTextSpan[], defaults: { fontSize?: number; fontFamily?: string }): (span: RichTextSpan) => number {
+    const key = (s: RichTextSpan) => `${s.listLevel || 0}|${s.listMarkerIndent ?? ''}`;
+    const widest = new Map<string, number>();
+    for (const s of spans) {
+        if (!s.listType || s.listType === 'none' || s.listIndent !== undefined) continue;
+        const x = listTextXWith(measure, s, defaults);
+        if (x > (widest.get(key(s)) ?? -Infinity)) widest.set(key(s), x);
+    }
+    return (s) => (s.listIndent === undefined ? widest.get(key(s)) : undefined) ?? listTextXWith(measure, s, defaults);
 }
 
 /** A positioned segment ready for canvas rendering. */
@@ -532,6 +544,7 @@ export function layoutRichText(
 
     // Tokenize spans into words and whitespace
     const tokens: Token[] = [];
+    const listTextX = listTextXResolver((text, font) => { ctx.font = font; return ctx.measureText(text).width; }, spans, elementDefaults);
     for (const span of spans) {
         const parts = span.text.split(/(\n)/);
         for (const part of parts) {
@@ -584,7 +597,7 @@ export function layoutRichText(
             // A paragraph's alignment rides on its first span; its wrapped lines keep it.
             if (lineFromNewline) paraAlign = isTextAlign(token.span.paragraphAlign) ? token.span.paragraphAlign : undefined;
             lineAligns[currentLineIndex] = paraAlign;
-            currentListIndent = isListItem ? listTextX(ctx, token.span, elementDefaults) : 0;
+            currentListIndent = isListItem ? listTextX(token.span) : 0;
             currentX = currentListIndent;
         }
 

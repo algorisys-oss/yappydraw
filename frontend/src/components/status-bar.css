@@ -278,7 +278,7 @@
 
 .status-toggle.is-active {
     opacity: 1;
-    background: #b14cff;
+    background: #9333ea; /* white text: #b14cff was 3.9:1 */
     color: #fff;
 }
 

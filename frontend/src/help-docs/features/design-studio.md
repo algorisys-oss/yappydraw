@@ -3,8 +3,8 @@ id: design-studio
 name: Design Studio
 icon: "🎨"
 category: Design
-description: "Canva-style design documents: pages & size presets, templates, Magic Resize, brand kit, unified elements search (icons/shapes/photos), text effects, AI assists, version history, offline PWA"
-keywords: "canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
+description: "Canva-style design documents: pages & size presets, slides & presentations (slide master, slide numbers, transitions, presenting), templates, Magic Resize, brand kit, unified elements search (icons/shapes/photos), text effects, AI assists, version history, offline PWA"
+keywords: "slides presentation new presentation slide deck slides panel add slide insert slide above below duplicate slide reorder slides slide transition fade zoom easing duration slide master use as slide master crown master layer logo footer watermark every slide slide number page number slideNumber totalSlides formula equals present F5 Shift+F5 present from current slide presentation mode laser pointer ink highlighter ink brush eraser exit presentation importMarkdownSlides markdown slides addSlide updateSlideTransition updateSlideBackground togglePresentationMode speaker notes presenter view canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
 ---
 
 # Design Studio
@@ -70,6 +70,50 @@ Pages are frames on one shared canvas, not separate files. An object lives on ex
 :::
 
 **Page backgrounds:** drop an image onto empty canvas to set it as the active page's background. Right-click a selected image → **Set as Page Background** does the same; right-click empty canvas → **Detach Image from Background** turns the background back into a regular image element you can move, crop, and filter. `Y.detachBackgroundImage()`
+
+## Slides & presentations
+
+A presentation is a paged document like a design, with slides instead of pages. Start one with **Menu → New → New Presentation**, from a presentation template, with **Menu → AI → AI Presentation**, or by opening a PowerPoint file (see Workspace ▸ Opening PowerPoint files).
+
+**Slides panel.** The left rail lists every slide with a live thumbnail.
+
+- **+ Add Slide** (<kbd>Ctrl+M</kbd>) adds a slide at the end. Right-click a thumbnail → **Insert Slide Above** / **Insert Slide Below** puts one exactly where you want it.
+- Hover a thumbnail for its buttons: **✕** deletes the slide (after a confirm), the copy icon duplicates it, and **⚡** opens its transition.
+- Drag thumbnails to reorder. <kbd>Alt+→</kbd> / <kbd>Alt+←</kbd> move to the next or previous slide while you edit.
+
+**Transitions.** The **⚡ Slide Transition** picker sets how a slide arrives: **Type** (None, Fade, Slide Left / Right / Up / Down, Zoom In, Zoom Out), **Duration (ms)** (500 by default), and **Easing** (Quad InOut by default). **Preview Transition** plays it on the canvas.
+
+**Slide Master: artwork on every slide.** Put a logo, footer or watermark on its own layer, then Layers panel → right-click the layer → **Use as Slide Master**. A crown 👑 marks it, and everything on it shows in the same place on every slide. Edit it like any layer (it must be active and unlocked); **Disable Slide Master** turns it back into an ordinary layer. There is one master for the whole deck, and a slide can't opt out of it.
+
+**Slide numbers.** A text box that **starts with `=`** fills in two fields: `${slideNumber}` (the slide you're on, from 1) and `${totalSlides}`. Type `=Page ${slideNumber} of ${totalSlides}` on the master layer and every slide shows its own "Page 2 of 10". Without the leading `=` the text shows as typed; start with `==` to show a literal `=`. There is no date field.
+
+**Presenting.**
+
+| Key | Does |
+|---|---|
+| <kbd>F5</kbd> | Present from the first slide |
+| <kbd>Shift+F5</kbd> | Present from the current slide |
+| <kbd>→</kbd>, <kbd>Space</kbd>, <kbd>Enter</kbd>, <kbd>Page Down</kbd>, or a click | Next build step, then the next slide |
+| <kbd>←</kbd>, <kbd>Page Up</kbd>, <kbd>Backspace</kbd> | Previous slide, shown fully built |
+| <kbd>Esc</kbd> | End the presentation |
+
+Move the mouse to show the toolbar at the bottom of the screen (it hides again after 3 seconds): **Pointer (Advance Slides)**, **💡 Spotlight**, **Laser Pointer** (<kbd>Shift+P</kbd>), **Ink Highlighter**, **Ink Brush**, **Eraser**, plus **Record** (MP4) and the film button (GIF), and **Exit Presentation**. Build steps, Spotlight and recording are covered in Animation ▸ Click-to-Advance and Animation ▸ Recording & Export.
+
+:::note
+Not available yet: speaker notes, a presenter view, hiding a slide, slide sections, and auto-advance timings.
+:::
+
+```
+const Y = window.Yappy;
+Y.addSlide();                              // add a slide
+Y.duplicateSlide(0); Y.deleteSlide(2);
+Y.reorderSlides(3, 0);                     // move slide 4 to the front
+Y.setActiveSlide(1);
+Y.updateSlideTransition(1, { type: 'fade', duration: 400 });
+Y.updateSlideBackground(1, '#0f172a');     // colour, or { fillStyle, gradientStops, … }
+await Y.importMarkdownSlides('# Title\n- point\n---\n# Next'); // headings → titles, bullets → content, --- → new slide
+Y.togglePresentationMode(true);            // present
+```
 
 ## Design templates & My Templates
 

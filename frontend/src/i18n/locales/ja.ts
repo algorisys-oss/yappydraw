@@ -631,7 +631,7 @@ export const ja: Dictionary = {
         'touchPen-penNodeDeleteConvert': 'ペンノード: 削除／変換（メニュー）',
         'touchPen-penInsertPointOnAPath': 'ペン: パス上に点を挿入',
         'touchPen-penConstrainHandles9045': 'ペン: ハンドルを 90°／45° に固定',
-        'touchPen-penStraightSegment': 'ペン: 直線セグメント（15° 刻み）',
+        'touchPen-penStraightSegment': 'ペン: 直線セグメント（45° 刻み）',
         'touchPen-setShapeFill': 'シェイプの塗りを設定（ColorDrop）',
         'touchPen-smartShapes': 'スマートシェイプ（ペンを長押しで補正）',
     },

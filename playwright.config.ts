@@ -22,6 +22,8 @@ export default defineConfig({
      */
     workers: process.env.PW_WORKERS ? Number(process.env.PW_WORKERS) : 2,
     timeout: 30_000,
+    // Compile the app once before the specs start (see tests/_global-warmup.ts).
+    globalSetup: './tests/_global-warmup.ts',
     use: {
         baseURL: process.env.YAPPY_URL,
         trace: 'off',

@@ -20,10 +20,11 @@ export type Paint =
     /** `scaled`: the angle is in the unit square and stretches with the box (SVG objectBoundingBox). */
     | { kind: 'linear'; stops: GradientStop[]; angle: number; scaled?: boolean }
     | { kind: 'radial'; stops: GradientStop[] }
-    /** DrawingML preset pattern (`ltUpDiag`, `diagCross`, `pct20`…) over a transparent ground. */
-    | { kind: 'pattern'; preset: string; color: Color }
-    /** A picture stretched over the shape (import only: `a:blipFill` on a shape). */
-    | { kind: 'image'; media: Media };
+    /** DrawingML preset pattern (`ltUpDiag`, `diagCross`, `pct20`…) in `color` over `bg` (transparent when absent). */
+    | { kind: 'pattern'; preset: string; color: Color; bg?: Color }
+    /** A picture stretched over the shape (import only: `a:blipFill` on a shape). `tile`: repeated
+     *  at that scale of its own size instead of stretched; `alpha`: the picture's opacity (0–1). */
+    | { kind: 'image'; media: Media; tile?: { sx: number; sy: number }; alpha?: number; grayscale?: boolean };
 
 export type ArrowEndType = 'triangle' | 'arrow' | 'oval' | 'diamond' | 'stealth';
 export interface ArrowEnd { type: ArrowEndType; size?: 'sm' | 'med' | 'lg' }
@@ -147,6 +148,10 @@ export interface PictureItem extends Placed {
     crop?: { l: number; t: number; r: number; b: number };
     alpha?: number;
     descr?: string;
+    /** The picture's outline when it isn't a rectangle ("crop to shape": an ellipse, a star…). */
+    geom?: Geometry;
+    /** Shown in grey tones (`a:grayscl`). */
+    grayscale?: boolean;
 }
 
 export interface GroupItem extends Placed {
@@ -167,7 +172,7 @@ export interface Transition {
 
 export interface Slide {
     items: Item[];
-    background?: Paint | { kind: 'image'; media: Media };
+    background?: Paint;
     transition?: Transition;
     /** Uniform scale + offset into the deck's slide size (slides of a different size are fitted). */
     fit?: { scale: number; dx: number; dy: number };

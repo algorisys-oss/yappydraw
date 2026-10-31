@@ -65,7 +65,7 @@ function paintXml(p: Paint | undefined): string {
         case 'radial': return p.stops.length === 0 ? '<a:noFill/>'
             : `<a:gradFill rotWithShape="1">${gsLst(p.stops)}<a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path></a:gradFill>`;
         case 'image': return '<a:noFill/>'; // import-only paint; the exporter never produces it
-        case 'pattern': return `<a:pattFill prst="${esc(p.preset)}"><a:fgClr>${clr(p.color)}</a:fgClr><a:bgClr><a:srgbClr val="FFFFFF"><a:alpha val="0"/></a:srgbClr></a:bgClr></a:pattFill>`;
+        case 'pattern': return `<a:pattFill prst="${esc(p.preset)}"><a:fgClr>${clr(p.color)}</a:fgClr><a:bgClr>${p.bg ? clr(p.bg) : '<a:srgbClr val="FFFFFF"><a:alpha val="0"/></a:srgbClr>'}</a:bgClr></a:pattFill>`;
     }
 }
 

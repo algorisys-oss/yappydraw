@@ -1,4 +1,4 @@
-import { s as o, b as m, d as b, z as W, h as z, g as a, i as U, j as B } from "./index-Dxj5fgvO.js";
+import { s as o, b as m, d as b, z as W, h as z, g as a, i as U, j as B } from "./index-OCtbNe3Y.js";
 const h = /* @__PURE__ */ new Set(), x = [], G = {
   ArrowLeft: "left",
   a: "left",
@@ -240,17 +240,17 @@ function X() {
       t && B(t.id);
     },
     playAnim: (n, t) => {
-      n?.alive && import("./index-Dxj5fgvO.js").then((r) => r.aQ).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
+      n?.alive && import("./index-OCtbNe3Y.js").then((r) => r.aQ).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
       }));
     },
     goToPage: (n) => {
       n >= 0 && n < o.slides.length && U(n);
     },
     sound: (n) => {
-      import("./index-Dxj5fgvO.js").then((t) => t.aR).then((t) => t.playSfx(n));
+      import("./index-OCtbNe3Y.js").then((t) => t.aR).then((t) => t.playSfx(n));
     },
     music: (n) => {
-      import("./index-Dxj5fgvO.js").then((t) => t.aR).then((t) => n ? t.startMusic() : t.stopMusic());
+      import("./index-OCtbNe3Y.js").then((t) => t.aR).then((t) => n ? t.startMusic() : t.stopMusic());
     },
     end: (n) => {
       if (P(!0), n) {
@@ -316,7 +316,7 @@ ${i}`);
   return y = requestAnimationFrame(n), !0;
 }
 function p() {
-  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", L, !0), window.removeEventListener("keyup", K, !0), import("./index-Dxj5fgvO.js").then((e) => e.aR).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
+  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", L, !0), window.removeEventListener("keyup", K, !0), import("./index-OCtbNe3Y.js").then((e) => e.aR).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
     const e = g;
     g = null, b(() => {
       a("elements", JSON.parse(e.elements)), a("selection", e.selection), a("activeSlideIndex", e.activeSlideIndex), a("appMode", e.appMode), a("gameActive", !1);

@@ -163,7 +163,7 @@ Right-click a keyframe → **Frame Action** to control playback the way Flash's 
 - **Next Scene** — chain scenes into a film that plays act by act.
 - Actions fire during *playback* (editor and HTML player alike) — scrubbing never triggers them. API: `Yappy.anim.setFrameAction({ kind: 'goto', frame: 0 })`.
 
-**Menu → Export HTML** produces a self-contained web page that plays the animation for real — not a video: it ships the actual renderer, so it loops at full quality, runs frame actions, plays the audio row, and shows minimal restart/pause controls. Share the file anywhere a browser runs.
+**Export / Save…** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) → **Export HTML** produces a self-contained web page that plays the animation for real — not a video: it ships the actual renderer, so it loops at full quality, runs frame actions, plays the audio row, and shows minimal restart/pause controls. Share the file anywhere a browser runs.
 
 ## Export
 

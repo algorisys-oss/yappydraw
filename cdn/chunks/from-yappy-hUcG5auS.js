@@ -1,12 +1,12 @@
-import { d as F, g as j, t as I, h as pt } from "./custgeom-DK60FLyH.js";
-import { a1 as et, a2 as mt, a3 as xt, a4 as gt, a5 as yt, a6 as kt, a7 as bt, a8 as G, a9 as Mt, aa as wt, ab as vt, ac as St, ad as At, ae as $t, af as Ct, ag as It, ah as Tt, ai as Pt, aj as zt, ak as Ft } from "./index-Dxj5fgvO.js";
+import { d as F, g as j, t as I, h as pt } from "./custgeom-BeeylhzV.js";
+import { a1 as et, a2 as mt, a3 as xt, a4 as gt, a5 as yt, a6 as kt, a7 as bt, a8 as G, a9 as Mt, aa as wt, ab as vt, ac as St, ad as At, ae as $t, af as Ct, ag as It, ah as Tt, ai as Pt, aj as zt, ak as Ft } from "./index-OCtbNe3Y.js";
 function Lt(t) {
-  const { l: n, c: e, h: r } = t, i = r * Math.PI / 180, o = e * Math.cos(i), l = e * Math.sin(i), f = n + 0.3963377774 * o + 0.2158037573 * l, a = n - 0.1055613458 * o - 0.0638541728 * l, s = n - 0.0894841775 * o - 1.291485548 * l, c = f * f * f, u = a * a * a, h = s * s * s, d = 1.2270138511 * c - 0.5577999807 * u + 0.2812561489 * h, p = -0.0405801784 * c + 1.1122568696 * u - 0.0716766787 * h, g = -0.0763812845 * c - 0.4214819787 * u + 1.5861632204 * h, x = 2.4039459 * d - 0.9898517 * p - 0.4141151 * g, k = -0.7797967 * d + 1.5445214 * p + 0.0352745 * g, m = 0.0384795 * d - 0.1141381 * p + 1.0756786 * g, y = (b) => {
+  const { l: n, c: e, h: r } = t, i = r * Math.PI / 180, o = e * Math.cos(i), l = e * Math.sin(i), f = n + 0.3963377774 * o + 0.2158037573 * l, s = n - 0.1055613458 * o - 0.0638541728 * l, a = n - 0.0894841775 * o - 1.291485548 * l, c = f * f * f, u = s * s * s, p = a * a * a, d = 1.2270138511 * c - 0.5577999807 * u + 0.2812561489 * p, h = -0.0405801784 * c + 1.1122568696 * u - 0.0716766787 * p, x = -0.0763812845 * c - 0.4214819787 * u + 1.5861632204 * p, g = 2.4039459 * d - 0.9898517 * h - 0.4141151 * x, k = -0.7797967 * d + 1.5445214 * h + 0.0352745 * x, m = 0.0384795 * d - 0.1141381 * h + 1.0756786 * x, y = (b) => {
     const M = Math.abs(b), w = M > 31308e-7 ? 1.055 * Math.pow(M, 1 / 2.4) - 0.055 : 12.92 * M;
     return b < 0 ? -w : w;
   };
   return {
-    r: y(x),
+    r: y(g),
     g: y(k),
     b: y(m)
   };
@@ -42,19 +42,19 @@ function T(t) {
   if (r) {
     const o = r[2].split(/[\s,]+/).filter(Boolean).map(Et);
     if (o.length < 3 || o.some((c) => !isFinite(c))) return null;
-    const [l, f, a] = o;
-    if (r[1] === "srgb") return [e(l), e(f), e(a)];
-    const s = V(l, f, a);
-    return [e(s.r), e(s.g), e(s.b)];
+    const [l, f, s] = o;
+    if (r[1] === "srgb") return [e(l), e(f), e(s)];
+    const a = V(l, f, s);
+    return [e(a.r), e(a.g), e(a.b)];
   }
   const i = n.match(/^oklch\(\s*([^/)]+?)\s*(?:\/[^)]*)?\)$/);
   if (i) {
     const o = i[1].split(/[\s,]+/).filter(Boolean);
     if (o.length < 3) return null;
-    const l = o[0].endsWith("%") ? parseFloat(o[0]) / 100 : parseFloat(o[0]), f = parseFloat(o[1]), a = parseFloat(o[2]);
-    if (![l, f, a].every(isFinite)) return null;
-    const s = V(...(({ r: c, g: u, b: h }) => [c, u, h])(Lt({ l, c: f, h: a })));
-    return [e(s.r), e(s.g), e(s.b)];
+    const l = o[0].endsWith("%") ? parseFloat(o[0]) / 100 : parseFloat(o[0]), f = parseFloat(o[1]), s = parseFloat(o[2]);
+    if (![l, f, s].every(isFinite)) return null;
+    const a = V(...(({ r: c, g: u, b: p }) => [c, u, p])(Lt({ l, c: f, h: s })));
+    return [e(a.r), e(a.g), e(a.b)];
   }
   return Rt(n);
 }
@@ -164,34 +164,34 @@ function Dt(t, n) {
 function Yt(t, n, e, r) {
   const i = t.listLevel || 0, o = { bullet: t.listType === "ordered" ? "num" : "char", level: i };
   if (o.bullet === "num") {
-    const a = Bt(t);
-    a !== "arabicPeriod" && (o.numType = a), !(e && e.level === i && e.scheme === a && (t.listIndex || 1) === e.index + 1) && (t.listIndex || 1) > 1 && (o.startAt = t.listIndex);
+    const s = Bt(t);
+    s !== "arabicPeriod" && (o.numType = s), !(e && e.level === i && e.scheme === s && (t.listIndex || 1) === e.index + 1) && (t.listIndex || 1) > 1 && (o.startAt = t.listIndex);
   } else t.listMarker && t.listMarker !== "•" && (o.bulletChar = t.listMarker);
   if (t.listMarkerColor) {
-    const a = S(t.listMarkerColor, n);
-    a && (o.bulletColor = a);
+    const s = S(t.listMarkerColor, n);
+    s && (o.bulletColor = s);
   }
   t.listMarkerScale && t.listMarkerScale !== 1 && (o.bulletScale = t.listMarkerScale);
-  const l = zt(t), f = Ft(Dt, t, r);
+  const l = Ft(t), f = r(t);
   return o.marL = f, o.indent = l - f, o;
 }
 function at(t, n, e, r) {
   const i = [];
   let o = { runs: [], align: n }, l = !1, f = null;
-  const a = () => {
+  const s = Pt(Dt, t, r), a = () => {
     i.push(o), o = { runs: [], align: n }, l = !1;
   };
-  for (const s of t)
-    String(s.text ?? "").split(`
-`).forEach((u, h) => {
-      if (h > 0 && a(), s.fontSize && !l && (o.endSize = s.fontSize), !u) return;
-      l || (l = !0, s.paragraphSpaceBefore && (o.spaceBefore = s.paragraphSpaceBefore), s.paragraphAlign && (o.align = U(s.paragraphAlign, n ?? "l")), s.listType && s.listType !== "none" && Object.assign(o, Yt(s, e, f, r)), f = o.bullet === "num" ? { level: o.level ?? 0, scheme: o.numType ?? "arabicPeriod", index: s.listIndex || 1 } : null);
-      const d = { text: u };
-      if (s.bold && (d.bold = !0), s.italic && (d.italic = !0), s.underline && (d.underline = !0), s.strikethrough && (d.strike = !0), s.color) {
-        const p = S(s.color, e);
-        p && (d.color = p);
+  for (const c of t)
+    String(c.text ?? "").split(`
+`).forEach((p, d) => {
+      if (d > 0 && a(), c.fontSize && !l && (o.endSize = c.fontSize), !p) return;
+      l || (l = !0, c.paragraphSpaceBefore && (o.spaceBefore = c.paragraphSpaceBefore), c.paragraphAlign && (o.align = U(c.paragraphAlign, n ?? "l")), c.listType && c.listType !== "none" && Object.assign(o, Yt(c, e, f, s)), f = o.bullet === "num" ? { level: o.level ?? 0, scheme: o.numType ?? "arabicPeriod", index: c.listIndex || 1 } : null);
+      const h = { text: p };
+      if (c.bold && (h.bold = !0), c.italic && (h.italic = !0), c.underline && (h.underline = !0), c.strikethrough && (h.strike = !0), c.color) {
+        const x = S(c.color, e);
+        x && (h.color = x);
       }
-      s.fontSize && (d.size = s.fontSize), s.fontFamily && (d.font = rt(s.fontFamily)), o.runs.push(d);
+      c.fontSize && (h.size = c.fontSize), c.fontFamily && (h.font = rt(c.fontFamily)), o.runs.push(h);
     });
   return a(), i;
 }
@@ -231,37 +231,37 @@ function ft(t, n) {
   };
 }
 function Ht(t, n, e) {
-  const r = [], i = Math.abs(n) / 2, o = Math.abs(e) / 2, l = (a, s, c) => {
-    const u = I(F(a), i, o);
+  const r = [], i = Math.abs(n) / 2, o = Math.abs(e) / 2, l = (s, a, c) => {
+    const u = I(F(s), i, o);
     if (u.length === 0) return;
-    const h = s, d = { fill: h.noFill ? !1 : void 0, stroke: h.noStroke ? !1 : void 0 };
+    const p = a, d = { fill: p.noFill ? !1 : void 0, stroke: p.noStroke ? !1 : void 0 };
     if (c) {
       r.push({ cmds: u, ...d });
       return;
     }
-    let p = [];
-    for (const g of u)
-      g.op === "M" && p.length && (r.push({ cmds: p, ...d }), p = []), p.push(g);
-    p.length && r.push({ cmds: p, ...d });
-  }, f = (a) => {
-    const s = (c) => Math.round(c * 1e3) / 1e3;
-    switch (a.type) {
+    let h = [];
+    for (const x of u)
+      x.op === "M" && h.length && (r.push({ cmds: h, ...d }), h = []), h.push(x);
+    h.length && r.push({ cmds: h, ...d });
+  }, f = (s) => {
+    const a = (c) => Math.round(c * 1e3) / 1e3;
+    switch (s.type) {
       case "rect": {
-        const c = Math.min(Math.abs(a.w), Math.abs(a.h)) / 2, [u, h, d, p] = (Array.isArray(a.r) ? a.r : [a.r || 0, a.r || 0, a.r || 0, a.r || 0]).map((b) => Math.max(0, Math.min(b || 0, c))), g = (b, M, w) => b ? ` A ${s(b)} ${s(b)} 0 0 1 ${s(M)} ${s(w)}` : "", { x, y: k } = a, m = a.w, y = a.h;
-        l(`M ${x + u} ${k} H ${x + m - h}${g(h, x + m, k + h)} V ${k + y - d}${g(d, x + m - d, k + y)} H ${x + p}${g(p, x, k + y - p)} V ${k + u}${g(u, x + u, k)} Z`, a, !1);
+        const c = Math.min(Math.abs(s.w), Math.abs(s.h)) / 2, [u, p, d, h] = (Array.isArray(s.r) ? s.r : [s.r || 0, s.r || 0, s.r || 0, s.r || 0]).map((b) => Math.max(0, Math.min(b || 0, c))), x = (b, M, w) => b ? ` A ${a(b)} ${a(b)} 0 0 1 ${a(M)} ${a(w)}` : "", { x: g, y: k } = s, m = s.w, y = s.h;
+        l(`M ${g + u} ${k} H ${g + m - p}${x(p, g + m, k + p)} V ${k + y - d}${x(d, g + m - d, k + y)} H ${g + h}${x(h, g, k + y - h)} V ${k + u}${x(u, g + u, k)} Z`, s, !1);
         break;
       }
       case "ellipse":
-        l(`M ${a.cx - a.rx} ${a.cy} A ${a.rx} ${a.ry} 0 1 0 ${a.cx + a.rx} ${a.cy} A ${a.rx} ${a.ry} 0 1 0 ${a.cx - a.rx} ${a.cy} Z`, a, !1);
+        l(`M ${s.cx - s.rx} ${s.cy} A ${s.rx} ${s.ry} 0 1 0 ${s.cx + s.rx} ${s.cy} A ${s.rx} ${s.ry} 0 1 0 ${s.cx - s.rx} ${s.cy} Z`, s, !1);
         break;
       case "points":
-        a.points.length >= 2 && l(`M ${a.points.map((c) => `${c.x} ${c.y}`).join(" L ")}${a.isClosed !== !1 ? " Z" : ""}`, a, !1);
+        s.points.length >= 2 && l(`M ${s.points.map((c) => `${c.x} ${c.y}`).join(" L ")}${s.isClosed !== !1 ? " Z" : ""}`, s, !1);
         break;
       case "path":
-        l(a.path, a, !!a.evenOdd);
+        l(s.path, s, !!s.evenOdd);
         break;
       case "multi":
-        a.shapes.forEach(f);
+        s.shapes.forEach(f);
         break;
     }
   };
@@ -337,8 +337,8 @@ function Gt(t, n) {
   if (t.crop) {
     const o = t.dataURL ? et(t.dataURL) : null, l = o?.naturalWidth, f = o?.naturalHeight;
     if (l && f) {
-      const a = t.crop;
-      r = { l: a.x / l, t: a.y / f, r: 1 - (a.x + a.width) / l, b: 1 - (a.y + a.height) / f };
+      const s = t.crop;
+      r = { l: s.x / l, t: s.y / f, r: 1 - (s.x + s.width) / l, b: 1 - (s.y + s.height) / f };
     }
   }
   const i = (t.opacity ?? 100) / 100;
@@ -348,7 +348,7 @@ function Vt(t, n, e, r) {
   const i = ft(t, r);
   if (!i) return [];
   const o = t.fontSize || 16, l = (t.containerText || "").split(`
-`), f = Math.max(1, ...l.map((c) => c.length)), a = Math.max(40, f * o * 0.6 + 24), s = Math.max(o * 1.6, l.length * o * 1.25 + 8);
+`), f = Math.max(1, ...l.map((c) => c.length)), s = Math.max(40, f * o * 0.6 + 24), a = Math.max(o * 1.6, l.length * o * 1.25 + 8);
   return i.wrap = !1, i.anchor = "ctr", i.paragraphs.forEach((c) => {
     c.align = "ctr";
   }), [{
@@ -356,10 +356,10 @@ function Vt(t, n, e, r) {
     id: e.nextId++,
     name: `${A(t)} label`,
     textBox: !0,
-    x: n.x - e.ox - a / 2,
-    y: n.y - e.oy - s / 2,
-    w: a,
-    h: s,
+    x: n.x - e.ox - s / 2,
+    y: n.y - e.oy - a / 2,
+    w: s,
+    h: a,
     geom: { kind: "preset", prst: "rect" },
     fill: { kind: "none" },
     line: null,
@@ -367,27 +367,27 @@ function Vt(t, n, e, r) {
   }];
 }
 function qt(t, n, e) {
-  const r = t.x + t.w / 2, i = t.y + t.h / 2, o = (t.rot || 0) * Math.PI / 180, l = [[0, -t.h / 2], [-t.w / 2, 0], [0, t.h / 2], [t.w / 2, 0]], f = n.x - e.ox, a = n.y - e.oy;
-  for (let s = 0; s < 4; s++) {
-    let [c, u] = l[s];
+  const r = t.x + t.w / 2, i = t.y + t.h / 2, o = (t.rot || 0) * Math.PI / 180, l = [[0, -t.h / 2], [-t.w / 2, 0], [0, t.h / 2], [t.w / 2, 0]], f = n.x - e.ox, s = n.y - e.oy;
+  for (let a = 0; a < 4; a++) {
+    let [c, u] = l[a];
     t.flipH && (c = -c), t.flipV && (u = -u);
-    const h = r + c * Math.cos(o) - u * Math.sin(o), d = i + c * Math.sin(o) + u * Math.cos(o);
-    if (Math.hypot(h - f, d - a) <= 2) return s;
+    const p = r + c * Math.cos(o) - u * Math.sin(o), d = i + c * Math.sin(o) + u * Math.cos(o);
+    if (Math.hypot(p - f, d - s) <= 2) return a;
   }
   return -1;
 }
 function Jt(t, n, e) {
   const r = e.x - n.x, i = e.y - n.y, o = Math.hypot(r, i);
   if (!(o > 0)) return !1;
-  const l = (s, c) => Math.abs((s - n.x) * i - (c - n.y) * r) / o, f = (s, c) => ((s - n.x) * r + (c - n.y) * i) / (o * o), a = (s, c) => l(s, c) <= 0.5 && f(s, c) >= -0.01 && f(s, c) <= 1.01;
-  return t.every((s) => s.op === "Z" ? !1 : s.op === "C" ? a(s.x1, s.y1) && a(s.x2, s.y2) && a(s.x, s.y) : a(s.x, s.y));
+  const l = (a, c) => Math.abs((a - n.x) * i - (c - n.y) * r) / o, f = (a, c) => ((a - n.x) * r + (c - n.y) * i) / (o * o), s = (a, c) => l(a, c) <= 0.5 && f(a, c) >= -0.01 && f(a, c) <= 1.01;
+  return t.every((a) => a.op === "Z" ? !1 : a.op === "C" ? s(a.x1, a.y1) && s(a.x2, a.y2) && s(a.x, a.y) : s(a.x, a.y));
 }
 function Kt(t, n) {
   const e = (t.opacity ?? 100) / 100, r = N(t, e, !0), i = bt(t), o = [];
   if (r) {
-    const l = t.type === "arrow", f = l ? t.startArrowhead : null, a = l ? t.endArrowhead || (t.startArrowhead ? null : "arrow") : null, s = { ...r, head: J(f, G(t, "start"), t.strokeWidth), tail: J(a, G(t, "end"), t.strokeWidth) };
+    const l = t.type === "arrow", f = l ? t.startArrowhead : null, s = l ? t.endArrowhead || (t.startArrowhead ? null : "arrow") : null, a = { ...r, head: J(f, G(t, "start"), t.strokeWidth), tail: J(s, G(t, "end"), t.strokeWidth) };
     if (!i.d || Jt(F(i.d), i.start, i.end)) {
-      const { start: c, end: u } = i, h = {
+      const { start: c, end: u } = i, p = {
         kind: "connector",
         id: n.nextId++,
         name: A(t),
@@ -398,31 +398,31 @@ function Kt(t, n) {
         flipH: u.x < c.x || void 0,
         flipV: u.y < c.y || void 0,
         geom: { kind: "preset", prst: "straightConnector1" },
-        line: s
-      }, d = (p, g) => {
-        const x = p?.elementId ? n.ids.get(p.elementId) : void 0;
-        if (!x) return;
-        const k = qt(x.item, g, n);
-        return k >= 0 ? { id: x.id, idx: k } : void 0;
+        line: a
+      }, d = (h, x) => {
+        const g = h?.elementId ? n.ids.get(h.elementId) : void 0;
+        if (!g) return;
+        const k = qt(g.item, x, n);
+        return k >= 0 ? { id: g.id, idx: k } : void 0;
       };
       n.glue.push(() => {
-        h.start = d(t.startBinding, c), h.end = d(t.endBinding, u);
-      }), o.push(h);
+        p.start = d(t.startBinding, c), p.end = d(t.endBinding, u);
+      }), o.push(p);
     } else {
       const c = F(i.d), u = j(c);
       if (u) {
-        const h = Math.max(u.maxX - u.minX, 0.01), d = Math.max(u.maxY - u.minY, 0.01);
+        const p = Math.max(u.maxX - u.minX, 0.01), d = Math.max(u.maxY - u.minY, 0.01);
         o.push({
           kind: "shape",
           id: n.nextId++,
           name: A(t),
           x: u.minX - n.ox,
           y: u.minY - n.oy,
-          w: h,
+          w: p,
           h: d,
           geom: { kind: "custom", paths: [{ cmds: I(c, -u.minX, -u.minY), fill: !1 }] },
           fill: { kind: "none" },
-          line: s
+          line: a
         });
       }
     }
@@ -434,14 +434,14 @@ function Qt(t, n) {
   const e = (t.opacity ?? 100) / 100, r = Mt(t.points), i = N(t, e, !0);
   if (r.length < 2 || !i) return [];
   i.cap = "rnd", i.join = "round";
-  const o = r.map((h) => h.x), l = r.map((h) => h.y), f = Math.min(...o), a = Math.min(...l), s = Math.max(Math.max(...o) - f, 0.01), c = Math.max(Math.max(...l) - a, 0.01), u = r.map((h, d) => ({ op: d ? "L" : "M", x: h.x - f, y: h.y - a }));
+  const o = r.map((p) => p.x), l = r.map((p) => p.y), f = Math.min(...o), s = Math.min(...l), a = Math.max(Math.max(...o) - f, 0.01), c = Math.max(Math.max(...l) - s, 0.01), u = r.map((p, d) => ({ op: d ? "L" : "M", x: p.x - f, y: p.y - s }));
   return n.report.native++, [{
     kind: "shape",
     id: n.nextId++,
     name: A(t),
     x: t.x + f - n.ox,
-    y: t.y + a - n.oy,
-    w: s,
+    y: t.y + s - n.oy,
+    w: a,
     h: c,
     rot: t.angle ? t.angle * 180 / Math.PI : void 0,
     geom: { kind: "custom", paths: [{ cmds: u, fill: !1 }] },
@@ -471,7 +471,7 @@ const nn = (t) => {
   return e.length === 6 && e.every(Number.isFinite) ? e : [1, 0, 0, 1, 0, 0];
 }, Q = (t, n, e) => ({ x: t[0] * n + t[2] * e + t[4], y: t[1] * n + t[3] * e + t[5] });
 function en(t) {
-  const n = Pt.generator(), e = (i) => {
+  const n = zt.generator(), e = (i) => {
     for (const o of n.toPaths(i))
       t.save(), o.fill && o.fill !== "none" && (!o.stroke || o.stroke === "none") ? (t.fillStyle = o.fill, t.fillPath(o.d)) : o.stroke && o.stroke !== "none" && o.strokeWidth > 0 && (t.strokeStyle = o.stroke, t.lineWidth = o.strokeWidth, t.strokePath(o.d)), t.restore();
     return i;
@@ -495,28 +495,28 @@ function rn(t) {
     fillStyle: Y[n] ? "solid" : t.fillStyle
   }, r = new St();
   try {
-    const s = document.createElement("canvas");
-    At(en(r), s.getContext("2d"), e, !1, 1, r);
+    const a = document.createElement("canvas");
+    At(en(r), a.getContext("2d"), e, !1, 1, r);
   } catch {
     return null;
   }
   if (r.failed) return null;
   const i = /* @__PURE__ */ new Map();
-  for (const s of Array.from(r.defs.children)) s.id && i.set(s.id, s);
-  const o = (s, c) => {
-    const u = i.get(s.replace(/^url\(#|\)$/g, ""));
+  for (const a of Array.from(r.defs.children)) a.id && i.set(a.id, a);
+  const o = (a, c) => {
+    const u = i.get(a.replace(/^url\(#|\)$/g, ""));
     if (!u) return null;
-    const h = Array.from(u.children).map((d) => ({ pos: +(d.getAttribute("offset") || 0), color: S(d.getAttribute("stop-color")) ?? { hex: "#000000", alpha: 0 } }));
-    if (!h.length) return null;
+    const p = Array.from(u.children).map((d) => ({ pos: +(d.getAttribute("offset") || 0), color: S(d.getAttribute("stop-color")) ?? { hex: "#000000", alpha: 0 } }));
+    if (!p.length) return null;
     if (u.tagName.toLowerCase() === "lineargradient") {
-      const d = Q(c, +u.getAttribute("x1"), +u.getAttribute("y1")), p = Q(c, +u.getAttribute("x2"), +u.getAttribute("y2"));
-      return { kind: "linear", x1: d.x, y1: d.y, x2: p.x, y2: p.y, stops: h };
+      const d = Q(c, +u.getAttribute("x1"), +u.getAttribute("y1")), h = Q(c, +u.getAttribute("x2"), +u.getAttribute("y2"));
+      return { kind: "linear", x1: d.x, y1: d.y, x2: h.x, y2: h.y, stops: p };
     }
-    return { kind: "radial", x1: 0, y1: 0, x2: 0, y2: 0, stops: h };
+    return { kind: "radial", x1: 0, y1: 0, x2: 0, y2: 0, stops: p };
   }, l = [];
   let f = "ok";
-  const a = (s) => {
-    for (const c of Array.from(s.children)) {
+  const s = (a) => {
+    for (const c of Array.from(a.children)) {
       if (f !== "ok") return;
       const u = c.tagName.toLowerCase();
       if (u === "g") {
@@ -524,30 +524,30 @@ function rn(t) {
           f = "picture";
           return;
         }
-        a(c);
+        s(c);
         continue;
       }
       if (u === "text" || u === "image") {
         f = "picture";
         return;
       }
-      let h = null;
-      if (u === "path") h = c.getAttribute("d");
+      let p = null;
+      if (u === "path") p = c.getAttribute("d");
       else if (u === "rect") {
         const b = +c.getAttribute("x"), M = +c.getAttribute("y"), w = +c.getAttribute("width"), v = +c.getAttribute("height");
-        h = `M ${b} ${M} L ${b + w} ${M} L ${b + w} ${M + v} L ${b} ${M + v} Z`;
+        p = `M ${b} ${M} L ${b + w} ${M} L ${b + w} ${M + v} L ${b} ${M + v} Z`;
       } else {
         f = "fail";
         return;
       }
-      const d = nn(c.getAttribute("transform")), p = pt(F(h || ""), d);
-      if (!p.length) continue;
-      const g = c.getAttribute("fill"), x = c.getAttribute("stroke"), k = !!g && g.startsWith("url("), m = +(c.getAttribute("fill-opacity") ?? 1), y = +(c.getAttribute("stroke-opacity") ?? 1);
+      const d = nn(c.getAttribute("transform")), h = pt(F(p || ""), d);
+      if (!h.length) continue;
+      const x = c.getAttribute("fill"), g = c.getAttribute("stroke"), k = !!x && x.startsWith("url("), m = +(c.getAttribute("fill-opacity") ?? 1), y = +(c.getAttribute("stroke-opacity") ?? 1);
       l.push({
-        cmds: p,
-        fill: g && g !== "none" && !k ? g : null,
-        grad: k ? o(g, d) : null,
-        stroke: x && x !== "none" ? x : null,
+        cmds: h,
+        fill: x && x !== "none" && !k ? x : null,
+        grad: k ? o(x, d) : null,
+        stroke: g && g !== "none" ? g : null,
         fillAlpha: Number.isFinite(m) ? m : 1,
         strokeAlpha: Number.isFinite(y) ? y : 1,
         width: +(c.getAttribute("stroke-width") || 1) * Math.sqrt(Math.abs(d[0] * d[3] - d[1] * d[2])),
@@ -556,7 +556,7 @@ function rn(t) {
       });
     }
   };
-  return a(r.root), f === "ok" ? l : f === "picture" ? "picture" : null;
+  return s(r.root), f === "ok" ? l : f === "picture" ? "picture" : null;
 }
 const tt = (t, n) => {
   if (!t || !n) return !1;
@@ -564,13 +564,13 @@ const tt = (t, n) => {
   return !!e && !!r && e[0] === r[0] && e[1] === r[1] && e[2] === r[2];
 };
 function on(t, n, e) {
-  const r = t.stops.map((p) => ({ pos: p.pos, color: e < 1 ? { ...p.color, alpha: (p.color.alpha ?? 1) * e } : p.color }));
+  const r = t.stops.map((h) => ({ pos: h.pos, color: e < 1 ? { ...h.color, alpha: (h.color.alpha ?? 1) * e } : h.color }));
   if (t.kind === "radial") return { kind: "radial", stops: r };
   const i = t.x2 - t.x1, o = t.y2 - t.y1, l = Math.hypot(i, o);
   if (!(l > 0)) return { kind: "solid", color: r[r.length - 1].color };
-  const f = i / l, a = o / l, s = (n.minX + n.maxX) / 2, c = (n.minY + n.maxY) / 2, u = (Math.abs((n.maxX - n.minX) * f) + Math.abs((n.maxY - n.minY) * a)) / 2;
+  const f = i / l, s = o / l, a = (n.minX + n.maxX) / 2, c = (n.minY + n.maxY) / 2, u = (Math.abs((n.maxX - n.minX) * f) + Math.abs((n.maxY - n.minY) * s)) / 2;
   if (!(u > 0)) return { kind: "solid", color: r[0].color };
-  const h = (p) => ((t.x1 + i * p - s) * f + (t.y1 + o * p - c) * a + u) / (2 * u), d = [...r].sort((p, g) => p.pos - g.pos).map((p) => ({ pos: h(p.pos), color: p.color }));
+  const p = (h) => ((t.x1 + i * h - a) * f + (t.y1 + o * h - c) * s + u) / (2 * u), d = [...r].sort((h, x) => h.pos - x.pos).map((h) => ({ pos: p(h.pos), color: h.color }));
   return { kind: "linear", angle: Math.atan2(o, i) * 180 / Math.PI, stops: ut(d) };
 }
 function ut(t) {
@@ -599,28 +599,28 @@ function sn(t, n) {
   const e = (t.opacity ?? 100) / 100, r = Z(t, n), i = ft(t, e);
   let o = jt(t);
   if (!o) {
-    const f = wt(t), a = f ? Ht(f, t.width, t.height) : [], s = rn(t);
-    if (s === "picture") return null;
-    if (s && s.length) {
-      const c = Math.min(t.x, t.x + t.width), u = Math.min(t.y, t.y + t.height), h = a.length ? a.filter((m) => m.fill !== !1).map((m) => I(m.cmds, c, u)) : null, d = !!ot(t), p = ["linear", "radial", "conic"].includes(t.fillStyle);
-      if (!s.every((m) => (!m.grad || p) && m.fillAlpha >= 1 && m.strokeAlpha >= 1 && (!m.fill || tt(m.fill, t.backgroundColor)) && (!m.stroke || tt(m.stroke, t.strokeColor) && Math.abs(m.width - t.strokeWidth) < 0.75 && m.dash === d))) {
-        const m = cn(t, s, r, i, n, e, h);
+    const f = wt(t), s = f ? Ht(f, t.width, t.height) : [], a = rn(t);
+    if (a === "picture") return null;
+    if (a && a.length) {
+      const c = Math.min(t.x, t.x + t.width), u = Math.min(t.y, t.y + t.height), p = s.length ? s.filter((m) => m.fill !== !1).map((m) => I(m.cmds, c, u)) : null, d = !!ot(t), h = ["linear", "radial", "conic"].includes(t.fillStyle);
+      if (!a.every((m) => (!m.grad || h) && m.fillAlpha >= 1 && m.strokeAlpha >= 1 && (!m.fill || tt(m.fill, t.backgroundColor)) && (!m.stroke || tt(m.stroke, t.strokeColor) && Math.abs(m.width - t.strokeWidth) < 0.75 && m.dash === d))) {
+        const m = cn(t, a, r, i, n, e, p);
         return m ? [m] : null;
       }
-      const x = [], k = (m) => I(m, -c, -u);
-      for (let m = 0; m < s.length; m++) {
-        const y = s[m], b = s[m + 1], M = !!((y.fill || y.grad) && !y.stroke && b && b.stroke && !b.fill && !b.grad && E(b) === E(y)), w = !!y.stroke || M;
+      const g = [], k = (m) => I(m, -c, -u);
+      for (let m = 0; m < a.length; m++) {
+        const y = a[m], b = a[m + 1], M = !!((y.fill || y.grad) && !y.stroke && b && b.stroke && !b.fill && !b.grad && E(b) === E(y)), w = !!y.stroke || M;
         if (y.fill || y.grad) {
-          const v = dt(y, h);
+          const v = dt(y, p);
           if (!v) return null;
-          v.length === 1 && v[0] === y.cmds ? x.push(...H({ cmds: k(y.cmds), stroke: w ? void 0 : !1 })) : (x.push(...v.map((R) => ({ cmds: k(R), stroke: !1 }))), w && x.push({ cmds: k(y.cmds), fill: !1 }));
+          v.length === 1 && v[0] === y.cmds ? g.push(...H({ cmds: k(y.cmds), stroke: w ? void 0 : !1 })) : (g.push(...v.map((R) => ({ cmds: k(R), stroke: !1 }))), w && g.push({ cmds: k(y.cmds), fill: !1 }));
         } else
-          x.push({ cmds: k(y.cmds), fill: !1, stroke: w ? void 0 : !1 });
+          g.push({ cmds: k(y.cmds), fill: !1, stroke: w ? void 0 : !1 });
         M && m++;
       }
-      o = { kind: "custom", paths: x };
-    } else if (a.length)
-      o = { kind: "custom", paths: a.flatMap(H) };
+      o = { kind: "custom", paths: g };
+    } else if (s.length)
+      o = { kind: "custom", paths: s.flatMap(H) };
     else return null;
   }
   const l = {
@@ -644,8 +644,8 @@ function D(t, n, e) {
   if (!B) return r;
   const i = t.map((o) => new Path2D(an(o)));
   for (let o = 0; o < z; o++) for (let l = 0; l < z; l++) {
-    const f = e.minX + (l + 0.5) / z * (e.maxX - e.minX), a = e.minY + (o + 0.5) / z * (e.maxY - e.minY);
-    r.push(i.some((s) => B.isPointInPath(s, f, a, n)));
+    const f = e.minX + (l + 0.5) / z * (e.maxX - e.minX), s = e.minY + (o + 0.5) / z * (e.maxY - e.minY);
+    r.push(i.some((a) => B.isPointInPath(a, f, s, n)));
   }
   return r;
 }
@@ -659,28 +659,28 @@ function dt(t, n) {
 }
 function cn(t, n, e, r, i, o, l) {
   const f = [];
-  for (let a = 0; a < n.length; a++) {
-    const s = n[a], c = n[a + 1], u = !!((s.fill || s.grad) && !s.stroke && c && c.stroke && !c.fill && !c.grad && E(c) === E(s)), h = u ? c : s, d = j(s.cmds);
+  for (let s = 0; s < n.length; s++) {
+    const a = n[s], c = n[s + 1], u = !!((a.fill || a.grad) && !a.stroke && c && c.stroke && !c.fill && !c.grad && E(c) === E(a)), p = u ? c : a, d = j(a.cmds);
     if (!d) continue;
-    const p = Math.max(d.maxX - d.minX, 0.01), g = Math.max(d.maxY - d.minY, 0.01), x = S(s.fill, o * s.fillAlpha), k = s.grad ? on(s.grad, d, o) : x ? { kind: "solid", color: x } : { kind: "none" }, m = S(h.stroke, o * h.strokeAlpha), y = m ? { width: h.width, color: m, dash: h.dash ? "dash" : void 0, join: "round", cap: "rnd" } : null, b = !!(s.fill || s.grad), M = (v) => I(v, -d.minX, -d.minY);
+    const h = Math.max(d.maxX - d.minX, 0.01), x = Math.max(d.maxY - d.minY, 0.01), g = S(a.fill, o * a.fillAlpha), k = a.grad ? on(a.grad, d, o) : g ? { kind: "solid", color: g } : { kind: "none" }, m = S(p.stroke, o * p.strokeAlpha), y = m ? { width: p.width, color: m, dash: p.dash ? "dash" : void 0, join: "round", cap: "rnd" } : null, b = !!(a.fill || a.grad), M = (v) => I(v, -d.minX, -d.minY);
     let w;
     if (b) {
-      const v = dt(s, l);
+      const v = dt(a, l);
       if (!v) return null;
-      w = v.length === 1 && v[0] === s.cmds ? H({ cmds: M(s.cmds), stroke: m ? void 0 : !1 }) : [...v.map((R) => ({ cmds: M(R), stroke: !1 })), ...m ? [{ cmds: M(s.cmds), fill: !1 }] : []];
-    } else w = [{ cmds: M(s.cmds), fill: !1, stroke: m ? void 0 : !1 }];
+      w = v.length === 1 && v[0] === a.cmds ? H({ cmds: M(a.cmds), stroke: m ? void 0 : !1 }) : [...v.map((R) => ({ cmds: M(R), stroke: !1 })), ...m ? [{ cmds: M(a.cmds), fill: !1 }] : []];
+    } else w = [{ cmds: M(a.cmds), fill: !1, stroke: m ? void 0 : !1 }];
     f.push({
       kind: "shape",
       id: i.nextId++,
       name: `${A(t)} part`,
       x: d.minX - i.ox,
       y: d.minY - i.oy,
-      w: p,
-      h: g,
+      w: h,
+      h: x,
       geom: { kind: "custom", paths: w },
       fill: k,
       line: y
-    }), u && a++;
+    }), u && s++;
   }
   return r && f.push({
     kind: "shape",
@@ -727,11 +727,11 @@ function ht(t, n, e) {
     }
     let f = i;
     for (; f < t.length && o(t[f]) === l; ) f++;
-    const a = ht(t.slice(i, f), n + 1, e);
-    if (a.length > 1) {
-      const s = fn(a), c = { kind: "group", id: e.nextId++, name: t[i].groupNames?.[l] || "Group", ...s, children: a };
+    const s = ht(t.slice(i, f), n + 1, e);
+    if (s.length > 1) {
+      const a = fn(s), c = { kind: "group", id: e.nextId++, name: t[i].groupNames?.[l] || "Group", ...a, children: s };
       r.push(c);
-    } else r.push(...a);
+    } else r.push(...s);
     i = f;
   }
   return r;
@@ -774,8 +774,8 @@ function dn(t, n) {
   if (i && r === "solid")
     return { kind: "solid", color: S(e.backgroundColor === "transparent" ? "#ffffff" : e.backgroundColor || "#ffffff") ?? { hex: "#ffffff" } };
   if (i && (r === "linear" || r === "radial") && (e.gradientStops?.length ?? 0) > 0) {
-    const f = e.gradientDirection || 0, a = e.gradientStops.map((s) => ({ pos: s.offset, color: S(s.color) ?? { hex: "#ffffff" } }));
-    return r === "radial" ? { kind: "radial", stops: a } : { kind: "linear", stops: hn(a, f, t.w, t.h), angle: f };
+    const f = e.gradientDirection || 0, s = e.gradientStops.map((a) => ({ pos: a.offset, color: S(a.color) ?? { hex: "#ffffff" } }));
+    return r === "radial" ? { kind: "radial", stops: s } : { kind: "linear", stops: hn(s, f, t.w, t.h), angle: f };
   }
   const o = n.rasterizeBackground?.(e), l = o ? _(o) : null;
   return l ? { kind: "image", media: l } : { kind: "solid", color: S(e.backgroundColor) ?? { hex: "#ffffff" } };
@@ -783,12 +783,12 @@ function dn(t, n) {
 function hn(t, n, e, r) {
   const i = n * Math.PI / 180, o = Math.hypot(e, r) / 2, l = (Math.abs(e * Math.cos(i)) + Math.abs(r * Math.sin(i))) / 2;
   if (!(l > 0) || t.length < 2) return t;
-  const f = [...t].sort((a, s) => a.pos - s.pos).map((a) => ({ pos: (-o + 2 * o * a.pos + l) / (2 * l), color: a.color }));
+  const f = [...t].sort((s, a) => s.pos - a.pos).map((s) => ({ pos: (-o + 2 * o * s.pos + l) / (2 * l), color: s.color }));
   return ut(f);
 }
 function pn(t, n, e) {
-  const r = T(t.hex), i = T(n.hex), o = [0, 1, 2].map((s) => Math.round(r[s] + (i[s] - r[s]) * e)), l = t.alpha ?? 1, f = n.alpha ?? 1, a = l + (f - l) * e;
-  return a < 0.999 ? { hex: L(o), alpha: a } : { hex: L(o) };
+  const r = T(t.hex), i = T(n.hex), o = [0, 1, 2].map((a) => Math.round(r[a] + (i[a] - r[a]) * e)), l = t.alpha ?? 1, f = n.alpha ?? 1, s = l + (f - l) * e;
+  return s < 0.999 ? { hex: L(o), alpha: s } : { hex: L(o) };
 }
 function gn(t, n, e) {
   const r = { ox: t.x, oy: t.y, nextId: 2, ids: /* @__PURE__ */ new Map(), glue: [], hooks: n, report: e }, i = ht(t.elements, 0, r);

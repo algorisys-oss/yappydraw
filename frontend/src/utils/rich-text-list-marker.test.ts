@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { listMarkerText, listMarkerX, listTextXWith, markerPropsOf, spansToHtml } from "./rich-text-utils";
+import { listMarkerText, listMarkerX, listTextXWith, listTextXResolver, markerPropsOf, spansToHtml } from "./rich-text-utils";
 
 describe("list markers", () => {
     it("draws Yappy's defaults when a span carries no overrides", () => {
@@ -35,5 +35,15 @@ describe("list markers", () => {
         expect(listTextXWith(em, { text: '', listType: 'ordered', listIndex: 4, listNumberStyle: 'upper-roman' }, d)).toBeCloseTo(3 * 28 * 0.35 + 28 * 0.3, 5);
         // An explicit hanging indent (imported from PowerPoint) is kept as it is.
         expect(listTextXWith(em, { text: '', listType: 'ordered', listIndex: 4, listIndent: 30, listMarkerIndent: 0 }, d)).toBe(30);
+    });
+    it("lines up the items of one level on the widest marker", () => {
+        const em = (t: string, font: string) => t.length * Number(/(\d+)px/.exec(font)![1]) * 0.35;
+        const items = [9, 10, 11].map(i => ({ text: 'x', listType: 'ordered' as const, listIndex: i }));
+        const sub = { text: 'y', listType: 'bullet' as const, listLevel: 1 };
+        const at = listTextXResolver(em, [...items, sub], { fontSize: 28 });
+        // "9." alone would start sooner; it takes the "10."/"11." position so the text lines up.
+        expect(items.map(at)).toEqual([at(items[1]), at(items[1]), at(items[1])]);
+        expect(at(items[0])).toBeGreaterThan(listTextXWith(em, items[0], { fontSize: 28 }));
+        expect(at(sub)).toBe(listTextXWith(em, sub, { fontSize: 28 })); // another level is measured on its own
     });
 });

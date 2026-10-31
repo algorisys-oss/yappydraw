@@ -91,7 +91,7 @@ Yappy.scene.at();                                        // → 3.5
 Yappy.playScene(true);                                   // watch it (no panel needed)
 ```
 
-**Playback does not need a panel.** `Yappy.playScene()` plays, and loops, with the Scene Timeline and Keyframes panels both closed; open one with `Yappy.toggleSceneTimeline(true)` to see the playhead. Presentations and **Export HTML** files loop the scene at its length too, instead of stopping on the last frame.
+**Playback does not need a panel.** `Yappy.playScene(true)` plays, and loops (`playScene(false)` pauses; with no argument it toggles), with the Scene Timeline and Keyframes panels both closed; open one with `Yappy.toggleSceneTimeline(true)` to see the playhead. Presentations and **Export HTML** files loop the scene at its length too, instead of stopping on the last frame.
 
 **Easing names are checked.** The default is `easeInOutCubic`. An unrecognised name (`'easeInOut'` is a common guess and is *not* a real name) falls back to linear — `scene.play` logs one console warning listing the valid names rather than quietly flattening your motion.
 
@@ -595,7 +595,7 @@ For a clean animation file, export from a **presentation or design page**. Use l
 
 ### Live screen capture
 
-Start it from **Menu → Export → MP4/WebM/Animated GIF** on an infinite-canvas document, or from a script with `Yappy.recordAnimation()` / `Yappy.startGifCapture()`. A badge with a timer appears at the top of the canvas — red **REC** for video, blue **GIF** (with the running file size beside it) for a GIF capture. Press its **Stop** button to finish and download.
+Start it from **Export / Save…** → **WebM Video**, **MP4 Video** or **Animated GIF** on an infinite-canvas document, or from a script with `Yappy.recordAnimation()` / `Yappy.startGifCapture()`. A badge with a timer appears at the top of the canvas — red **REC** for video, blue **GIF** (with the running file size beside it) for a GIF capture. Press its **Stop** button to finish and download.
 
 It records the **canvas surface only**, at 60fps. Toolbars, panels, dialogs and the REC badge are normal page UI and never appear in the recording, so you get a clean picture of the drawing even while you work around it.
 
@@ -748,7 +748,7 @@ Forward and backward are deliberately different. **→** (or Space / Page Down) 
 
 ### Spotlight
 
-Dim everything except one thing. Select an element (or several) and press the **💡 Spotlight** button in the presentation toolbar: the rest of the canvas fades back to 12% so the emphasis is unmistakable. Press it again, or <kbd>Esc</kbd>, to bring the slide back.
+Dim everything except one thing. Select an element (or several) and press the **💡 Spotlight** button in the presentation toolbar: the rest of the canvas fades back to 12% so the emphasis is unmistakable. Press it again to bring the slide back, or press <kbd>Esc</kbd>: while a spotlight is on, <kbd>Esc</kbd> clears it, and the next <kbd>Esc</kbd> ends the presentation.
 
 A spotlit container brings its children with it, so spotlighting a mind-map branch or a grouped diagram lights the whole thing. Dimmed elements stay clickable — the spotlight is emphasis, not a mode — and it is never saved into your file or recorded in undo.
 

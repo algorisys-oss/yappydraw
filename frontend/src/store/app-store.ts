@@ -3184,7 +3184,8 @@ export const detachSlideBackgroundImage = (slideIndex: number = store.activeSlid
         dataURL: slide.backgroundImage, status: 'loaded',
         backgroundColor: 'transparent', fillStyle: 'solid',
         strokeColor: 'transparent', strokeWidth: 0, strokeStyle: 'solid',
-        opacity: slide.backgroundOpacity ?? 100, angle: 0, roughness: 0, renderStyle: 'architectural',
+        // backgroundOpacity is 0–1 (as the canvas draws it); element opacity is 0–100.
+        opacity: Math.round((slide.backgroundOpacity ?? 1) * 100), angle: 0, roughness: 0, renderStyle: 'architectural',
         locked: false, layerId: store.activeLayerId || 'default-layer',
         seed: Math.floor(Math.random() * 2 ** 31), roundness: null,
     } as DrawingElement;

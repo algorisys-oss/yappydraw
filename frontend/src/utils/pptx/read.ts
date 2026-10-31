@@ -311,10 +311,21 @@ function paintOf(f: El, r: Res): Paint | undefined {
             if (kid(f, 'path')) return { kind: 'radial', stops };
             return { kind: 'linear', stops, angle: lin ? num(lin, 'ang') / 60000 : 90, scaled: bool(lin, 'scaled') ?? false };
         }
-        case 'blipFill': { const m = blipMedia(f, r); return m ? { kind: 'image', media: m } : undefined; }
+        case 'blipFill': {
+            const m = blipMedia(f, r);
+            if (!m) return undefined;
+            const p: Extract<Paint, { kind: 'image' }> = { kind: 'image', media: m };
+            const tile = kid(f, 'tile');
+            if (tile) p.tile = { sx: Math.max(0.01, num(tile, 'sx', 100000) / 100000), sy: Math.max(0.01, num(tile, 'sy', 100000) / 100000) };
+            const amt = kid(kid(f, 'blip'), 'alphaModFix');
+            if (amt) p.alpha = Math.max(0, Math.min(1, num(amt, 'amt', 100000) / 100000));
+            if (kid(kid(f, 'blip'), 'grayscl')) p.grayscale = true;
+            return p;
+        }
         case 'pattFill': {
             const fg = colorIn(kid(f, 'fgClr'), r.ctx);
-            return fg ? { kind: 'pattern', preset: attr(f, 'prst') || 'pct50', color: fg } : undefined;
+            const bg = colorIn(kid(f, 'bgClr'), r.ctx);
+            return fg ? { kind: 'pattern', preset: attr(f, 'prst') || 'pct50', color: fg, ...(bg ? { bg } : {}) } : undefined;
         }
         case 'grpFill': return undefined;
     }
@@ -703,6 +714,10 @@ interface SlideCtx {
     defaultText: El | null;
     warnings: string[];
     count: number;
+    /** The slide's background, for shapes marked `useBgFill` ("fill with the slide background"). */
+    background?: Paint;
+    /** `ppt/tableStyles.xml`'s root: the definitions of the table styles the deck uses. */
+    tableStyles: El | null;
 }
 
 const avOf = (geomEl: El | null): Record<string, string> => {
@@ -805,7 +820,10 @@ function readOne(el: El, level: Level, sc: SlideCtx, frame: Frame, depth: number
             const src = kid(bf, 'srcRect');
             const crop = src ? { l: num(src, 'l') / 100000, t: num(src, 't') / 100000, r: num(src, 'r') / 100000, b: num(src, 'b') / 100000 } : undefined;
             const amt = attr(path(bf, 'blip', 'alphaModFix'), 'amt');
-            return { kind: 'picture', id, name, ...frame(box), media, crop, alpha: amt !== null ? Number(amt) / 100000 : undefined, descr: attr(cNvPr, 'descr') || undefined };
+            const b = frame(box);
+            const g = geometryOf(spPr, b)?.geom;
+            const outline = g && !(g.kind === 'preset' && g.prst === 'rect') ? g : undefined;
+            return { kind: 'picture', id, name, ...b, media, crop, alpha: amt !== null ? Number(amt) / 100000 : undefined, descr: attr(cNvPr, 'descr') || undefined, geom: outline, ...(path(bf, 'blip', 'grayscl') ? { grayscale: true } : {}) };
         }
         case 'grpSp': {
             const gpr = kid(el, 'grpSpPr');
@@ -836,6 +854,12 @@ function inheritedBox(ph: PhInfo, sc: SlideCtx): Box | null {
     return boxOf(path(mph, 'spPr', 'xfrm'));
 }
 
+/** The first source that is not undefined; null ("explicitly none") counts as an answer. */
+function firstSaid<T>(...sources: (() => T | undefined)[]): T | undefined {
+    for (const f of sources) { const v = f(); if (v !== undefined) return v; }
+    return undefined;
+}
+
 function readSp(el: El, level: Level, sc: SlideCtx, frame: Frame, id: number, name: string, includePh: boolean): Item | null {
     const r: Res = { pkg: sc.pkg, part: level.part, ctx: sc.ctx };
     const nvPr = nvPrOf(el);
@@ -858,14 +882,23 @@ function readSp(el: El, level: Level, sc: SlideCtx, frame: Frame, id: number, na
 
     const g = geometryOf(spPr, box) ?? (lph ? geometryOf(kid(lph, 'spPr'), box) : undefined) ?? (mph ? geometryOf(kid(mph, 'spPr'), box) : undefined)
         ?? { geom: { kind: 'preset', prst: 'rect' } as Geometry };
-    const fill = fillOf(spPr, r)
+    // useBgFill: "fill with the slide background". A colour or gradient can be copied; a picture
+    // can't (it would have to line up with the slide's), so the shape lets the background show.
+    const bgFill: Paint | undefined = !bool(el, 'useBgFill') ? undefined
+        : sc.background?.kind === 'image' ? { kind: 'none' } : sc.background ?? { kind: 'solid', color: { hex: '#ffffff' } };
+    // The shape's own formatting, then its own style refs (p:style), then what its placeholder
+    // inherits. A slide placeholder's p:style outranks the layout's "no fill": with the style
+    // checked last, a theme-filled placeholder came in empty (white text on white).
+    const fill = bgFill
+        ?? fillOf(spPr, r) ?? styleFill(style, r)
         ?? (lr ? fillOf(kid(lph, 'spPr'), lr) : undefined) ?? (mr ? fillOf(kid(mph, 'spPr'), mr) : undefined)
-        ?? styleFill(style, r) ?? (lr ? styleFill(kid(lph, 'style'), lr) : undefined)
+        ?? (lr ? styleFill(kid(lph, 'style'), lr) : undefined)
         ?? { kind: 'none' };
-    const lineOwn = lineOf(kid(spPr, 'ln'), r);
-    const line = lineOwn !== undefined ? lineOwn
-        : (lr ? lineOf(path(lph, 'spPr', 'ln'), lr) : undefined) ?? (mr ? lineOf(path(mph, 'spPr', 'ln'), mr) : undefined)
-        ?? styleLine(style, r) ?? null;
+    // First level that says anything wins — including "no line" (null), which `??` would skip.
+    const line = firstSaid<Line | null>(
+        () => lineOf(kid(spPr, 'ln'), r), () => styleLine(style, r),
+        () => lr ? lineOf(path(lph, 'spPr', 'ln'), lr) : undefined, () => mr ? lineOf(path(mph, 'spPr', 'ln'), mr) : undefined,
+    ) ?? null;
 
     // Text style chain: master text styles (placeholders only) → master ph → layout ph → own.
     const levels: (El | null)[] = [];
@@ -899,25 +932,83 @@ function readSp(el: El, level: Level, sc: SlideCtx, frame: Frame, id: number, na
 }
 
 /**
- * A table's look. PowerPoint's built-in table styles live in the application, not the file: a
- * table only names one by GUID. The default every new table gets — Medium Style 2, Accent 1
- * ({5C22544A-…}) — is reproduced here from the theme (accent1 header with white bold text,
- * accent1 tints for the bands, white rules); any other style falls back to plain cells.
+ * How a table cell looks before its own `tcPr`. A table names its style by GUID; PowerPoint writes
+ * the definition of every style a deck uses into `ppt/tableStyles.xml`, so the parts there
+ * (whole table, bands, first/last row and column) are read generically. A style the file doesn't
+ * define falls back to the default every new table gets — Medium Style 2, Accent 1 ({5C22544A-…})
+ * — reproduced from the theme; any other unknown style gives plain cells.
  */
-interface TableLook { firstRow: boolean; bandRow: boolean; header: Color; band1: Color; band2: Color; border: Color; headerText: Color; bodyText: Color | null }
-function tableLook(tblPr: El | null, r: Res): TableLook | null {
-    const id = (kid(tblPr, 'tableStyleId')?.textContent || '').trim().toUpperCase();
-    if (id && id !== '{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}') return null;
+interface CellLook { fill?: Paint; text?: Color; bold?: boolean; border?: Line | null }
+type CellLookFor = ((ri: number, ci: number, rows: number, cols: number) => CellLook) & { background?: Paint };
+const DEFAULT_TABLE_STYLE = '{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}';
+
+function tablePartLook(part: El | null, r: Res): CellLook {
+    const out: CellLook = {};
+    if (!part) return out;
+    const tc = kid(part, 'tcStyle'), tx = kid(part, 'tcTxStyle');
+    const fillEl = kid(tc, 'fill');
+    const fill = fillEl ? fillOf(fillEl, r) : styleFill(tc, r);
+    if (fill) out.fill = fill;
+    const text = colorIn(tx, r.ctx) ?? colorIn(kid(tx, 'fontRef'), r.ctx);
+    if (text) out.text = text;
+    if (attr(tx, 'b') === 'on') out.bold = true;
+    const bdr = kid(tc, 'tcBdr');
+    for (const side of ['insideH', 'bottom', 'top', 'left']) {
+        const b = kid(bdr, side);
+        if (!b) continue;
+        const ln = lineOf(kid(b, 'ln'), r) ?? styleLine(b, r); // an explicit line, or a theme line (lnRef)
+        if (ln !== undefined) { out.border = ln; break; }
+    }
+    return out;
+}
+
+function tableLook(tblPr: El | null, r: Res, styles: El | null): CellLookFor | null {
+    const id = ((kid(tblPr, 'tableStyleId')?.textContent || '').trim() || attr(styles, 'def') || DEFAULT_TABLE_STYLE).toUpperCase();
+    const flag = (n: string) => bool(tblPr, n) ?? false;
+    const f = { firstRow: flag('firstRow'), lastRow: flag('lastRow'), firstCol: flag('firstCol'), lastCol: flag('lastCol'), bandRow: flag('bandRow'), bandCol: flag('bandCol') };
+    const def = kids(styles, 'tblStyle').find(st => (attr(st, 'styleId') || '').toUpperCase() === id);
+    if (def) {
+        const part = (n: string) => tablePartLook(kid(def, n), r);
+        const tblBg = kid(def, 'tblBg');
+        const background = tblBg ? (kid(tblBg, 'fill') ? fillOf(kid(tblBg, 'fill'), r) : styleFill(tblBg, r)) : undefined;
+        const P = { whole: part('wholeTbl'), b1H: part('band1H'), b2H: part('band2H'), b1V: part('band1V'), b2V: part('band2V'),
+            firstRow: part('firstRow'), lastRow: part('lastRow'), firstCol: part('firstCol'), lastCol: part('lastCol') };
+        const lookFor: CellLookFor = (ri, ci, rows, cols) => {
+            // Lowest to highest precedence, as PowerPoint layers them.
+            const layers: CellLook[] = [P.whole];
+            const br = ri - (f.firstRow ? 1 : 0), bc = ci - (f.firstCol ? 1 : 0);
+            if (f.bandCol && bc >= 0) layers.push(bc % 2 === 0 ? P.b1V : P.b2V);
+            if (f.bandRow && br >= 0) layers.push(br % 2 === 0 ? P.b1H : P.b2H);
+            if (f.firstCol && ci === 0) layers.push(P.firstCol);
+            if (f.lastCol && ci === cols - 1) layers.push(P.lastCol);
+            if (f.firstRow && ri === 0) layers.push(P.firstRow);
+            if (f.lastRow && ri === rows - 1) layers.push(P.lastRow);
+            const out: CellLook = {};
+            for (const l of layers) {
+                if (l.fill) out.fill = l.fill;
+                if (l.text) out.text = l.text;
+                if (l.bold) out.bold = true;
+                if (l.border !== undefined) out.border = l.border;
+            }
+            return out;
+        };
+        // The table's own background (tblBg) shows through cells that have no fill.
+        if (background && background.kind !== 'none') lookFor.background = background;
+        return lookFor;
+    }
+    if (id !== DEFAULT_TABLE_STYLE) return null;
     const accent = r.ctx.theme.colors.accent1 ?? '#4472c4';
     const tint = (k: number): Color => {
         const [rr, gg, bb] = hexToRgb(accent);
         return { hex: rgbToHex(fromLin(toLin(rr) * k + (1 - k)), fromLin(toLin(gg) * k + (1 - k)), fromLin(toLin(bb) * k + (1 - k))) };
     };
-    return {
-        firstRow: bool(tblPr, 'firstRow') ?? false, bandRow: bool(tblPr, 'bandRow') ?? false,
-        header: { hex: accent }, band1: tint(0.4), band2: tint(0.2),
-        border: { hex: r.ctx.theme.colors.lt1 ?? '#ffffff' },
-        headerText: { hex: r.ctx.theme.colors.lt1 ?? '#ffffff' }, bodyText: colorOfScheme('tx1', r),
+    const white: Color = { hex: r.ctx.theme.colors.lt1 ?? '#ffffff' };
+    const body = colorOfScheme('tx1', r) ?? undefined;
+    return (ri) => {
+        const header = f.firstRow && ri === 0;
+        const banded = f.bandRow && !header && (ri - (f.firstRow ? 1 : 0)) % 2 === 0;
+        return { fill: { kind: 'solid', color: header ? { hex: accent } : banded ? tint(0.4) : tint(0.2) },
+            text: header ? white : body, bold: header || undefined, border: { width: 1.33, color: white } };
     };
 }
 
@@ -930,7 +1021,7 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
     const tbl = kid(gd, 'tbl');
     if (tbl) {
         const cols = kids(kid(tbl, 'tblGrid'), 'gridCol').map(c => px(num(c, 'w')));
-        const look = tableLook(kid(tbl, 'tblPr'), r);
+        const look = tableLook(kid(tbl, 'tblPr'), r, sc.tableStyles);
         const cells: Item[] = [];
         let y = box0.y;
         let cid = 1_000_000 + id * 1000;
@@ -946,18 +1037,17 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
                 const rowSpan = Math.max(1, num(tc, 'rowSpan', 1));
                 const tcPr = kid(tc, 'tcPr');
                 const cellH = rowSpan > 1 ? h * rowSpan : h;
-                const header = look && look.firstRow && ri === 0;
-                const banded = look && look.bandRow && !header && (ri - (look.firstRow ? 1 : 0)) % 2 === 0;
-                const styleFont: TextChain['fontRef'] = header ? { color: look!.headerText } : look ? { color: look.bodyText } : undefined;
+                const cl = look ? look(ri, ci - span, rowsEl.length, cols.length) : null;
+                const styleFont: TextChain['fontRef'] = cl?.text ? { color: cl.text } : undefined;
                 const text = textBodyOf(kid(tc, 'txBody'), { levels: [sc.defaultText], bodyPr: [], fontRef: styleFont }, r);
-                if (text && header) text.paragraphs.forEach(p => p.runs.forEach(run => { if (run.bold === undefined) run.bold = true; }));
+                if (text && cl?.bold) text.paragraphs.forEach(p => p.runs.forEach(run => { if (run.bold === undefined) run.bold = true; }));
                 if (text) {
                     text.insets = { l: px(num(tcPr, 'marL', 91440)), r: px(num(tcPr, 'marR', 91440)), t: px(num(tcPr, 'marT', 45720)), b: px(num(tcPr, 'marB', 45720)) };
                     text.anchor = attr(tcPr, 'anchor') === 'ctr' ? 'ctr' : attr(tcPr, 'anchor') === 'b' ? 'b' : 't';
                 }
                 const border = lineOf(kid(tcPr, 'lnB'), r) ?? lineOf(kid(tcPr, 'lnT'), r)
-                    ?? (look ? { width: 1.33, color: look.border } : { width: 1, color: { hex: '#bfbfbf' } });
-                const styleFill: Paint | undefined = look ? { kind: 'solid', color: header ? look.header : banded ? look.band1 : look.band2 } : undefined;
+                    ?? (cl ? cl.border ?? null : { width: 1, color: { hex: '#bfbfbf' } });
+                const styleFill: Paint | undefined = cl?.fill;
                 cells.push({ kind: 'shape', id: cid++, name: `${name} cell`, ...frame({ x, y, w, h: cellH, rot: 0, flipH: false, flipV: false }),
                     geom: { kind: 'preset', prst: 'rect' }, fill: fillOf(tcPr, r) ?? styleFill ?? { kind: 'none' }, line: border, text });
                 x += w;
@@ -965,12 +1055,19 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
             y += h;
         });
         if (!cells.length) return null;
+        if (look?.background) {
+            const b = bounds(cells);
+            cells.unshift({ kind: 'shape', id: cid++, name: `${name} background`, x: b.x, y: b.y, w: b.w, h: b.h, rot: 0, flipH: false, flipV: false,
+                geom: { kind: 'preset', prst: 'rect' }, fill: look.background, line: null } as Item);
+        }
         return { kind: 'group', id, name, ...bounds(cells), children: cells };
     }
     const uri = attr(gd, 'uri') || '';
     if (/diagram/.test(uri)) {
         const drawn = smartArtDrawing(gd, level, sc, frame, box0, id, name, depth);
         if (drawn) return drawn;
+        const listed = smartArtText(gd, level, sc, frame, box0, id, name, r);
+        if (listed) return listed;
     }
     const what = /chart/.test(uri) ? 'Chart' : /diagram/.test(uri) ? 'SmartArt diagram' : 'Embedded object';
     sc.warnings.push(`${what} "${name}" was imported as a placeholder frame.`);
@@ -1013,6 +1110,53 @@ function smartArtDrawing(gd: El | null, level: Level, sc: SlideCtx, frame: Frame
     return { kind: 'group', id, name, ...bounds(children), children };
 }
 
+/**
+ * SmartArt saved without a drawing (older files, other apps): only PowerPoint's layout engine
+ * could place its shapes, but the data part still holds every item and its nesting, so the text
+ * comes in as an outline — top-level items as paragraphs, their children as bullets — instead
+ * of being lost behind an empty frame.
+ */
+function smartArtText(gd: El | null, level: Level, sc: SlideCtx, frame: Frame, box0: Box, id: number, name: string, r: Res): Item | null {
+    const dm = attr(kid(gd, 'relIds'), 'r:dm');
+    const rel = dm ? sc.pkg.rels(level.part).get(dm) : undefined;
+    if (!rel || rel.external) return null;
+    const model = sc.pkg.xml(rel.target);
+    const pts = new Map<string, El>();
+    for (const pt of kids(kid(model, 'ptLst'), 'pt')) pts.set(attr(pt, 'modelId') || '', pt);
+    const childrenOf = new Map<string, { id: string; ord: number }[]>();
+    for (const c of kids(kid(model, 'cxnLst'), 'cxn')) {
+        if ((attr(c, 'type') || 'parOf') !== 'parOf') continue;
+        const src = attr(c, 'srcId') || '', dest = attr(c, 'destId') || '';
+        if (!childrenOf.has(src)) childrenOf.set(src, []);
+        childrenOf.get(src)!.push({ id: dest, ord: num(c, 'srcOrd') });
+    }
+    const root = [...pts.values()].find(pt => attr(pt, 'type') === 'doc');
+    if (!root) return null;
+    const paragraphs: Paragraph[] = [];
+    const seen = new Set<string>();
+    const walk = (ptId: string, depth: number) => {
+        if (seen.has(ptId) || depth > 16 || paragraphs.length > 500) return; // cycles, hostile nesting
+        seen.add(ptId);
+        for (const ch of (childrenOf.get(ptId) ?? []).sort((a, b) => a.ord - b.ord)) {
+            const pt = pts.get(ch.id);
+            const type = attr(pt, 'type') || 'node';
+            if (!pt || (type !== 'node' && type !== 'asst')) continue;
+            const body = textBodyOf(kid(pt, 't'), { levels: [sc.defaultText], bodyPr: [] }, r);
+            for (const para of body?.paragraphs ?? []) {
+                if (!para.runs.some(run => !run.br && run.text.trim())) continue;
+                paragraphs.push({ ...para, align: 'l', level: depth, ...(depth > 0 ? { bullet: 'char' as const } : {}),
+                    runs: para.runs.map(run => ({ ...run, size: run.size ?? (depth > 0 ? 16 : 18), bold: run.bold ?? (depth === 0 ? true : undefined) })) });
+            }
+            walk(ch.id, depth + 1);
+        }
+    };
+    walk(attr(root, 'modelId') || '', 0);
+    if (!paragraphs.length) return null;
+    sc.warnings.push(`SmartArt diagram "${name}" had no saved drawing; its text was imported as a list.`);
+    return { kind: 'shape', id, name, ...frame(box0), geom: { kind: 'preset', prst: 'rect' }, fill: { kind: 'none' }, line: null, textBox: true,
+        text: { paragraphs, anchor: 'ctr', insets: { l: 8, t: 8, r: 8, b: 8 }, wrap: true } };
+}
+
 /** The first descendant with this local name, searching at most `depth` levels down. */
 function findDeep(el: El | null, local: string, depth: number): El | null {
     if (!el || depth < 0) return null;
@@ -1032,7 +1176,6 @@ function backgroundOf(cSld: El | null, r: Res): Slide['background'] | undefined 
     const bgPr = kid(bg, 'bgPr');
     if (bgPr) {
         const p = fillOf(bgPr, r);
-        if (p?.kind === 'image') return { kind: 'image', media: p.media };
         return p;
     }
     const ref = kid(bg, 'bgRef');
@@ -1041,7 +1184,6 @@ function backgroundOf(cSld: El | null, r: Res): Slide['background'] | undefined 
         const list = idx >= 1001 ? r.ctx.theme.bgFills : r.ctx.theme.fills;
         const f = list[idx >= 1001 ? idx - 1001 : idx - 1];
         const p = f ? paintOf(f, { ...r, ctx: { ...r.ctx, phClr: colorIn(ref, r.ctx) ?? undefined } }) : undefined;
-        if (p?.kind === 'image') return { kind: 'image', media: p.media };
         return p ?? (colorIn(ref, r.ctx) ? { kind: 'solid', color: colorIn(ref, r.ctx)! } : undefined);
     }
     return undefined;
@@ -1095,6 +1237,8 @@ export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult 
     const height = sz ? Math.max(1, px(num(sz, 'cy', 5143500))) : 540;
     const defaultText = kid(pres, 'defaultTextStyle');
     const presRels = pkg.rels(presPart);
+    const tableStylesPart = pkg.relOfType(presPart, 'tableStyles');
+    const tableStyles = tableStylesPart ? pkg.xml(tableStylesPart) : null;
 
     const slideParts: string[] = [];
     const seen = new Set<string>();
@@ -1137,19 +1281,22 @@ export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult 
             layout: layoutPart ? { part: layoutPart, tree: path(layoutRoot, 'cSld', 'spTree') } : null,
             master: masterPart ? { part: masterPart, tree: path(masterRoot, 'cSld', 'spTree') } : null,
             masterTx: { title: kid(txStyles, 'titleStyle'), body: kid(txStyles, 'bodyStyle'), other: kid(txStyles, 'otherStyle') },
-            defaultText, warnings, count: 0,
+            defaultText, warnings, count: 0, tableStyles,
         };
+        const res = (lv: Level | null): Res => ({ pkg, part: lv?.part ?? part, ctx });
+        const background = backgroundOf(kid(root, 'cSld'), res(sc.slide))
+            ?? backgroundOf(kid(layoutRoot, 'cSld'), res(sc.layout))
+            ?? backgroundOf(kid(masterRoot, 'cSld'), res(sc.master))
+            // No <p:bg> anywhere: the slide is plain white, as PowerPoint and LibreOffice draw it.
+            // Not bg1 — under a layout's inverted colour map (bg1 → dk1) that turned it black.
+            ?? { kind: 'solid', color: { hex: '#ffffff' } };
+        sc.background = background;
         // Master artwork under layout artwork under the slide's own — unless a level turns it off.
         const items: Item[] = [];
         const showMaster = bool(root, 'showMasterSp') !== false && bool(layoutRoot, 'showMasterSp') !== false;
         if (sc.master && showMaster) items.push(...readShapes(sc.master.tree, sc.master, sc, IDENTITY, 0, false));
         if (sc.layout && bool(root, 'showMasterSp') !== false) items.push(...readShapes(sc.layout.tree, sc.layout, sc, IDENTITY, 0, false));
         items.push(...readShapes(sc.slide.tree, sc.slide, sc, IDENTITY, 0, true));
-        const res = (lv: Level | null): Res => ({ pkg, part: lv?.part ?? part, ctx });
-        const background = backgroundOf(kid(root, 'cSld'), res(sc.slide))
-            ?? backgroundOf(kid(layoutRoot, 'cSld'), res(sc.layout))
-            ?? backgroundOf(kid(masterRoot, 'cSld'), res(sc.master))
-            ?? { kind: 'solid', color: { hex: theme.colors[clrMap.bg1 ?? 'lt1'] ?? '#ffffff' } };
         slides.push({ items, background, transition: transitionOf(root), name: attr(kid(root, 'cSld'), 'name') || undefined });
     });
     if (!slides.length) warn('The presentation has no slides.');

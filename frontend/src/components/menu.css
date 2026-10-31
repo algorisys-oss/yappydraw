@@ -58,7 +58,7 @@
     border: 1px solid rgba(239, 68, 68, 0.35);
     border-radius: 999px;
     background: rgba(239, 68, 68, 0.09);
-    color: #dc2626;
+    color: #b91c1c; /* #dc2626 on this tint was 4.3:1, under AA's 4.5 */
     font-size: 12px;
     font-weight: 600;
     line-height: 1;
@@ -102,6 +102,10 @@
     .topbar-support-label { display: none; }
     .topbar-support-btn { padding: 0 8px; }
 }
+/* Same while a tool shows its options in the centre slot: those are what the user is working
+   with. At 1200px the node tool's Delete sat under the view controls, clipped out of reach. */
+.shell-topbar:has(.tool-options-bar > *) .topbar-support-label { display: none; }
+.shell-topbar:has(.tool-options-bar > *) .topbar-support-btn { padding: 0 8px; }
 
 @media (prefers-reduced-motion: reduce) {
     .topbar-support-btn,

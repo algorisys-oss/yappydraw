@@ -26,7 +26,7 @@ import { connectorGeometry } from '../connector-geometry';
 import { arrowheadSize } from '../arrowhead-size';
 import { cssColorToRgb255 } from '../color-utils';
 import { resolveFontFamily } from '../text-utils';
-import { listMarkerX, listTextXWith } from '../rich-text-utils';
+import { listMarkerX, listTextXResolver } from '../rich-text-utils';
 import { normalizeFontWeight, normalizeFontStyle } from '../font-variants';
 import { lineHeightFactorOf, DEFAULT_LINE_HEIGHT } from '../text-line-height';
 import { cornerRadiiPx } from '../corner-radius';
@@ -183,7 +183,7 @@ function measureText(text: string, font: string): number {
 
 type TextDefaults = { fontSize?: number; fontFamily?: string };
 
-function listParagraph(sp: RichTextSpan, op: number, prev: PrevNum, defaults: TextDefaults): Partial<Paragraph> {
+function listParagraph(sp: RichTextSpan, op: number, prev: PrevNum, textXOf: (sp: RichTextSpan) => number): Partial<Paragraph> {
     const level = sp.listLevel || 0;
     const out: Partial<Paragraph> = { bullet: sp.listType === 'ordered' ? 'num' : 'char', level };
     if (out.bullet === 'num') {
@@ -197,7 +197,7 @@ function listParagraph(sp: RichTextSpan, op: number, prev: PrevNum, defaults: Te
     if (sp.listMarkerScale && sp.listMarkerScale !== 1) out.bulletScale = sp.listMarkerScale;
     // The canvas layout's own positions, so the text lines up where Yappy drew it.
     const markerX = listMarkerX(sp);
-    const textX = listTextXWith(measureText, sp, defaults);
+    const textX = textXOf(sp);
     out.marL = textX;
     out.indent = markerX - textX;
     return out;
@@ -209,6 +209,7 @@ function richParagraphs(spans: RichTextSpan[], align: Paragraph['align'], op: nu
     let cur: Paragraph = { runs: [], align };
     let started = false;
     let prevNum: PrevNum = null;
+    const textXOf = listTextXResolver(measureText, spans, defaults);
     const push = () => { paras.push(cur); cur = { runs: [], align }; started = false; };
     for (const sp of spans) {
         const pieces = String(sp.text ?? '').split('\n');
@@ -222,7 +223,7 @@ function richParagraphs(spans: RichTextSpan[], align: Paragraph['align'], op: nu
                 started = true;
                 if (sp.paragraphSpaceBefore) cur.spaceBefore = sp.paragraphSpaceBefore;
                 if (sp.paragraphAlign) cur.align = alignOf(sp.paragraphAlign, align ?? 'l');
-                if (sp.listType && sp.listType !== 'none') Object.assign(cur, listParagraph(sp, op, prevNum, defaults));
+                if (sp.listType && sp.listType !== 'none') Object.assign(cur, listParagraph(sp, op, prevNum, textXOf));
                 prevNum = cur.bullet === 'num' ? { level: cur.level ?? 0, scheme: cur.numType ?? 'arabicPeriod', index: sp.listIndex || 1 } : null;
             }
             const run: TextRun = { text: piece };

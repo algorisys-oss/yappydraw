@@ -25,6 +25,9 @@ const MathNumberInput: Component<{
     step?: number;
     class?: string;
     title?: string;
+    /** false: commit only on Enter/Tab/blur, never while typing — for edits that aren't safe to
+     *  replay digit by digit (a Transform resize rescales points and font size each time). */
+    live?: boolean;
 }> = (props) => {
     const [text, setText] = createSignal('');
     const [editing, setEditing] = createSignal(false);
@@ -52,6 +55,7 @@ const MathNumberInput: Component<{
     // like `200-`, `*2`, `2+`. For these we can safely preview on every keystroke.
     const PLAIN_NUMBER = /^[+-]?(\d+\.?\d*|\.\d+)$/;
     const liveCommit = (raw: string) => {
+        if (props.live === false) return;
         const t = raw.trim();
         if (!PLAIN_NUMBER.test(t)) return;   // expressions wait for Enter/Tab/blur
         const n = Number(t);

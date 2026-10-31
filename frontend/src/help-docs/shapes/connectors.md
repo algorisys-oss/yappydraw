@@ -129,7 +129,7 @@ Turn it off for the whole drawing under **Canvas properties → Line Jumps** (Al
 
 ### Auto layout
 
-Select the shapes of a diagram (or nothing, to take the whole layer) and choose **right-click → Arrange → Auto Layout: Top to Bottom** (<kbd>Alt+Shift+A</kbd>), or *Left to Right*, *Bottom to Top*, *Right to Left*. The command palette has the same entries.
+Select the shapes of a diagram (or nothing, to take the whole layer) and choose **right-click → Arrange → Auto Layout: Top to Bottom** (<kbd>Alt+Shift+A</kbd>), or *Left to Right*, *Bottom to Top*, *Right to Left*. The command palette (<kbd>Ctrl/Cmd+K</kbd>) has *Auto Layout (top to bottom)* and *Auto Layout (left to right)*.
 
 Yappy reads the connectors between the selected shapes as a graph and arranges it in layers: sources on top (or left), each connector pointing to a later layer, shapes ordered within a layer to reduce crossings, and parents centred over their children. Everything then re-routes.
 

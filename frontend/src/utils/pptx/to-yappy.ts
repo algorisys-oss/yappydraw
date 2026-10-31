@@ -10,7 +10,7 @@
  *
  * Everything imports in architectural (clean) style: a PowerPoint deck was never hand-drawn.
  */
-import type { DrawingElement, PathSubpath, PathAnchor, RichTextSpan, TextAlign } from '../../types';
+import type { DrawingElement, PathSubpath, PathAnchor, RichTextSpan, TextAlign, PatternFill } from '../../types';
 import type { SlideDocument, Slide as YappySlide, SlideTransition } from '../../types/slide-types';
 import { createSlideDocument, createDefaultSlide } from '../../types/slide-types';
 import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition } from './deck';
@@ -97,6 +97,75 @@ interface Conv {
     warnings: string[];
     stats: ToYappyResult['stats'];
     images: Map<Media, { url: string; w: number; h: number } | null>;
+    /** This slide's background picture, pre-laid-out at slide size (see slideBackground). */
+    slideBg?: string;
+    /** Grey-tone copies of pictures that are shown in grayscale somewhere (image url → copy). */
+    gray: Map<string, string>;
+}
+
+/** A grey-tone copy of a picture (`a:grayscl`; Yappy pictures have no such adjustment). Browser only. */
+async function grayscaleCopy(url: string): Promise<string | undefined> {
+    if (typeof document === 'undefined') return undefined;
+    try {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.min(8192, img.naturalWidth)); c.height = Math.max(1, Math.min(8192, img.naturalHeight));
+        const g = c.getContext('2d');
+        if (!g) return undefined;
+        g.filter = 'grayscale(1)';
+        g.drawImage(img, 0, 0, c.width, c.height);
+        return c.toDataURL(/^data:image\/jpeg/.test(url) ? 'image/jpeg' : 'image/png', 0.92);
+    } catch { return undefined; }
+}
+
+/** Every picture the deck shows in grayscale, converted once. */
+async function grayCopies(deck: Deck, images: Conv['images']): Promise<Map<string, string>> {
+    const urls = new Set<string>();
+    const walk = (items: Item[]) => {
+        for (const it of items) {
+            if (it.kind === 'group') walk(it.children);
+            else if (it.kind === 'picture' && it.grayscale) { const u = images.get(it.media)?.url; if (u) urls.add(u); }
+            else if (it.kind === 'shape' && it.fill.kind === 'image' && it.fill.grayscale) { const u = images.get(it.fill.media)?.url; if (u) urls.add(u); }
+        }
+    };
+    deck.slides.forEach(s => walk(s.items));
+    const out = new Map<string, string>();
+    await Promise.all([...urls].map(async u => { const g = await grayscaleCopy(u); if (g) out.set(u, g); }));
+    return out;
+}
+
+/**
+ * A background picture as one slide-sized picture, laid out as PowerPoint does it. Yappy covers
+ * the slide with a background (scaled to fill, cropped), PowerPoint stretches it (`a:stretch`) or
+ * repeats it (`a:tile`), so both are drawn here, at import: a tile stretched over a slide is a
+ * smear, and a 4:3 picture on a 16:9 slide lost its edges. Browser only; elsewhere (tests) the
+ * plain picture is kept.
+ */
+async function slideBackground(url: string, w: number, h: number, tile: { sx: number; sy: number } | undefined): Promise<string | undefined> {
+    if (typeof document === 'undefined') return undefined;
+    try {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.min(4096, Math.round(w))); c.height = Math.max(1, Math.min(4096, Math.round(h)));
+        const g = c.getContext('2d');
+        if (!g) return undefined;
+        if (tile) {
+            const pat = g.createPattern(img, 'repeat');
+            if (!pat) return undefined;
+            pat.setTransform(new DOMMatrix().scale(tile.sx, tile.sy));
+            g.fillStyle = pat;
+            g.fillRect(0, 0, c.width, c.height);
+        } else {
+            // Same shape as the slide: Yappy's cover already matches a stretch, keep the original.
+            if (Math.abs(img.naturalWidth / img.naturalHeight - w / h) < 0.01) return undefined;
+            g.drawImage(img, 0, 0, c.width, c.height);
+        }
+        return c.toDataURL(tile ? 'image/png' : 'image/jpeg', 0.92);
+    } catch { return undefined; }
 }
 
 function base(c: Conv, type: string, it: { name: string; x: number; y: number; w: number; h: number; rot?: number; flipH?: boolean; flipV?: boolean }, groups: string[]): any {
@@ -124,14 +193,15 @@ function applyPaint(el: any, p: Paint, c: Conv) {
             if (p.kind === 'linear') el.gradientDirection = p.angle;
             break;
         case 'pattern': {
-            const pr = p.preset;
             el.backgroundColor = css(p.color);
-            el.fillStyle = /Cross|cross|Grid|grid|weave|trellis/.test(pr) ? 'cross-hatch' : /^pct|dot/i.test(pr) ? 'dots' : 'hachure';
+            el.fillStyle = 'pattern';
+            el.patternFill = patternFillOf(p.preset, css(p.color), p.bg ? css(p.bg) : 'transparent');
             break;
         }
         case 'image': {
             const img = c.images.get(p.media);
-            if (img) { el.fillStyle = 'image'; el.backgroundImage = img.url; el.backgroundColor = '#ffffff'; }
+            if (img) { el.fillStyle = 'image'; el.backgroundImage = (p.grayscale && c.gray.get(img.url)) || img.url; el.backgroundColor = '#ffffff'; }
+            if (img && p.alpha !== undefined && p.alpha < 1) el.backgroundOpacity = p.alpha;
             break;
         }
     }
@@ -474,7 +544,7 @@ function pictureElement(it: PictureItem, c: Conv, groups: string[]): DrawingElem
         return [el];
     }
     const el = base(c, 'image', it, groups);
-    el.dataURL = img.url;
+    el.dataURL = (it.grayscale && c.gray.get(img.url)) || img.url;
     el.status = 'loaded';
     el.mimeType = MIME[it.media.ext];
     if (it.crop && (it.crop.l || it.crop.t || it.crop.r || it.crop.b)) {
@@ -484,7 +554,19 @@ function pictureElement(it: PictureItem, c: Conv, groups: string[]): DrawingElem
     if (it.alpha !== undefined && it.alpha < 1) el.opacity = Math.round(it.alpha * 100);
     if (it.descr) el.altText = it.descr;
     c.stats.elements++; c.stats.pictures++;
-    return [el];
+    if (!it.geom) return [el];
+    // Cropped to a shape: the outline becomes a clipping mask over the picture, grouped with it —
+    // what Object ▸ Make Clipping Mask builds, so it stays editable the same way.
+    const gid = c.nextId('group');
+    const outline = shapeElements({ kind: 'shape', id: it.id, name: `${it.name} outline`, x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot, flipH: it.flipH, flipV: it.flipV,
+        geom: it.geom, fill: { kind: 'solid', color: { hex: '#000000' } }, line: null }, c, [...groups, gid]);
+    if (outline.length !== 1) { c.stats.elements -= outline.length; return [el]; }
+    const mask = outline[0];
+    mask.isClipMask = true;
+    el.groupIds = [gid, ...el.groupIds];
+    el.clipMaskId = mask.id;
+    el.maskType = 'clip';
+    return [el, mask];
 }
 
 function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[] {
@@ -522,7 +604,9 @@ function applyBackground(s: YappySlide, bg: Slide['background'], c: Conv) {
         if (bg.kind === 'linear') s.gradientDirection = bg.angle;
     } else if (bg.kind === 'image') {
         const img = c.images.get(bg.media);
-        if (img) { s.fillStyle = 'image'; s.backgroundImage = img.url; s.backgroundColor = '#ffffff'; }
+        const url = c.slideBg ?? img?.url;
+        if (url) { s.fillStyle = 'image'; s.backgroundImage = url; s.backgroundColor = '#ffffff'; }
+        if (url && bg.alpha !== undefined && bg.alpha < 1) s.backgroundOpacity = bg.alpha;
     } else if (bg.kind === 'pattern') { s.fillStyle = 'solid'; s.backgroundColor = css(bg.color); }
 }
 
@@ -564,6 +648,35 @@ async function decodeImages(deck: Deck): Promise<Map<Media, { url: string; w: nu
     return out;
 }
 
+/**
+ * A DrawingML preset pattern as Yappy's vector pattern fill: foreground on background, like
+ * PowerPoint's 8-px tiles. The motif follows the name — Horz/Vert/Diag stripes, Grid, Check,
+ * diagCross — with `lt`/`dk` for thin/thick lines and `nar`/`sm`/`wd`/`lg` for spacing; `pctN`
+ * becomes dots that cover about N % of the area (above 50 %, background dots on the foreground).
+ * Used to be Yappy's sketch hatching in the foreground colour with no ground, which drew 30 %
+ * grey as faint teal lines.
+ */
+export function patternFillOf(prst: string, fg: string, bg: string): PatternFill {
+    const spacing = /^(nar|sm)/.test(prst) ? 4 : /^(wd|lg)/.test(prst) ? 12 : 8;
+    const strokeWidth = /^dk/.test(prst) ? 3 : /^lt/.test(prst) ? 1 : /^(wd)/.test(prst) ? 3 : 1.5;
+    const base = { color: fg, background: bg, spacing, strokeWidth };
+    const pct = /^pct(\d+)$/.exec(prst);
+    if (pct) {
+        const n = Math.max(1, Math.min(99, Number(pct[1])));
+        const inverse = n > 50; // mostly foreground: draw the gaps as dots instead
+        const share = (inverse ? 100 - n : n) / 100;
+        return { type: 'dots', color: inverse ? bg : fg, background: inverse ? fg : bg, spacing: 4, strokeWidth: Math.max(0.5, 4 * Math.sqrt(share / Math.PI)) };
+    }
+    if (/Horz$|^horz|Brick$|^shingle$|^wave$|^zigZag$/.test(prst)) return { type: 'stripes', ...base, angle: 0 };
+    if (/Vert$|^vert$/.test(prst)) return { type: 'stripes', ...base, angle: 90 };
+    if (/DnDiag$|^dnDiag$/.test(prst)) return { type: 'stripes', ...base, angle: 45 };
+    if (/UpDiag$|^upDiag$/.test(prst)) return { type: 'stripes', ...base, angle: -45 };
+    if (/^(diagCross|trellis|openDmnd|weave)$/.test(prst)) return { type: 'crosshatch', ...base };
+    if (/Check$|^solidDmnd$/.test(prst)) return { type: 'checker', ...base, angle: prst === 'solidDmnd' ? 45 : 0 };
+    if (/^(cross|smGrid|lgGrid|dotGrid|plaid)$/.test(prst)) return { type: 'grid', ...base };
+    return { type: 'dots', ...base, strokeWidth: 1 }; // confetti, sphere, divot, dotDmnd…
+}
+
 /** Build the Yappy document. `nextId` mints element ids (the store's generator, with a batch set). */
 export async function deckToDocument(deck: Deck, nextId: (type: string) => string, name?: string): Promise<ToYappyResult> {
     const presets = await loadPresets();
@@ -573,11 +686,17 @@ export async function deckToDocument(deck: Deck, nextId: (type: string) => strin
     const warnings: string[] = [];
     const stats = { slides: 0, elements: 0, pictures: 0, paths: 0 };
     doc.slides = [];
+    const gray = await grayCopies(deck, images);
+    const laidOut = await Promise.all(deck.slides.map(s => {
+        const bg = s.background;
+        const img = bg?.kind === 'image' ? images.get(bg.media) : undefined;
+        return bg?.kind === 'image' && img ? slideBackground(img.url, W, H, bg.tile) : undefined;
+    }));
     deck.slides.forEach((s, i) => {
         const x = i * (W + PAGE_GAP);
         const slide = createDefaultSlide(undefined, s.name || `Slide ${i + 1}`, x, 0, { width: W, height: H });
         slide.order = i;
-        const c: Conv = { ox: x, oy: 0, presets, nextId, out: [], byPptId: new Map(), glue: [], warnings, stats, images };
+        const c: Conv = { ox: x, oy: 0, presets, nextId, out: [], byPptId: new Map(), glue: [], warnings, stats, images, slideBg: laidOut[i], gray };
         doc.elements.push(...convertItems(s.items, c, []));
         c.glue.forEach(f => f());
         applyBackground(slide, s.background, c);

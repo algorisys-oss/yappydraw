@@ -11401,3 +11401,55 @@ Save dialog via a stubbed `showSaveFilePicker`); `tests/eyedropper.spec.ts` upda
   build needs it (`tsconfig.node.json`, `frontend/src/wasm/vite-plugin-as.ts`). It had been
   arriving transitively through `pptxgenjs`, which v0.8.292 removed. Dropped from the strip list.
   Caught by `--verify` before anything was pushed; the live site was never affected.
+
+### PowerPoint import fidelity, from LibreOffice's PPTX test corpus (2026-10-31)
+
+- **Slides turned black** under a layout with an inverted colour map and no background defined:
+  the fallback used `bg1`. It is white now.
+- **Shapes marked "use slide background" (`useBgFill`) got the default fill.** They now take the
+  slide's colour or gradient; over a picture background they are left unfilled so it shows through.
+- **A theme-filled placeholder came in empty** (white text on white): its own `p:style` ranked
+  below the layout's "no fill". Outline inheritance also skipped an explicit "no line".
+- **Tables in any style but PowerPoint's default were plain.** Styles are read from
+  `ppt/tableStyles.xml`, including the table background and theme-line borders.
+- **SmartArt without a saved drawing was an empty frame.** Its text now comes in as an outline.
+- **Background pictures:** tiled ones were stretched into a smear, stretched ones were cropped, and
+  see-through ones showed the export's transparency. Pictures cropped to a shape came in
+  rectangular; grayscale pictures came in coloured; pattern fills were faint sketch hatching.
+- **Detach slide background → image made a nearly invisible element**: `backgroundOpacity` (0–1)
+  was written into element opacity (0–100). (`store/app-store.ts`)
+- **List markers: items of one level didn't line up** after the wide-marker fix earlier today
+  ("1." and "2." measured separately). Every item of a level now starts at its widest marker.
+- PowerPoint import is out of Dev Mode: File ▸ Open and drag-and-drop accept .pptx for everyone.
+- Covered by `frontend/src/utils/pptx/read.test.ts` (backgrounds, crop to shape, grayscale, table
+  styles, SmartArt text), `to-yappy.test.ts` (patterns), `rich-text-list-marker.test.ts`, and
+  `tests/pptx-import.spec.ts` (tiled background + clipped picture, import without Dev Mode).
+
+### Long-failing Playwright specs, triaged (2026-10-31)
+
+Each one was either an app bug or a spec that had fallen behind a deliberate change:
+
+- **App: node tool's Delete was out of reach at 1200px.** The top bar's centre slot clips its
+  overflow, and the options bar inside it couldn't shrink (a flex item's `min-width: auto`), so it
+  never scrolled — Delete was simply cut off under the view controls. The bar now shrinks and
+  scrolls, and the Support button drops its label while a tool shows options.
+- **App: Transform panel X/Y/W/H/rotation didn't take math** (`*2`, `200-50%`): they were plain
+  number inputs while the rest of the panel used `MathNumberInput`. Now the same field, committing
+  on Enter/Tab/blur only (`live={false}`) so a resize isn't replayed digit by digit.
+- **App: colour contrast (WCAG AA), light/dark/focus.** Support label red (4.3:1), symmetry and
+  grid-style active buttons (white on #b14cff 3.9:1, on #6366f1 4.47:1), two italic hints at 60 %
+  opacity (2.3:1), number-field ▴▾ at 45 % opacity (1.8:1), and a leftover light-only
+  `button.active` (#e0efff) that won in every theme — 1.06:1 under dark-mode text.
+- **Spec: undo depth** asked for 3, but the setting is clamped to 10–500 since v0.8.210.
+- **Spec: Pen close** expected Select after closing; since Sep 2026 the Pen stays (like every draw
+  tool) unless "keep tool active" is off, and the closed shape is selected.
+- **Spec: crop via the real UI** aimed its drag without the canvas origin (46, 52 px off the handle).
+- **Spec: tool-options-bar** `[title*="mandala"]` also matched the later Kaleidoscope button.
+- **Spec: help-doc-recovery** clicked `#/help/…` links and broke a production-only chunk name;
+  Help has used clean `/help/<page>/` URLs since the prerendered docs, and the dev server serves
+  the doc as `…/vector-paths.md?import`. Matches both now (not the `?import&meta` index request).
+- **Spec: stick figures** read the canvas as soon as `window.Yappy` existed — it is published
+  before the canvas mounts. They wait for the canvas, and poll instead of sleeping.
+- **Infra: boot timeouts.** A `globalSetup` (`tests/_global-warmup.ts`) loads the app once before
+  the specs, so the first spec per worker no longer pays for Vite's cold compile inside a 30 s wait.
+

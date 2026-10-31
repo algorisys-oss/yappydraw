@@ -160,7 +160,7 @@ Click **Scene timeline** in the panel, or choose **Menu → Panels → Scene Tim
 - **Sync to slides** — on a slides/pages document, toggle the monitor-play button (“Restart the scene when the slide/page changes”) so each slide plays its animation fresh.
 
 :::tip
-The scene length is set automatically by the longest figure. API: ` toggleSceneTimeline(true)`, `playScene()`, `seekScene(seconds)`.
+The scene length is set automatically by the longest figure. API: `toggleSceneTimeline(true)`, `playScene()` (toggles play/pause), `seekScene(seconds)`.
 :::
 
 ## Export your animation as a video
@@ -175,10 +175,10 @@ Alternatively, **record the live canvas**: with an animated figure selected, cli
 Live recording captures whatever is on screen, so pan/zoom to frame your scene first. API: ` recordAnimation(seconds?)` / `stopRecording()`. On an infinite-canvas doc, Export → Video also uses live capture (there are no page bounds to frame to).
 :::
 
-Prefer a shareable webpage? **Export → HTML** writes a self-contained `.html` file that **plays the animation** when opened in any browser — the figures walk, wave and follow their paths just like on the canvas, and keyframes and tinyfly animations play and loop with them. (API: `exportHtml(name?)`.) The player is interactive: presentations advance with **→ / Space** (back with ←, Home/End jump to first/last slide) or the on-screen arrows, and an infinite-canvas export opens auto-framed to your content.
+Prefer a shareable webpage? **Export / Save…** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) → **Export HTML** writes a self-contained `.html` file that **plays the animation** when opened in any browser — the figures walk, wave and follow their paths just like on the canvas, and keyframes and tinyfly animations play and loop with them. (API: `exportHtml(name?)`.) The player is interactive: presentations advance with **→ / Space** (back with ←, Home/End jump to first/last slide) or the on-screen arrows, and an infinite-canvas export opens auto-framed to your content.
 
 ## Good to know
 
 - An animated figure is a single object — move, scale, rotate and recolour it like any shape.
 - It renders procedurally from a skeleton; to hand-edit the artwork, **Bake** it to paths first.
-- Share a moving animation as a **video** (record) or a self-contained **HTML** page (Export → HTML) that plays it; bake a frame for a still. Image/PDF export captures a single frame.
+- Share a moving animation as a **video** (record) or a self-contained **HTML** page (Export / Save… → Export HTML) that plays it; bake a frame for a still. Image/PDF export captures a single frame.

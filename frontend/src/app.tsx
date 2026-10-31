@@ -13,7 +13,7 @@ import {
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
   transformAgain, recordTransform, convertTextToOutlines, fitArtboardToSelection, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
-  toggleNodeTool, exitAllToolModes, toggleTypeOnPath, toggleArtboardTool, isDevMode
+  toggleNodeTool, exitAllToolModes, toggleTypeOnPath, toggleArtboardTool
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { initPWA } from './utils/pwa';
@@ -281,6 +281,13 @@ const App: Component = () => {
         exitCompoundEdit(true); // finish, rebuilding the compound from the edited sources
         return;
       }
+      // Spotlight first: the presentation toolbar promises "Clear spotlight (Esc)", and with the
+      // presentation check ahead of it Esc ended the show instead, leaving the spotlight on.
+      if (e.key === 'Escape' && store.spotlightIds.length > 0) {
+        e.preventDefault();
+        setSpotlight(null);
+        return;
+      }
       if (e.key === 'Escape' && store.appMode === 'presentation') {
         e.preventDefault();
         togglePresentationMode(false);
@@ -289,11 +296,6 @@ const App: Component = () => {
       if (e.key === 'Escape' && store.focusBranchId) {
         e.preventDefault();
         setFocusBranch(null);
-        return;
-      }
-      if (e.key === 'Escape' && store.spotlightIds.length > 0) {
-        e.preventDefault();
-        setSpotlight(null);
         return;
       }
 
@@ -1399,9 +1401,9 @@ const App: Component = () => {
 
       const allDroppedFiles = [...data.filesFromList, ...data.filesFromItems];
 
-      // A dropped PowerPoint file opens as a new slides document (Dev Mode preview).
+      // A dropped PowerPoint file opens as a new slides document.
       const pptx = allDroppedFiles.find(f => /\.(pptx|potx|ppsx)$/i.test(f.name));
-      if (pptx && isDevMode()) {
+      if (pptx) {
         const { openPptxFile } = await import('./utils/pptx/import');
         if (await openPptxFile(pptx)) setDrawingId(pptx.name.replace(/\.(pptx|potx|ppsx)$/i, ''));
         return true;

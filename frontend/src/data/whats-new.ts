@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.293', date: '2026-10-31', items: [
+        'Open PowerPoint files: File → Open (or drop a .pptx on the canvas) brings a presentation in as editable slides — shapes, text, bullets, tables in their own style, pictures, SmartArt, backgrounds and transitions.',
+        'The Transform fields (X, Y, W, H, rotation) take math, like the rest of the panel: type *2, 200-50% or +10 and press Enter.',
+        'The node tool’s Delete button is back in reach on smaller screens, and Esc clears a spotlight before it ends the presentation.',
+        'Easier to read: several buttons and hints got stronger colour contrast in the light, dark and focus themes.',
+    ] },
     { version: '0.8.292', date: '2026-10-31', items: [
         'Export to PowerPoint is now editable: shapes, text, bullets, connectors and images arrive as real PowerPoint objects you can keep editing in your presentation app. Pick “Pictures” in the export dialog for the old one-image-per-slide file.',
         'Large numbered lists no longer run the number into the text (“IV.Roman”).',

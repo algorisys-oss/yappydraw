@@ -80,7 +80,7 @@ The lines connecting nodes can have different appearances:
 
 Mind maps automatically reflow into a tidy arrangement every time you add, collapse, expand, delete, or reparent a node — and the change animates so the tree stays readable as it reorganizes. New maps use **Balanced** (branches split left and right of the central topic, which keeps the map widescreen rather than growing into one tall column); you can switch a tree to Horizontal, Vertical, or Radial from the property panel or right-click menu, and that choice is remembered per tree. Collapsing a branch frees its space so the rest of the map packs in tighter.
 
-Auto layout and the default direction both live in **Settings → Mindmap**. Prefer to place nodes by hand? Turn **Auto Layout** off and nodes stay exactly where you put them.
+Auto layout and the default direction both live in **Settings → Mindmap** (**Auto Layout (reflow & animate)** and **Default Layout**). Prefer to place nodes by hand? Turn **Auto Layout (reflow & animate)** off and nodes stay exactly where you put them.
 
 ### Manual Adjustment
 
@@ -116,7 +116,7 @@ Collapse branches before presenting, then progressively reveal content by expand
 
 Working on one branch of a dense map? Select a node and press <kbd>Shift</kbd>+<kbd>F</kbd> (or use **Focus This Branch** in the right-click **Hierarchy** menu, or the 🎯 button in the property panel). The branch, its path back to the central topic, and the connecting lines stay bright; everything else dims right back and becomes unclickable, so you can't accidentally grab something you can barely see. The view fits itself to the branch, and a bar across the top names what you're focused on.
 
-Press <kbd>Esc</kbd> or <kbd>Shift</kbd>+<kbd>F</kbd> again — or click **Show all** on the bar — to bring the whole map back.
+Press <kbd>Esc</kbd> or <kbd>Shift</kbd>+<kbd>F</kbd> again — or click **Show all** on the bar, or **Show Whole Map** in the right-click **Hierarchy** menu — to bring the whole map back.
 
 Focus mode is a *view* setting: nothing is moved or changed, it isn't saved into your file, and it doesn't appear in undo.
 

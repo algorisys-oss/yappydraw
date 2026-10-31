@@ -427,6 +427,12 @@ export function renderSlideBackground(
     } else if (type === 'image' && slide.backgroundImage) {
         const img = getImage(slide.backgroundImage);
         if (img) {
+            // A see-through picture shows the slide's colour beneath it, not whatever the export
+            // or the canvas happens to have there (a transparent PNG, the pasteboard).
+            if ((slide.backgroundOpacity ?? 1) < 1) {
+                ctx.fillStyle = dim(slide.backgroundColor || defaultBg);
+                ctx.fillRect(x, y, w, h);
+            }
             ctx.save();
             ctx.globalAlpha = slide.backgroundOpacity ?? 1;
             const imgAspect = img.width / img.height;

@@ -638,7 +638,7 @@ export const en = {
         'touchPen-penNodeDeleteConvert': 'Pen node: delete / convert (menu)',
         'touchPen-penInsertPointOnAPath': 'Pen: insert point on a path',
         'touchPen-penConstrainHandles9045': 'Pen: constrain handles 90°/45°',
-        'touchPen-penStraightSegment': 'Pen: straight segment (15° steps)',
+        'touchPen-penStraightSegment': 'Pen: straight segment (45° steps)',
         'touchPen-setShapeFill': 'Set Shape Fill (ColorDrop)',
         'touchPen-smartShapes': 'Smart Shapes (hold pen to correct)',
     },

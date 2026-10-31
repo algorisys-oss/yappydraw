@@ -24,7 +24,8 @@ const btn = {
     border: '1px solid var(--border-color, #ccc)', 'border-radius': '4px',
     background: 'transparent', color: 'inherit',
 } as const;
-const on = { background: 'var(--accent, #3b82f6)', color: '#fff' } as const;
+// White text needs the deeper indigo: the theme accent (#6366f1 light, #818cf8 dark) is under AA with it.
+const on = { background: '#4f46e5', color: '#fff' } as const;
 const sub = { 'font-size': '10px', 'font-weight': 600, opacity: 0.6, 'margin-top': '10px', 'letter-spacing': '0.04em' } as const;
 
 export const GridSettingsSection = () => {

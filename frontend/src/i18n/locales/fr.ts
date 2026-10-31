@@ -646,7 +646,7 @@ export const fr: Dictionary = {
         'touchPen-penNodeDeleteConvert': 'Nœud de plume : supprimer / convertir (menu)',
         'touchPen-penInsertPointOnAPath': 'Plume : insérer un point sur un tracé',
         'touchPen-penConstrainHandles9045': 'Plume : contraindre les poignées à 90°/45°',
-        'touchPen-penStraightSegment': 'Plume : segment droit (pas de 15°)',
+        'touchPen-penStraightSegment': 'Plume : segment droit (pas de 45°)',
         'touchPen-setShapeFill': 'Définir le fond de la forme (ColorDrop)',
         'touchPen-smartShapes': 'Formes intelligentes (maintenir le stylet pour corriger)',
     },

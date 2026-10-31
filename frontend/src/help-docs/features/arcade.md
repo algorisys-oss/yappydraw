@@ -135,7 +135,7 @@ A game has one script: for a visual/Blueprint game the script is compiled from y
 
 ## Sharing your game
 
-Hit **⬇ Export** on the game bar (or **Menu → Save… → Export HTML**) to download a single self-contained file: anyone opening it sees your game with a big **▶ Play Game** button — no install, works offline, touch controls included. Visual and Blueprint games export just like code games (the graph is compiled into the file). The script also travels with `.yappy`/JSON saves and My Templates.
+Hit **⬇ Export** on the game bar (or **Export / Save… → Export HTML**) to download a single self-contained file: anyone opening it sees your game with a big **▶ Play Game** button — no install, works offline, touch controls included. Visual and Blueprint games export just like code games (the graph is compiled into the file). The script also travels with `.yappy`/JSON saves and My Templates.
 
 ```
 const Y = window.Yappy;      // scripting from the console works too

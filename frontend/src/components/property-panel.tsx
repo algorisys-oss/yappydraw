@@ -415,15 +415,10 @@ const TransformControls: Component<{ elementId: string }> = (props) => {
         if (!Number.isFinite(deg)) return;
         apply({ angle: (((deg % 360) + 360) % 360) * Math.PI / 180 });
     };
+    // Math in fields like the rest of the panel (`*2`, `200-50%`, `+10`), committed on
+    // Enter/Tab/blur only: was a plain <input type=number>, which can't take an expression.
     const num = (get: () => number, set: (v: number) => void, title: string, step = 1) => (
-        <input
-            type="number"
-            step={step}
-            value={get()}
-            title={title}
-            style={{ width: '100%', 'font-size': '11px', 'min-width': '0' }}
-            onChange={(e) => { const v = Number(e.currentTarget.value); if (Number.isFinite(v) && e.currentTarget.value.trim() !== '') set(v); }}
-        />
+        <MathNumberInput value={get()} onCommit={set} step={step} title={title} live={false} />
     );
     const lbl = { 'min-width': '12px', 'font-size': '11px', color: 'var(--text-secondary)' } as any;
     return (
@@ -2688,7 +2683,7 @@ const PropertyPanel: Component = () => {
                                                     style={{
                                                         flex: '1', 'font-size': '11px', padding: '4px 2px', cursor: 'pointer',
                                                         border: '1px solid var(--border-color, #ccc)', 'border-radius': '4px',
-                                                        background: store.symmetry.mode === m.id ? '#b14cff' : 'transparent',
+                                                        background: store.symmetry.mode === m.id ? '#9333ea' : 'transparent', // white on #b14cff was 3.9:1
                                                         color: store.symmetry.mode === m.id ? '#fff' : 'inherit',
                                                     }}
                                                     title={m.title}
@@ -2731,7 +2726,7 @@ const PropertyPanel: Component = () => {
                                                     style={{
                                                         flex: '1', 'font-size': '11px', padding: '4px', cursor: 'pointer',
                                                         border: '1px solid var(--border-color, #ccc)', 'border-radius': '4px',
-                                                        background: store.symmetry.editing ? '#b14cff' : 'transparent',
+                                                        background: store.symmetry.editing ? '#9333ea' : 'transparent',
                                                         color: store.symmetry.editing ? '#fff' : 'inherit',
                                                     }}
                                                     title="Drag the canvas handle to reposition the axis (Alt+Shift+Y)"
@@ -2816,11 +2811,11 @@ const PropertyPanel: Component = () => {
                                                 <option value="notebook">Notebook</option>
                                             </select>
                                         </div>
-                                        <div class="group-title" style={{ "margin-top": "6px", opacity: 0.6, "font-weight": "normal", "font-style": "italic" }}>Theme sets background + texture; tweak either here or in Background below.</div>
+                                        <div class="group-title" style={{ "margin-top": "6px", color: "var(--text-secondary)", "font-weight": "normal", "font-style": "italic" }}>Theme sets background + texture; tweak either here or in Background below.</div>
                                         {/* The Line Grid / Graph Paper themes look like the grid but are paper
                                             textures: always behind the artwork, never snapping. People reach for
                                             them expecting the grid (Anshika's review, Sep 2026). */}
-                                        <div class="group-title" style={{ "margin-top": "2px", opacity: 0.6, "font-weight": "normal", "font-style": "italic" }}>{t('gridPanel.textureNote')}</div>
+                                        <div class="group-title" style={{ "margin-top": "2px", color: "var(--text-secondary)", "font-weight": "normal", "font-style": "italic" }}>{t('gridPanel.textureNote')}</div>
                                     </div>
                                 </Show>
                                 <Show when={targetType() === 'canvas'}>

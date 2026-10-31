@@ -631,7 +631,7 @@ export const de: Dictionary = {
         'touchPen-penNodeDeleteConvert': 'Zeichenstift-Knoten: löschen / umwandeln (Menü)',
         'touchPen-penInsertPointOnAPath': 'Zeichenstift: Punkt auf einem Pfad einfügen',
         'touchPen-penConstrainHandles9045': 'Zeichenstift: Griffe auf 90°/45° beschränken',
-        'touchPen-penStraightSegment': 'Zeichenstift: gerades Segment (15°-Schritte)',
+        'touchPen-penStraightSegment': 'Zeichenstift: gerades Segment (45°-Schritte)',
         'touchPen-setShapeFill': 'Flächenfarbe der Form festlegen (ColorDrop)',
         'touchPen-smartShapes': 'Intelligente Formen (Stift halten zum Korrigieren)',
     },
