@@ -19,7 +19,7 @@ import { evaluateTimelineAt } from "./animation/frame-timeline-evaluator";
 import { effectiveTime } from "./animation/animation-engine";
 import { sceneTime } from "./animation/scene-clock";
 import rough from 'roughjs/bin/rough';
-// jspdf + pptxgenjs are ~744 kB and are reached ONLY by exportToPdf / exportToPptx,
+// jspdf (and the PPTX writer) are reached ONLY by exportToPdf / exportToPptx,
 // but this module is statically imported by api.ts, the export dialog, doc-thumbnails
 // and others for plain PNG/SVG export — so importing them at module level put the whole
 // vendor-export chunk on the cold-load critical path. Loaded inside the two functions
@@ -34,7 +34,7 @@ import {
     type SvgThemeOptions,
 } from "./svg-theme";
 import { buildFilterString } from "./image-filter-utils";
-import { layoutRichText, type RichTextSegment } from "./rich-text-utils";
+import { layoutRichText, listMarkerText, listMarkerX, alignedLineX, type RichTextSegment } from "./rich-text-utils";
 import { getShapeGeometry, getCentredShapeGeometry, type ShapeGeometry } from "./shape-geometry";
 import { effectiveStrokeAlign } from "./stroke-align";
 import { connectorGeometry } from "./connector-geometry";
@@ -56,15 +56,12 @@ import { appendDimensionSvg } from "./dimension-svg";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
-/** One indent step per list nesting level — the canvas renderers' INDENT_SIZE. */
-const LIST_INDENT_SIZE = 20;
-
 /**
  * The bullet / number that sits in a list item's gutter, as a `<tspan>`.
  *
  * The canvas renderers (`text-renderer.ts`, `render-pipeline.ts`) draw it beside the
  * item's *first* segment — `seg.listMarker`, which word-wrapped continuation lines
- * never carry — at `xOffset + level * INDENT_SIZE`, in that span's own font. SVG export
+ * never carry — at `xOffset + listMarkerX(span)`, in that span's own font. SVG export
  * emitted a tspan per segment but never the marker, so an exported list kept the indent
  * `layoutRichText` reserved for it and lost every bullet. Returns null for non-markers
  * so callers can just append the result.
@@ -77,11 +74,11 @@ const listMarkerTspan = (
     const span = seg.span;
     if (!seg.listMarker || !span.listType || span.listType === 'none') return null;
     const tspan = document.createElementNS(SVGNS, 'tspan') as SVGTSpanElement;
-    tspan.textContent = span.listType === 'ordered' ? `${span.listIndex || 1}.` : '•';
-    tspan.setAttribute('x', `${xOffset + (span.listLevel || 0) * LIST_INDENT_SIZE}`);
-    tspan.setAttribute('fill', span.color || fallback.color);
+    tspan.textContent = listMarkerText(span);
+    tspan.setAttribute('x', `${xOffset + listMarkerX(span)}`);
+    tspan.setAttribute('fill', span.listMarkerColor || span.color || fallback.color);
     tspan.setAttribute('font-family', resolveFontFamily(span.fontFamily || fallback.fontFamily));
-    tspan.setAttribute('font-size', `${span.fontSize || fallback.fontSize}px`);
+    tspan.setAttribute('font-size', `${(span.fontSize || fallback.fontSize) * (span.listMarkerScale ?? 1)}px`);
     if (span.bold) tspan.setAttribute('font-weight', 'bold');
     if (span.italic) tspan.setAttribute('font-style', 'italic');
     return tspan;
@@ -620,6 +617,17 @@ export const rasterizeElements = async (
     // Layer order first, then document order — the order the CANVAS draws in, so the raster
     // stacks the same way the artwork does (see elementsInRenderOrder).
     const elements = exportScene().filter(el => idSet.has(el.id) && !el.isClipMask && isExportable(el));
+    return rasterizePosed(elements, scale, background);
+};
+
+/**
+ * `rasterizeElements` for elements that are already posed (from `exportScene()`), so a caller
+ * rasterizing many objects one at a time — the PPTX exporter's per-object fallback — poses the
+ * scene once instead of once per object.
+ */
+const rasterizePosed = (
+    elements: DrawingElement[], scale = 2, background?: string,
+): { dataURL: string; x: number; y: number; width: number; height: number; pixelWidth: number; pixelHeight: number } | null => {
     if (elements.length === 0) return null;
 
     const { minX, minY, maxX, maxY } = elementsBounds(elements);
@@ -1308,7 +1316,8 @@ export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptio
 
                 let lineY = el.y + verticalPadding;
                 for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
-                    const lineHeight = layout.lineHeights[lineIdx];
+                    lineY += layout.lineGaps[lineIdx] ?? 0;
+            const lineHeight = layout.lineHeights[lineIdx];
                     const lineSegments = layout.segments.filter(s => s.lineIndex === lineIdx);
                     let lineWidth = 0;
                     if (lineSegments.length > 0) {
@@ -1316,10 +1325,7 @@ export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptio
                         lineWidth = last.x + last.width;
                     }
 
-                    let xOffset: number;
-                    if (textAlign === 'center') xOffset = el.x + (lw - lineWidth) / 2;
-                    else if (textAlign === 'right') xOffset = el.x + lw - padding - lineWidth;
-                    else xOffset = el.x + padding;
+                    const xOffset = alignedLineX(layout.lineAligns[lineIdx], textAlign, lineWidth, el.x + padding, el.x + lw / 2, el.x + lw - padding);
 
                     const baselineY = lineY + lineHeight * 0.75;
 
@@ -1654,7 +1660,8 @@ export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptio
 
                 let lineY = startY;
                 for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
-                    const lineHeight = layout.lineHeights[lineIdx];
+                    lineY += layout.lineGaps[lineIdx] ?? 0;
+            const lineHeight = layout.lineHeights[lineIdx];
                     const lineSegments = layout.segments.filter(s => s.lineIndex === lineIdx);
                     let lineWidth = 0;
                     if (lineSegments.length > 0) {
@@ -1662,10 +1669,7 @@ export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptio
                         lineWidth = last.x + last.width;
                     }
 
-                    let xOffset: number;
-                    if (textAlign === 'left') xOffset = cx - maxWidth / 2;
-                    else if (textAlign === 'right') xOffset = cx + maxWidth / 2 - lineWidth;
-                    else xOffset = cx - lineWidth / 2;
+                    const xOffset = alignedLineX(layout.lineAligns[lineIdx], textAlign, lineWidth, cx - maxWidth / 2, cx, cx + maxWidth / 2);
 
                     const baselineY = lineY + lineHeight * 0.75;
                     const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -2066,119 +2070,110 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
     }
 };
 
-export const exportToPptx = async (scale: number, background: boolean, onlySelected: boolean) => {
+export type PptxMode = 'editable' | 'pictures';
+
+/**
+ * PowerPoint export. `editable` (the default) writes native shapes, text, connectors and pictures
+ * (utils/pptx/from-yappy); `pictures` writes each page as one image — pixel-exact, sketch strokes
+ * and all, but nothing in it can be edited. Paged documents get one slide per page, sized from
+ * the first page; a page of another size is scaled to fit and centred rather than stretched.
+ */
+export const exportToPptx = async (
+    scale: number, background: boolean, onlySelected: boolean,
+    mode: PptxMode = 'editable', download = true,
+): Promise<Blob | undefined> => {
     await ensureExportImages();
     // Hidden objects never reach a PDF/PPTX page (see isExportable).
     const allElements = exportScene().filter(isExportable);
     if (allElements.length === 0) return;
 
-    const { default: PptxGenJS } = await import("pptxgenjs");
-    const pptx = new PptxGenJS();
+    const [{ buildPptx }, { pageToSlide, fitInto, transitionOf, mediaOf: pictureMedia }] = await Promise.all([import('./pptx/write'), import('./pptx/from-yappy')]);
+    type PageInput = import('./pptx/from-yappy').PageInput;
+    type DeckSlide = import('./pptx/deck').Slide;
 
     const isSlides = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
-
+    const pages: PageInput[] = [];
     if (isSlides) {
         const sortedSlides = [...store.slides].sort((a, b) => a.order - b.order);
-
-        // Set presentation size from first slide's aspect ratio (inches, 10" base width)
-        const firstSlide = sortedSlides[0];
-        const slideW = 10;
-        const slideH = 10 * (firstSlide.dimensions.height / firstSlide.dimensions.width);
-        pptx.defineLayout({ name: 'CUSTOM', width: slideW, height: slideH });
-        pptx.layout = 'CUSTOM';
-
-        for (const slide of sortedSlides) {
-            const { width: sW, height: sH } = slide.dimensions;
-            const { x: sX, y: sY } = slide.spatialPosition;
-
-            // One page owns each element — the same rule the editor and the PNG
-            // exporter use, so a shape straddling the gutter between two pages is not
-            // dropped from every page by a bare centre test.
-            const pageIdx = sortedSlides.indexOf(slide);
-            const slideElements = allElements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx);
-
-            // Render to offscreen canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = sW * scale;
-            canvas.height = sH * scale;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) continue;
-
-            if (background) {
-                ctx.fillStyle = slide.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff');
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-            ctx.scale(scale, scale);
-            ctx.translate(-sX, -sY);
-
-            const rc = rough.canvas(canvas);
-            slideElements.forEach(el => {
-                renderElWithEffects(rc, ctx, el);
+        sortedSlides.forEach((slide, pageIdx) => {
+            // One page owns each element — the same rule the editor and the PNG exporter use, so
+            // a shape straddling the gutter between two pages is not dropped from every page.
+            const { width: w, height: h } = slide.dimensions;
+            pages.push({
+                x: slide.spatialPosition.x, y: slide.spatialPosition.y, w, h, name: slide.name, slide,
+                elements: allElements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx),
             });
-
-            // Per-slide dimensions in inches (in case slides differ in size)
-            const thisSlideW = 10;
-            const thisSlideH = 10 * (sH / sW);
-
-            const pptSlide = pptx.addSlide();
-            pptSlide.addImage({
-                data: canvas.toDataURL('image/png'),
-                x: 0,
-                y: 0,
-                w: thisSlideW,
-                h: thisSlideH,
-            });
-        }
+        });
     } else {
-        // Single slide: selection or infinite canvas
         let elements = allElements;
         if (onlySelected) {
             if (store.selection.length === 0) return;
             elements = elements.filter(el => store.selection.includes(el.id));
         }
         if (elements.length === 0) return;
-
-        const __eb = elementsBounds(elements);
-        let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
-
+        const b = elementsBounds(elements);
         const padding = 20;
-        const width = maxX - minX + padding * 2;
-        const height = maxY - minY + padding * 2;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width * scale;
-        canvas.height = height * scale;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        if (background) {
-            ctx.fillStyle = documentBackground();
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        ctx.scale(scale, scale);
-        ctx.translate(-minX + padding, -minY + padding);
-
-        const rc = rough.canvas(canvas);
-        elements.forEach(el => {
-            renderElWithEffects(rc, ctx, el);
-        });
-
-        const slideW = 10;
-        const slideH = 10 * (height / width);
-        pptx.defineLayout({ name: 'CUSTOM', width: slideW, height: slideH });
-        pptx.layout = 'CUSTOM';
-
-        const pptSlide = pptx.addSlide();
-        pptSlide.addImage({
-            data: canvas.toDataURL('image/png'),
-            x: 0,
-            y: 0,
-            w: slideW,
-            h: slideH,
+        pages.push({
+            x: b.minX - padding, y: b.minY - padding, w: b.maxX - b.minX + padding * 2, h: b.maxY - b.minY + padding * 2,
+            background: background ? documentBackground() : undefined, elements,
         });
     }
 
-    await pptx.writeFile({ fileName: 'yappy_drawing.pptx' });
+    const deckW = pages[0].w, deckH = pages[0].h;
+    const report = { native: 0, pictures: 0 };
+    const hooks = {
+        rasterize: (els: DrawingElement[]) => rasterizePosed(els, Math.max(2, scale)),
+        rasterizeBackground: (slide: import('../types/slide-types').Slide) => {
+            const { width: w, height: h } = slide.dimensions;
+            const k = Math.max(0.05, Math.min(scale, MAX_RASTER_EDGE / Math.max(w, h)));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(w * k)); canvas.height = Math.max(1, Math.round(h * k));
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return null;
+            ctx.scale(k, k);
+            renderSlideBackground(ctx, rough.canvas(canvas), slide, 0, 0, w, h, store.theme);
+            try { return canvas.toDataURL('image/png'); } catch { return null; }
+        },
+    };
+
+    const slides: DeckSlide[] = [];
+    for (const page of pages) {
+        let slide: DeckSlide;
+        if (mode === 'pictures') {
+            const k = Math.max(0.05, Math.min(scale, MAX_RASTER_EDGE / Math.max(page.w, page.h)));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(page.w * k)); canvas.height = Math.max(1, Math.round(page.h * k));
+            const ctx = canvas.getContext('2d');
+            if (!ctx) continue;
+            ctx.scale(k, k);
+            if (background) {
+                if (page.slide) renderSlideBackground(ctx, rough.canvas(canvas), page.slide, 0, 0, page.w, page.h, store.theme);
+                else { ctx.fillStyle = page.background || documentBackground(); ctx.fillRect(0, 0, page.w, page.h); }
+            }
+            ctx.translate(-page.x, -page.y);
+            const rc = rough.canvas(canvas);
+            page.elements.forEach(el => renderElWithEffects(rc, ctx, el));
+            const media = pictureMedia(canvas.toDataURL('image/png'));
+            slide = {
+                name: page.name, transition: transitionOf(page.slide?.transition),
+                items: media ? [{ kind: 'picture', id: 2, name: page.name || 'Page', x: 0, y: 0, w: page.w, h: page.h, media }] : [],
+            };
+        } else {
+            slide = pageToSlide(page, hooks, report);
+            if (!background) slide.background = undefined;
+        }
+        slide.fit = fitInto(page.w, page.h, deckW, deckH);
+        slides.push(slide);
+    }
+
+    const bytes = buildPptx({ width: deckW, height: deckH, slides, title: 'YappyDraw presentation' });
+    if (mode === 'editable' && report.pictures > 0) showToast(t('pptxExport.someAsPictures', { count: report.pictures }), 'info', 6000);
+    const blob = new Blob([bytes as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    if (download) {
+        await saveBlob(blob, 'yappy_drawing.pptx', {
+            description: 'PowerPoint presentation',
+            accept: { 'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'] },
+        });
+    }
+    return blob;
 };

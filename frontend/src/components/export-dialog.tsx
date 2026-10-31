@@ -2,7 +2,7 @@ import { type Component, createSignal, Show, For, createEffect, onCleanup, untra
 import { X } from "lucide-solid";
 import { store, pageNoun } from "../store/app-store";
 import { isPagedDocType } from "../types/slide-types";
-import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg, ensureExportImages, exportPageForPlatform } from "../utils/export";
+import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg, ensureExportImages, exportPageForPlatform, type PptxMode } from "../utils/export";
 import { socialTargetsForPage, type SocialTarget } from "../utils/social-export";
 import { t, currentLocale } from "../i18n";
 import type { PrintProfileId } from "../utils/color-management";
@@ -26,6 +26,8 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
     const [pdfProfile, setPdfProfile] = createSignal('fogra39' as PrintProfileId);
     const [pdfX, setPdfX] = createSignal(false);
     const [pdfTitle, setPdfTitle] = createSignal('');
+    // Editable by default: real PowerPoint shapes and text. "Pictures" makes one image per slide.
+    const [pptxMode, setPptxMode] = createSignal('editable' as PptxMode);
     const [scale, setScale] = createSignal<number>(2);
     const [hasBackground, setHasBackground] = createSignal(true);
     const [onlySelected, setOnlySelected] = createSignal(store.selection.length > 0);
@@ -130,7 +132,11 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                 showToast(t('pdfExport.failed', { message: err instanceof Error ? err.message : String(err) }), 'error', 10000);
             }
         } else if (format() === 'pptx') {
-            exportToPptx(scale(), hasBackground(), onlySelected());
+            try {
+                await exportToPptx(scale(), hasBackground(), onlySelected(), pptxMode());
+            } catch (err) {
+                showToast(t('pptxExport.failed', { message: err instanceof Error ? err.message : String(err) }), 'error', 10000);
+            }
         } else if (format() === 'gif') {
             const m = await import('../utils/recording-manager');
             if (isPaged()) {
@@ -301,6 +307,17 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                     animations; 20–24 is worth it for fast motion.
                                     <Show when={isPaged()}> Roughly {Math.round(videoSeconds() * gifFps())} frames.</Show>
                                 </span>
+                            </div>
+                        </Show>
+
+                        <Show when={format() === 'pptx'}>
+                            <div class="option-group">
+                                <label>{t('pptxExport.mode')}</label>
+                                <div class="scale-group">
+                                    <button class={`scale-btn ${pptxMode() === 'editable' ? 'active' : ''}`} aria-pressed={pptxMode() === 'editable'} onClick={() => setPptxMode('editable')}>{t('pptxExport.editable')}</button>
+                                    <button class={`scale-btn ${pptxMode() === 'pictures' ? 'active' : ''}`} aria-pressed={pptxMode() === 'pictures'} onClick={() => setPptxMode('pictures')}>{t('pptxExport.pictures')}</button>
+                                </div>
+                                <span class="hint">{pptxMode() === 'editable' ? t('pptxExport.editableHint') : t('pptxExport.picturesHint')}</span>
                             </div>
                         </Show>
 

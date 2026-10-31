@@ -4,7 +4,7 @@ import { getShapeGeometry } from "../../utils/shape-geometry";
 import { geometryToDs } from "../../utils/geometry-to-ds";
 import { resolveDash } from "../../utils/stroke-dash";
 import { getFontString, measureContainerText, containerTextAvailableWidth } from "../../utils/text-utils";
-import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
+import { layoutRichText, buildSpanFontString, listMarkerText, listMarkerX, listMarkerStyle, alignedLineX } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
 import { drawTextAlongPath, getElementTextPath, isClosedShapeForText, textPathOptionsFor, curvedTextColor } from "../../utils/text-on-path";
@@ -1047,6 +1047,7 @@ export class RenderPipeline {
         // Accumulate y offset per line
         let lineY = startY;
         for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
+            lineY += layout.lineGaps[lineIdx] ?? 0;
             const lineHeight = layout.lineHeights[lineIdx];
             const lineSegments = layout.segments.filter(s => s.lineIndex === lineIdx);
 
@@ -1058,18 +1059,10 @@ export class RenderPipeline {
             }
 
             // Calculate x offset based on text alignment
-            let xOffset: number;
-            if (textAlign === 'left') {
-                xOffset = cx - maxWidth / 2;
-            } else if (textAlign === 'right') {
-                xOffset = cx + maxWidth / 2 - lineWidth;
-            } else {
-                xOffset = cx - lineWidth / 2;
-            }
+            const xOffset = alignedLineX(layout.lineAligns[lineIdx], textAlign, lineWidth, cx - maxWidth / 2, cx, cx + maxWidth / 2);
 
             const baselineY = lineY + lineHeight / 2;
 
-            const INDENT_SIZE = 20;
 
             for (const seg of lineSegments) {
                 const span = seg.span;
@@ -1083,19 +1076,12 @@ export class RenderPipeline {
                 // Word-wrapped continuation lines don't carry the flag, so they get no
                 // second bullet.
                 if (seg.listMarker && span.listType && span.listType !== 'none') {
-                    const listLevel = span.listLevel || 0;
-                    const indent = listLevel * INDENT_SIZE;
-                    const markerX = xOffset + indent;
-
-                    if (span.listType === 'bullet') {
-                        // Draw bullet point
-                        const bulletChar = '•';
-                        renderer.fillText(bulletChar, markerX, baselineY);
-                    } else if (span.listType === 'ordered') {
-                        // Draw number
-                        const number = `${span.listIndex || 1}.`;
-                        renderer.fillText(number, markerX, baselineY);
-                    }
+                    const m = listMarkerStyle(span, defaults, color);
+                    renderer.font = m.font;
+                    renderer.fillStyle = this.adjustColor(m.color, isDarkMode);
+                    renderer.fillText(listMarkerText(span), xOffset + listMarkerX(span), baselineY);
+                    renderer.font = buildSpanFontString(span, defaults);
+                    renderer.fillStyle = this.adjustColor(color, isDarkMode);
                 }
 
                 renderer.fillText(seg.text, xOffset + seg.x, baselineY);

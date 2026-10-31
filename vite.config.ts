@@ -88,7 +88,7 @@ export default defineConfig({
           // config below, so it no longer depends on a document's filename.
           // `svg2pdf`/`pdf-vector`/`lcms`/`color-management` are the vector & CMYK PDF path
           // (utils/pdf-vector, utils/color-management): ~450 kB incl. the colour engine's WASM.
-          const LAZY_HEAVY = /(export-game|jspdf|pptxgen|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|helpdoc-|search-|svg2pdf|pdf-vector|pdf-cmyk|pdf-rewrite|pdf-x|lcms|color-management)/i
+          const LAZY_HEAVY = /(export-game|jspdf|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|helpdoc-|search-|svg2pdf|pdf-vector|pdf-cmyk|pdf-rewrite|pdf-x|lcms|color-management)/i
           return {
             // `illustrations/` is ~1,600 SVGs (~4 MB) of which a user sees a handful; they
             // are fetched on demand and kept by the runtimeCaching rule below.
@@ -203,7 +203,7 @@ export default defineConfig({
     // reaches it only through a dynamic import — without pre-bundling, the browser
     // hits its bare `require(...)` and throws "require is not defined".
     include: [
-      'lucide-solid', 'roughjs', 'jspdf', 'pptxgenjs',
+      'lucide-solid', 'roughjs', 'jspdf',
       'mathjax-full/js/mathjax.js',
       'mathjax-full/js/input/tex.js',
       'mathjax-full/js/output/svg.js',
@@ -217,11 +217,11 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        // NOTE: jspdf/pptxgenjs are deliberately NOT listed here. A manualChunks
-        // entry forces those modules into a chunk that is reachable from the entry,
-        // which put ~744 kB of export-only vendor code on the cold-load critical path
-        // even after exportToPdf/exportToPptx switched to dynamic imports. Left to
-        // Rollup, they land in a chunk pulled in only when an export actually runs.
+        // NOTE: jspdf is deliberately NOT listed here. A manualChunks entry forces a
+        // module into a chunk that is reachable from the entry, which put ~744 kB of
+        // export-only vendor code (jspdf + the since-removed pptxgenjs) on the cold-load
+        // critical path even after exportToPdf/exportToPptx switched to dynamic imports.
+        // Left to Rollup, it lands in a chunk pulled in only when an export actually runs.
         manualChunks: {
           // lucide-solid is NOT listed: naming it forces the ENTIRE icon package into
           // the chunk, defeating tree-shaking of the ~40 icons actually imported at

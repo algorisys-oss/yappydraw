@@ -1,4 +1,4 @@
-import { s as o, b as m, d as b, z as W, h as z, g as a, i as U, j as B } from "./index-BhrKqu0C.js";
+import { s as o, b as m, d as b, z as W, h as z, g as a, i as U, j as B } from "./index-Dxj5fgvO.js";
 const h = /* @__PURE__ */ new Set(), x = [], G = {
   ArrowLeft: "left",
   a: "left",
@@ -19,17 +19,17 @@ const h = /* @__PURE__ */ new Set(), x = [], G = {
   x: "b",
   X: "b",
   Shift: "b"
-}, Q = (e) => {
+}, _ = (e) => {
   h.has(e) || (h.add(e), I(e));
 }, q = (e) => {
   h.delete(e);
 }, I = (e) => {
-  for (const i of x) i.button === e && L(i.fn);
+  for (const i of x) i.button === e && $(i.fn);
 }, u = { x: 0, y: 0, down: !1 }, v = [], ee = (e, i) => {
   u.x = e, u.y = i;
 }, te = (e, i) => {
   u.x = e, u.y = i, u.down = !0;
-  for (const s of v) L(() => s(e, i));
+  for (const s of v) $(() => s(e, i));
 }, ne = () => {
   u.down = !1;
 };
@@ -109,38 +109,38 @@ const C = (e, i) => {
 };
 let g = null, y = null, w = [], k = 0, M = 0, c = null, T = !1, F = "", f = 0;
 const N = "SCORE ";
-let $ = null, V = !1, E = () => {
+let R = null, V = !1, E = () => {
 };
 const ie = (e) => {
   E = e;
 }, J = (e) => {
-  $ = e, E();
+  R = e, E();
 }, P = (e) => {
   T = e, V = e, E();
-}, L = (e) => {
+}, $ = (e) => {
   try {
     e();
   } catch (i) {
     console.error("[arcade] script error:", i), m(`Game error: ${i?.message || i}`, "error"), p();
   }
-}, K = (e) => {
+}, L = (e) => {
   if (e.key === "Escape") {
     p();
     return;
   }
   const i = G[e.key];
   i && (e.preventDefault(), h.has(i) || (h.add(i), I(i)));
-}, O = (e) => {
+}, K = (e) => {
   const i = G[e.key];
   i && h.delete(i);
 };
 let j = 0;
-function X() {
+function Q() {
   const e = o.slides[o.activeSlideIndex] || o.slides[0];
   return e ? { x: e.spatialPosition.x, y: e.spatialPosition.y, width: e.dimensions.width, height: e.dimensions.height } : { x: 0, y: 0, width: 800, height: 600 };
 }
-function Y() {
-  const e = X(), i = {
+function X() {
+  const e = Q(), i = {
     strokeColor: "transparent",
     strokeWidth: 0,
     strokeStyle: "solid",
@@ -165,7 +165,7 @@ function Y() {
       ...i,
       ...S
     };
-    return a("elements", (R) => [...R, D]), new A(D.id);
+    return a("elements", (O) => [...O, D]), new A(D.id);
   };
   return {
     x: e.x,
@@ -240,17 +240,17 @@ function Y() {
       t && B(t.id);
     },
     playAnim: (n, t) => {
-      n?.alive && import("./index-BhrKqu0C.js").then((r) => r.at).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
+      n?.alive && import("./index-Dxj5fgvO.js").then((r) => r.aQ).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
       }));
     },
     goToPage: (n) => {
       n >= 0 && n < o.slides.length && U(n);
     },
     sound: (n) => {
-      import("./index-BhrKqu0C.js").then((t) => t.au).then((t) => t.playSfx(n));
+      import("./index-Dxj5fgvO.js").then((t) => t.aR).then((t) => t.playSfx(n));
     },
     music: (n) => {
-      import("./index-BhrKqu0C.js").then((t) => t.au).then((t) => n ? t.startMusic() : t.stopMusic());
+      import("./index-Dxj5fgvO.js").then((t) => t.aR).then((t) => n ? t.startMusic() : t.stopMusic());
     },
     end: (n) => {
       if (P(!0), n) {
@@ -272,7 +272,7 @@ function Y() {
   };
 }
 const re = () => o.gameActive;
-function Z(e) {
+function Y(e) {
   o.gameActive && p();
   const i = e ?? o.gameScript;
   if (!i?.trim())
@@ -283,7 +283,7 @@ function Z(e) {
     activeSlideIndex: o.activeSlideIndex,
     appMode: o.appMode,
     viewState: { ...o.viewState }
-  }, F = i, w = [], x.length = 0, v.length = 0, h.clear(), c = null, f = 0, P(!1), $ = null;
+  }, F = i, w = [], x.length = 0, v.length = 0, h.clear(), c = null, f = 0, P(!1), R = null;
   let s;
   try {
     s = new Function("game", `'use strict';
@@ -295,11 +295,11 @@ ${i}`);
     a("selection", []), a("gameActive", !0), a("appMode", "presentation");
   }), W();
   try {
-    s(Y());
+    s(X());
   } catch (t) {
     return m(`Game error: ${t?.message || t}`, "error"), p(), !1;
   }
-  window.addEventListener("keydown", K, !0), window.addEventListener("keyup", O, !0), k = performance.now(), M = k;
+  window.addEventListener("keydown", L, !0), window.addEventListener("keyup", K, !0), k = performance.now(), M = k;
   const n = (t) => {
     y = requestAnimationFrame(n);
     const r = Math.min(0.05, (t - M) / 1e3);
@@ -316,7 +316,7 @@ ${i}`);
   return y = requestAnimationFrame(n), !0;
 }
 function p() {
-  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-BhrKqu0C.js").then((e) => e.au).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
+  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", L, !0), window.removeEventListener("keyup", K, !0), import("./index-Dxj5fgvO.js").then((e) => e.aR).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
     const e = g;
     g = null, b(() => {
       a("elements", JSON.parse(e.elements)), a("selection", e.selection), a("activeSlideIndex", e.activeSlideIndex), a("appMode", e.appMode), a("gameActive", !1);
@@ -327,7 +327,7 @@ function p() {
 }
 function se() {
   const e = F;
-  p(), e && Z(e);
+  p(), e && Y(e);
 }
 export {
   A as Sprite,
@@ -337,10 +337,10 @@ export {
   ne as gamePointerUp,
   re as isGameRunning,
   ie as onGameUiSignal,
-  Q as padPress,
+  _ as padPress,
   q as padRelease,
-  $ as padVisibleOverride,
+  R as padVisibleOverride,
   se as restartGame,
-  Z as startGame,
+  Y as startGame,
   p as stopGame
 };

@@ -4,7 +4,7 @@ version = "0.8.58"
 description = "Yappy — desktop wrapper for the diagramming & vector-illustration app"
 authors = ["Algorisys"]
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.88"
 
 # The library holds the app entry point; the binary (main.rs) is a thin shim
 # that calls into it, so the same code can also drive mobile targets later.

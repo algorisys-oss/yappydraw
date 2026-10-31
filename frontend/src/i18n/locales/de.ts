@@ -1324,6 +1324,21 @@ export const de: Dictionary = {
         exit: 'Druckvorschau beenden',
         failed: 'Die Druckvorschau konnte nicht gestartet werden.',
     },
+    pptxImport: {
+        loading: 'Präsentation wird geöffnet …',
+        done: '{{ slides }} Folie(n) mit {{ elements }} Objekt(en) geöffnet.',
+        partial: '{{ slides }} Folie(n) geöffnet. {{ count }} Element(e) ließen sich nicht exakt importieren (Diagramme, SmartArt, nicht unterstützte Bilder) — die Liste steht in der Browserkonsole.',
+        failed: 'Die Präsentation konnte nicht geöffnet werden: {{ message }}',
+    },
+    pptxExport: {
+        mode: 'PowerPoint-Typ',
+        editable: 'Bearbeitbare Formen',
+        editableHint: 'Formen, Text, Linien und Bilder werden zu echten PowerPoint-Objekten, die du bearbeiten kannst. Handgezeichnete Striche werden sauber, Effekte, Masken und besondere Füllungen werden als Bilder eingefügt.',
+        pictures: 'Bilder',
+        picturesHint: 'Ein Bild pro Folie. Sieht genau aus wie die Zeichenfläche, handgezeichnete Striche inklusive, aber nichts auf der Folie lässt sich bearbeiten.',
+        someAsPictures: '{{ count }} Objekt(e), die PowerPoint nicht nativ darstellen kann (Effekte, Masken, besondere Füllungen), wurden als Bilder eingefügt.',
+        failed: 'PowerPoint-Export fehlgeschlagen: {{ message }}',
+    },
     pdfExport: {
         mode: 'PDF-Typ',
         vector: 'Vektor',

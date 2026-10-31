@@ -1323,6 +1323,21 @@ export const es: Dictionary = {
         exit: 'Salir de la vista previa de impresión',
         failed: 'No se pudo iniciar la vista previa de impresión.',
     },
+    pptxImport: {
+        loading: 'Abriendo la presentación…',
+        done: 'Se abrieron {{ slides }} diapositiva(s) con {{ elements }} objeto(s).',
+        partial: 'Se abrieron {{ slides }} diapositiva(s). {{ count }} elemento(s) no se pudieron importar con exactitud (gráficos, SmartArt, imágenes no compatibles); la lista está en la consola del navegador.',
+        failed: 'No se pudo abrir la presentación: {{ message }}',
+    },
+    pptxExport: {
+        mode: 'Tipo de PowerPoint',
+        editable: 'Formas editables',
+        editableHint: 'Las formas, el texto, las líneas y las imágenes se convierten en objetos reales de PowerPoint que puedes editar. Los trazos a mano salen limpios, y los efectos, máscaras y rellenos especiales se colocan como imágenes.',
+        pictures: 'Imágenes',
+        picturesHint: 'Una imagen por diapositiva. Se ve exactamente como el lienzo, trazos a mano incluidos, pero no se puede editar nada de la diapositiva.',
+        someAsPictures: '{{ count }} objeto(s) que PowerPoint no puede dibujar de forma nativa (efectos, máscaras, rellenos especiales) se colocaron como imágenes.',
+        failed: 'Falló la exportación a PowerPoint: {{ message }}',
+    },
     pdfExport: {
         mode: 'Tipo de PDF',
         vector: 'Vectorial',

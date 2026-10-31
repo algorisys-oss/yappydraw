@@ -1,5 +1,25 @@
 # Bug Fixes Log
 
+## 2026-10-29 — Desktop: rustls security advisories (Dependabot)
+
+### 459. Desktop updater used rustls 0.23.41 (four advisories)
+
+**Cause:** `tauri-plugin-updater` → `reqwest` → `rustls`. The lockfile was on 0.23.41, below the
+fixed 0.23.45/0.23.46 (handshake messages accepted across encryption levels, secrets in Debug
+output, unbounded Brotli certificate decompression, ServerHello key-share poisoning). Plain
+`cargo update -p rustls` stopped at 0.23.43 because the resolver honours the crate's stale
+`rust-version = "1.77.2"`; `--precise 0.23.46` was needed.
+
+**Fix:** `desktop/src-tauri/Cargo.lock`: rustls 0.23.46, rustls-webpki 0.103.16. `cargo check`
+passes. Not fixable from here: the critical `zip` advisory (the updater pins zip 4.x; fixed in 9.0.5,
+Windows-only, and the archive is signature-checked before it is unpacked) and `deepmerge`
+(build tooling only, no fixed version).
+
+**Follow-up:** `rust-version` raised to `1.88` in `desktop/src-tauri/Cargo.toml`, the highest MSRV
+already in the lockfile (darling, time, plist, serde_with), so the declared floor is true again and
+future `cargo update`s are no longer held back. The lockfile is unchanged; `cargo check --locked`
+passes on rustc 1.95.
+
 ## 2026-10-29 — Pan cursor, vanishing connectors, arrows pulled back (user reports)
 
 ### 455. The Pan tool's hand cursor stayed on after switching to another tool
@@ -11317,3 +11337,67 @@ Save dialog via a stubbed `showSaveFilePicker`); `tests/eyedropper.spec.ts` upda
   returns true for an unloaded face. `fontStretch` also now triggers a re-fit. Covered by
   `tests/text-weights-axis-scale.spec.ts` (Poppins, whose weights are separate files; Inter is one
   variable file and can't reproduce it). The test fails with the fix disabled.
+
+## PowerPoint export was one picture per slide; SVG recorder drew ellipses and rounded rects wrong
+
+- **PPTX export wrote each slide as one PNG** (pptxgenjs `addImage`): nothing was editable, text
+  was not searchable, transitions were dropped. It now writes native shapes, text, connectors,
+  pictures, groups, backgrounds and transitions through our own OOXML writer (`utils/pptx/`), with
+  the old behaviour kept as the **Pictures** option. pptxgenjs is removed.
+- **PPTX: pages of a different size were stretched.** The slide size came from page 1 and every
+  page's image was placed at 10″ × (its own aspect), overflowing or leaving a band. Pages are now
+  scaled to fit and centred.
+- **`SvgRenderer.ellipse` ignored the start/end angle and rotation**, drawing every call as a full
+  ellipse — a BPMN data store's half-ellipse caps became two whole ellipses joined by a diagonal.
+  Partial and rotated arcs are now drawn as canvas draws them.
+- **`SvgRenderer.roundRect` used quadratic corners and only the first radius**, turning a
+  circle-radius badge into a squircle and ignoring per-corner rounding. Now circular arcs, all
+  1–4 radius forms, scaled down together when they would overlap (the canvas rule).
+- **`SvgRenderer.arcTo` failed the whole recording**, so any shape with `arcTo` corners fell back
+  to a raster in SVG/PDF export. It now draws the tangent arc.
+- Covered by `tests/pptx-export.spec.ts` (incl. a LibreOffice round trip when `soffice` is
+  installed), `frontend/src/utils/pptx/write.test.ts`, and the existing SVG/PDF export specs.
+
+## PowerPoint import: bullets were all round dots, SmartArt was a placeholder
+
+- **Bullets lost their look on import.** Every bullet came in as "•" at Yappy's 20 px indent: the
+  template's Wingdings squares and arrowheads, bullet colour and size, numbering style (a) / iv.),
+  start number and hanging indent were dropped, and paragraphs had no space between them. Rich-text
+  spans now carry `listMarker`, `listNumberStyle`/`listNumberSuffix`, `listMarkerColor`,
+  `listMarkerScale`, `listIndent`/`listMarkerIndent` and `paragraphSpaceBefore`; the canvas, SVG
+  export and PPTX export all draw them, and the editor keeps them.
+- **Editing a numbered list renumbered it from 1.** `spansToHtml` wrote `<ol>` without `start`, so
+  an imported run starting at 3 restarted after any edit. It now writes and reads `start`.
+- **SmartArt imported as a grey "SmartArt diagram" frame.** It now imports the diagram's saved
+  drawing as a group of editable shapes and labels (`readPptx` → `smartArtDrawing`).
+- **Shape text with deep insets ignored them.** A native shape's label is laid out by Yappy's own
+  padding, so PowerPoint insets (SmartArt's 57 px top inset) put the text over the header above
+  it. Text with its own box or insets past PowerPoint's defaults is now a separate text element.
+- Covered by `frontend/src/utils/pptx/read.test.ts` (bullets, spacing, SmartArt),
+  `frontend/src/utils/rich-text-list-marker.test.ts` and `tests/pptx-import.spec.ts`.
+
+### PowerPoint import: mixed paragraph alignment (2026-10-31)
+
+- **A centred heading over left-aligned lines came in left-aligned.** Yappy aligned a whole text
+  element, so import took the alignment most of the text used. Rich text spans now carry
+  `paragraphAlign`; layout, canvas and SVG rendering place each line by its paragraph's alignment,
+  and PPTX import/export map it to and from `a:pPr algn`.
+- Covered by `frontend/src/utils/rich-text-paragraph-align.test.ts` and
+  `tests/pptx-import.spec.ts` ("a paragraph aligned differently from its text box keeps its alignment").
+
+### Rich text lists: wide numbers overlapped their text (2026-10-31)
+
+- **"IV.Roman", "a)Sub", "1.First".** A list item's text started a fixed 20 px after the marker,
+  so at 28 px a roman numeral or "a)" ran into the text, on the canvas, in SVG and in PowerPoint
+  export alike. The text now clears the measured marker by 0.3 em (never closer than the old
+  20 px, so small fonts are unchanged); an explicit imported hanging indent is kept as it is.
+  PPTX export uses the same helper (`listTextXWith`), so the file puts the text where the canvas drew it.
+- Found by the PowerPoint test deck; covered by `frontend/src/utils/rich-text-list-marker.test.ts`.
+
+### OSS mirror stopped building: `@types/node` stripped (2026-10-31, v0.8.292 release)
+
+- `publish-oss.sh --verify` failed with `Cannot find type definition file for 'node'`. The script
+  deletes `@types/node` from the mirror's package.json as a "server" dev dependency, but the client
+  build needs it (`tsconfig.node.json`, `frontend/src/wasm/vite-plugin-as.ts`). It had been
+  arriving transitively through `pptxgenjs`, which v0.8.292 removed. Dropped from the strip list.
+  Caught by `--verify` before anything was pushed; the live site was never affected.

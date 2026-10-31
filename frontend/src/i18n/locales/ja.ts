@@ -1323,6 +1323,21 @@ export const ja: Dictionary = {
         exit: '印刷プレビューを終了',
         failed: '印刷プレビューを開始できませんでした。',
     },
+    pptxImport: {
+        loading: 'プレゼンテーションを開いています…',
+        done: '{{ slides }} 枚のスライド（{{ elements }} 個のオブジェクト）を開きました。',
+        partial: '{{ slides }} 枚のスライドを開きました。{{ count }} 個の項目（グラフ、SmartArt、未対応の画像）は正確に取り込めませんでした。一覧はブラウザーのコンソールにあります。',
+        failed: 'プレゼンテーションを開けませんでした: {{ message }}',
+    },
+    pptxExport: {
+        mode: 'PowerPoint の形式',
+        editable: '編集可能な図形',
+        editableHint: '図形・テキスト・線・画像が、編集できる PowerPoint のオブジェクトになります。手描きの線はきれいな線になり、エフェクト・マスク・特殊な塗りは画像として配置されます。',
+        pictures: '画像',
+        picturesHint: 'スライドごとに 1 枚の画像。手描きの線も含めてキャンバスどおりに見えますが、スライド上のものは編集できません。',
+        someAsPictures: 'PowerPoint でそのまま描けない {{ count }} 個のオブジェクト（エフェクト、マスク、特殊な塗り）を画像として配置しました。',
+        failed: 'PowerPoint への書き出しに失敗しました: {{ message }}',
+    },
     pdfExport: {
         mode: 'PDF の種類',
         vector: 'ベクター',

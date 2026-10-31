@@ -39,7 +39,7 @@ import {
 import { setPrintPreview, printPreviewActive } from './utils/print-preview';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
-import { exportToSvg, exportToPdf, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
+import { exportToSvg, exportToPdf, exportToPptx, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
 import { socialTargetsForPage, SOCIAL_TARGETS } from "./utils/social-export";
 import { GRID_STYLES, gridSnap, gridUnitToPx } from "./utils/grid-lattice";
 import { openLayoutGuidesDialog } from "./components/layout-guides-dialog";
@@ -2458,6 +2458,60 @@ export const YappyAPI = {
     } = {}): Promise<Blob | undefined> {
         const { vector = true, onlySelected = false, background = true, scale = 2, download = true, colorMode = 'rgb', profile, pdfx, title } = options;
         return exportToPdf(scale, background, onlySelected, { vector, download, colorMode, profile, pdfx, title });
+    },
+
+    /**
+     * Export to PowerPoint (.pptx). Resolves to the file as a Blob (undefined when there is
+     * nothing to export); `download: false` skips the save dialog.
+     *
+     * `mode: 'editable'` (default) writes native PowerPoint objects: shapes keep their outline
+     * (rectangles, rounded rectangles and ellipses as PowerPoint's own presets, every other shape
+     * as a custom shape), text stays text with its font, size, colour, bold/italic/underline,
+     * alignment, bullets and numbering; straight lines become connectors glued to the shapes they
+     * touch; curves and elbows become paths with arrowheads; images keep their crop and opacity;
+     * groups stay groups; slide backgrounds and transitions (fade, slide → Push, zoom) carry over.
+     * Hand-drawn (sketch) strokes come out clean, and hatched fills become pattern fills. Objects
+     * PowerPoint can't draw — shadows, glows, masks, mesh/pattern/image fills, 3-D, warps, image
+     * filters, text on a path, UML class boxes — are placed as pictures of just that object.
+     *
+     * `mode: 'pictures'` writes one image per slide: pixel-exact, but nothing is editable.
+     *
+     * Paged documents get one slide per page, sized from the first page (another-sized page is
+     * scaled to fit and centred). The infinite canvas, or `onlySelected`, is one slide.
+     *
+     *   await Yappy.exportPPTX();                              // editable
+     *   await Yappy.exportPPTX({ mode: 'pictures', scale: 3 }); // one sharp image per slide
+     */
+    exportPPTX(options: {
+        mode?: 'editable' | 'pictures'; onlySelected?: boolean; background?: boolean; scale?: number; download?: boolean;
+    } = {}): Promise<Blob | undefined> {
+        const { mode = 'editable', onlySelected = false, background = true, scale = 2, download = true } = options;
+        return exportToPptx(scale, background, onlySelected, mode, download);
+    },
+
+    /**
+     * Open a PowerPoint file (.pptx / .potx / .ppsx) as a new slides document, replacing the
+     * current one (like File ▸ Open). **Preview** — in the UI it is behind Dev Mode.
+     *
+     * Each slide becomes a page at the presentation's slide size. Rectangles, rounded rectangles,
+     * ellipses, diamonds and triangles become those Yappy shapes; every other PowerPoint shape
+     * becomes a vector path with its exact outline (from ECMA-376's preset definitions). Text
+     * keeps its font size, colour, bold/italic/underline and alignment; bullets and numbering keep
+     * their glyph, colour, size, numbering style, start, indents and paragraph spacing (as the
+     * RichTextSpan `listMarker*` / `listNumber*` / `listIndent` / `paragraphSpaceBefore` fields), and a
+     * paragraph aligned differently from its text box keeps that alignment (`paragraphAlign`);
+     * theme colours, slide-master and layout placeholders and the master's own artwork are
+     * resolved. SmartArt becomes a group of the shapes PowerPoint last drew for it. Connectors
+     * become lines/arrows bound to the shapes they were glued to; pictures keep crop and
+     * transparency; tables become groups of cells; groups stay groups; backgrounds and
+     * transitions carry over. Charts and embedded objects become labelled frames, and
+     * EMF/WMF/TIFF pictures placeholders — listed in `warnings`.
+     *
+     *   const { stats, warnings } = await Yappy.importPPTX(file);   // a File, Blob or ArrayBuffer
+     */
+    async importPPTX(input: Blob | ArrayBuffer | Uint8Array, name?: string): Promise<{ stats: { slides: number; elements: number; pictures: number; paths: number }; warnings: string[] }> {
+        const { importPptx } = await import('./utils/pptx/import');
+        return importPptx(input, name);
     },
 
     /**

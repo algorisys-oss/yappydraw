@@ -4,10 +4,75 @@ import { lineHeightPx } from './text-line-height';
  * Conversion between DOM ↔ RichTextSpan[], layout engine for canvas rendering.
  */
 
-import type { RichTextSpan, FontFamily } from '../types';
+import type { RichTextSpan, FontFamily, ListNumberStyle, ListNumberSuffix, TextAlign } from '../types';
 import { resolveFontFamily, reverseFontFamily } from './text-utils';
 import type { IRenderer } from '../rendering/IRenderer';
 import { CanvasRenderer } from '../rendering/CanvasRenderer';
+
+// ============ List markers ============
+
+/** Indent per list level and the room left for the marker — Yappy's default list look. */
+export const LIST_INDENT_SIZE = 20;
+export const LIST_MARKER_WIDTH = 20;
+
+/** The marker overrides a list item may carry (all optional; see RichTextSpan). */
+type MarkerProps = Pick<RichTextSpan, 'listMarker' | 'listNumberStyle' | 'listNumberSuffix' | 'listMarkerColor' | 'listMarkerScale' | 'listIndent' | 'listMarkerIndent'>;
+const NUMBER_STYLES: ListNumberStyle[] = ['decimal', 'lower-alpha', 'upper-alpha', 'lower-roman', 'upper-roman'];
+const NUMBER_SUFFIXES: ListNumberSuffix[] = ['period', 'paren', 'parens', 'none'];
+const isTextAlign = (v: unknown): v is TextAlign => v === 'left' || v === 'center' || v === 'right';
+
+const MARKER_KEYS = ['listMarker', 'listNumberStyle', 'listNumberSuffix', 'listMarkerColor', 'listMarkerScale', 'listIndent', 'listMarkerIndent'] as const;
+
+/** The span's marker overrides, validated — anything malformed is dropped, never rendered. */
+export function markerPropsOf(src: Record<string, unknown> | null | undefined): MarkerProps {
+    const out: MarkerProps = {};
+    if (!src) return out;
+    const finite = (v: unknown, lo: number, hi: number) => typeof v === 'number' && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : undefined;
+    if (typeof src.listMarker === 'string' && src.listMarker) out.listMarker = [...src.listMarker].slice(0, 4).join('');
+    if (NUMBER_STYLES.includes(src.listNumberStyle as ListNumberStyle)) out.listNumberStyle = src.listNumberStyle as ListNumberStyle;
+    if (NUMBER_SUFFIXES.includes(src.listNumberSuffix as ListNumberSuffix)) out.listNumberSuffix = src.listNumberSuffix as ListNumberSuffix;
+    if (typeof src.listMarkerColor === 'string' && src.listMarkerColor.length <= 64) out.listMarkerColor = src.listMarkerColor;
+    const scale = finite(src.listMarkerScale, 0.25, 4); if (scale !== undefined) out.listMarkerScale = scale;
+    const ind = finite(src.listIndent, 0, 4000); if (ind !== undefined) out.listIndent = ind;
+    const mind = finite(src.listMarkerIndent, 0, 4000); if (mind !== undefined) out.listMarkerIndent = mind;
+    return out;
+}
+
+const toAlpha = (n: number, upper: boolean) => {
+    let s = '';
+    for (let k = Math.max(1, Math.floor(n)); k > 0; k = Math.floor((k - 1) / 26)) s = String.fromCharCode(97 + ((k - 1) % 26)) + s;
+    return upper ? s.toUpperCase() : s;
+};
+const toRoman = (n: number, upper: boolean) => {
+    let k = Math.max(1, Math.min(3999, Math.floor(n))), s = '';
+    for (const [v, r] of [[1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']] as const) {
+        while (k >= v) { s += r; k -= v; }
+    }
+    return upper ? s.toUpperCase() : s;
+};
+
+/** The text drawn before a list item: its bullet glyph, or its formatted number. */
+export function listMarkerText(span: RichTextSpan): string {
+    if (span.listType === 'bullet') return span.listMarker || '\u2022';
+    if (span.listType !== 'ordered') return '';
+    const n = span.listIndex || 1;
+    const st = span.listNumberStyle;
+    const num = st === 'lower-alpha' ? toAlpha(n, false) : st === 'upper-alpha' ? toAlpha(n, true)
+        : st === 'lower-roman' ? toRoman(n, false) : st === 'upper-roman' ? toRoman(n, true) : String(n);
+    const sfx = span.listNumberSuffix;
+    return sfx === 'paren' ? `${num})` : sfx === 'parens' ? `(${num})` : sfx === 'none' ? num : `${num}.`;
+}
+
+/** Where the marker starts, in px from the text area's left edge. */
+export function listMarkerX(span: RichTextSpan): number {
+    return span.listMarkerIndent ?? (span.listLevel || 0) * LIST_INDENT_SIZE;
+}
+
+/** The marker's own font size and colour (PowerPoint bullets are often smaller and accent-coloured). */
+export function listMarkerStyle(span: RichTextSpan, defaults: { fontSize?: number; fontFamily?: string }, textColor: string) {
+    const size = (span.fontSize || defaults.fontSize || 28) * (span.listMarkerScale ?? 1);
+    return { font: buildSpanFontString({ ...span, fontSize: size }, defaults), size, color: span.listMarkerColor || textColor };
+}
 
 // ============ Span ↔ HTML Conversion ============
 
@@ -30,6 +95,9 @@ function spanInlineHtml(span: RichTextSpan): string {
         .replace(/>/g, '&gt;')
         .replace(/\n/g, '<br>');
 
+    const psb = (span.paragraphSpaceBefore && Number.isFinite(span.paragraphSpaceBefore) ? ` data-psb="${Math.round(span.paragraphSpaceBefore * 100) / 100}"` : '')
+        + (isTextAlign(span.paragraphAlign) ? ` data-pa="${span.paragraphAlign}"` : '');
+    if (psb) return `<span${psb}${styles.length ? ` style="${styles.join(';')}"` : ''}>${escaped}</span>`;
     return styles.length > 0 ? `<span style="${styles.join(';')}">${escaped}</span>` : escaped;
 }
 
@@ -47,8 +115,15 @@ function listToHtml(items: RichTextSpan[]): string {
         while (open.length > level + 1) html += `</${open.pop()}>`;
         // Same level but the other list kind — close it and start the new one.
         if (open.length === level + 1 && open[level] !== tag) html += `</${open.pop()}>`;
-        while (open.length < level + 1) { html += `<${tag}>`; open.push(tag); }
-        html += `<li>${spanInlineHtml(item)}</li>`;
+        while (open.length < level + 1) {
+            // A numbered list that doesn't start at 1 (an imported "3." run) keeps its start.
+            const start = tag === 'ol' && open.length === level && (item.listIndex || 1) > 1 ? ` start="${Math.floor(item.listIndex!)}"` : '';
+            html += `<${tag}${start}>`; open.push(tag);
+        }
+        const marker = markerPropsOf(item as unknown as Record<string, unknown>);
+        const data = Object.keys(marker).length
+            ? ` data-list="${JSON.stringify(marker).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')}"` : '';
+        html += `<li${data}>${spanInlineHtml(item)}</li>`;
     }
     while (open.length) html += `</${open.pop()}>`;
     return html;
@@ -135,7 +210,7 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
         return false;
     };
 
-    function walk(node: Node, inherited: Partial<RichTextSpan>, listContext: { type?: 'bullet' | 'ordered'; level: number; index: number } = { level: -1, index: 0 }) {
+    function walk(node: Node, inherited: Partial<RichTextSpan>, listContext: { type?: 'bullet' | 'ordered'; level: number; index: number; marker?: MarkerProps } = { level: -1, index: 0 }) {
         if (node.nodeType === Node.TEXT_NODE) {
             const text = node.textContent || '';
             if (text.length > 0) {
@@ -147,6 +222,8 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
                 if (inherited.color) span.color = inherited.color;
                 if (inherited.fontSize) span.fontSize = inherited.fontSize;
                 if (inherited.fontFamily) span.fontFamily = inherited.fontFamily;
+                if (inherited.paragraphSpaceBefore) span.paragraphSpaceBefore = inherited.paragraphSpaceBefore;
+                if (inherited.paragraphAlign) span.paragraphAlign = inherited.paragraphAlign;
 
                 // Apply list context if we're inside a list item
                 if (listContext.type) {
@@ -155,6 +232,7 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
                     if (listContext.type === 'ordered') {
                         span.listIndex = listContext.index;
                     }
+                    if (listContext.marker) Object.assign(span, listContext.marker);
                 }
 
                 spans.push(span);
@@ -184,7 +262,8 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
             // nested <ul>/<ol> the browser parks *between* items when indenting
             // (execCommand('indent') emits the nested list as a sibling of the
             // <li>, not inside it) — skipping those dropped the nested items.
-            let index = 0;
+            const start = tag === 'ol' ? parseInt(el.getAttribute('start') || '1', 10) : 1;
+            let index = Number.isFinite(start) && start > 0 ? Math.min(start, 100000) - 1 : 0;
             for (const child of Array.from(el.children)) {
                 const childTag = child.tagName.toLowerCase();
                 if (childTag === 'li') {
@@ -202,6 +281,12 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
 
         // Handle list item - just process children with current context
         if (tag === 'li') {
+            // Marker overrides ride on the <li> (see listToHtml); the browser copies the
+            // attribute when Enter splits an item, so new items keep the list's look.
+            let marker: MarkerProps | undefined;
+            const raw = el.getAttribute('data-list');
+            if (raw) { try { marker = markerPropsOf(JSON.parse(raw)); } catch { /* ignore a mangled attribute */ } }
+            listContext = { ...listContext, marker };
             const children = Array.from(el.childNodes);
             for (let ci = 0; ci < children.length; ci++) {
                 const child = children[ci];
@@ -214,6 +299,11 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
             }
             return;
         }
+
+        const psb = Number(el.getAttribute('data-psb'));
+        if (Number.isFinite(psb) && psb > 0) style.paragraphSpaceBefore = Math.min(psb, 1000);
+        const pa = el.getAttribute('data-pa');
+        if (isTextAlign(pa)) style.paragraphAlign = pa;
 
         // Semantic tags
         if (tag === 'b' || tag === 'strong') style.bold = true;
@@ -307,7 +397,10 @@ function sameFormatting(a: RichTextSpan, b: RichTextSpan): boolean {
         ((a.fontFamily || '') === (b.fontFamily || '')) &&
         ((a.listType || 'none') === (b.listType || 'none')) &&
         ((a.listLevel || 0) === (b.listLevel || 0)) &&
-        ((a.listIndex || 0) === (b.listIndex || 0));
+        ((a.listIndex || 0) === (b.listIndex || 0)) &&
+        MARKER_KEYS.every(k => a[k] === b[k]) &&
+        (a.paragraphSpaceBefore || 0) === (b.paragraphSpaceBefore || 0) &&
+        (a.paragraphAlign || '') === (b.paragraphAlign || '');
 }
 
 /**
@@ -327,6 +420,30 @@ export function plainTextToSpans(text: string): RichTextSpan[] {
 
 // ============ Layout Engine ============
 
+/**
+ * Where a list item's text starts. Yappy's default: one indent per level plus the marker's
+ * room. An explicit indent (PowerPoint's marL) wins — but never over the marker itself:
+ * like PowerPoint, text that would start inside the marker moves to just past it.
+ */
+/**
+ * Where a list item's text starts. An explicit `listIndent` past the marker wins (an imported
+ * hanging indent); otherwise the text clears the marker by 0.3 em, and Yappy's default never
+ * starts closer than LIST_MARKER_WIDTH. A fixed 20 px used to put "IV." or "a)" at 28 px over
+ * the text. `measure` is the canvas's measureText where there is one (layout); PPTX export
+ * passes its own, so the file puts the text where the canvas drew it.
+ */
+export function listTextXWith(measure: (text: string, font: string) => number, span: RichTextSpan, defaults: { fontSize?: number; fontFamily?: string }): number {
+    const markerX = listMarkerX(span);
+    if (span.listIndent !== undefined && span.listIndent > markerX) return span.listIndent;
+    const m = listMarkerStyle(span, defaults, '');
+    const clear = markerX + measure(listMarkerText(span), m.font) + m.size * 0.3;
+    return span.listIndent === undefined ? Math.max(markerX + LIST_MARKER_WIDTH, clear) : clear;
+}
+
+function listTextX(ctx: IRenderer, span: RichTextSpan, defaults: { fontSize?: number; fontFamily?: string }): number {
+    return listTextXWith((text, font) => { ctx.font = font; return ctx.measureText(text).width; }, span, defaults);
+}
+
 /** A positioned segment ready for canvas rendering. */
 export interface RichTextSegment {
     text: string;
@@ -344,6 +461,22 @@ export interface RichTextLayout {
     totalHeight: number;
     lineCount: number;
     lineHeights: number[];
+    /** Extra space above each line (paragraph spacing); renderers add it before placing the line. */
+    lineGaps: number[];
+    /** Each line's own alignment (its paragraph's `paragraphAlign`); undefined = the element's. */
+    lineAligns: (TextAlign | undefined)[];
+}
+
+/**
+ * Where a laid-out line starts. `lineAlign` (the paragraph's own alignment) wins over the
+ * element's; `left`/`right` are the text area's edges and `mid` its centre line (passed on its
+ * own because a connector label's area is unbounded: left/right are ±Infinity there).
+ */
+export function alignedLineX(lineAlign: TextAlign | undefined, elementAlign: string | undefined, lineWidth: number, left: number, mid: number, right: number): number {
+    const a = lineAlign ?? elementAlign;
+    if (a === 'center') return mid - lineWidth / 2;
+    if (a === 'right') return right - lineWidth;
+    return left;
 }
 
 interface Token {
@@ -384,9 +517,10 @@ export function layoutRichText(
 ): RichTextLayout {
     const segments: RichTextSegment[] = [];
     const lineHeights: number[] = [];
+    const lineGaps: number[] = [];
+    const lineAligns: (TextAlign | undefined)[] = [];
+    let paraAlign: TextAlign | undefined; // the current paragraph's own alignment
 
-    const INDENT_SIZE = 20; // Pixels per indent level
-    const MARKER_WIDTH = 20; // Space reserved for bullet/number
 
     let currentX = 0;
     let currentLineIndex = 0;
@@ -439,16 +573,18 @@ export function layoutRichText(
         currentLineHeight = Math.max(currentLineHeight, lh);
 
         // Calculate indentation for list items
-        const listLevel = token.span.listLevel || 0;
-        const isListItem = token.span.listType && token.span.listType !== 'none';
-        const indent = isListItem ? listLevel * INDENT_SIZE : 0;
-        const markerSpace = isListItem ? MARKER_WIDTH : 0;
+        const isListItem = !!token.span.listType && token.span.listType !== 'none';
 
         // The indent belongs to whatever starts the line, so recompute it there:
         // a deeper (or shallower) list level — or leaving the list altogether —
         // has to take effect immediately, not stay on the previous item's indent.
         if (!lineHasContent) {
-            currentListIndent = isListItem ? indent + markerSpace : 0;
+            // Space before a paragraph — never above the first line, as in PowerPoint.
+            if (lineFromNewline && currentLineIndex > 0 && token.span.paragraphSpaceBefore) lineGaps[currentLineIndex] = token.span.paragraphSpaceBefore;
+            // A paragraph's alignment rides on its first span; its wrapped lines keep it.
+            if (lineFromNewline) paraAlign = isTextAlign(token.span.paragraphAlign) ? token.span.paragraphAlign : undefined;
+            lineAligns[currentLineIndex] = paraAlign;
+            currentListIndent = isListItem ? listTextX(ctx, token.span, elementDefaults) : 0;
             currentX = currentListIndent;
         }
 
@@ -459,6 +595,7 @@ export function layoutRichText(
         if (!token.isWhitespace && currentX + measured.width > maxWidth && currentX > currentListIndent) {
             finishLine(false);
             currentLineHeight = Math.max(currentLineHeight, lh);
+            lineAligns[currentLineIndex] = paraAlign;
         }
 
         // Skip leading whitespace only after word-wrap, not after explicit newlines
@@ -484,11 +621,16 @@ export function layoutRichText(
         lineHeights.push(currentLineHeight || getLineHeight(elementDefaults.fontSize || 28, elementDefaults.lineHeight));
     }
 
+    for (let i = 0; i < lineHeights.length; i++) lineGaps[i] ??= 0;
+    lineGaps.length = lineHeights.length;
+    lineAligns.length = lineHeights.length;
     return {
         segments,
-        totalHeight: lineHeights.reduce((a, b) => a + b, 0),
+        totalHeight: lineHeights.reduce((a, b) => a + b, 0) + lineGaps.reduce((a, b) => a + b, 0),
         lineCount: lineHeights.length,
-        lineHeights
+        lineHeights,
+        lineGaps,
+        lineAligns,
     };
 }
 

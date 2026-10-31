@@ -1345,6 +1345,21 @@ export const fr: Dictionary = {
         exit: 'Quitter l’aperçu d’impression',
         failed: 'L’aperçu d’impression n’a pas pu démarrer.',
     },
+    pptxImport: {
+        loading: 'Ouverture de la présentation…',
+        done: '{{ slides }} diapositive(s) ouverte(s) avec {{ elements }} objet(s).',
+        partial: '{{ slides }} diapositive(s) ouverte(s). {{ count }} élément(s) n’ont pas pu être importés exactement (graphiques, SmartArt, images non prises en charge) — la liste est dans la console du navigateur.',
+        failed: 'Impossible d’ouvrir la présentation : {{ message }}',
+    },
+    pptxExport: {
+        mode: 'Type PowerPoint',
+        editable: 'Formes modifiables',
+        editableHint: 'Les formes, le texte, les traits et les images deviennent de vrais objets PowerPoint modifiables. Les tracés à main levée deviennent nets ; les effets, masques et remplissages spéciaux sont placés en images.',
+        pictures: 'Images',
+        picturesHint: 'Une image par diapositive. Identique au canevas, tracés à main levée compris, mais rien sur la diapositive n’est modifiable.',
+        someAsPictures: '{{ count }} objet(s) que PowerPoint ne sait pas dessiner nativement (effets, masques, remplissages spéciaux) ont été placés en images.',
+        failed: 'Échec de l’export PowerPoint : {{ message }}',
+    },
     pdfExport: {
         mode: 'Type de PDF',
         vector: 'Vectoriel',

@@ -28,7 +28,7 @@ Y.exportPageToPng(0, 2);                 // export page 1 at 2x
 ```
 
 :::tip
-Export dialog → **PNG and JPG** show a **Current Page Only** option in paged documents — exact page bounds, page background included (JPG has no transparency, so any uncovered area takes the document's background colour). Leave it unchecked to export the **whole design**: every page is rendered at its full page bounds with its own background, stacked vertically (multi-page designs). PDF and PPTX export emit one file page per document page. SVG export includes the full page area and each page's background.
+Export dialog → **PNG and JPG** show a **Current Page Only** option in paged documents — exact page bounds, page background included (JPG has no transparency, so any uncovered area takes the document's background colour). Leave it unchecked to export the **whole design**: every page is rendered at its full page bounds with its own background, stacked vertically (multi-page designs). PDF and PPTX export emit one file page per document page (PPTX as editable PowerPoint shapes by default — see Workspace ▸ Export ▸ PowerPoint; a page of another size is scaled to fit the first page's slide size). SVG export includes the full page area and each page's background.
 :::
 
 ### Ready for social — one-click export
@@ -179,7 +179,9 @@ Select the words you want and pick a size from the **A<sub>A</sub>** button — 
 
 **Default** (top of the size list) puts the selection back to the element's own size. Note that this writes that size onto the run explicitly rather than clearing it, so a run reset this way will not follow a later change to the element's base Font Size — reset it again, or retype it, if you change the base afterwards.
 
-Lists survive export: PNG/JPG/PDF render through the canvas, and **SVG** now writes the bullet or number into the item's gutter with the same indent per level, so an exported list reads exactly like the one on canvas.
+Lists survive export: PNG/JPG/PDF render through the canvas, and **SVG** now writes the bullet or number into the item's gutter with the same indent per level, so an exported list reads exactly like the one on canvas. **PowerPoint** export writes real bullets and numbering.
+
+Lists opened from a PowerPoint file keep that deck's look — its bullet characters (▪ ➢ ✔ …), bullet colour and size, numbering style (a) · (iv) · A.), start number, indents and paragraph spacing — and new items you add with Enter continue in the same style. Lists you make in Yappy use the default • and 1. markers.
 
 **Known limitations.** There is no indent shortcut inside the editor — Tab leaves the text box and commits, so nested levels come from pasted content. Lists are available on rich-text elements only; text typed inside a shape is plain.
 

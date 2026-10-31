@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
+keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint open pptx importPPTX potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
 ---
 
 # Workspace & Productivity
@@ -695,7 +695,7 @@ A language is only offered once it is complete, so you will never get a half-tra
 
 ## Export
 
-From the menu (or right-click → Export) save your work as **PNG**, **JPG**, **SVG**, **PDF** or copy it to the clipboard — the whole canvas or just the selection. **Artboards** export their region to a fixed-size PNG (see the Artboards doc).
+From the menu (or right-click → Export) save your work as **PNG**, **JPG**, **SVG**, **PDF**, **PowerPoint (PPTX)** or copy it to the clipboard — the whole canvas or just the selection. **Artboards** export their region to a fixed-size PNG (see the Artboards doc).
 
 ### Naming the file and choosing where it goes
 
@@ -846,8 +846,95 @@ await Yappy.exportPDF({ colorMode: 'cmyk', profile: 'gracol' }); // print PDF, U
 ```
 
 :::tip
-Choose **SVG** for logos, icons and anything you'll scale or re-edit; **PNG** (2×) for crisp raster output; **PDF** (Vector) for print and sharing documents.
+Choose **SVG** for logos, icons and anything you'll scale or re-edit; **PNG** (2×) for crisp raster output; **PDF** (Vector) for print and sharing documents; **PPTX** (Editable shapes) to keep working on slides in PowerPoint, Google Slides or Keynote.
 :::
+
+### PowerPoint (PPTX)
+
+Pick **PPTX** in the Export dialog and choose a **PowerPoint type**:
+
+- **Editable shapes** (default) — every object becomes a real PowerPoint object you can select,
+  recolour, resize and type into:
+  - **Shapes** keep their exact outline. Rectangles, rounded rectangles and ellipses become
+    PowerPoint's own shapes (with its resize handles); every other shape — flowchart, UML, BPMN,
+    cloud, icons — becomes a custom shape with the same outline and the same inner detail lines
+    (a database keeps its lid). Shapes with several colours, such as shaded 3D blocks and icons,
+    become a **group** of shapes.
+  - **Text stays text** in its font, size, colour, bold/italic/underline/strikethrough and
+    alignment, with bullets, numbering and list levels — including a list's own bullet glyph,
+    bullet colour and size, numbering style (1. a) (iv)…), start number, indents and the space
+    between paragraphs. A shape's label is the shape's own text.
+  - **Straight lines and arrows are connectors**: when an end sits on the middle of a shape's side
+    they are glued to that shape, so they follow it when you move it in PowerPoint. Curves and
+    elbow lines keep their exact path and arrowheads, but are not glued.
+  - **Images** keep their crop and opacity; **groups** stay groups.
+  - **Slide backgrounds** (colour or gradient) and **transitions** carry over: *Fade* → Fade,
+    *Slide left/right/up/down* → Push, *Zoom in/out* → Zoom, at the same duration.
+  - Hand-drawn (sketch) strokes come out **clean**, and hatched fills become PowerPoint pattern
+    fills.
+  - What PowerPoint can't draw is placed as a **picture of just that object**, where it sits:
+    drop shadows, glows and feathering, masks, mesh/pattern/image fills, 3D extrude and inflate,
+    warps, image filters, text on a path, UML class boxes, tables and code blocks. A message says
+    how many objects were placed as pictures.
+- **Pictures** — each slide is one image at the **Scale** you choose. It looks exactly like the
+  canvas, sketch strokes and all, but nothing on the slide is editable.
+
+Paged documents (Slides, Design) get **one slide per page**. The slide size is taken from the
+first page; a page of a different size is scaled to fit and centred, never stretched. On the
+infinite canvas (or with **Export Selection Only**) you get one slide around your artwork.
+Untick **White Background** to leave the slide background out (PowerPoint then shows its own,
+white by default).
+
+**Fonts.** The file names each font (Handlee, Inter, Poppins…) but doesn't embed it. On a
+computer that doesn't have the font, PowerPoint substitutes another, so text can wrap a little
+differently. Installing the font, or switching to one PowerPoint ships with, fixes it.
+
+From a script:
+
+```js
+await Yappy.exportPPTX();                               // editable, saves the file
+await Yappy.exportPPTX({ mode: 'pictures', scale: 3 }); // one sharp image per slide
+const blob = await Yappy.exportPPTX({ download: false }); // just the file, as a Blob
+```
+
+### Opening PowerPoint files (preview)
+
+With **Dev Mode** on (Settings), **Open** also accepts **.pptx** (and .potx / .ppsx), and you can
+drop one on the canvas. The presentation opens as a **new slides document**, replacing the current
+one, exactly as opening a Yappy file does. Each slide becomes a page at the presentation's slide
+size.
+
+- **Shapes**: rectangles, rounded rectangles, ellipses, diamonds and triangles become those Yappy
+  shapes. Every other PowerPoint shape (arrows, callouts, flowchart, stars, clouds, freeforms)
+  becomes a vector **path** with its exact outline, so it looks right and you can edit its points.
+- **Text** keeps its font size, colour, bold/italic/underline and alignment, paragraph by
+  paragraph: a centred heading over left-aligned lines stays centred. Text styled by
+  the slide master and layouts (titles, body placeholders) gets that styling, and theme colours
+  and fonts are resolved. Fonts Yappy doesn't have use the closest built-in face (sans-serif, serif
+  or monospace).
+- **Bullets and numbering** keep each level's own look: the bullet character (➢ ▪ ✔ – and the
+  others templates draw from Wingdings or Symbol), its colour and size, the numbering style
+  (1. · a) · (iv) · A.) and start number, the hanging indent, and the space before and after
+  each paragraph. They stay editable: Enter in a list continues it in the same style.
+- **SmartArt** comes in as the shapes PowerPoint last drew for it — boxes, arrows and labels you
+  can edit one by one, grouped as the diagram. It is no longer a SmartArt diagram: adding an item
+  doesn't re-flow the others.
+- **Connectors** become lines and arrows **bound** to the shapes they were glued to.
+- **Pictures** keep their crop and transparency; **tables** become groups of cells (PowerPoint's
+  default table style is reproduced); **groups** stay groups; the **slide master's own artwork**
+  (logo bars, decorations) is placed on every slide that shows it.
+- **Backgrounds** (colour, gradient, picture) and **transitions** (Fade, Push/Wipe/Cover → Slide,
+  Zoom) carry over.
+
+Not imported yet: **charts and embedded objects** come in as labelled frames;
+**EMF/WMF/TIFF pictures** (common in older decks) as placeholders; animations, speaker notes and
+audio/video are skipped. A message tells you how many items weren't imported exactly, and the
+browser console lists them. A paragraph's own alignment shows on the canvas and in every
+export, but Yappy has no control for it yet: while you edit the text it shows the text box's
+alignment, and the toolbar's align buttons set the whole text box.
+
+From a script: `const { stats, warnings } = await Yappy.importPPTX(file)` — a File, Blob or
+ArrayBuffer.
 
 ### Excalidraw import & export
 

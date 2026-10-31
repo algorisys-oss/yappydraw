@@ -39,3 +39,15 @@ be separated from the data it applies to.
 These are the curated open-licence families that match the in-app font picker; each carries its
 upstream licence (SIL Open Font License 1.1 unless stated otherwise in the family's own
 distribution).
+
+## ECMA-376 preset shape definitions
+
+`frontend/src/utils/pptx/presets.json` — the geometry of PowerPoint's 187 preset shapes, compiled
+by `scripts/pptx-presets.mjs` from `presetShapeDefinitions.xml`, the machine-readable part of
+**ECMA-376 Office Open XML, Part 1** (© Ecma International), which Ecma publishes for free use
+in implementations of the standard.
+
+- Source: the copy Apache POI distributes under the Apache License 2.0,
+  <https://github.com/apache/poi> (`poi/src/main/resources/org/apache/poi/sl/draw/geom/presetShapeDefinitions.xml`).
+  Fetched 2026-10-31.
+- Used by the PowerPoint importer to draw shapes with their exact outlines.

@@ -107,7 +107,7 @@ export class PathUtils {
      * unchanged. Returns [] for a degenerate arc (zero-length or zero-radius); the
      * caller falls back to a straight line, which is what the spec mandates.
      */
-    private static arcToCubics(
+    static arcToCubics(
         x1: number, y1: number,
         rxIn: number, ryIn: number, rotDeg: number,
         largeArc: boolean, sweep: boolean,

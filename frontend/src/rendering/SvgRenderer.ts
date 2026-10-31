@@ -96,9 +96,25 @@ export class SvgRenderer implements IRenderer {
         this.cur = [x, y];
     }
     roundRect(x: number, y: number, w: number, h: number, radii: number | number[]): void {
-        let r = Array.isArray(radii) ? radii[0] : radii; r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
-        if (r <= 0) return this.rect(x, y, w, h);
-        this.d += ` M ${r3(x + r)} ${r3(y)} L ${r3(x + w - r)} ${r3(y)} Q ${r3(x + w)} ${r3(y)} ${r3(x + w)} ${r3(y + r)} L ${r3(x + w)} ${r3(y + h - r)} Q ${r3(x + w)} ${r3(y + h)} ${r3(x + w - r)} ${r3(y + h)} L ${r3(x + r)} ${r3(y + h)} Q ${r3(x)} ${r3(y + h)} ${r3(x)} ${r3(y + h - r)} L ${r3(x)} ${r3(y + r)} Q ${r3(x)} ${r3(y)} ${r3(x + r)} ${r3(y)} Z`;
+        // Canvas semantics: 1–4 radii (all | tl+br, tr+bl | tl, tr+bl, br | tl, tr, br, bl), drawn
+        // as circular arcs and scaled down together when two on one side would overlap. This used
+        // to take only radii[0] and draw quadratic corners, which turned a pill or a circle-
+        // radius badge into a squircle and ignored per-corner rounding.
+        const list = (Array.isArray(radii) ? radii : [radii]).map(r => Math.max(0, Number(r) || 0));
+        const [tl, tr, br, bl] = list.length >= 4 ? list.slice(0, 4)
+            : list.length === 3 ? [list[0], list[1], list[2], list[1]]
+            : list.length === 2 ? [list[0], list[1], list[0], list[1]]
+            : [list[0] ?? 0, list[0] ?? 0, list[0] ?? 0, list[0] ?? 0];
+        if (w < 0) { x += w; w = -w; }
+        if (h < 0) { y += h; h = -h; }
+        const k = Math.min(1, w / (tl + tr || Infinity), w / (bl + br || Infinity), h / (tl + bl || Infinity), h / (tr + br || Infinity));
+        const [a, b, c, d] = [tl * k, tr * k, br * k, bl * k];
+        if (!(a || b || c || d)) return this.rect(x, y, w, h);
+        const arc = (r: number, ex: number, ey: number) => r ? ` A ${r3(r)} ${r3(r)} 0 0 1 ${r3(ex)} ${r3(ey)}` : '';
+        this.d += ` M ${r3(x + a)} ${r3(y)} L ${r3(x + w - b)} ${r3(y)}${arc(b, x + w, y + b)}`
+            + ` L ${r3(x + w)} ${r3(y + h - c)}${arc(c, x + w - c, y + h)}`
+            + ` L ${r3(x + d)} ${r3(y + h)}${arc(d, x, y + h - d)}`
+            + ` L ${r3(x)} ${r3(y + a)}${arc(a, x + a, y)} Z`;
         this.cur = [x, y];
     }
     arc(cx: number, cy: number, r: number, a0: number, a1: number, ccw = false): void {
@@ -121,17 +137,53 @@ export class SvgRenderer implements IRenderer {
         this.d += ` A ${r3(r)} ${r3(r)} 0 ${large} ${sweep} ${r3(end[0])} ${r3(end[1])}`;
         this.cur = end;
     }
-    ellipse(cx: number, cy: number, rx: number, ry: number, _rot: number, a0: number, a1: number, ccw = false): void {
-        // Full-ellipse common case (start 0 → 2π). Partial arcs approximate as full.
-        const sx = cx + rx * Math.cos(a0), sy = cy + ry * Math.sin(a0);
-        if (this.cur) this.d += ` L ${r3(sx)} ${r3(sy)}`; else this.d += ` M ${r3(sx)} ${r3(sy)}`;
-        const mx = cx - rx * Math.cos(a0), my = cy - ry * Math.sin(a0);
+    ellipse(cx: number, cy: number, rx: number, ry: number, rot: number, a0: number, a1: number, ccw = false): void {
+        // Canvas semantics, partial arcs and rotation included. This used to draw every call as a
+        // full ellipse, so a shape built from half-ellipse caps (a BPMN data store, a drum) came
+        // out as two whole ellipses joined by a stray line.
+        const cr = Math.cos(rot), sr = Math.sin(rot);
+        const at = (t: number): [number, number] => [
+            cx + rx * Math.cos(t) * cr - ry * Math.sin(t) * sr,
+            cy + rx * Math.cos(t) * sr + ry * Math.sin(t) * cr,
+        ];
+        const start = at(a0);
+        if (this.cur) this.d += ` L ${r3(start[0])} ${r3(start[1])}`; else this.d += ` M ${r3(start[0])} ${r3(start[1])}`;
+        let delta = a1 - a0;
+        if (!ccw && delta < 0) delta = (delta % (Math.PI * 2)) + Math.PI * 2;
+        if (ccw && delta > 0) delta = (delta % (Math.PI * 2)) - Math.PI * 2;
         const sweep = ccw ? 0 : 1;
-        this.d += ` A ${r3(rx)} ${r3(ry)} 0 1 ${sweep} ${r3(mx)} ${r3(my)} A ${r3(rx)} ${r3(ry)} 0 1 ${sweep} ${r3(sx)} ${r3(sy)}`;
-        this.cur = [sx, sy];
-        void a1;
+        const rotDeg = r3((rot * 180) / Math.PI);
+        if (Math.abs(delta) >= Math.PI * 2 - 1e-6 || (!ccw && a1 - a0 >= Math.PI * 2) || (ccw && a0 - a1 >= Math.PI * 2)) {
+            const mid = at(a0 + Math.PI);
+            this.d += ` A ${r3(rx)} ${r3(ry)} ${rotDeg} 1 ${sweep} ${r3(mid[0])} ${r3(mid[1])} A ${r3(rx)} ${r3(ry)} ${rotDeg} 1 ${sweep} ${r3(start[0])} ${r3(start[1])}`;
+            this.cur = start;
+            return;
+        }
+        const end = at(a0 + delta);
+        const large = Math.abs(delta) > Math.PI ? 1 : 0;
+        this.d += ` A ${r3(rx)} ${r3(ry)} ${rotDeg} ${large} ${sweep} ${r3(end[0])} ${r3(end[1])}`;
+        this.cur = end;
     }
-    arcTo(): void { this.failed = true; }
+    /** Canvas `arcTo`: a line to the first tangent point, then the arc of `r` tangent to both lines. */
+    arcTo(x1: number, y1: number, x2: number, y2: number, r: number): void {
+        if (!this.cur) { this.moveTo(x1, y1); return; }
+        const [x0, y0] = this.cur;
+        const v1x = x0 - x1, v1y = y0 - y1, v2x = x2 - x1, v2y = y2 - y1;
+        const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y);
+        const cross = v1x * v2y - v1y * v2x;
+        // Degenerate (zero radius, coincident or collinear points): the spec draws a line to P1.
+        if (!(r > 0) || l1 === 0 || l2 === 0 || Math.abs(cross) < 1e-9 * l1 * l2) { this.lineTo(x1, y1); return; }
+        const cos = (v1x * v2x + v1y * v2y) / (l1 * l2);
+        const theta = Math.acos(Math.max(-1, Math.min(1, cos)));
+        const dist = r / Math.tan(theta / 2);
+        const t1x = x1 + (v1x / l1) * dist, t1y = y1 + (v1y / l1) * dist;
+        const t2x = x1 + (v2x / l2) * dist, t2y = y1 + (v2y / l2) * dist;
+        this.lineTo(t1x, t1y);
+        // Travelling P0→P1 then P1→P2: a right turn on screen (y down) is a clockwise arc.
+        const sweep = ((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)) > 0 ? 1 : 0;
+        this.d += ` A ${r3(r)} ${r3(r)} 0 0 ${sweep} ${r3(t2x)} ${r3(t2y)}`;
+        this.cur = [t2x, t2y];
+    }
 
     // ── Fill helpers ──
     private paint(value: FillStyle): string {

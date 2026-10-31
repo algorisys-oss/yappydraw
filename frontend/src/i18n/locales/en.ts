@@ -1349,6 +1349,21 @@ export const en = {
         exit: 'Exit print preview',
         failed: 'Print preview could not start.',
     },
+    pptxImport: {
+        loading: 'Opening the presentation…',
+        done: 'Opened {{ slides }} slide(s) with {{ elements }} object(s).',
+        partial: 'Opened {{ slides }} slide(s). {{ count }} item(s) couldn’t be imported exactly (charts, SmartArt, unsupported pictures) — see the browser console for the list.',
+        failed: 'Couldn’t open the presentation: {{ message }}',
+    },
+    pptxExport: {
+        mode: 'PowerPoint type',
+        editable: 'Editable shapes',
+        editableHint: 'Shapes, text, lines and images become real PowerPoint objects you can edit. Hand-drawn strokes come out clean, and effects, masks and special fills are placed as pictures.',
+        pictures: 'Pictures',
+        picturesHint: 'One picture per slide. Looks exactly like the canvas, hand-drawn strokes included, but nothing on the slide can be edited.',
+        someAsPictures: '{{ count }} object(s) PowerPoint can’t draw natively (effects, masks, special fills) were placed as pictures.',
+        failed: 'PowerPoint export failed: {{ message }}',
+    },
     pdfExport: {
         mode: 'PDF type',
         vector: 'Vector',

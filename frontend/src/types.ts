@@ -203,7 +203,20 @@ export interface RichTextSpan {
     listType?: 'bullet' | 'ordered' | 'none';  // Type of list item
     listLevel?: number;                         // Indent level (0-based, 0 = no indent)
     listIndex?: number;                         // For ordered lists, the item number
+    // Marker overrides (set by PowerPoint import; absent = Yappy's default "•" / "1." look).
+    listMarker?: string;                        // Bullet glyph, e.g. "▪", "–", "✓"
+    listNumberStyle?: ListNumberStyle;          // Ordered: 1 / a / A / i / I
+    listNumberSuffix?: ListNumberSuffix;        // Ordered: "1." / "1)" / "(1)" / "1"
+    listMarkerColor?: string;                   // Marker colour when it differs from the text
+    listMarkerScale?: number;                   // Marker size as a fraction of the text size
+    listIndent?: number;                        // px from the text box's left edge to the item text
+    listMarkerIndent?: number;                  // px from the text box's left edge to the marker
+    paragraphSpaceBefore?: number;              // px of extra space above the paragraph this span starts
+    paragraphAlign?: TextAlign;                 // alignment of the paragraph this span starts (absent = the element's textAlign)
 }
+
+export type ListNumberStyle = 'decimal' | 'lower-alpha' | 'upper-alpha' | 'lower-roman' | 'upper-roman';
+export type ListNumberSuffix = 'period' | 'paren' | 'parens' | 'none';
 
 export interface GradientStop {
     offset: number; // 0 to 1

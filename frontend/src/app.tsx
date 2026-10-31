@@ -13,7 +13,7 @@ import {
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
   transformAgain, recordTransform, convertTextToOutlines, fitArtboardToSelection, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
-  toggleNodeTool, exitAllToolModes, toggleTypeOnPath, toggleArtboardTool
+  toggleNodeTool, exitAllToolModes, toggleTypeOnPath, toggleArtboardTool, isDevMode
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { initPWA } from './utils/pwa';
@@ -96,7 +96,7 @@ import Menu, {
   handleNew, setShowHelp,
   isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
   setIsLoadExportOpen, setLoadExportInitialTab,
-  isAIPromptOpen, setIsAIPromptOpen, quickSaveToGallery
+  isAIPromptOpen, setIsAIPromptOpen, quickSaveToGallery, setDrawingId
 } from './components/menu';
 import StatusBar from './components/status-bar';
 import SupportDialog from './components/support-dialog';
@@ -1397,8 +1397,17 @@ const App: Component = () => {
     const processExtractedDrop = async (data: ReturnType<typeof extractDropData>) => {
       let imageFiles: File[] = [];
 
-      // SVG files import as editable vector paths (not raster images)
       const allDroppedFiles = [...data.filesFromList, ...data.filesFromItems];
+
+      // A dropped PowerPoint file opens as a new slides document (Dev Mode preview).
+      const pptx = allDroppedFiles.find(f => /\.(pptx|potx|ppsx)$/i.test(f.name));
+      if (pptx && isDevMode()) {
+        const { openPptxFile } = await import('./utils/pptx/import');
+        if (await openPptxFile(pptx)) setDrawingId(pptx.name.replace(/\.(pptx|potx|ppsx)$/i, ''));
+        return true;
+      }
+
+      // SVG files import as editable vector paths (not raster images)
       const svgFiles = allDroppedFiles.filter(f => f.type === 'image/svg+xml' || f.name.toLowerCase().endsWith('.svg'));
       if (svgFiles.length > 0) {
         if (!store.welcomeDismissed) setStore('welcomeDismissed', true);

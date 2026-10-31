@@ -11264,3 +11264,105 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **A native `prompt()` command belongs on the sweep's skip list.** Playwright dismisses
   dialogs, so a sweep would only ever exercise the cancel path while reporting the command
   covered; the skip list states the reason and asserts the id still exists.
+
+
+## Native PowerPoint export (2026-10-31)
+
+- **Record what the renderer draws, not what the geometry says.** `getShapeGeometry` is the
+  silhouette; the database's lid, a stick figure's open limbs, an icon's glyphs and a gear's hole
+  live only in the renderer. Building PowerPoint shapes from geometry alone filled stick-figure
+  limbs and dropped the lid. Recording the architectural render through `SvgRenderer` (plus a
+  rough.js stand-in, because renderers fill polygons with `rc.polygon` even in architectural
+  style) and converting the recorded paths took the all-shapes sweep from dozens of visibly wrong
+  cells to two.
+- **A recorder that approximates silently is worse than one that fails.** `SvgRenderer.ellipse`
+  drew every call as a full ellipse, `roundRect` used quadratic corners and only the first
+  radius, and `arcTo` set `failed`. Each looked fine on the shapes it was written for and wrong on
+  the rest (a half-ellipse cap became two ellipses and a stray diagonal). SVG and vector-PDF export
+  used the same recorder as their fallback and inherited the same errors.
+- **Fill rules differ between readers.** Canvas fills non-zero; LibreOffice fills DrawingML
+  custom geometry even-odd. A path that runs over itself (the barrel traced round its cap) gets a
+  hole. `isPointInPath` with both rules on a sample grid detects it in the browser; the geometry
+  outline replaces the path only when its coverage matches what the canvas painted.
+- **An oracle beats eyeballing.** The sweep (`temp/pptx-sweep.mjs`: every registered shape →
+  PPTX → LibreOffice → PNG, diffed per cell against `exportPageToPng`) ranked the failures and
+  showed which fix moved which shape. Median cell difference ended at 2.5%; the leftovers are
+  anti-aliasing and font substitution.
+- **LibreOffice re-routes connectors.** Any `p:cxnSp` that isn't straight, glued or not, is
+  redrawn as LibreOffice's own bent connector. Curves and elbows are written as path shapes with
+  arrowheads; only straight lines are connectors. A "curve" with collinear handles — what
+  `connect()` draws by default — is straight and gets glued.
+- **The fonts on the build machine lie.** LibreOffice rendered a Poppins label bold because this
+  machine has only Poppins' bold faces installed; the XML had no `b="1"`. Check the file before
+  blaming the writer.
+
+## PowerPoint import (2026-10-31, Dev Mode preview)
+
+- **Reader and writer share one model.** `utils/pptx/deck.ts` is what the exporter writes and the
+  importer reads, so the first import test was free: write a deck, read it back, compare. Every
+  writer bug the reader caught (and the other way round) showed up as a field that didn't survive.
+- **Evaluate presets from the standard, map only what is identical.** ECMA-376's
+  `presetShapeDefinitions.xml` plus a 150-line guide evaluator draws all 187 PowerPoint presets
+  exactly. Only shapes whose Yappy twin has the same outline (rect, roundRect, ellipse, diamond,
+  isosceles triangle) become Yappy types; mapping "close enough" ones would have changed how they
+  look.
+- **`mc:AlternateContent`: take the Choice you understand.** Preferring the Fallback lost every
+  transition's exact `p14:dur` (450 ms came back as "fast", 500). The rule is per namespace.
+- **Style precedence is not "most specific wins" across the board.** A theme-styled shape's label
+  is white because `p:style/fontRef` sits above the presentation's default text colour; reading
+  it after the list styles made every such label black.
+- **Built-in table styles aren't in the file.** A table names its style by GUID; the look lives in
+  PowerPoint. Reproducing the default (Medium Style 2 – Accent 1) from the theme covers almost
+  every real table.
+- **Test decks without a PowerPoint licence.** python-pptx ships PowerPoint's own default template
+  (placeholders, theme, layouts), and LibreOffice's bundled templates convert to .pptx; rendering
+  both through LibreOffice and through Yappy gave a side-by-side oracle.
+
+## PowerPoint bullets and SmartArt (2026-10-31)
+
+- **A real deck is the test that matters.** The SAP decks in ~/Documents (exported by PowerPoint,
+  built on a corporate template) showed in one look what the hand-built fixtures had not:
+  paragraph spacing (`spcBef` 6–18 pt on every body level) does more for a bulleted slide's look
+  than the bullet glyph does. Spacing wasn't on the list of gaps; it was the biggest one.
+- **Template bullets are symbol-font code points.** `<a:buFont typeface="Wingdings"/><a:buChar
+  char="§"/>` is a small square, `Ø` an arrowhead, `ü` a check — the character means something
+  else in every other font. Files also write them as the private-use alias (U+F0A7), so subtract
+  0xF000 first. An unmapped symbol-font character becomes "•", never the literal letter.
+- **`*Tx` elements reset inherited values.** `buClrTx`, `buSzTx`, `buFontTx` mean "follow the
+  text", so in the level-style merge they must write `null`, not be skipped — otherwise a master's
+  red bullet colour leaks into a level that turned it off.
+- **SmartArt is already drawn.** Since Office 2010 every diagram carries a `diagramDrawing` part:
+  plain DrawingML shapes in the graphic frame's own coordinates. The data part names it
+  (`dsp:dataModelExt relId`, a relationship *of the slide*, not of the data part). Every shape
+  there has `cNvPr id="0"`, so they need fresh ids before anything can glue to them. Text often
+  has its own box (`dsp:txXfrm`) and deep insets (a 57 px `tIns` under a tab header), and a Yappy
+  shape label ignores insets — so both cases become a separate text element grouped with the shape.
+- **List overrides ride on `<li data-list>`** through the contenteditable editor; Chrome copies the
+  attribute when Enter splits an item, so a new item keeps the list's style. `<ol start>` keeps a
+  numbered run's start — previously every edit renumbered from 1.
+- **Yappy aligns a whole text element**, PowerPoint each paragraph. Majority-by-characters keeps a
+  centred heading over left-aligned lines readable; the first paragraph's alignment did not.
+  It was a stopgap: a later change added `RichTextSpan.paragraphAlign` (see below).
+
+## Per-paragraph alignment (2026-10-31)
+
+- **Same shape as paragraph spacing.** The paragraph's alignment rides on its spans,
+  `layoutRichText` resolves it per line (`lineAligns`, beside `lineGaps`), and the four rich-text
+  renderers (canvas text, canvas container text, the two SVG-export loops) place each line with
+  one helper, `alignedLineX`. The element's `textAlign` stays the default, so only paragraphs that
+  differ carry the field, and old documents are unchanged.
+- **Put it on every span of the paragraph, not just the first** (unlike `paragraphSpaceBefore`).
+  A PowerPoint soft break (`a:br`) becomes a `\n` inside the paragraph, and Yappy's layout treats
+  every `\n` as a new paragraph, so a first-span-only field dropped off after the break.
+- **Pass the centre on its own.** A connector label's text area is unbounded (`maxWidth =
+  Infinity`), so "centre = (left + right) / 2" is `NaN` there; the helper takes `mid` explicitly.
+- **Start the dev server from the repo root.** `npx vite` run inside `frontend/` boots without
+  the root `vite.config`, every request for `virtual:pwa-register` returns 500, `window.Yappy` never
+  appears, and every Playwright spec times out in `boot()`. That looks like a regression and isn't.
+- **A test deck for someone else to open is also a test for you.** The deck built for a PowerPoint
+  check showed "IV.Roman" in LibreOffice; Yappy drew the same overlap. The fixed 20 px list gap was
+  older than PPTX work and simply never met a wide marker at a large size.
+- **Removing a dependency removes its dependencies too, and one of them may have been load-bearing.**
+  `pptxgenjs` pulled in `@types/node`, which `publish-oss.sh` deliberately strips from the OSS
+  mirror as "server-only". This repo kept building (it lists `@types/node` directly); the mirror
+  did not. Only `--verify` could see it, which is the whole case for always passing it.

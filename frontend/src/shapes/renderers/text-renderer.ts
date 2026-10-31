@@ -6,7 +6,7 @@ import type { IRenderer } from "../../rendering/IRenderer";
 import type { DrawingElement } from "../../types";
 import { resolveFontFamily, wrapText, measureVerticalText } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
-import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
+import { layoutRichText, buildSpanFontString, listMarkerText, listMarkerX, listMarkerStyle, alignedLineX } from "../../utils/rich-text-utils";
 
 export class TextRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, _cx: number, _cy: number): void {
@@ -268,6 +268,7 @@ export class TextRenderer extends ShapeRenderer {
 
         let lineY = el.y + verticalPadding;
         for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
+            lineY += layout.lineGaps[lineIdx] ?? 0;
             const lineHeight = layout.lineHeights[lineIdx];
             const lineSegments = layout.segments.filter(s => s.lineIndex === lineIdx);
 
@@ -277,18 +278,10 @@ export class TextRenderer extends ShapeRenderer {
                 lineWidth = last.x + last.width;
             }
 
-            let xOffset: number;
-            if (textAlign === 'center') {
-                xOffset = el.x + (el.width - lineWidth) / 2;
-            } else if (textAlign === 'right') {
-                xOffset = el.x + el.width - padding - lineWidth;
-            } else {
-                xOffset = el.x + padding;
-            }
+            const xOffset = alignedLineX(layout.lineAligns[lineIdx], textAlign, lineWidth, el.x + padding, el.x + el.width / 2, el.x + el.width - padding);
 
             const baselineY = lineY + lineHeight / 2;
 
-            const INDENT_SIZE = 20;
 
             for (const seg of lineSegments) {
                 const span = seg.span;
@@ -302,15 +295,12 @@ export class TextRenderer extends ShapeRenderer {
                 // Word-wrapped continuation lines don't carry the flag, so they get no
                 // second bullet.
                 if (seg.listMarker && span.listType && span.listType !== 'none') {
-                    const listLevel = span.listLevel || 0;
-                    const indent = listLevel * INDENT_SIZE;
-                    const markerX = xOffset + indent;
-
-                    if (span.listType === 'bullet') {
-                        renderer.fillText('\u2022', markerX, baselineY);
-                    } else if (span.listType === 'ordered') {
-                        renderer.fillText(`${span.listIndex || 1}.`, markerX, baselineY);
-                    }
+                    const m = listMarkerStyle(span, defaults, color);
+                    renderer.font = m.font;
+                    renderer.fillStyle = RenderPipeline.adjustColor(m.color, isDarkMode);
+                    renderer.fillText(listMarkerText(span), xOffset + listMarkerX(span), baselineY);
+                    renderer.font = buildSpanFontString(span, defaults);
+                    renderer.fillStyle = RenderPipeline.adjustColor(color, isDarkMode);
                 }
 
                 renderer.fillText(seg.text, xOffset + seg.x, baselineY);

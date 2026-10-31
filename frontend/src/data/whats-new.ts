@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.292', date: '2026-10-31', items: [
+        'Export to PowerPoint is now editable: shapes, text, bullets, connectors and images arrive as real PowerPoint objects you can keep editing in your presentation app. Pick “Pictures” in the export dialog for the old one-image-per-slide file.',
+        'Large numbered lists no longer run the number into the text (“IV.Roman”).',
+        'Preview for testers: with Dev Mode on, File → Open accepts PowerPoint files, including SmartArt, bullets and theme styling.',
+    ] },
     { version: '0.8.291', date: '2026-10-29', items: [
         'After using the Pan tool, the Pen, Rectangle and other tools show their own cursor again instead of the hand.',
         'Connectors that route round other shapes no longer disappear while you pan the diagram.',
