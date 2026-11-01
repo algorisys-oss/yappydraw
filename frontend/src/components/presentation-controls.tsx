@@ -1,12 +1,20 @@
 import { type Component, Show, createSignal, onMount, onCleanup, createMemo } from 'solid-js';
 import { store, togglePresentationMode, advancePresentation, retreatPresentation, setSelectedTool, toggleSpotlight } from '../store/app-store';
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
-import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser, Lightbulb } from 'lucide-solid';
+import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser, Lightbulb, Maximize, Presentation } from 'lucide-solid';
+import { t } from '../i18n';
 import { gifCapturing } from '../utils/recording-manager';
 import { PresentationCaptureButtons } from './presentation-capture';
 
-export const PresentationControls: Component = () => {
+/** The presenter view is loaded on demand so the HTML player (which shares these controls) never
+ *  bundles it, and preloaded when the editor's controls mount: the popup must open within the
+ *  click's user activation, so the module should already be there when the click lands. */
+function loadPresenterView() { return import('./presenter-view'); }
+
+export const PresentationControls: Component<{ editor?: boolean }> = (props) => {
     const [isVisible, setIsVisible] = createSignal(true);
+    const [fullscreen, setFullscreen] = createSignal(!!document.fullscreenElement);
+    const onFullscreenChange = () => setFullscreen(!!document.fullscreenElement);
     let hideTimeout: number;
 
     const resetHideTimeout = () => {
@@ -23,11 +31,14 @@ export const PresentationControls: Component = () => {
 
     onMount(() => {
         window.addEventListener('mousemove', resetHideTimeout);
+        document.addEventListener('fullscreenchange', onFullscreenChange);
         resetHideTimeout();
+        if (props.editor) void loadPresenterView();
     });
 
     onCleanup(() => {
         window.removeEventListener('mousemove', resetHideTimeout);
+        document.removeEventListener('fullscreenchange', onFullscreenChange);
         window.clearTimeout(hideTimeout);
     });
 
@@ -230,6 +241,29 @@ export const PresentationControls: Component = () => {
                         reads the canvas surface, so this HUD and the REC badge stay
                         out of the output. */}
                     <PresentationCaptureButtons onInteract={resetHideTimeout} />
+
+                    {/* Opening the presenter view uses up the click, so the slides can't go full
+                        screen on it too; this is the second click that does. */}
+                    <Show when={!fullscreen()}>
+                        <button
+                            onClick={() => { void document.documentElement.requestFullscreen?.().catch(() => { }); resetHideTimeout(); }}
+                            style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', padding: '8px', 'border-radius': '8px' }}
+                            title={t('presenter.fullScreen')}
+                            aria-label={t('presenter.fullScreen')}
+                        >
+                            <Maximize size={18} />
+                        </button>
+                    </Show>
+                    <Show when={props.editor && store.docType !== 'infinite'}>
+                        <button
+                            onClick={() => { void loadPresenterView().then(m => m.openPresenterView()); resetHideTimeout(); }}
+                            style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', padding: '8px', 'border-radius': '8px' }}
+                            title={t('presenter.open')}
+                            aria-label={t('presenter.open')}
+                        >
+                            <Presentation size={18} />
+                        </button>
+                    </Show>
                 </div>
 
                 <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.1)', 'margin': '0 8px' }}></div>

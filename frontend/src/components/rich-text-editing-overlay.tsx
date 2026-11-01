@@ -6,7 +6,7 @@
 
 import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
 import { Maximize2, List, ListOrdered } from "lucide-solid";
-import { store, setSelectedTool, shouldRevertToSelect } from "../store/app-store";
+import { store, setSelectedTool, shouldRevertToSelect, darkenElementColors } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { resolveFontFamily } from "../utils/text-utils";
 import { lineHeightPx as lineHeightOf } from "../utils/text-line-height";
@@ -403,7 +403,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                 font: `${fontSizeVal * scale}px ${fontFamily}`,
                                 // Match the committed colour (per-colour dark adjust, see
                                 // docs/design/dark-mode.md) so editing text reads the same.
-                                color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus'),
+                                color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', darkenElementColors()),
                                 'text-align': textAlign,
                                 'line-height': `${lineHeightOf(fontSizeVal, el) * scale}px`,
                                 filter: 'none',

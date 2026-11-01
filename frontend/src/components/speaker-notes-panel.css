@@ -1,0 +1,58 @@
+/* Docked along the bottom of the canvas, as PowerPoint's notes pane is. Its height is reserved
+   in dockInsets() (utils/dock-layout.ts, SPEAKER_NOTES_H), so the canvas ends where it begins
+   and the slide re-fits above it. --dock-bottom includes the pane itself, hence the subtraction.
+   The slide navigator is not a dock inset (a fixed column over the canvas), so the left edge
+   clears it explicitly via --notes-left-min, set by the component. */
+.speaker-notes-panel {
+    position: fixed;
+    left: max(var(--dock-left, 0px), var(--notes-left-min, 0px));
+    right: var(--dock-right, 0px);
+    bottom: calc(var(--dock-bottom, 178px) - var(--speaker-notes-h, 150px));
+    height: var(--speaker-notes-h, 150px);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel, #ffffff);
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.speaker-notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #64748b);
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    user-select: none;
+}
+
+.speaker-notes-close {
+    display: flex;
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--text-secondary, #64748b);
+    cursor: pointer;
+}
+
+.speaker-notes-close:hover {
+    background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+    color: var(--text-primary, #1e293b);
+}
+
+.speaker-notes-text {
+    flex: 1;
+    min-height: 0;
+    resize: none;
+    border: none;
+    outline: none;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary, #1e293b);
+    background: transparent;
+}

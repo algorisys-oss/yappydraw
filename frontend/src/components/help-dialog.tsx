@@ -203,6 +203,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'viewZoom-helpDialog', keys: 'Shift+?' },
             { key: 'viewZoom-presentFromStart', keys: 'F5' },
             { key: 'viewZoom-presentFromCurrent', keys: 'Shift+F5' },
+            { key: 'viewZoom-presenterView', keys: 'Alt+F5' },
             { key: 'viewZoom-exitPresentation', keys: 'Esc' },
         ]
     },

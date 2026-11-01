@@ -138,6 +138,7 @@ export function renderOpacityMasked(ctx: CanvasRenderingContext2D, el: DrawingEl
 import { getSelectionBoundingBox, getDeleteHandlePosition } from './handle-detection';
 import { getAnchorPoints } from './anchor-points';
 import { projectMasterPosition, ownerSlideIndex } from './slide-utils';
+import { resolveFieldText } from './slide-fields';
 
 /** Opacity of the part of a page's artwork that hangs past the page edge (authoring only). */
 const PAGE_OVERHANG_GHOST_ALPHA = 0.35;
@@ -1086,15 +1087,7 @@ export function renderLayersAndElements(
 
             // Dynamic text variables
             if (needsTextVar && renderedEl.text) {
-                if (renderedEl.text.startsWith('==')) {
-                    renderedEl.text = renderedEl.text.substring(1);
-                } else if (renderedEl.text.startsWith('=')) {
-                    const slideNumber = (activeSlideIndex + 1).toString();
-                    const totalSlides = slides.length.toString();
-                    renderedEl.text = renderedEl.text.substring(1)
-                        .replace(/\$\{slideNumber\}/g, slideNumber)
-                        .replace(/\$\{totalSlides\}/g, totalSlides);
-                }
+                renderedEl.text = resolveFieldText(renderedEl.text, { slideNumber: activeSlideIndex + 1, totalSlides: slides.length });
             }
 
             // Clip drawing to the owning page. The rough cache stores geometry rather

@@ -32,8 +32,10 @@ import {
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
     addChildNode, addSiblingNode, reorderMindmap, moveMindmapNode, applyMindmapStyling, setFocusBranch, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
-    toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
+    toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision, followLink
 } from '../store/app-store';
+import { parseLink, slideLink, actionLink, normaliseLinkInput, SHOW_ACTIONS } from './slide-links';
+import { showToast } from '../components/toast';
 import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
     copyStyle, pasteStyle, lockSelected, flipSelected,
@@ -79,6 +81,56 @@ const TYPE_CATEGORIES: { label: string; types: string[] }[] = [
     { label: 'Images', types: IMAGE_TYPES },
     { label: 'Videos', types: VIDEO_TYPES },
 ];
+
+/**
+ * Link ▸ for the selection: the slides of the deck and the show actions (slides and design
+ * documents), a web address, and Remove. A link is followed by clicking the object while
+ * presenting (utils/slide-links.ts for the formats).
+ */
+function linkMenu(els: DrawingElement[]): MenuItem {
+    const set = (link: string | null) => {
+        pushToHistory();
+        for (const el of els) updateElement(el.id, { link } as Partial<DrawingElement>, false);
+    };
+    // The selection's link when they all share one; otherwise none is shown as current.
+    const links = new Set(els.map(e => e.link ?? ''));
+    const current = links.size === 1 ? [...links][0] : '';
+    const items: MenuItem[] = [];
+    if (parseLink(current).kind !== 'none') {
+        items.push({ label: t('links.open'), onClick: () => followLink(current) }, { separator: true });
+    }
+    if (isPagedDocType(store.docType) && store.slides.length > 1) {
+        items.push({
+            label: t('links.toSlide'),
+            submenu: store.slides.map((s, i) => ({
+                label: `${i + 1}. ${s.name || ''}`.trim(),
+                checked: current === slideLink(s.id),
+                onClick: () => set(slideLink(s.id)),
+            })),
+        });
+        items.push({
+            label: t('links.showAction'),
+            submenu: SHOW_ACTIONS.map(a => ({
+                label: t(`links.action.${a}` as any),
+                checked: current === actionLink(a),
+                onClick: () => set(actionLink(a)),
+            })),
+        });
+    }
+    items.push({
+        label: t('links.webAddress'),
+        onClick: () => {
+            const shown = parseLink(current).kind === 'url' ? current : '';
+            const input = window.prompt(t('links.webAddressPrompt'), shown);
+            if (input === null) return;
+            const link = normaliseLinkInput(input);
+            if (link === null) { showToast(t('links.invalid'), 'error'); return; }
+            set(link || null);
+        },
+    });
+    if (current) items.push({ separator: true }, { label: t('links.remove'), onClick: () => set(null) });
+    return { label: t('links.menu'), icon: '🔗', submenu: items };
+}
 
 function buildSelectByTypeMenu(): MenuItem[] {
     const items: MenuItem[] = [];
@@ -262,7 +314,7 @@ function buildContextMenuItems(
             if (selectionCount === 1 && firstEl?.link) {
                 items.push({
                     label: 'Open Link',
-                    onClick: () => window.open(firstEl.link!, '_blank', 'noopener')
+                    onClick: () => followLink(firstEl.link)
                 });
             }
 
@@ -1625,14 +1677,13 @@ function buildContextMenuItems(
                 { label: 'Copy Styles', shortcut: 'Ctrl+Alt+C', onClick: copyStyle },
                 { label: 'Paste Styles', shortcut: 'Ctrl+Alt+V', onClick: pasteStyle },
             );
-            const selectedEl = store.elements.find(e => e.id === store.selection[0]);
-            if (selectedEl?.link) {
-                items.push({
-                    label: 'Open Link',
-                    onClick: () => window.open(selectedEl.link!, '_blank', 'noopener')
-                });
-            }
             items.push({ separator: true });
+        }
+        // A group (an icon and its label) is the usual button on a slide, so a link applies to
+        // the whole selection; clicking any linked part follows it.
+        if (selectionCount >= 1) {
+            const selectedEls = store.selection.map(id => store.elements.find(e => e.id === id)).filter(Boolean) as DrawingElement[];
+            if (selectedEls.length) items.push(linkMenu(selectedEls), { separator: true });
         }
 
         // Video-specific actions

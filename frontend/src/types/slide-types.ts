@@ -66,6 +66,9 @@ export interface Slide {
     thumbnail?: string; // Data URL preview
     transition?: SlideTransition; // Transition when entering this slide
     lastViewState?: { scale: number; panX: number; panY: number }; // Persisted viewport state
+    /** Speaker notes: plain text, one paragraph per line. Shown in the notes strip under the
+     *  canvas and in the presenter view; never drawn on the slide. Round-trips PPTX notes. */
+    notes?: string;
 }
 
 /**

@@ -13,7 +13,8 @@
 import type { DrawingElement, PathSubpath, PathAnchor, RichTextSpan, TextAlign, PatternFill } from '../../types';
 import type { SlideDocument, Slide as YappySlide, SlideTransition } from '../../types/slide-types';
 import { createSlideDocument, createDefaultSlide } from '../../types/slide-types';
-import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition } from './deck';
+import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink } from './deck';
+import { slideLink, actionLink } from '../slide-links';
 import { geometryPathsPx, textRectPx, loadPresets, type GeomDef } from './guides';
 import { cmdsBounds } from './custgeom';
 import { reverseFontFamily } from '../text-utils';
@@ -101,6 +102,17 @@ interface Conv {
     slideBg?: string;
     /** Grey-tone copies of pictures that are shown in grayscale somewhere (image url → copy). */
     gray: Map<string, string>;
+    /** Deck slide key → the Yappy slide id it became, for slide links. */
+    slideIds?: Map<string, string>;
+}
+
+/** A deck click action as a Yappy link (utils/slide-links.ts); null when it can't be kept. */
+function linkOf(link: DeckLink | undefined, c: Conv): string | null {
+    if (!link) return null;
+    if (link.kind === 'url') return link.url;
+    if (link.kind === 'action') return actionLink(link.action);
+    const id = c.slideIds?.get(link.key);
+    return id ? slideLink(id) : null;
 }
 
 /** A grey-tone copy of a picture (`a:grayscl`; Yappy pictures have no such adjustment). Browser only. */
@@ -573,12 +585,18 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
     const out: DrawingElement[] = [];
     for (const it of items) {
         try {
+            const made: DrawingElement[] = [];
             switch (it.kind) {
-                case 'shape': out.push(...shapeElements(it, c, groups)); break;
-                case 'connector': out.push(...connectorElements(it, c, groups)); break;
-                case 'picture': out.push(...pictureElement(it, c, groups)); break;
-                case 'group': out.push(...convertItems(it.children, c, [...groups, c.nextId('group')])); break;
+                case 'shape': made.push(...shapeElements(it, c, groups)); break;
+                case 'connector': made.push(...connectorElements(it, c, groups)); break;
+                case 'picture': made.push(...pictureElement(it, c, groups)); break;
+                case 'group': made.push(...convertItems(it.children, c, [...groups, c.nextId('group')])); break;
             }
+            // A linked group is a button made of parts: every part follows the link, unless a
+            // part has its own.
+            const link = linkOf(it.link, c);
+            if (link) for (const el of made) if (!el.link) el.link = link;
+            out.push(...made);
         } catch (e) {
             c.warnings.push(`"${it.name}" couldn't be converted and was skipped.`);
         }
@@ -692,16 +710,21 @@ export async function deckToDocument(deck: Deck, nextId: (type: string) => strin
         const img = bg?.kind === 'image' ? images.get(bg.media) : undefined;
         return bg?.kind === 'image' && img ? slideBackground(img.url, W, H, bg.tile) : undefined;
     }));
+    // Slide ids first, so a link on slide 1 can point at slide 5.
+    const ids = deck.slides.map(() => nextId('slide'));
+    const slideIds = new Map<string, string>();
+    deck.slides.forEach((s, i) => { if (s.key) slideIds.set(s.key, ids[i]); });
     deck.slides.forEach((s, i) => {
         const x = i * (W + PAGE_GAP);
-        const slide = createDefaultSlide(undefined, s.name || `Slide ${i + 1}`, x, 0, { width: W, height: H });
+        const slide = createDefaultSlide(ids[i], s.name || `Slide ${i + 1}`, x, 0, { width: W, height: H });
         slide.order = i;
-        const c: Conv = { ox: x, oy: 0, presets, nextId, out: [], byPptId: new Map(), glue: [], warnings, stats, images, slideBg: laidOut[i], gray };
+        const c: Conv = { ox: x, oy: 0, presets, nextId, out: [], byPptId: new Map(), glue: [], warnings, stats, images, slideBg: laidOut[i], gray, slideIds };
         doc.elements.push(...convertItems(s.items, c, []));
         c.glue.forEach(f => f());
         applyBackground(slide, s.background, c);
         const tr = transitionOf(s.transition);
         if (tr) slide.transition = tr;
+        if (s.notes) slide.notes = s.notes;
         doc.slides.push(slide);
         stats.slides++;
     });

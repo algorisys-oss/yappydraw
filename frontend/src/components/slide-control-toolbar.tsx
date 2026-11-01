@@ -1,15 +1,16 @@
 import { type Component, createSignal, createEffect, Show } from 'solid-js';
 import { isMultiPageDocType } from '../types/slide-types';
 import {
-    store, togglePresentationMode, toggleSlideToolbar,
+    store, togglePresentationMode, toggleSlideToolbar, toggleSpeakerNotes,
     setSlideToolbarPosition, setIsPreviewing, setActiveSlide
 } from '../store/app-store';
 import { sequenceAnimator } from '../utils/animation/sequence-animator';
 import { getElementsOnSlide } from '../utils/slide-utils';
 import {
     Zap, GripVertical, X,
-    MonitorPlay, ChevronLeft, ChevronRight
+    MonitorPlay, ChevronLeft, ChevronRight, NotebookPen
 } from 'lucide-solid';
+import { t } from '../i18n';
 
 export const SlideControlToolbar: Component = () => {
     let toolbarRef: HTMLDivElement | undefined;
@@ -193,6 +194,15 @@ export const SlideControlToolbar: Component = () => {
                         label="Preview Animations"
                         color="#f59e0b"
                     />
+                    <Show when={store.docType === 'slides'}>
+                        <ToolbarButton
+                            onClick={() => toggleSpeakerNotes()}
+                            icon={<NotebookPen size={18} />}
+                            label={t('commands.toggle-speaker-notes')}
+                            color="#10b981"
+                            active={store.showSpeakerNotes}
+                        />
+                    </Show>
                 </div>
 
                 {/* Close */}
@@ -224,6 +234,7 @@ interface ToolbarButtonProps {
     label: string;
     color: string;
     disabled?: boolean;
+    active?: boolean;
 }
 
 const ToolbarButton: Component<ToolbarButtonProps> = (props) => {
@@ -236,10 +247,12 @@ const ToolbarButton: Component<ToolbarButtonProps> = (props) => {
             onMouseLeave={() => setIsHovered(false)}
             disabled={props.disabled}
             title={props.label}
+            aria-label={props.label}
+            aria-pressed={props.active === undefined ? undefined : props.active}
             style={{
                 background: isHovered() && !props.disabled ? 'rgba(0, 0, 0, 0.05)' : 'none',
                 border: 'none',
-                color: props.disabled ? '#cbd5e1' : isHovered() ? props.color : '#475569',
+                color: props.disabled ? '#cbd5e1' : (isHovered() || props.active) ? props.color : '#475569',
                 padding: '8px',
                 'border-radius': '8px',
                 cursor: props.disabled ? 'default' : 'pointer',

@@ -23,7 +23,7 @@ import {
     setSymmetryRings, setSymmetryRingSpacing,
     setSymmetryAngleDeg, setSymmetryCenter, noteMandalaArmedSymmetry, setSymmetryEditing, toggleSymmetryEditing,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
-    updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
+    updateSlideTransition, updateSlideBackground, updateSlideNotes, toggleSpeakerNotes, followLink, insertSlideWithLayout, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
     setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
@@ -39,6 +39,9 @@ import {
 import { setPrintPreview, printPreviewActive } from './utils/print-preview';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
+import { slideLink, actionLink, normaliseLinkInput, SHOW_ACTIONS, type ShowAction } from './utils/slide-links';
+import { SLIDE_LAYOUTS } from './utils/slide-layouts';
+import { openPresenterView, closePresenterView, isPresenterViewOpen } from './components/presenter-view';
 import { exportToSvg, exportToPdf, exportToPptx, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
 import { socialTargetsForPage, SOCIAL_TARGETS } from "./utils/social-export";
 import { GRID_STYLES, gridSnap, gridUnitToPx } from "./utils/grid-lattice";
@@ -3793,6 +3796,70 @@ export const YappyAPI = {
     reorderSlides(fromIndex: number, toIndex: number) { reorderSlides(fromIndex, toIndex); },
     updateSlideTransition(slideIndex: number, transition: Partial<SlideTransition>) { updateSlideTransition(slideIndex, transition); },
     updateSlideBackground(slideIndex: number, updates: Partial<Slide> | string) { updateSlideBackground(slideIndex, updates); },
+    /**
+     * Speaker notes of a slide (default: the active one) as plain text, one paragraph per
+     * line; `''` when it has none or the index is out of range. Notes never draw on the
+     * slide; they show in the notes strip and round-trip PowerPoint's notes.
+     */
+    getSlideNotes(slideIndex: number = store.activeSlideIndex): string {
+        return store.slides[slideIndex]?.notes ?? '';
+    },
+    /** Set a slide's speaker notes (one undo step). Blank text removes them. No-op out of range. */
+    setSlideNotes(slideIndex: number, notes: string) { updateSlideNotes(slideIndex, String(notes ?? '')); },
+    /** Show/hide the speaker-notes strip under the canvas (slides documents). */
+    toggleSpeakerNotes(visible?: boolean) { toggleSpeakerNotes(visible); },
+    /**
+     * Present from the current slide with the presenter view: a second window showing the
+     * current and next slide, the speaker notes, a timer and a clock (Alt+F5). Browsers only
+     * open the window from a click or key press, so call this from an event handler; returns
+     * false when the window was blocked. Ending the show closes it.
+     */
+    openPresenterView(): boolean { return openPresenterView(); },
+    /**
+     * Give objects a link, followed by clicking them while presenting (Link ▸ in the right-click
+     * menu does the same). `link` is a web address (`https://…`, `mailto:…`, or a bare
+     * `www.example.com`), `{ slide: index }` for another slide (it follows the slide if slides
+     * are reordered), one of `'next' | 'previous' | 'first' | 'last' | 'end'`, or null to remove.
+     * Returns the stored link ('' when removed), or null when the link can't be used — unsafe
+     * addresses such as `javascript:` are refused. One undo step.
+     *
+     *   Y.setLink(buttonId, { slide: 4 });          // jump to slide 5
+     *   Y.setLink([iconId, labelId], 'https://yappydraw.com');
+     */
+    setLink(ids: string | string[], link: string | { slide: number } | null): string | null {
+        let stored: string | null;
+        if (link === null) stored = '';
+        else if (typeof link === 'object') {
+            const s = store.slides[link.slide];
+            if (!s) return null;
+            stored = slideLink(s.id);
+        } else stored = (SHOW_ACTIONS as readonly string[]).includes(link) ? actionLink(link as ShowAction) : normaliseLinkInput(link);
+        if (stored === null) return null;
+        const list = (Array.isArray(ids) ? ids : [ids]).filter(id => store.elements.some(e => e.id === id));
+        if (!list.length) return null;
+        pushToHistory();
+        for (const id of list) updateElement(id, { link: stored || null } as any, false);
+        return stored;
+    },
+    /** An object's link as stored ('' when it has none): a URL, `#slide:<slideId>`, or `#next`/`#previous`/`#first`/`#last`/`#end`. */
+    getLink(id: string): string { return store.elements.find(e => e.id === id)?.link ?? ''; },
+    /** Follow a link as a click in the show would. Returns false when there is nothing safe to follow. */
+    followLink(link: string): boolean { return followLink(link); },
+    /**
+     * Insert a slide after the current one, laid out from a layout with placeholder text (the
+     * Layouts button beside + Add Slide). It takes the current slide's background; the layout's
+     * colours are chosen to read on it. Returns the new slide's index, or -1 (not a slides
+     * document, or an unknown layout). One undo step.
+     *
+     *   Y.insertSlideWithLayout('two-column');
+     */
+    insertSlideWithLayout(layout: import('./utils/slide-layouts').SlideLayoutId): number { return insertSlideWithLayout(layout); },
+    /** The layout ids `insertSlideWithLayout` accepts. */
+    getSlideLayouts(): string[] { return [...SLIDE_LAYOUTS]; },
+    /** Close the presenter view (the show keeps running). */
+    closePresenterView() { closePresenterView(); },
+    /** Is the presenter view window open? */
+    isPresenterViewOpen(): boolean { return isPresenterViewOpen(); },
     advancePresentation() { return advancePresentation(); },
     retreatPresentation() { return retreatPresentation(); },
     goToFirstSlide() { return setActiveSlide(0); },

@@ -1,7 +1,9 @@
 .slide-navigator {
     position: fixed;
     top: 0;
-    left: 0;
+    /* Beside a left-docked toolbar, not under it (it hid the slide numbers and the left of
+       + Add Slide). Keep in step with slideNavigatorRight() in utils/dock-layout.ts. */
+    left: var(--toolbar-left, 0px);
     height: calc(100vh - 28px);
     width: 240px;
     z-index: 1000;
@@ -274,6 +276,76 @@
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     pointer-events: auto;
+    display: flex;
+    gap: 8px;
+    position: relative;
+}
+
+.add-slide-layout-btn {
+    flex: 0 0 48px;
+    height: 48px;
+    border-radius: 8px;
+    border: 2px dashed #cbd5e1;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-slide-layout-btn:hover,
+.add-slide-layout-btn.active {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.04);
+}
+
+/* Opens upward from the Add button, inside the navigator column. */
+.slide-layout-menu {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: calc(100% - 8px);
+    z-index: 20;
+    padding: 10px;
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.slide-layout-menu-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary, #64748b);
+    margin: 0 2px 8px;
+}
+
+.slide-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.slide-layout-item {
+    padding: 8px 6px;
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.25;
+    text-align: left;
+    color: var(--text-primary, #1e293b);
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.slide-layout-item:hover {
+    border-color: #3b82f6;
+    color: #1d4ed8;
 }
 
 .add-slide-btn {
@@ -297,30 +369,30 @@
 }
 
 /* Dark Mode Adjustments */
-:global(.dark) .slide-navigator {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-navigator {
     border-right-color: rgba(255, 255, 255, 0.1);
 }
 
-:global(.dark) .slide-navigator-header,
-:global(.dark) .slide-list-container,
-:global(.dark) .add-slide-container {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-navigator-header,
+:is([data-theme="dark"], [data-theme="focus"]) .slide-list-container,
+:is([data-theme="dark"], [data-theme="focus"]) .add-slide-container {
     background: rgba(15, 23, 42, 0.9);
 }
 
-:global(.dark) .slide-navigator-header {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-navigator-header {
     color: #f1f5f9;
 }
 
-:global(.dark) .slide-thumbnail {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-thumbnail {
     background: #1e293b;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
-:global(.dark) .slide-index {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-index {
     color: #64748b;
 }
 
-:global(.dark) .slide-thumbnail.active {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-thumbnail.active {
     border-color: #60a5fa;
     background: rgba(59, 130, 246, 0.12);
     box-shadow:
@@ -328,34 +400,39 @@
         0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
-:global(.dark) .slide-thumbnail-wrapper:has(.slide-thumbnail.active) .slide-index {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-thumbnail-wrapper:has(.slide-thumbnail.active) .slide-index {
     color: #60a5fa;
 }
 
-:global(.dark) .slide-list-container::-webkit-scrollbar-thumb {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-list-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
 }
 
-:global(.dark) .add-slide-btn {
+:is([data-theme="dark"], [data-theme="focus"]) .add-slide-btn,
+:is([data-theme="dark"], [data-theme="focus"]) .add-slide-layout-btn {
     border-color: #334155;
 }
 
-:global(.dark) .slide-delete-btn {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-layout-item:hover {
+    color: #93c5fd;
+}
+
+:is([data-theme="dark"], [data-theme="focus"]) .slide-delete-btn {
     background: rgba(30, 41, 59, 0.9);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-:global(.dark) .slide-delete-btn:hover {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-delete-btn:hover {
     background: #ef4444;
 }
 
-:global(.dark) .slide-duplicate-btn {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-duplicate-btn {
     background: rgba(30, 41, 59, 0.9);
     border-color: rgba(255, 255, 255, 0.1);
     color: #cbd5e1;
 }
 
-:global(.dark) .slide-duplicate-btn:hover {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-duplicate-btn:hover {
     background: #3b82f6;
     color: white;
 }
@@ -406,7 +483,7 @@
 }
 
 /* Dark mode for context menu */
-:global(.dark) .slide-context-menu {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-context-menu {
     background: #1e293b;
     box-shadow:
         0 4px 6px -1px rgba(0, 0, 0, 0.3),
@@ -414,11 +491,11 @@
         0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-:global(.dark) .slide-context-menu .menu-item {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-context-menu .menu-item {
     color: #cbd5e1;
 }
 
-:global(.dark) .slide-context-menu .menu-item:hover {
+:is([data-theme="dark"], [data-theme="focus"]) .slide-context-menu .menu-item:hover {
     background: #334155;
     color: white;
 }

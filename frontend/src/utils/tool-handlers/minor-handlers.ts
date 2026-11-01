@@ -10,7 +10,8 @@ import { isPagedDocType } from '../../types/slide-types';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement, startInkCleanupIfNeeded } from '../../store/app-store';
+import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement, startInkCleanupIfNeeded, followLink } from '../../store/app-store';
+import { parseLink } from '../slide-links';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { animPosedElements } from '../../store/anim-ops';
@@ -179,6 +180,8 @@ export function presentationOnDown(
         for (let i = store.elements.length - 1; i >= 0; i--) {
             const el = store.elements[i];
             if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
+                // A linked object is a button in the show: follow the link instead of advancing.
+                if (e.button === 0 && followLink(el.link)) return true;
                 // Check for openBox with click-to-open enabled
                 if (el.type === 'openBox' && el.enableClickToOpen) {
                     triggerOpenBoxReveal(el);
@@ -236,11 +239,27 @@ export function presentationOnDown(
  */
 export function presentationOnMove(
     e: PointerEvent,
-    pState: PointerState
+    pState: PointerState,
+    helpers?: PointerHelpers
 ): boolean {
     if (store.appMode !== 'presentation') return false;
 
     const isNavTool = store.selectedTool === 'selection' || store.selectedTool === 'pan';
+
+    // A hand over anything with a link, so the audience-facing presenter can see what's clickable.
+    if (isNavTool && helpers && e.buttons === 0) {
+        const { x, y } = helpers.getWorldCoordinates(e.clientX, e.clientY);
+        const threshold = 5 / store.viewState.scale;
+        let linked = false;
+        for (let i = store.elements.length - 1; i >= 0; i--) {
+            const el = store.elements[i];
+            if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements)) {
+                linked = parseLink(el.link).kind !== 'none';
+                break;
+            }
+        }
+        helpers.setCursor(linked ? 'pointer' : 'default');
+    }
 
     // If elements are selected and being dragged, let selectionOnMove handle it
     if (isNavTool && store.selection.length > 0) return false;

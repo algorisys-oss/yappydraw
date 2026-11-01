@@ -11412,3 +11412,115 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Warm the dev server once instead of raising timeouts.** Cold Vite compiles are what blow
   30–60 s boot waits under two workers; a `globalSetup` that boots the app once removes the cause.
 
+## Speaker notes (2026-11-01)
+
+- **A notes slide drags in two more parts.** PowerPoint wants a notes master whenever any slide
+  has a notes slide, and the notes master needs its own theme relationship. We write
+  `notesMaster1.xml` (PowerPoint's default placeholder layout, as DeckCraft's writer does),
+  a second copy of the theme as `theme2.xml`, and `<p:notesMasterIdLst>` between
+  `sldMasterIdLst` and `sldIdLst` — schema order matters there. Decks without notes get none
+  of it, so their output is byte-for-byte what it was.
+- **Notes are the body placeholder, nothing else.** A notes slide also carries the slide image,
+  header, date, footer and slide-number placeholders; reading every text box would put "1" (the
+  slide number) into the notes. Match `ph type="body"` (or an untyped placeholder, which
+  defaults to `obj`), and keep `a:fld` text, which is what PowerPoint last rendered there.
+- **Pictures mode builds its own slides.** `exportToPptx` has a second slide-building branch for
+  `mode: 'pictures'` that bypasses `pageToSlide`, so a field added to one path silently goes
+  missing from the other. The spec round-trips both modes for that reason.
+- **A controlled textarea must not echo the store's normalised value.** The store keeps blank
+  notes as absent; binding the box straight to it would swallow a leading space or a fresh
+  Enter mid-typing. The pane keeps its own value while focused and re-reads the store on slide
+  change, blur, or an outside change (undo, the API). One `pushToHistory` per focus session
+  makes the typing one undo step.
+- **A pane that covers the canvas should take its space instead.** The first version floated
+  over the bottom of the slide. Adding its height to `dockInsets()` was enough to make the
+  canvas shrink and the slide re-fit above it, because the canvas already re-lays itself out
+  whenever `dockInsets()`'s dependencies change. The slide navigator is *not* a dock inset (a
+  fixed 240 px column over the canvas), so the pane clears it separately, or it would cover
+  "+ Add Slide".
+- **`mock.module` for a store-coupled helper.** `markdown-to-slides` only needs ids from
+  `id-generator`, which imports the whole store (and through it lucide, which throws under
+  bun's server build). Mocking `./id-generator` before a dynamic import keeps the parser test
+  tiny.
+
+## Presenter view (2026-11-01)
+
+- **Render into the popup instead of syncing with it.** A same-origin `window.open('')` window
+  can be rendered into from the opener with Solid's `render(..., popup.document.body)`. It then
+  reads the editor's own store: slide changes, notes edits and the end of the show reach it like
+  any component, and there is no BroadcastChannel protocol to keep in step.
+- **Delegated events don't cross documents.** Solid's `onClick` is delegated to the document the
+  module was loaded in (the editor's), so it never fires in the popup. Use `on:click` (a native
+  listener) for anything rendered there. Styles likewise: the app's CSS only loads in the
+  editor, so the popup gets an injected `<style>`.
+- **One click, one activation.** `window.open` uses up the click's user activation, and
+  browsers then reject `requestFullscreen` in the same handler (and vice versa). The popup opens
+  first; the presentation toolbar has a Full screen button for the second click.
+- **Opening the popup took the opener out of full screen, which ended the show.** App.tsx ended
+  the presentation on any fullscreen exit. With the presenter view open, a fullscreen exit no
+  longer ends the show. Found by the spec, not by reading: the toolbar-button test failed on
+  `appMode === 'design'` after the popup opened.
+- **An effect that reacts to "not presenting" fires on its first run.** The popup is rendered a
+  moment before the show starts, so "close when appMode isn't presentation" closed it instantly.
+  React to the transition (`on(appMode, (m, prev) => prev === 'presentation' && …)`).
+- **Lazy-load across bundles.** The presentation controls are shared with the exported HTML
+  player; a static import would pull the presenter view (and `utils/export`) into the player.
+  The controls import it on demand and preload it on mount in the editor, so the popup still
+  opens inside the click's activation window.
+- **The i18n ratchet reads `=> … <` as JSX text.** `const f = () => import(…); … Component<P>`
+  made the text between the arrow and the generic look like a hardcoded string. A function
+  declaration avoids it.
+
+## Dark theme on pages (2026-11-01, bugs #460–#461)
+
+- **A colour transform has to know what it's drawn against.** The dark-mode lightness swap is
+  right on a dark surface and wrong on a white one. Pages are white in Dark by design, so the
+  rule is "swap where the surface is dimmed", in one helper (`darkenElementColors`), not
+  "swap in dark themes". Three renderers (canvas, thumbnails, recordings) each had their own
+  copy of the old check; the thumbnail's had drifted to `theme !== 'light'`.
+- **A selector the browser can't parse is a rule that silently doesn't exist.** `:global(.dark)`
+  belongs to CSS Modules; in a plain `.css` file the whole rule is dropped, with no warning
+  anywhere. Grep for framework syntax when a stylesheet's dark rules "don't work".
+- **Prove a regression test by removing the fix.** Stashing just the fix files and re-running
+  the spec gave luminance 255 at the block's centre — the exact white-on-white the users saw.
+- **Found while screenshotting another feature.** Both bugs showed up in the dark-theme
+  screenshot taken to check the speaker-notes pane. Screenshot new UI in every theme, and read
+  the whole frame, not just the part you changed.
+
+## Links in the show; fitting the slide to the canvas (2026-11-01, bugs #462–#463)
+
+- **One string, three kinds of target.** `link` stays a single string (documents, Excalidraw
+  round trip) and gains two internal forms: `#slide:<slideId>` and `#next`/`#previous`/
+  `#first`/`#last`/`#end`. Keying slide links to the slide id makes them survive reordering
+  for free; the PPTX writer resolves the id to `slideN.xml` at export, and the reader maps part
+  paths back to the new ids (slide ids are minted before any slide is converted, so a link on
+  slide 1 can name slide 5).
+- **Parse links where they are followed, not where they are stored.** A file can carry any
+  string in `link`; the only safe place to check is the click. `parseLink` is the one gate, and
+  the old `window.open(el.link)` calls (#463) now go through it too.
+- **A fit function written before the dock layout lies quietly.** `zoomToFitSlide` used the
+  window size; after the canvas shrank to "window minus chrome", the slide was off by every
+  inset and ran under the navigator. Nothing failed, because nothing measured where the slide
+  landed on screen. `temp/fit-probe.mjs` prints canvas and slide rects in screen pixels.
+- **A test that can't hit its target is a probe.** The right-click-menu spec failed because the
+  object was under the navigator — that is how #462 was found.
+- **Wait for state that settles asynchronously.** `addSlide`/`reorderSlides` switch slides
+  after a delay; a test's `setActiveSlide(0)` could land first and be overridden.
+
+## Slide layouts; master and fields in exports (2026-11-01, bug #464)
+
+- **Fix the scene, not each exporter.** Six exporters (PNG page, stacked PNG, raster PDF, vector
+  PDF, SVG, PPTX) all start from `exportScene()`. Expanding the master into per-page copies and
+  resolving fields there fixed all of them at once, the vector PDF's id-based `keep` sets
+  included, because the copies are ordinary elements owned by their page.
+- **Look for the second copy of a formula.** The fit had a twin in the transition manager; the
+  field substitution had near-twins in thumbnails and recordings. After fixing one, grep for
+  the expression it used (`window.innerWidth - margin * 2`).
+- **Two layout systems overlapped silently.** The navigator was positioned from the window edge
+  while the toolbar docked onto that edge; each was right on its own. One function
+  (`toolbarInset`) now feeds the CSS variable and the fit, so they can't drift.
+- **Solid's delegated `onClick` defeats `stopPropagation` against a `document` listener.** Both
+  run on `document`; the outside-click handler has to check where the click landed.
+- **Reuse the generators, not just their output.** The layout picker is twelve lines of
+  placeholder content over `createSlideElements`, plus scaling for slides that aren't 1920×1080.
+

@@ -86,6 +86,7 @@ const Toast = lazy(() => import('./components/toast'));
 const ChoiceDialog = lazy(() => import('./components/choice-dialog'));
 const QuickToolbar = lazy(() => import('./components/quick-toolbar').then(m => ({ default: m.QuickToolbar })));
 const SlideNavigator = lazy(() => import('./components/slide-navigator').then(m => ({ default: m.SlideNavigator })));
+const SpeakerNotesPanel = lazy(() => import('./components/speaker-notes-panel').then(m => ({ default: m.SpeakerNotesPanel })));
 const SlideControlToolbar = lazy(() => import('./components/slide-control-toolbar').then(m => ({ default: m.SlideControlToolbar })));
 const PresentationControls = lazy(() => import('./components/presentation-controls').then(m => ({ default: m.PresentationControls })));
 const CanvasToolbar = lazy(() => import('./components/canvas-toolbar').then(m => ({ default: m.CanvasToolbar })));
@@ -104,6 +105,7 @@ import AboutDialog from './components/about-dialog';
 import { initAPI } from './api';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
+import { openPresenterView, isPresenterViewOpen } from './components/presenter-view';
 import { insertFrame, insertKeyframeAndSelect, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame, copyFrames, cutFrames, pasteFrames, duplicateFrames, stepCel, stepMarker, endPegEdit } from './store/anim-ops';
 import { createSymbol, simplifyPath } from './store/app-store';
 import { toggleAnimPlayback } from './utils/animation/anim-playback';
@@ -259,6 +261,11 @@ const App: Component = () => {
       // Presentation Mode shortcuts (highest priority)
       if (e.key === 'F5') {
         e.preventDefault();
+        if (e.altKey) {
+          // Alt+F5: present from the current slide with the presenter view (as in PowerPoint)
+          if (isMultiPageDocType(store.docType)) openPresenterView();
+          return;
+        }
         if (e.shiftKey) {
           // Shift+F5: Present from current slide
           togglePresentationMode(true);
@@ -1094,7 +1101,10 @@ const App: Component = () => {
     };
 
     const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && store.appMode === 'presentation') {
+      // Leaving full screen ends the show — except with the presenter view open. Opening that
+      // window is itself what drops this one out of full screen, and a presenter moving between
+      // two windows must not end the show; the controls' Full screen button brings it back.
+      if (!document.fullscreenElement && store.appMode === 'presentation' && !isPresenterViewOpen()) {
         togglePresentationMode(false);
       }
     };
@@ -1696,11 +1706,12 @@ const App: Component = () => {
         <Show when={isMultiPageDocType(store.docType)}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation' && !store.gameActive}>
-              <PresentationControls />
+              <PresentationControls editor />
             </Show>
           }>
             <SlideNavigator />
           </Show>
+          <SpeakerNotesPanel />
         </Show>
         <CanvasToolbar />
         <DsOpsPanel />

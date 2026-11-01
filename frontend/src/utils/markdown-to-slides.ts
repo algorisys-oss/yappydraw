@@ -15,6 +15,11 @@
  *  - `1. item` → numbered list (treated same as bullets)
  *  - `> quote` → quote slide
  *  - Paragraphs → body text
+ *
+ * Speaker notes (never drawn on the slide):
+ *  - a line starting `Note:` or `Notes:` (reveal.js) — it and every line after it, up to the
+ *    next slide break, are the slide's notes
+ *  - an HTML comment `<!-- … -->`, on one line or several (Marp, Slidev)
  */
 
 import type { DrawingElement } from '../types';
@@ -33,6 +38,7 @@ interface ParsedSlide {
     body?: string;
     quoteText?: string;
     quoteAttribution?: string;
+    notes?: string[];
 }
 
 /**
@@ -56,8 +62,15 @@ export function parseMarkdownToSlides(markdown: string, paletteName?: string) {
     const slides: ParsedSlide[] = [];
     let current: ParsedSlide | null = null;
     let bodyLines: string[] = [];
+    // After a `Note:` line, everything up to the next slide break is notes.
+    let inNotes = false;
+    const addNote = (text: string) => {
+        if (!current) startSlide('');
+        (current!.notes ??= []).push(text);
+    };
 
     const flushCurrent = () => {
+        inNotes = false;
         if (!current) return;
         // Flush accumulated body lines
         if (bodyLines.length > 0 && !current.bullets?.length && !current.body && !current.quoteText) {
@@ -76,6 +89,17 @@ export function parseMarkdownToSlides(markdown: string, paletteName?: string) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmed = line.trim();
+
+        // HTML comment → notes (one line, or up to the line that closes it)
+        if (trimmed.startsWith('<!--')) {
+            const parts = [trimmed.slice(4)];
+            while (!parts[parts.length - 1].includes('-->') && i + 1 < lines.length) parts.push(lines[++i].trim());
+            const last = parts.length - 1;
+            parts[last] = parts[last].slice(0, parts[last].includes('-->') ? parts[last].indexOf('-->') : undefined);
+            const text = parts.join('\n').trim();
+            if (text) addNote(text);
+            continue;
+        }
 
         // Horizontal rule → slide break
         if (/^---+\s*$/.test(trimmed)) {
@@ -98,6 +122,19 @@ export function parseMarkdownToSlides(markdown: string, paletteName?: string) {
         const h2Match = trimmed.match(/^##\s+(.+)$/);
         if (h2Match) {
             startSlide(h2Match[1]);
+            continue;
+        }
+
+        // `Note:` → this line's remainder and the rest of the slide are notes
+        const noteMatch = trimmed.match(/^notes?:\s*(.*)$/i);
+        if (noteMatch) {
+            if (noteMatch[1]) addNote(noteMatch[1]);
+            else if (!current) startSlide('');
+            inNotes = true;
+            continue;
+        }
+        if (inNotes) {
+            addNote(line.trimEnd());
             continue;
         }
 
@@ -209,6 +246,7 @@ export function parseMarkdownToSlides(markdown: string, paletteName?: string) {
             dimensions: { width: 1920, height: 1080 },
             order: index,
             backgroundColor: palette.background,
+            ...(notesText(parsed.notes) && { notes: notesText(parsed.notes) }),
         });
     });
 
@@ -220,6 +258,11 @@ export function parseMarkdownToSlides(markdown: string, paletteName?: string) {
         slides: slideFrames,
         globalSettings: {},
     };
+}
+
+/** Joined notes with leading/trailing blank lines dropped; '' when there are none. */
+function notesText(notes: string[] | undefined): string {
+    return (notes ?? []).join('\n').replace(/^\s*\n/, '').trimEnd();
 }
 
 /**

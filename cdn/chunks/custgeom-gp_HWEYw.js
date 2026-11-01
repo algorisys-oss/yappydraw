@@ -1,4 +1,4 @@
-import { al as w } from "./index-OCtbNe3Y.js";
+import { am as w } from "./index-v2rH-W8-.js";
 import { s as z, z as X } from "./browser-DbZP-BrN.js";
 const Z = 9525, _ = 12700, U = (c) => {
   const o = ((Number.isFinite(c) ? c : 0) % 360 + 360) % 360;
@@ -23,7 +23,10 @@ const Z = 9525, _ = 12700, U = (c) => {
   image: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
   presProps: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
   viewProps: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps",
-  tableStyles: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles"
+  tableStyles: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
+  notesSlide: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
+  notesMaster: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
+  hyperlink: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
 }, Q = (c) => N + `<Relationships xmlns="${R.rel}">` + c.map((o) => `<Relationship Id="${D(o.id)}" Type="${o.type}" Target="${D(o.target)}"${o.external ? ' TargetMode="External"' : ""}/>`).join("") + "</Relationships>";
 function Y(c) {
   const o = {}, i = [...c.keys()].sort((r, n) => r === "[Content_Types].xml" ? -1 : n === "[Content_Types].xml" ? 1 : 0);
@@ -54,7 +57,7 @@ function H(c) {
     h || (o.push({ op: "M", x: e, y: s }), h = !0, y = e, d = s);
   }, T = (f, b, p, m, x, t) => {
     L(), o.push({ op: "C", x1: f, y1: b, x2: p, y2: m, x, y: t }), u = p, a = m, e = x, s = t;
-  }, k = (f, b, p, m) => {
+  }, S = (f, b, p, m) => {
     T(e + 2 / 3 * (f - e), s + 2 / 3 * (b - s), p + 2 / 3 * (f - p), m + 2 / 3 * (b - m), p, m), u = f, a = b;
   };
   for (; r < i.length; ) {
@@ -127,7 +130,7 @@ function H(c) {
           x = !1;
           break;
         }
-        k(p + t[0], m + t[1], p + t[2], m + t[3]);
+        S(p + t[0], m + t[1], p + t[2], m + t[3]);
         break;
       }
       case "T": {
@@ -137,7 +140,7 @@ function H(c) {
           break;
         }
         const v = /[QT]/.test(g) ? { x: 2 * e - u, y: 2 * s - a } : { x: e, y: s };
-        k(v.x, v.y, p + t[0], m + t[1]);
+        S(v.x, v.y, p + t[0], m + t[1]);
         break;
       }
       case "A": {
@@ -146,12 +149,12 @@ function H(c) {
           x = !1;
           break;
         }
-        const v = p + t[5], P = m + t[6];
+        const v = p + t[5], k = m + t[6];
         L();
-        const S = w.arcToCubics(e, s, t[0], t[1], t[2], t[3] !== 0, t[4] !== 0, v, P);
-        if (S.length === 0)
-          o.push({ op: "L", x: v, y: P }), e = v, s = P;
-        else for (const C of S) T(C.c1.x, C.c1.y, C.c2.x, C.c2.y, C.end.x, C.end.y);
+        const P = w.arcToCubics(e, s, t[0], t[1], t[2], t[3] !== 0, t[4] !== 0, v, k);
+        if (P.length === 0)
+          o.push({ op: "L", x: v, y: k }), e = v, s = k;
+        else for (const C of P) T(C.c1.x, C.c1.y, C.c2.x, C.c2.y, C.end.x, C.end.y);
         break;
       }
       case "Z": {

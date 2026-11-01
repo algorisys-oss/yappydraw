@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.294', date: '2026-11-01', items: [
+        'Speaker notes: open the notes pane from the slide toolbar and write what you want to say on each slide. Notes come in from PowerPoint files and go out to them, and Markdown import reads Note: lines.',
+        'Presenter view: press Alt+F5 to present with a second window just for you — the current and next slide, your notes, a timer and the clock — while the audience sees only the slides.',
+        'Links that work while presenting: right-click any object → Link to jump to another slide, go next/back, end the show or open a web page. Great for agenda slides, menus and quizzes. PowerPoint keeps them too.',
+        'New slide from a layout: the button beside + Add Slide offers twelve ready layouts (title, two columns, comparison, timeline, key numbers…) that fit your slide’s colours.',
+        'Slide numbers, a ${date} field and Slide Master logos and footers now appear on every page of a PDF, image or PowerPoint export, not just the first.',
+        'Fixed: in the Dark theme black text and lines no longer vanish from slides, the slide panel is dark too, slides fit fully beside the slide panel, and presented slides are centred on the screen.',
+    ] },
     { version: '0.8.293', date: '2026-10-31', items: [
         'Open PowerPoint files: File → Open (or drop a .pptx on the canvas) brings a presentation in as editable slides — shapes, text, bullets, tables in their own style, pictures, SmartArt, backgrounds and transitions.',
         'The Transform fields (X, Y, W, H, rotation) take math, like the rest of the panel: type *2, 200-50% or +10 and press Enter.',

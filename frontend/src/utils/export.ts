@@ -7,7 +7,8 @@ import { store, isLayerVisible, elementsInRenderOrder } from "../store/app-store
 import { isPagedDocType } from '../types/slide-types';
 import { saveBlob, saveCanvas } from './save-file';
 import { getSocialTarget, shapeMatches, encodeWithinBudget, socialFileName } from './social-export';
-import { ownerSlideIndex } from './slide-utils';
+import { ownerSlideIndex, projectMasterPosition } from './slide-utils';
+import { hasFields, resolveFieldText } from './slide-fields';
 import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
 import { renderSlideBackground, renderOpacityMasked } from "./canvas-renderer";
@@ -199,8 +200,54 @@ function exportScene(): DrawingElement[] {
     const posed = elementsInRenderOrder(all)
         .filter(el => !visible || visible.has(el.id))
         .map(el => { const ov = anim.get(el.id); return ov ? { ...el, ...ov } as DrawingElement : el; });
-    scenePose = new Map(posed.map(el => [el.id, el]));
-    return posed;
+    const scene = isPagedDocType(store.docType) && store.slides.length > 0 ? pagedScene(posed) : posed;
+    scenePose = new Map(scene.map(el => [el.id, el]));
+    return scene;
+}
+
+/**
+ * A paged document as its pages show it, which is what every exporter draws:
+ *  - Slide Master artwork appears on EVERY page. It is stored once (on the page it was drawn
+ *    on), and the canvas projects it onto whichever slide is showing; exports used to draw only
+ *    the stored copy, so a master logo or footer came out on page 1 alone (bug #464). Each page
+ *    gets its own copy at that page's position; copies off the home page get `<id>@page<n>`
+ *    ids, with references between master elements (bindings, masks, parents) remapped to match.
+ *  - Field text (`=Page ${slideNumber} of ${totalSlides}`, `${date}`) is filled in for the page
+ *    it lands on. Exports used to print the raw formula.
+ */
+function pagedScene(posed: DrawingElement[]): DrawingElement[] {
+    const pages = [...store.slides].sort((a, b) => a.order - b.order);
+    const total = pages.length;
+    const masterLayers = new Set(store.layers.filter(l => l.isMaster).map(l => l.id));
+    const masterIds = new Set(posed.filter(el => masterLayers.has(el.layerId)).map(el => el.id));
+    const date = new Date();
+    const withFields = (el: DrawingElement, page: number): DrawingElement =>
+        el.type === 'text' && hasFields(el.text) && page >= 0
+            ? { ...el, text: resolveFieldText(el.text, { slideNumber: page + 1, totalSlides: total, date }) }
+            : el;
+    const out: DrawingElement[] = [];
+    for (const el of posed) {
+        if (!masterIds.has(el.id) || total < 2) {
+            out.push(withFields(el, ownerSlideIndex(el, pages)));
+            continue;
+        }
+        const home = ownerSlideIndex(el, pages);
+        pages.forEach((page, i) => {
+            const { x, y } = projectMasterPosition(el, page, pages);
+            if (i === home) { out.push(withFields({ ...el, x, y }, i)); return; }
+            const re = (id: string | null | undefined) => (id && masterIds.has(id) ? `${id}@page${i + 1}` : id);
+            const copy: DrawingElement = {
+                ...el, id: `${el.id}@page${i + 1}`, x, y,
+                ...(el.clipMaskId && { clipMaskId: re(el.clipMaskId) }),
+                ...(el.parentId && { parentId: re(el.parentId) }),
+                ...(el.startBinding && { startBinding: { ...el.startBinding, elementId: re(el.startBinding.elementId)! } }),
+                ...(el.endBinding && { endBinding: { ...el.endBinding, elementId: re(el.endBinding.elementId)! } }),
+                ...(el.boundElements && { boundElements: el.boundElements.map(b => ({ ...b, id: re(b.id)! })) }),
+            } as DrawingElement;
+            out.push(withFields(copy, i));
+        });
+    }
+    return out;
 }
 
 /** Build an SVG <g> of the element's appearance-stack extras (centred frame), or null. */
@@ -2156,6 +2203,9 @@ export const exportToPptx = async (
             const media = pictureMedia(canvas.toDataURL('image/png'));
             slide = {
                 name: page.name, transition: transitionOf(page.slide?.transition),
+                // A picture of the slide still keeps its notes: they are for the presenter.
+                notes: page.slide?.notes?.trim() ? page.slide.notes : undefined,
+                key: page.slide?.id,
                 items: media ? [{ kind: 'picture', id: 2, name: page.name || 'Page', x: 0, y: 0, w: page.w, h: page.h, media }] : [],
             };
         } else {

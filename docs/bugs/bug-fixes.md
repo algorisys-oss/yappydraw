@@ -1,5 +1,104 @@
 # Bug Fixes Log
 
+## 2026-11-01 — Exports dropped Slide Master artwork and printed field formulas
+
+### 464. Master logo/footer only on page 1 of an export; "=Page ${slideNumber}" printed as typed
+
+**Symptom:** a footer or logo on the Slide Master layer showed on every slide in the editor and
+when presenting, but a PDF, PNG, SVG or PowerPoint export had it on the first page only, and a
+slide-number footer came out as the literal `=Page ${slideNumber} of ${totalSlides}`. Slide
+thumbnails and recordings showed the formula too.
+
+**Cause:** master projection and field substitution lived only in the canvas renderer
+(`renderLayersAndElements`). Every exporter starts from `exportScene()` and filters per page by
+ownership, so the master — stored once, on the page it was drawn on — was owned by that page
+alone, and no exporter knew about `=` fields.
+
+**Fix:** `exportScene()` builds the paged scene (`pagedScene`): one copy of each master element
+per page at that page's position (ids `<id>@page<n>` off the home page, references between
+master elements remapped), and field text resolved for the page each element lands on. The
+resolver moved to `utils/slide-fields.ts` and is shared by the canvas, thumbnails and
+recordings; it also gains `${date}`. **Test:** `tests/slide-layouts.spec.ts` exports a 3-slide
+deck with a master footer to PPTX and reads back "Page 1 of 3" … "Page 3 of 3".
+
+**Also (#462 follow-up):** slide switches used their own copy of the old window-sized fit
+(`slide-transition-manager.ts`), now the shared `fitSlideViewState`; and the slide navigator sat
+under the left-docked toolbar, hiding the slide numbers and the left of + Add Slide — it now
+starts at `--toolbar-left`, which `toolbarInset()` computes for both the CSS and the fit.
+
+## 2026-11-01 — Slides fitted to the window, not the canvas; Open Link opened any scheme
+
+### 462. Slide edges hidden under the navigator and status bar; presented slides off-centre
+
+**Symptom:** in the editor, a slide's left edge sat under the slide navigator (154 px of a slide
+at 1280×800) and its bottom under the status bar; content placed near the left of a slide could
+not be clicked. When presenting, the slide was pushed 46 px right and its right edge cut off,
+with a dead 28 px strip along the bottom.
+
+**Cause:** two halves of the docking work never met. `zoomToFitSlide` still fitted the slide to
+`window.innerWidth/innerHeight`, from before the canvas became "the window minus docked
+chrome", and pan is measured from the canvas corner — so the fit was off by every inset and
+ignored the navigator (which overlays the canvas instead of reserving an inset). And
+`dockInsets()` reserved the docked toolbar and the status bar even in Presentation (and the
+status bar in Zen), where app.tsx doesn't mount them.
+
+**Fix:** `zoomToFitSlide` fits `canvasViewport()`, starting right of the navigator while it is
+showing (`SLIDE_NAVIGATOR_W`). `dockInsets()` reserves the status bar only when it is mounted
+(not Zen/Presentation) and the toolbar edge only outside Presentation with the toolbar shown.
+
+**Measured** (1280×800, `temp/fit-probe.mjs`): editor slide x 86–1286 → 280–1240, bottom 790 →
+682 (canvas ends 772); presented canvas 1234×772 at x 46 → 1280×800 at 0, slide centred.
+
+### 463. Open Link opened `javascript:` and other unsafe links
+
+**Symptom:** the right-click **Open Link** (editor and show) passed an object's `link` straight
+to `window.open`, so a document carrying `javascript:…` (or `data:`) in a link would open it.
+
+**Fix:** every link now goes through `parseLink` (`utils/slide-links.ts`): only `http(s):`,
+`mailto:`, `tel:`, slide links and show actions are followed; anything else is inert. Covered by
+`slide-links.test.ts` and `tests/slide-links.spec.ts` (a planted `javascript:` link is clicked
+in the show and must not run).
+
+## 2026-11-01 — Dark theme: black vanished from pages, navigator stayed white
+
+### 460. Black text and strokes vanished from slides and pages in the Dark theme
+
+**Symptom:** in Dark (or System on a dark OS), a slide's default black text, outlines and black
+fills disappeared: white on a white page. The slide thumbnails lost them too, in Dark, Focus and
+even System on a light OS, and so did MP4/GIF recordings of a page made in a dark theme. Under
+Focus, the same happened while presenting.
+
+**Cause:** dark mode shows black as light via a per-colour lightness swap
+(`RenderPipeline.adjustColor`, docs/design/dark-mode.md), applied to every element whenever the
+theme was Dark or Focus. Pages, though, are deliberately WYSIWYG white in Dark (only Focus dims
+the page, and only while editing, bug #193). So on a page the swap turned black into white on
+white. The thumbnail renderer and the recording frame renderer had their own copies of the
+check; the thumbnail's was `store.theme !== 'light'`, which also caught System on a light OS.
+
+**Fix:** elements follow the surface they sit on. `darkenElementColors()` (app-store) is true on
+the infinite canvas in Dark/Focus, and on a page only under Focus while editing. The canvas
+(elements, onion skins, dimension labels) and both text-editing overlays use it; the grid,
+selection and other chrome still follow the theme. Thumbnails and recordings always render true
+colours, like every other export.
+
+**Trade-off:** objects parked on the pasteboard beside a page now show true colours in Dark, so a
+black object there sits dark on the dark workspace (it is drawn faded anyway).
+
+**Test:** `tests/dark-theme-pages.spec.ts` samples the canvas centre over a black block (Light,
+Dark, Focus, Focus presenting) and the generated thumbnail. Fails without the fix (luminance 255,
+i.e. white on white).
+
+### 461. Slide navigator stayed white in the dark themes
+
+**Symptom:** the slides panel was a white column in Dark and Focus.
+
+**Cause:** its 18 dark rules were written `:global(.dark) .slide-navigator…` — CSS-Modules syntax
+in a plain stylesheet. Browsers drop a rule whose selector they can't parse, and the app marks
+the theme with `data-theme` on `<html>`, not a `.dark` class, so none of them ever applied.
+
+**Fix:** `:is([data-theme="dark"], [data-theme="focus"])`. Checked: no other stylesheet uses
+`:global(`. Covered by the same spec (computed background of the slide list).
+
 ## 2026-10-29 — Desktop: rustls security advisories (Dependabot)
 
 ### 459. Desktop updater used rustls 0.23.41 (four advisories)

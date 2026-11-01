@@ -49,6 +49,29 @@ export const PHONE_MAX_WIDTH = 600;
  *  Matches the `@media (max-width: 600px)` block in components/toolbar.css. */
 export const PHONE_TOOLBAR_H = 57;
 
+/** Space the docked main toolbar takes on one edge of the window (0 when floating, on a phone,
+ *  hidden, or presenting — the toolbar isn't mounted then). */
+export function toolbarInset(edge: 'left' | 'right' | 'top' | 'bottom'): number {
+    const dock = store.globalSettings.toolbarDock ?? 'left';
+    if (dock !== edge || isPhoneWidth() || store.appMode === 'presentation' || !store.showMainToolbar) return 0;
+    return TOOLBAR_DOCK_SIZE;
+}
+
+/** Width of the slide navigator column (components/slide-navigator.css). It overlays the canvas
+ *  rather than reserving an inset, so the slide fit and the notes pane clear it themselves. It
+ *  starts beside a left-docked toolbar (`--toolbar-left`), not under it. */
+export const SLIDE_NAVIGATOR_W = 240;
+
+/** Right edge of the slide navigator, in window px. */
+export const slideNavigatorRight = (): number => toolbarInset('left') + SLIDE_NAVIGATOR_W;
+
+/** Height of the speaker-notes pane docked above the status bar (slides documents). */
+export const SPEAKER_NOTES_H = 150;
+
+/** Is the speaker-notes pane on screen? The guards mirror where app.tsx mounts it. */
+export const speakerNotesDocked = (): boolean =>
+    store.docType === 'slides' && store.showSpeakerNotes && store.appMode !== 'presentation' && !store.zenMode;
+
 /** True on phone-width viewports (see PHONE_MAX_WIDTH). */
 export function isPhoneWidth(): boolean {
     return typeof window !== 'undefined' && window.innerWidth <= PHONE_MAX_WIDTH;
@@ -83,11 +106,15 @@ export function dockInsets(): Insets {
     // Bottom: the status bar is permanent chrome. The canvas used to be sized to the
     // whole window and simply drew underneath it — 28px of the drawing surface was
     // always occluded. It is taller on mobile, hence the width-dependent height.
-    out.bottom += statusBarHeight();
+    //
+    // Only while it is mounted: app.tsx drops it in Zen and Presentation. Reserving it there
+    // left a 28px dead strip under every presented slide (bug #462).
+    if (!chromeless) out.bottom += statusBarHeight();
 
-    // The main toolbar's edge, when docked.
-    const dock = store.globalSettings.toolbarDock ?? 'left';
-    if (dock !== 'float' && !narrow) out[dock] += TOOLBAR_DOCK_SIZE;
+    // The main toolbar's edge, when docked — and only when it is on screen (app.tsx mounts it
+    // outside Presentation, when showMainToolbar is on). Reserving a hidden toolbar pushed the
+    // presented slide 46px right and cut its right edge off (bug #462).
+    for (const edge of ['left', 'right', 'top', 'bottom'] as const) out[edge] += toolbarInset(edge);
 
     // On a phone the toolbar can't take an edge, but it isn't really floating either: it is
     // an opaque full-width strip pinned above the status bar. Reserve it for the same reason
@@ -96,6 +123,10 @@ export function dockInsets(): Insets {
     if (narrow && store.showMainToolbar && store.appMode !== 'presentation') {
         out.bottom += PHONE_TOOLBAR_H;
     }
+
+    // The speaker-notes pane takes the bottom edge, as PowerPoint's does: the slide re-fits
+    // above it instead of its lower part sitting under the notes.
+    if (speakerNotesDocked()) out.bottom += SPEAKER_NOTES_H;
 
     // Dockable panels (store/dock-layout.ts) already computed their own reserved widths
     // in layoutInsets(), but nothing consumed them — Phase A groundwork that was never
@@ -178,19 +209,17 @@ export function publishDockVars(): void {
     // Published separately: side docks stop above the status bar, and need its height
     // rather than the whole bottom inset (which may include more chrome later).
     r.setProperty('--statusbar-h', `${statusBarHeight()}px`);
+    r.setProperty('--speaker-notes-h', `${SPEAKER_NOTES_H}px`);
     r.setProperty('--topbar-h', `${TOP_BAR_H}px`);
     // The TOOLBAR's own edge contribution, separate from the totals above. Panel dock
     // zones need this rather than --dock-left/right: those already include the panel
     // widths, so a zone offsetting by them would push itself off by its own size. Without
     // it the zone starts at the window edge, lands under the tool column, and leaves a
     // gap the width of the panel between itself and the canvas.
-    const dock = store.globalSettings.toolbarDock ?? 'left';
-    const narrow = isPhoneWidth();
-    const bar = (edge: string) => (!narrow && dock === edge ? TOOLBAR_DOCK_SIZE : 0);
-    r.setProperty('--toolbar-left', `${bar('left')}px`);
-    r.setProperty('--toolbar-right', `${bar('right')}px`);
-    r.setProperty('--toolbar-top', `${bar('top')}px`);
+    r.setProperty('--toolbar-left', `${toolbarInset('left')}px`);
+    r.setProperty('--toolbar-right', `${toolbarInset('right')}px`);
+    r.setProperty('--toolbar-top', `${toolbarInset('top')}px`);
     // 'bottom' is a real dock position too (the position button cycles through it), so
     // bottom-anchored chrome needs it for the same reason the other three exist.
-    r.setProperty('--toolbar-bottom', `${bar('bottom')}px`);
+    r.setProperty('--toolbar-bottom', `${toolbarInset('bottom')}px`);
 }

@@ -92,6 +92,8 @@ export interface PresentationSlideTemplate {
     gradientDirection?: number;
     elements: Partial<DrawingElement>[];
     transition?: import('./slide-types').SlideTransition;
+    /** Speaker notes the slide starts with (plain text, one paragraph per line). */
+    notes?: string;
 }
 
 /**

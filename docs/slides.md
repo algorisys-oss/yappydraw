@@ -32,6 +32,11 @@ Yappy supports dynamic text variables that update automatically as you navigate 
 ### Available Variables:
 - `${slideNumber}`: Displays the current slide index (starting at 1).
 - `${totalSlides}`: Displays the total number of slides.
+- `${date}`: Today's date in the reader's locale format.
+
+Resolved by `utils/slide-fields.ts` everywhere a slide is drawn: canvas, thumbnails, recordings
+and all exports. Exports also put Slide Master artwork on every page (`pagedScene` in
+`utils/export.ts`); before bug #464 they drew it on its home page only, as the raw formula.
 
 > [!NOTE]
 > **Formula Syntax**: Any text box containing these variables **must start with an `=` sign** to be processed (e.g., `=Page ${slideNumber}`). Static text without the leading `=` will display as-is.

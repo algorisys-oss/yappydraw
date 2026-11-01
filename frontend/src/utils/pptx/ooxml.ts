@@ -66,6 +66,7 @@ export const REL = {
     tableStyles: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles',
     notesSlide: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide',
     notesMaster: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster',
+    hyperlink: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
 } as const;
 
 export interface Rel { id: string; type: string; target: string; external?: boolean }

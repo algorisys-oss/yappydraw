@@ -3,7 +3,7 @@
  * Handles animated transitions between slides in presentation mode
  */
 
-import { store, setViewState, setStore } from '../../store/app-store';
+import { store, setViewState, setStore, fitSlideViewState } from '../../store/app-store';
 import { animationEngine, generateAnimationId } from './animation-engine';
 import { lerp, getEasing } from './animation-types';
 import type { Slide, SlideTransition } from '../../types/slide-types';
@@ -25,21 +25,8 @@ export interface TransitionOptions {
  * Calculate the viewState needed to center and fit a slide
  */
 function calculateSlideViewState(slide: Slide): { scale: number; panX: number; panY: number } {
-    const { width: sW, height: sH } = slide.dimensions;
-    const { x: spatialX, y: spatialY } = slide.spatialPosition;
-    const margin = 40;
-
-    const availableW = window.innerWidth - margin * 2;
-    const availableH = window.innerHeight - margin * 2;
-
-    const scaleW = availableW / sW;
-    const scaleH = availableH / sH;
-    const scale = Math.min(scaleW, scaleH);
-
-    const panX = (window.innerWidth - sW * scale) / 2 - spatialX * scale;
-    const panY = (window.innerHeight - sH * scale) / 2 - spatialY * scale;
-
-    return { scale, panX, panY };
+    // Fits the visible canvas, not the window (bug #462): one rule with zoomToFitSlide.
+    return fitSlideViewState(slide);
 }
 
 class SlideTransitionManager {

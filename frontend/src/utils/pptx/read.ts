@@ -20,7 +20,7 @@
  * `readPptx`'s own "not a presentation" error.
  */
 import { unzipSync, strFromU8 } from 'fflate';
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink } from './deck';
 import { EMU_PER_PX, EMU_PER_PT } from './ooxml';
 import { geometryPathsPx, textRectPx, type GeomDef } from './guides';
 
@@ -786,7 +786,38 @@ function readShapes(tree: El | null, level: Level, sc: SlideCtx, frame: Frame, d
     return out;
 }
 
+const JUMPS: Record<string, 'next' | 'previous' | 'first' | 'last' | 'end'> = {
+    nextslide: 'next', previousslide: 'previous', firstslide: 'first', lastslide: 'last', endshow: 'end',
+};
+
+/**
+ * An object's click action (`a:hlinkClick` on its cNvPr): a web address, a jump to a slide (named
+ * by its part path, the slide's key), or next/previous/first/last/end. Other actions (run a
+ * program, play a sound, a custom show, a macro) are not links Yappy can follow and are dropped.
+ */
+function linkOf(cNvPr: El | null, part: string, pkg: Pkg): DeckLink | undefined {
+    const h = kid(cNvPr, 'hlinkClick');
+    if (!h) return undefined;
+    const action = attr(h, 'action') || '';
+    const rel = pkg.rels(part).get(attr(h, 'r:id') || '');
+    if (action.startsWith('ppaction://hlinkshowjump')) {
+        const jump = JUMPS[(/jump=([a-z]+)/i.exec(action)?.[1] ?? '').toLowerCase()];
+        return jump ? { kind: 'action', action: jump } : undefined;
+    }
+    if (action.startsWith('ppaction://hlinksldjump')) return rel && !rel.external ? { kind: 'slide', key: rel.target } : undefined;
+    if (action) return undefined;
+    return rel?.external && /^(https?:|mailto:|tel:)/i.test(rel.target) ? { kind: 'url', url: rel.target } : undefined;
+}
+
 function readOne(el: El, level: Level, sc: SlideCtx, frame: Frame, depth: number, includePh: boolean): Item | Item[] | null {
+    const nv = kids(el).find(k => k.localName.startsWith('nv'));
+    const out = readOneInner(el, level, sc, frame, depth, includePh);
+    const link = out ? linkOf(kid(nv ?? null, 'cNvPr'), level.part, sc.pkg) : undefined;
+    if (link) for (const it of Array.isArray(out) ? out : [out!]) it.link = link;
+    return out;
+}
+
+function readOneInner(el: El, level: Level, sc: SlideCtx, frame: Frame, depth: number, includePh: boolean): Item | Item[] | null {
     const r: Res = { pkg: sc.pkg, part: level.part, ctx: sc.ctx };
     const nv = kids(el).find(k => k.localName.startsWith('nv'));
     const cNvPr = kid(nv ?? null, 'cNvPr');
@@ -1189,6 +1220,39 @@ function backgroundOf(cSld: El | null, r: Res): Slide['background'] | undefined 
     return undefined;
 }
 
+/**
+ * A slide's speaker notes as plain text: the body placeholder of its notes slide, one line per
+ * paragraph, `a:br` as a line break. Fields (`a:fld`, e.g. a slide number typed into the notes)
+ * keep the text PowerPoint last rendered for them. Formatting and list levels are not kept.
+ */
+function notesOf(pkg: Pkg, slidePart: string): string | undefined {
+    const notesPart = pkg.relOfType(slidePart, 'notesSlide');
+    const tree = notesPart ? path(pkg.xml(notesPart), 'cSld', 'spTree') : null;
+    if (!tree) return undefined;
+    const lines: string[] = [];
+    const visit = (parent: El) => {
+        for (const el of elementKids(parent)) {
+            if (el.localName === 'grpSp') { visit(el); continue; }
+            if (el.localName !== 'sp') continue;
+            const ph = phOf(nvPrOf(el));
+            // The notes body is the `body` placeholder (or an untyped one, which defaults to obj);
+            // the slide image, header, date, footer and number placeholders are not notes.
+            if (!ph || (ph.type !== 'body' && ph.type !== 'obj')) continue;
+            for (const p of kids(kid(el, 'txBody'), 'p')) {
+                let line = '';
+                for (const r of kids(p)) {
+                    if (r.localName === 'r' || r.localName === 'fld') line += kid(r, 't')?.textContent ?? '';
+                    else if (r.localName === 'br') line += '\n';
+                }
+                lines.push(line);
+            }
+        }
+    };
+    visit(tree);
+    const text = lines.join('\n').replace(/\s+$/, '');
+    return text.trim() ? text : undefined;
+}
+
 function transitionOf(root: El): Transition | undefined {
     const t = elementKids(root).find(k => k.localName === 'transition');
     if (!t) return undefined;
@@ -1297,7 +1361,7 @@ export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult 
         if (sc.master && showMaster) items.push(...readShapes(sc.master.tree, sc.master, sc, IDENTITY, 0, false));
         if (sc.layout && bool(root, 'showMasterSp') !== false) items.push(...readShapes(sc.layout.tree, sc.layout, sc, IDENTITY, 0, false));
         items.push(...readShapes(sc.slide.tree, sc.slide, sc, IDENTITY, 0, true));
-        slides.push({ items, background, transition: transitionOf(root), name: attr(kid(root, 'cSld'), 'name') || undefined });
+        slides.push({ items, background, transition: transitionOf(root), name: attr(kid(root, 'cSld'), 'name') || undefined, notes: notesOf(pkg, part), key: part });
     });
     if (!slides.length) warn('The presentation has no slides.');
     const title = path(pkg.xml('docProps/core.xml'), 'title')?.textContent || undefined;

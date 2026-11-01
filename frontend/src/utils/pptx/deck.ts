@@ -106,9 +106,19 @@ export interface TextBody {
     defaults?: Omit<TextRun, 'text' | 'br'>;
 }
 
+/**
+ * What clicking an object does in the show (`a:hlinkClick`). A slide is named by its deck `key`
+ * (Yappy's slide id on export, the slide part's path on import), not its position.
+ */
+export type DeckLink =
+    | { kind: 'url'; url: string }
+    | { kind: 'slide'; key: string }
+    | { kind: 'action'; action: 'next' | 'previous' | 'first' | 'last' | 'end' };
+
 interface Placed {
     id: number;      // unique within the slide (cNvPr id); 1 is the slide's spTree
     name: string;
+    link?: DeckLink;
     x: number; y: number; w: number; h: number;
     rot?: number;    // degrees, about the box centre
     flipH?: boolean;
@@ -177,6 +187,10 @@ export interface Slide {
     /** Uniform scale + offset into the deck's slide size (slides of a different size are fitted). */
     fit?: { scale: number; dx: number; dy: number };
     name?: string;
+    /** Speaker notes as plain text, one paragraph per line (`p:notes` body placeholder). */
+    notes?: string;
+    /** Stable name for slide links to point at (see DeckLink). */
+    key?: string;
 }
 
 export interface Deck {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { zipSync, unzipSync, strToU8 } from "fflate";
+import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { DOMParser } from "@xmldom/xmldom";
 import { readPptx } from "./read";
 import { buildPptx } from "./write";
@@ -432,5 +432,83 @@ describe("readPptx: SmartArt without a saved drawing", () => {
         const box = deck.slides[0].items.find(i => i.name === 'D') as ShapeItem;
         expect(box.text!.paragraphs.map(p => [p.runs[0].text, p.level, p.bullet ?? null])).toEqual([['Plan', 0, null], ['Design', 1, 'char'], ['Build', 0, null]]);
         expect(warnings.join(' ')).toContain('its text was imported as a list');
+    });
+});
+
+describe("readPptx: speaker notes", () => {
+    it("round-trips notes through our own writer, blank lines and XML-special characters included", () => {
+        const notes = 'Open with the story.\n\nThen: costs < 5% & "falling".';
+        const deck: Deck = { width: 960, height: 540, slides: [{ items: [], notes }, { items: [] }] };
+        const { deck: back, warnings } = read(buildPptx(deck));
+        expect(warnings).toEqual([]);
+        expect(back.slides[0].notes).toBe(notes);
+        expect(back.slides[1].notes).toBeUndefined();
+    });
+
+    it("reads a PowerPoint notes slide: body placeholder only, line breaks and fields kept", () => {
+        const ph = (id: number, type: string, body: string) => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${type}"/><p:cNvSpPr/><p:nvPr><p:ph type="${type}" idx="${id}"/></p:nvPr></p:nvSpPr><p:spPr/>`
+            + `<p:txBody><a:bodyPr/><a:lstStyle/>${body}</p:txBody></p:sp>`;
+        const notesTree = `<p:sp><p:nvSpPr><p:cNvPr id="2" name="Slide Image"/><p:cNvSpPr/><p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr><p:spPr/></p:sp>`
+            + ph(3, 'body', '<a:p><a:r><a:t>First </a:t></a:r><a:r><a:rPr b="1"/><a:t>point</a:t></a:r><a:br/><a:r><a:t>same paragraph</a:t></a:r></a:p>'
+                + '<a:p><a:pPr lvl="1"/><a:r><a:t>Slide </a:t></a:r><a:fld id="{1}" type="slidenum"><a:t>1</a:t></a:fld></a:p><a:p><a:endParaRPr/></a:p>')
+            + ph(4, 'sldNum', '<a:p><a:fld id="{2}" type="slidenum"><a:t>1</a:t></a:fld></a:p>');
+        const bytes = handBuilt('', {
+            'ppt/slides/_rels/slide1.xml.rels': REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rId2', 'notesSlide', '../notesSlides/notesSlide1.xml']]),
+            'ppt/notesSlides/notesSlide1.xml': `<p:notes ${NS}><p:cSld>${tree(notesTree)}</p:cSld></p:notes>`,
+        });
+        const { deck } = read(bytes);
+        // The trailing empty paragraph is dropped; the slide-number placeholder is not notes.
+        expect(deck.slides[0].notes).toBe('First point\nsame paragraph\nSlide 1');
+    });
+
+    it("treats a notes slide with only an empty body as no notes", () => {
+        const bytes = handBuilt('', {
+            'ppt/slides/_rels/slide1.xml.rels': REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rId2', 'notesSlide', '../notesSlides/notesSlide1.xml']]),
+            'ppt/notesSlides/notesSlide1.xml': `<p:notes ${NS}><p:cSld>${tree('<p:sp><p:nvSpPr><p:cNvPr id="3" name="b"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:p><a:endParaRPr/></a:p></p:txBody></p:sp>')}</p:cSld></p:notes>`,
+        });
+        expect(read(bytes).deck.slides[0].notes).toBeUndefined();
+    });
+});
+
+describe("readPptx: links (hlinkClick)", () => {
+    const box = (id: number, link: Deck['slides'][0]['items'][0]['link']): ShapeItem => ({ kind: 'shape', id, name: `b${id}`, x: 10 * id, y: 10, w: 50, h: 50,
+        geom: { kind: 'preset', prst: 'rect' }, fill: { kind: 'solid', color: { hex: '#cccccc' } }, line: null, link });
+
+    it("round-trips web, slide and show-action links through our writer", () => {
+        const deck: Deck = { width: 960, height: 540, slides: [
+            { key: 'yappy-a', items: [box(2, { kind: 'url', url: 'https://example.com/?a=1&b=2' }), box(3, { kind: 'slide', key: 'yappy-c' }), box(4, { kind: 'action', action: 'end' }),
+                box(5, { kind: 'slide', key: 'not-in-deck' }), box(6, { kind: 'url', url: 'https://example.com/?a=1&b=2' })] },
+            { key: 'yappy-b', items: [box(2, { kind: 'action', action: 'previous' })] },
+            { key: 'yappy-c', items: [] },
+        ] };
+        const bytes = buildPptx(deck);
+        const { deck: back, warnings } = read(bytes);
+        expect(warnings).toEqual([]);
+        const links = back.slides.map(s => s.items.map(i => i.link));
+        expect(links[0][0]).toEqual({ kind: 'url', url: 'https://example.com/?a=1&b=2' });
+        // Slide keys come back as part paths; the third slide is slide3.xml.
+        expect(links[0][1]).toEqual({ kind: 'slide', key: 'ppt/slides/slide3.xml' });
+        expect(back.slides[2].key).toBe('ppt/slides/slide3.xml');
+        expect(links[0][2]).toEqual({ kind: 'action', action: 'end' });
+        expect(links[0][3]).toBeUndefined();       // a slide that isn't in the deck: no link written
+        expect(links[1][0]).toEqual({ kind: 'action', action: 'previous' });
+        // One relationship per distinct web address.
+        const rels = strFromU8(unzipSync(bytes)['ppt/slides/_rels/slide1.xml.rels']);
+        expect(rels.match(/TargetMode="External"/g)!.length).toBe(1);
+        expect(rels).toContain('Target="https://example.com/?a=1&amp;b=2"');
+    });
+
+    it("drops actions Yappy can't follow and unsafe web addresses", () => {
+        const sp = (id: number, hlink: string) => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="s${id}">${hlink}</p:cNvPr><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(10, 10, 50, 50)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></p:spPr></p:sp>`;
+        const bytes = handBuilt(sp(2, '<a:hlinkClick r:id="rId7"/>') + sp(3, '<a:hlinkClick r:id="" action="ppaction://program"/>')
+            + sp(4, '<a:hlinkClick r:id="rId8"/>') + sp(5, '<a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=lastslide"/>'), {
+            'ppt/slides/_rels/slide1.xml.rels': `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+                + `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`
+                + `<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="javascript:alert(1)" TargetMode="External"/>`
+                + `<Relationship Id="rId8" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="mailto:a@b.c" TargetMode="External"/></Relationships>`,
+        });
+        // The test deck's master puts a logo bar on every slide; only the four shapes are under test.
+        const links = read(bytes).deck.slides[0].items.filter(i => /^s\d/.test(i.name)).map(i => i.link);
+        expect(links).toEqual([undefined, undefined, { kind: 'url', url: 'mailto:a@b.c' }, { kind: 'action', action: 'last' }]);
     });
 });

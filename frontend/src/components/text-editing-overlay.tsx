@@ -7,7 +7,7 @@
 
 import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
-import { store, setSelectedTool, updateElement, shouldRevertToSelect } from "../store/app-store";
+import { store, setSelectedTool, updateElement, shouldRevertToSelect, darkenElementColors } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { lineHeightPx as lineHeightOf } from "../utils/text-line-height";
 import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString, containerTextAvailableWidth, containerTextWrapWidth } from "../utils/text-utils";
@@ -558,7 +558,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 'box-sizing': 'border-box',
                                 font: fontSpec(fontSizeVal * scale),
                                 'letter-spacing': `${(el.letterSpacing || 0) * scale}px`,
-                                color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus'),
+                                color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', darkenElementColors()),
                                 background: 'transparent',
                                 border: 'none',
                                 outline: 'none',

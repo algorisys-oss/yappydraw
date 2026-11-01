@@ -12,7 +12,7 @@ import { elementsBounds } from "../utils/element-bounds";
 import { normalizedLayers, subtreeCopyOrders, keepContentsSurvivor } from "./layer-order";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
-import { isPagedDocType } from '../types/slide-types';
+import { isPagedDocType, isMultiPageDocType } from '../types/slide-types';
 import { idbDelete } from '../storage/idb-kv';
 import { setActiveDrawingId } from '../storage/active-drawing';
 import type { ElementAnimation, DisplayState, PropertyTrack, BezierEase, TinyflyClip } from "../types/motion-types";
@@ -21,6 +21,7 @@ import { createDefaultAnimTimeline } from "../types/anim-types";
 import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator";
 import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
+import { t } from "../i18n";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo, mindmapChildren } from "../utils/mindmap-layout";
 import { segmentIntersection } from "../utils/path-intersection";
 import { WIDTH_PROFILES, profileToWidthPoints, detectWidthProfile } from "../utils/width-profiles";
@@ -62,7 +63,9 @@ import { slideTransitionManager } from "../utils/animation/slide-transition-mana
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
 import { layoutGuidePositions, DEFAULT_LAYOUT_GRID, type LayoutGridSpec } from "../utils/layout-guides";
-import { canvasCenterClient } from "../utils/dock-layout";
+import { layoutElements, paletteFor, isSlideLayout, type SlideLayoutId, type LayoutText } from '../utils/slide-layouts';
+import { parseLink, targetSlideIndex } from '../utils/slide-links';
+import { canvasCenterClient, canvasViewport, SPEAKER_NOTES_H, slideNavigatorRight, statusBarHeight } from "../utils/dock-layout";
 import {
     buildSymmetryOps, defaultSymmetryState, MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS,
     type SymmetryMode, type SymmetryOp,
@@ -85,6 +88,20 @@ const systemPrefersDark = (): boolean =>
 
 export const resolveTheme = (theme: Theme): ResolvedTheme =>
     theme === 'system' ? (systemPrefersDark() ? 'dark' : 'light') : theme;
+
+/**
+ * Do element colours get the dark-theme lightness swap (black ↔ white) on the live canvas?
+ * Only where they are drawn against a dark surface. The infinite canvas is dark in Dark and
+ * Focus. A page (slides, designs, games, animation stages) stays WYSIWYG white — except
+ * under Focus while editing, which dims the page too (`focusDim`, bug #193). Swapping
+ * colours on a white page turned default black text and strokes white-on-white (bug #460).
+ */
+export const darkenElementColors = (): boolean => {
+    const t = store.resolvedTheme;
+    if (t !== 'dark' && t !== 'focus') return false;
+    if (!isPagedDocType(store.docType)) return true;
+    return t === 'focus' && store.appMode !== 'presentation';
+};
 
 // One-time migration: previous focus theme stored white as default stroke.
 // With the dark-mode CSS filter inverting black→white at render time,
@@ -517,6 +534,8 @@ interface AppState {
     showPatternsPanel: boolean;
     showSlideNavigator: boolean;
     showSlideToolbar: boolean;
+    /** The speaker-notes strip under the canvas (slides documents). A view toggle, not saved. */
+    showSpeakerNotes: boolean;
     showMainToolbar: boolean;
     slideToolbarPosition: { x: number, y: number };
     showExportDialog: boolean;
@@ -869,6 +888,7 @@ const initialState: AppState = {
     showStatePanel: false,
     showSlideNavigator: true,
     showSlideToolbar: true,
+    showSpeakerNotes: false,
     showMainToolbar: true,
     slideToolbarPosition: { x: window.innerWidth / 2 - 150, y: window.innerHeight - 80 },
     showExportDialog: false,
@@ -2874,6 +2894,34 @@ export const retreatPresentation = async () => {
     }
 };
 
+/**
+ * Follow an object's link (utils/slide-links.ts): open a web address in a new tab, go to a
+ * slide, or run a show action. Returns false when there is nothing to follow — no link, an
+ * unsafe one (`javascript:` and the like are never opened), or a slide that has since been
+ * deleted — so a click can fall back to its ordinary meaning.
+ */
+export const followLink = (link: string | null | undefined): boolean => {
+    const target = parseLink(link);
+    if (target.kind === 'none') return false;
+    if (target.kind === 'url') {
+        window.open(target.url, '_blank', 'noopener,noreferrer');
+        return true;
+    }
+    if (target.kind === 'action' && target.action === 'end') {
+        if (store.appMode === 'presentation') void togglePresentationMode(false);
+        return true;
+    }
+    const index = targetSlideIndex(target, store.activeSlideIndex, store.slides);
+    if (index === null) {
+        if (target.kind === 'slide') showToast(t('links.missingSlide'), 'info');
+        // An action at the end of the deck (Next on the last slide) is a no-op, not a failure.
+        return target.kind === 'action';
+    }
+    // Going back shows the slide finished, as the show's own Back does.
+    void setActiveSlide(index, false, index < store.activeSlideIndex);
+    return true;
+};
+
 /** "Page" in design documents, "Slide" in presentations. */
 export const pageNoun = (): 'Page' | 'Slide' => store.docType === 'design' ? 'Page' : 'Slide';
 
@@ -2908,6 +2956,52 @@ export const addSlide = () => {
 
     showToast(`${pageNoun()} added`, 'success');
 };
+
+/**
+ * Insert a slide after the current one, laid out from a layout (utils/slide-layouts.ts) with
+ * placeholder text. It takes the current slide's background, and the layout's colours are
+ * picked to read on it. One undo step. Returns the new slide's index, or -1 when the document
+ * has no slides to add to.
+ */
+export const insertSlideWithLayout = (layout: SlideLayoutId): number => {
+    if (!isMultiPageDocType(store.docType) || !isSlideLayout(layout)) return -1;
+    const at = Math.max(0, Math.min(store.activeSlideIndex, store.slides.length - 1));
+    const current = store.slides[at];
+    const background = current ? {
+        backgroundColor: current.backgroundColor, fillStyle: current.fillStyle, gradientStops: current.gradientStops,
+        gradientDirection: current.gradientDirection, backgroundImage: current.backgroundImage,
+        backgroundOpacity: current.backgroundOpacity, canvasTexture: current.canvasTexture,
+    } : {};
+    const index = at + 1;
+    withCommandHistory('New slide from layout', () => {
+        insertNewSlide(at, 'after');
+        const slide = store.slides[index];
+        if (!slide) return;
+        setStore('slides', index, JSON.parse(JSON.stringify(background)));
+        // Artwork goes on the active layer, or the first ordinary one if that is the Slide Master
+        // (a layout on the master would repeat on every slide).
+        const layer = store.layers.find(l => l.id === store.activeLayerId && !l.isMaster)
+            ?? store.layers.find(l => !l.isMaster) ?? store.layers[0];
+        const batchIds = new Set<string>();
+        const els = layoutElements(layout,
+            { x: slide.spatialPosition.x, y: slide.spatialPosition.y, w: slide.dimensions.width, h: slide.dimensions.height },
+            paletteFor(current?.fillStyle === 'solid' || !current?.fillStyle ? current?.backgroundColor : undefined),
+            layoutText(), (type) => generateId(type, batchIds),
+        ).map(el => ({ ...el, layerId: layer?.id ?? 'default-layer' }));
+        if (els.length) setStore('elements', prev => [...prev, ...els]);
+    });
+    bumpDirtyRevision();
+    return index;
+};
+
+/** Placeholder words for a new layout, in the user's language. */
+const layoutText = (): LayoutText => ({
+    title: t('layouts.text.title'), subtitle: t('layouts.text.subtitle'),
+    point: (n) => t('layouts.text.point', { n }), body: t('layouts.text.body'),
+    quote: t('layouts.text.quote'), author: t('layouts.text.author'),
+    value: t('layouts.text.value'), label: t('layouts.text.label'), year: t('layouts.text.year'),
+    optionA: t('layouts.text.optionA'), optionB: t('layouts.text.optionB'), closing: t('layouts.text.closing'),
+});
 
 export const insertNewSlide = (targetIndex: number, position: 'before' | 'after') => {
     pushToHistory();
@@ -3141,6 +3235,21 @@ export const updateSlideTransition = (slideIndex: number, transition: Partial<Sl
 };
 
 /**
+ * Set a slide's speaker notes. Blank notes are stored as absent, so an emptied notes box
+ * leaves no trace in the file or the PowerPoint export. `recordHistory: false` is for a
+ * typing session that has already pushed its one undo step (see SpeakerNotesPanel).
+ */
+export const updateSlideNotes = (slideIndex: number, notes: string, recordHistory = true) => {
+    if (slideIndex < 0 || slideIndex >= store.slides.length) return;
+    const text = typeof notes === 'string' ? notes.replace(/\r\n?/g, '\n') : '';
+    const next = text.trim() ? text : undefined;
+    if ((store.slides[slideIndex].notes ?? undefined) === next) return;
+    if (recordHistory) pushToHistory();
+    setStore("slides", slideIndex, "notes", next);
+    bumpDirtyRevision();
+};
+
+/**
  * Update the background properties for a specific slide
  */
 export const updateSlideBackground = (slideIndex: number, updates: Partial<Slide> | string) => {
@@ -3369,6 +3478,12 @@ export const loadDocument = (doc: any) => {
         setStore("docType", loadedDocType);
         setStore("showSlideNavigator", isPagedDocType(loadedDocType));
         setStore("showSlideToolbar", true);
+        // A deck that arrives with notes (an imported .pptx, a colleague's file) opens with the
+        // notes strip showing; otherwise they would be invisible until someone went looking.
+        // Never closes it: a deck without notes leaves the strip as the user left it.
+        if (loadedDocType === 'slides' && (doc.slides || []).some((s: Slide) => !!s.notes?.trim())) {
+            toggleSpeakerNotes(true);
+        }
         setStore("showUtilityToolbar", false);
 
         // Animation mode: restore the frame timeline(s) (healing a missing one so
@@ -5991,6 +6106,31 @@ export const toggleSlideToolbar = (visible?: boolean) => {
     setStore('showSlideToolbar', (v) => visible ?? !v);
 };
 
+// Where toggleSpeakerNotes moved the slide toolbar to, so hiding the pane can put it back —
+// but only if the user hasn't dragged it somewhere else in the meantime.
+let toolbarNudgedTo: { x: number; y: number } | null = null;
+
+export const toggleSpeakerNotes = (visible?: boolean) => {
+    const next = visible ?? !store.showSpeakerNotes;
+    if (next === store.showSpeakerNotes) return;
+    // The slide toolbar floats at a user-chosen spot, by default just above the status bar —
+    // exactly where the notes pane docks. Lift it with the pane, and drop it back after.
+    const { x, y } = store.slideToolbarPosition;
+    if (next) {
+        const paneTop = (typeof window !== 'undefined' ? window.innerHeight : 0) - statusBarHeight() - SPEAKER_NOTES_H;
+        if (y + 48 > paneTop) {
+            toolbarNudgedTo = { x, y: y - SPEAKER_NOTES_H };
+            setStore('slideToolbarPosition', toolbarNudgedTo);
+        }
+    } else {
+        if (toolbarNudgedTo && toolbarNudgedTo.x === x && toolbarNudgedTo.y === y) {
+            setStore('slideToolbarPosition', { x, y: y + SPEAKER_NOTES_H });
+        }
+        toolbarNudgedTo = null;
+    }
+    setStore('showSpeakerNotes', next);
+};
+
 export const setSlideToolbarPosition = (x: number, y: number) => {
     setStore('slideToolbarPosition', { x, y });
 };
@@ -6225,27 +6365,40 @@ export const toggleMainToolbar = (force?: boolean) => {
 export const zoomToFitSlide = () => {
     const slide = store.slides[store.activeSlideIndex];
     if (!slide) return;
+    setStore('viewState', fitSlideViewState(slide));
+};
 
+/**
+ * The view that fits a slide in the visible canvas. Shared by zoomToFitSlide and every slide
+ * switch and transition (utils/animation/slide-transition-manager.ts), which had a copy fitting
+ * the window instead (bug #462).
+ */
+export const fitSlideViewState = (slide: Slide): { scale: number; panX: number; panY: number } => {
     const { width: sW, height: sH } = slide.dimensions;
     const { x: spatialX, y: spatialY } = slide.spatialPosition;
     const margin = 40; // Pixels
 
-    const availableW = window.innerWidth - margin * 2;
-    const availableH = window.innerHeight - margin * 2;
+    // Fit the CANVAS, not the window: the canvas is the window minus the docked chrome (top bar,
+    // toolbar, status bar, panels, notes pane), and pan is measured from its corner. The slide
+    // navigator is a fixed column over the canvas's left edge rather than a dock inset, so the
+    // fit starts to its right while it is showing. Fitting the window put the slide's left
+    // edge under the navigator and its bottom under the status bar (bug #462).
+    const vp = canvasViewport();
+    const navigatorShown = isMultiPageDocType(store.docType) && store.showSlideNavigator
+        && store.appMode !== 'presentation' && !store.zenMode;
+    const left = navigatorShown ? Math.max(0, Math.min(slideNavigatorRight() - vp.x, vp.width / 2)) : 0;
+    const areaW = vp.width - left;
+    const areaH = vp.height;
 
-    const scaleW = availableW / sW;
-    const scaleH = availableH / sH;
+    const scaleW = Math.max(1, areaW - margin * 2) / sW;
+    const scaleH = Math.max(1, areaH - margin * 2) / sH;
     const newScale = Math.min(scaleW, scaleH);
 
-    // Calculate pan to center the spatial slide region
-    const panX = (window.innerWidth - sW * newScale) / 2 - spatialX * newScale;
-    const panY = (window.innerHeight - sH * newScale) / 2 - spatialY * newScale;
+    // Pan centres the slide in that area
+    const panX = left + (areaW - sW * newScale) / 2 - spatialX * newScale;
+    const panY = (areaH - sH * newScale) / 2 - spatialY * newScale;
 
-    setStore('viewState', {
-        scale: newScale,
-        panX,
-        panY
-    });
+    return { scale: newScale, panX, panY };
 };
 
 // Snapshot of DS element text for auto-reset on presentation exit
@@ -9428,6 +9581,7 @@ export const loadPresentationTemplate = (template: {
         gradientDirection?: number;
         elements: Partial<DrawingElement>[];
         transition?: SlideTransition;
+        notes?: string;
     }>;
     palette?: { primary: string; secondary: string; accent: string; background: string; text: string };
 }) => {
@@ -9459,6 +9613,7 @@ export const loadPresentationTemplate = (template: {
             gradientStops: slideTemplate.gradientStops || undefined,
             gradientDirection: slideTemplate.gradientDirection || undefined,
             transition: slideTemplate.transition || { ...DEFAULT_SLIDE_TRANSITION },
+            ...(slideTemplate.notes?.trim() && { notes: slideTemplate.notes }),
         });
     });
 

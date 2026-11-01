@@ -4,7 +4,7 @@ name: Design Studio
 icon: "🎨"
 category: Design
 description: "Canva-style design documents: pages & size presets, slides & presentations (slide master, slide numbers, transitions, presenting), templates, Magic Resize, brand kit, unified elements search (icons/shapes/photos), text effects, AI assists, version history, offline PWA"
-keywords: "slides presentation new presentation slide deck slides panel add slide insert slide above below duplicate slide reorder slides slide transition fade zoom easing duration slide master use as slide master crown master layer logo footer watermark every slide slide number page number slideNumber totalSlides formula equals present F5 Shift+F5 present from current slide presentation mode laser pointer ink highlighter ink brush eraser exit presentation importMarkdownSlides markdown slides addSlide updateSlideTransition updateSlideBackground togglePresentationMode speaker notes presenter view canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
+keywords: "slides presentation new presentation slide deck slides panel add slide insert slide above below duplicate slide reorder slides slide transition fade zoom easing duration slide master use as slide master crown master layer logo footer watermark every slide slide number page number slideNumber totalSlides date field ${date} footer formula new slide layout layouts title and content two columns section header comparison key numbers timeline cards closing insertSlideWithLayout getSlideLayouts equals present F5 Shift+F5 present from current slide presentation mode laser pointer ink highlighter ink brush eraser exit presentation importMarkdownSlides markdown slides addSlide updateSlideTransition updateSlideBackground togglePresentationMode speaker notes notes pane presenter notes setSlideNotes getSlideNotes toggleSpeakerNotes markdown notes presenter view link hyperlink jump to slide button menu agenda quiz interactive presentation non-linear setLink getLink end show alt+f5 openPresenterView presenter window timer next slide second screen projector dual monitor canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
 ---
 
 # Design Studio
@@ -77,15 +77,23 @@ A presentation is a paged document like a design, with slides instead of pages. 
 
 **Slides panel.** The left rail lists every slide with a live thumbnail.
 
-- **+ Add Slide** (<kbd>Ctrl+M</kbd>) adds a slide at the end. Right-click a thumbnail → **Insert Slide Above** / **Insert Slide Below** puts one exactly where you want it.
+- **+ Add Slide** (<kbd>Ctrl+M</kbd>) adds a blank slide at the end. The **layouts** button beside it adds a slide after the current one from a layout — **Blank**, **Title**, **Title and content**, **Two columns**, **Section header**, **Comparison**, **Quote**, **Key numbers**, **Timeline**, **Cards**, **Picture and text** or **Closing** — with placeholder text to type over. The new slide takes the current slide's background, and the layout's colours are picked to read on it (light text on a dark slide). Layout artwork is ordinary objects: there are no placeholders that stay linked to the layout. Right-click a thumbnail → **Insert Slide Above** / **Insert Slide Below** puts one exactly where you want it.
 - Hover a thumbnail for its buttons: **✕** deletes the slide (after a confirm), the copy icon duplicates it, and **⚡** opens its transition.
 - Drag thumbnails to reorder. <kbd>Alt+→</kbd> / <kbd>Alt+←</kbd> move to the next or previous slide while you edit.
 
 **Transitions.** The **⚡ Slide Transition** picker sets how a slide arrives: **Type** (None, Fade, Slide Left / Right / Up / Down, Zoom In, Zoom Out), **Duration (ms)** (500 by default), and **Easing** (Quad InOut by default). **Preview Transition** plays it on the canvas.
 
-**Slide Master: artwork on every slide.** Put a logo, footer or watermark on its own layer, then Layers panel → right-click the layer → **Use as Slide Master**. A crown 👑 marks it, and everything on it shows in the same place on every slide. Edit it like any layer (it must be active and unlocked); **Disable Slide Master** turns it back into an ordinary layer. There is one master for the whole deck, and a slide can't opt out of it.
+**Slide Master: artwork on every slide.** Put a logo, footer or watermark on its own layer, then Layers panel → right-click the layer → **Use as Slide Master**. A crown 👑 marks it, and everything on it shows in the same place on every slide. Edit it like any layer (it must be active and unlocked); **Disable Slide Master** turns it back into an ordinary layer. There is one master for the whole deck, and a slide can't opt out of it. Exports put the master's artwork on every page, just as the canvas shows it.
 
-**Slide numbers.** A text box that **starts with `=`** fills in two fields: `${slideNumber}` (the slide you're on, from 1) and `${totalSlides}`. Type `=Page ${slideNumber} of ${totalSlides}` on the master layer and every slide shows its own "Page 2 of 10". Without the leading `=` the text shows as typed; start with `==` to show a literal `=`. There is no date field.
+**Slide numbers and the date.** A text box that **starts with `=`** fills in fields: `${slideNumber}` (the slide it's on, from 1), `${totalSlides}`, and `${date}` (today's date, written the way your browser writes dates, e.g. "1 November 2026"). Type `=Page ${slideNumber} of ${totalSlides}` on the master layer and every slide shows its own "Page 2 of 10". Without the leading `=` the text shows as typed; start with `==` to show a literal `=`. Fields are filled in on the canvas, in slide thumbnails, in recordings and in every export (PNG, PDF, SVG, PowerPoint); PowerPoint gets the numbers as plain text, so they don't renumber if you reorder slides there.
+
+**Speaker notes.** Each slide has its own notes: what you want to say, for you and not the audience. Click the **notes** button (the notebook with a pen) in the slide toolbar at the bottom of the canvas, or run **Show / hide speaker notes** from the command palette (<kbd>Ctrl+K</kbd>). A **Speaker notes · Slide N** pane opens along the bottom of the canvas, and the slide shrinks to fit above it. Type into it; the notes follow the slide you have selected. Close it with **✕** or the same button.
+
+- Notes are plain text, one paragraph per line. They never draw on the slide, and the audience never sees them: while presenting they show only in the **presenter view** (below). They are left out of PNG, SVG and PDF exports.
+- The whole time you spend typing in the pane counts as one step for <kbd>Ctrl+Z</kbd>.
+- Notes are saved with the document. **PowerPoint export** (editable or pictures) writes them as PowerPoint's own speaker notes, and **opening a .pptx** brings its notes in. A document that has notes opens with the pane showing.
+- **Markdown import** takes notes too: a line starting `Note:` (or `Notes:`) begins the slide's notes, which run to the next slide break; an HTML comment `<!-- … -->` is also a note.
+- Formatting inside PowerPoint notes (bold, bullets, indent levels) comes in as plain text.
 
 **Presenting.**
 
@@ -93,14 +101,35 @@ A presentation is a paged document like a design, with slides instead of pages. 
 |---|---|
 | <kbd>F5</kbd> | Present from the first slide |
 | <kbd>Shift+F5</kbd> | Present from the current slide |
+| <kbd>Alt+F5</kbd> | Present from the current slide with the **presenter view** |
 | <kbd>→</kbd>, <kbd>Space</kbd>, <kbd>Enter</kbd>, <kbd>Page Down</kbd>, or a click | Next build step, then the next slide |
 | <kbd>←</kbd>, <kbd>Page Up</kbd>, <kbd>Backspace</kbd> | Previous slide, shown fully built |
 | <kbd>Esc</kbd> | End the presentation |
 
-Move the mouse to show the toolbar at the bottom of the screen (it hides again after 3 seconds): **Pointer (Advance Slides)**, **💡 Spotlight**, **Laser Pointer** (<kbd>Shift+P</kbd>), **Ink Highlighter**, **Ink Brush**, **Eraser**, plus **Record** (MP4) and the film button (GIF), and **Exit Presentation**. Build steps, Spotlight and recording are covered in Animation ▸ Click-to-Advance and Animation ▸ Recording & Export.
+Move the mouse to show the toolbar at the bottom of the screen (it hides again after 3 seconds): **Pointer (Advance Slides)**, **💡 Spotlight**, **Laser Pointer** (<kbd>Shift+P</kbd>), **Ink Highlighter**, **Ink Brush**, **Eraser**, plus **Record** (MP4) and the film button (GIF), **Full screen** (when the slides aren't full screen), **Presenter view**, and **Exit Presentation**. Build steps, Spotlight and recording are covered in Animation ▸ Click-to-Advance and Animation ▸ Recording & Export.
+
+**Presenter view.** Press <kbd>Alt+F5</kbd> (or **Present with presenter view** in the command palette, or the **Presenter view** button in the presentation toolbar) to present from the current slide with a second window just for you. It shows:
+
+- the **current slide**, large, and the **next slide** (or *End of presentation* on the last one);
+- the slide's **speaker notes**, with **A−** / **A+** to change their size (remembered for next time);
+- a **timer** with **Pause** / **Resume** and **Reset**, the time of day, and *Slide N of M*;
+- **Previous**, **Next** and **End show** buttons. The show's keys (<kbd>→</kbd> <kbd>Space</kbd> <kbd>Page Down</kbd> to advance, <kbd>←</kbd> <kbd>Page Up</kbd> to go back, <kbd>Esc</kbd> to end) work in this window too, so you never have to click back into the slides.
+
+With a projector or second screen: put the YappyDraw window on the audience's screen, press <kbd>Alt+F5</kbd>, drag the presenter window to your own screen, then click **Full screen** in the slides' toolbar. (A browser can't open a window and go full screen on the same click, so the slides start out in a normal window.) Ending the show closes the presenter view; closing the presenter view leaves the show running. If nothing opens, your browser blocked the pop-up: allow pop-ups for the site and try again.
+
+The current-slide picture shows the whole slide, not how far its build steps have got.
+
+**Links: buttons that jump.** Any object can be a link — a "Back to agenda" button, a menu of topics, a quiz answer. Right-click it (or select several, such as an icon and its label) → **🔗 Link**:
+
+- **To slide ▸** — pick a slide from the list. The link follows that slide, so it still works after you reorder or insert slides.
+- **Show action ▸** — **Next slide**, **Previous slide**, **First slide**, **Last slide** or **End show**.
+- **Web address…** — a page to open in a new tab (`https://…`, `mailto:…` and `tel:` work; a bare `www.example.com` gets `https://` added). Anything else, such as `javascript:`, is refused, and never opened even if a file contains one.
+- **Open link** tries it; **Remove link** takes it off.
+
+While presenting, the pointer turns into a hand over a linked object, and clicking it follows the link instead of moving to the next build step or slide. A link to a slide that has since been deleted does nothing and says so. The **Link** field under Properties ▸ Advanced holds the same thing as text. PowerPoint export and import keep links, including jumps to slides and the show actions.
 
 :::note
-Not available yet: speaker notes, a presenter view, hiding a slide, slide sections, and auto-advance timings.
+Not available yet: hiding a slide, slide sections, and auto-advance timings. Links on single words inside a text box (rather than the whole object) are not supported.
 :::
 
 ```
@@ -112,6 +141,15 @@ Y.setActiveSlide(1);
 Y.updateSlideTransition(1, { type: 'fade', duration: 400 });
 Y.updateSlideBackground(1, '#0f172a');     // colour, or { fillStyle, gradientStops, … }
 await Y.importMarkdownSlides('# Title\n- point\n---\n# Next'); // headings → titles, bullets → content, --- → new slide
+Y.setSlideNotes(0, 'Open with the story.\nThen the numbers.');  // blank text removes them
+Y.getSlideNotes(0);                        // → 'Open with the story.\nThen the numbers.' ('' when none)
+Y.toggleSpeakerNotes(true);                // show the notes pane
+Y.openPresenterView();                     // present with the presenter view — call from a click/key handler
+Y.isPresenterViewOpen(); Y.closePresenterView();
+Y.insertSlideWithLayout('two-column');     // after the current slide; Y.getSlideLayouts() lists the ids
+Y.setLink(buttonId, { slide: 4 });         // click → slide 5 (also 'next' | 'previous' | 'first' | 'last' | 'end', or a URL)
+Y.setLink([iconId, labelId], 'https://yappydraw.com');
+Y.getLink(buttonId);                       // → '#slide:<id>', '#end', 'https://…' or ''
 Y.togglePresentationMode(true);            // present
 ```
 

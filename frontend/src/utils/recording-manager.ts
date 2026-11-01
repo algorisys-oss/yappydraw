@@ -13,6 +13,7 @@ import rough from 'roughjs';
 import { renderSlideBackground } from "./canvas-renderer";
 import { renderElement } from "./render-element";
 import { projectMasterPosition, ownerSlideIndex } from "./slide-utils";
+import { hasFields, resolveFieldText } from "./slide-fields";
 import { calculateAllAnimatedStates } from "./animation-utils";
 import { applyCompositionOverrides } from "./animation/composition-evaluator";
 import { evaluateTinyflyClips, ensureTinyflyEngine } from "./animation/tinyfly-clips";
@@ -290,6 +291,11 @@ function poseAt(exportMs: number, slide: Slide | null): { el: DrawingElement; la
             }
             const ov = anim.get(el.id);
             if (ov) renderEl = { ...renderEl, ...ov };
+            // Field text (=Page ${slideNumber}…) for the slide being recorded.
+            if (slide && renderEl.type === 'text' && hasFields(renderEl.text)) {
+                const n = store.slides.findIndex(s => s.id === slide.id);
+                renderEl = { ...renderEl, text: resolveFieldText(renderEl.text, { slideNumber: n + 1, totalSlides: store.slides.length }) };
+            }
             out.push({ el: renderEl, layerOpacity });
         }
     }
@@ -331,7 +337,10 @@ export function makeRegionFrameRenderer(region: FrameRegion, k: number, forGif =
     const ctx = off.getContext('2d', forGif ? { willReadFrequently: true } : undefined);
     if (!ctx) return null;
     const rc = rough.canvas(off);
-    const isDark = store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus';
+    // An export, so true colours whatever the editor theme (docs/design/dark-mode.md): the
+    // page and the background are drawn true-colour, and dark-swapped elements on them came
+    // out white-on-white in every recording made in Dark or Focus (bug #460).
+    const isDark = false;
     const bg = region.background && region.background !== 'transparent' ? region.background : null;
 
     const drawAt = (exportMs: number) => {
@@ -641,8 +650,11 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
         tCtx.scale(thumbScale, thumbScale);
         tCtx.translate(-spatialX, -spatialY); // Focus on the slide's spatial area
 
-        // Background
-        const isDarkMode = store.theme !== 'light';
+        // Background. A thumbnail shows the page as it presents and exports: true colours on
+        // the page's own (WYSIWYG) background. Swapping element colours for the dark theme here
+        // dropped black text and outlines from every thumbnail in Dark, Focus and System —
+        // `theme !== 'light'` even caught System on a light OS (bug #460).
+        const isDarkMode = false;
         const rc = rough.canvas(thumbCanvas);
         renderSlideBackground(tCtx!, rc, slide, spatialX, spatialY, sW, sH, store.theme);
 
@@ -669,6 +681,9 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
                     renderEl = { ...el, x: projected.x, y: projected.y };
                 } else if (ownerSlideIndex(el, store.slides) !== index) {
                     return; // belongs to another page (or to none)
+                }
+                if (renderEl.type === 'text' && hasFields(renderEl.text)) {
+                    renderEl = { ...renderEl, text: resolveFieldText(renderEl.text, { slideNumber: index + 1, totalSlides: store.slides.length }) };
                 }
                 const layerOpacity = (layer?.opacity ?? 1);
                 renderElement(rc, tCtx, renderEl, isDarkMode, layerOpacity);

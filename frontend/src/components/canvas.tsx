@@ -17,7 +17,7 @@ import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition, ownerSlideIndex } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, setEyedropperHover, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint, toggleNodeTool, exitAllToolModes } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, setEyedropperHover, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint, toggleNodeTool, exitAllToolModes, darkenElementColors } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { canvasViewport, publishDockVars, dockInsets } from "../utils/dock-layout";
@@ -488,6 +488,9 @@ const Canvas: Component = () => {
 
         const { scale, panX, panY } = store.viewState;
         const isDarkMode = store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus';
+        // Elements (and their dimension labels) follow the surface they sit on; the chrome
+        // around them (grid, selection, overlays) follows the theme.
+        const elementsDark = darkenElementColors();
         if (!rcInstance) rcInstance = rough.canvas(canvasRef);
         const rc = rcInstance;
         const shouldAnimate = store.appMode === 'presentation' || store.isPreviewing;
@@ -590,7 +593,7 @@ const Canvas: Component = () => {
                     docType: store.docType, activeSlideIndex: store.activeSlideIndex,
                     selection: [], selectedTool: store.selectedTool,
                     activeLayerId: store.activeLayerId,
-                    viewportBounds: vp, scale, isDarkMode,
+                    viewportBounds: vp, scale, isDarkMode: elementsDark,
                     currentDrawingId: null,
                     hoveredConnector: null,
                     editingId: null,
@@ -622,7 +625,7 @@ const Canvas: Component = () => {
             docType: store.docType, activeSlideIndex: store.activeSlideIndex,
             selection: store.selection, selectedTool: store.selectedTool,
             activeLayerId: store.activeLayerId,
-            animatedStates, viewportBounds: vp, scale, isDarkMode,
+            animatedStates, viewportBounds: vp, scale, isDarkMode: elementsDark,
             currentDrawingId: pState.currentId,
             hoveredConnector: pState.hoveredConnector,
             editingId: editingId(),
@@ -635,7 +638,7 @@ const Canvas: Component = () => {
         // Persistent dimension annotations (Phase 5): a world-space overlay that reads
         // each target's current (animated) bounds, so it auto-updates on move/resize/anim.
         if (store.dimensionAnnotations.length > 0) {
-            renderDimensions(ctx, store.dimensionAnnotations, store.elements, animatedStates, scale, isDarkMode, store.globalSettings.measurementUnit ?? 'px');
+            renderDimensions(ctx, store.dimensionAnnotations, store.elements, animatedStates, scale, elementsDark, store.globalSettings.measurementUnit ?? 'px');
         }
 
         // Grid over the artwork (GridSettings.onTop) — above every element, below the
@@ -2071,7 +2074,7 @@ const Canvas: Component = () => {
             if (isPalmTouch(pState, e, Date.now())) return;
         }
 
-        if (presentationOnMove(e, pState)) return;
+        if (presentationOnMove(e, pState, pHelpers)) return;
         let { x, y } = getWorldCoordinates(e.clientX, e.clientY);
         setCursorPosition({ x: Math.round(x), y: Math.round(y) });
 

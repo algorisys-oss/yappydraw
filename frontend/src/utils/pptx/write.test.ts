@@ -180,3 +180,43 @@ describe("buildPptx", () => {
         expect(s).toContain(`sz="${fontSz(16)}"`);
     });
 });
+
+describe("buildPptx: speaker notes", () => {
+    const deck = (notes?: string): Deck => ({ width: 960, height: 540, slides: [{ items: [], notes }, { items: [] }] });
+
+    it("writes no notes parts when no slide has notes", () => {
+        const r = unzip(buildPptx(deck('   ')));
+        expect(r('ppt/notesMasters/notesMaster1.xml')).toBeUndefined();
+        expect(r('ppt/presentation.xml')).not.toContain('notesMasterIdLst');
+        expect(r('[Content_Types].xml')).not.toContain('notesSlide');
+    });
+
+    it("writes a notes slide linked both ways, a notes master with its own theme, and content types", () => {
+        const r = unzip(buildPptx(deck('Line one & <two>\n\nLine three')));
+        const notes = r('ppt/notesSlides/notesSlide1.xml')!;
+        parseStrict(notes);
+        parseStrict(r('ppt/notesMasters/notesMaster1.xml')!);
+        expect(notes).toContain('<p:ph type="body" idx="1"/>');
+        expect(notes).toContain('<a:t>Line one &amp; &lt;two&gt;</a:t>');
+        expect(notes.match(/<a:p>/g)!.length).toBe(3); // the blank line stays an empty paragraph
+        expect(r('ppt/slides/_rels/slide1.xml.rels')).toContain('Target="../notesSlides/notesSlide1.xml"');
+        expect(r('ppt/slides/_rels/slide2.xml.rels')).not.toContain('notesSlide');
+        expect(r('ppt/notesSlides/notesSlide2.xml')).toBeUndefined();
+        const nrels = r('ppt/notesSlides/_rels/notesSlide1.xml.rels')!;
+        expect(nrels).toContain('Target="../notesMasters/notesMaster1.xml"');
+        expect(nrels).toContain('Target="../slides/slide1.xml"');
+        expect(r('ppt/notesMasters/_rels/notesMaster1.xml.rels')).toContain('Target="../theme/theme2.xml"');
+        expect(r('ppt/theme/theme2.xml')).toBeDefined();
+        const pres = r('ppt/presentation.xml')!;
+        // Schema order: sldMasterIdLst, notesMasterIdLst, sldIdLst.
+        expect(pres.indexOf('notesMasterIdLst')).toBeGreaterThan(pres.indexOf('sldMasterIdLst'));
+        expect(pres.indexOf('notesMasterIdLst')).toBeLessThan(pres.indexOf('sldIdLst'));
+        const rid = /<p:notesMasterId r:id="(rId\d+)"/.exec(pres)![1];
+        expect(r('ppt/_rels/presentation.xml.rels')).toContain(`Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster"`);
+        const ct = r('[Content_Types].xml')!;
+        expect(ct).toContain('PartName="/ppt/notesSlides/notesSlide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"');
+        expect(ct).toContain('PartName="/ppt/notesMasters/notesMaster1.xml"');
+        expect(ct).toContain('PartName="/ppt/theme/theme2.xml"');
+        expect(r('docProps/app.xml')).toContain('<Notes>1</Notes>');
+    });
+});

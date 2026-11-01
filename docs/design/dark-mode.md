@@ -38,9 +38,18 @@ in `canvas.tsx` still uses its own filter — it's self-contained.)
 
 Bonus: embedded **images now render true-colour** in dark mode (the old filter inverted them too).
 
+## Pages: elements follow the surface (bug #460)
+A page (slides, designs, game/animation stages) is WYSIWYG **white** in Dark; only Focus dims it,
+and only while editing (`focusDim`). Swapping element colours on a white page made black
+white-on-white, so whether elements are swapped is decided by **`darkenElementColors()`**
+(`store/app-store.ts`): infinite canvas → Dark/Focus; page → Focus while editing only. The
+canvas's element pass, onion skins, dimension labels and the text-editing overlays use it;
+grid, selection and other chrome still use the plain theme check.
+
 ## Exports / WYSIWYG
 Export paths render with `isDarkMode = false`, so PNG/SVG exports are always true-colour
-(light-mode canonical) regardless of the editor theme.
+(light-mode canonical) regardless of the editor theme. So do slide thumbnails and MP4/GIF
+recordings (`utils/recording-manager.ts`) — both used to swap and lost black content.
 
 ## How to tweak later
 - **Make colours swap harder/softer:** change the weight in `adjustColor` — e.g. use `(1 - S)^k`

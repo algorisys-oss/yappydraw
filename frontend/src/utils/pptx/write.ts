@@ -7,7 +7,7 @@
  * on the blank layout, so nothing inherits placeholder text or positions: what the deck model
  * says is what PowerPoint shows.
  */
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink } from './deck';
 import { custGeomXml, presetGeomXml } from './custgeom';
 import { EMU_PER_PX, ang, esc, fontSz, pct, NS, REL, XML_DECL, relsXml, zipPackage, type Rel } from './ooxml';
 
@@ -26,6 +26,8 @@ const CT = {
     presProps: 'application/vnd.openxmlformats-officedocument.presentationml.presProps+xml',
     viewProps: 'application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml',
     tableStyles: 'application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml',
+    notesMaster: 'application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml',
+    notesSlide: 'application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml',
     core: 'application/vnd.openxmlformats-package.core-properties+xml',
     app: 'application/vnd.openxmlformats-officedocument.extended-properties+xml',
 };
@@ -171,6 +173,26 @@ interface Ctx {
     s: number; dx: number; dy: number;   // slide fit
     rels: Rel[];
     media: (m: Media) => string;          // returns the rel id
+    /** Slide number (1-based) for a slide link's key, when that slide is in the deck. */
+    slideNumber?: (key: string) => number | null;
+}
+
+const JUMP: Record<string, string> = { next: 'nextslide', previous: 'previousslide', first: 'firstslide', last: 'lastslide', end: 'endshow' };
+
+/** `a:hlinkClick` for an object's link, adding the relationship it needs. '' for none. */
+function hlinkXml(link: DeckLink | undefined, c: Ctx): string {
+    if (!link) return '';
+    const rel = (type: string, target: string, external?: boolean) => {
+        const known = c.rels.find(r => r.type === type && r.target === target);
+        if (known) return known.id;
+        const id = `rId${c.rels.length + 1}`;
+        c.rels.push({ id, type, target, external });
+        return id;
+    };
+    if (link.kind === 'url') return `<a:hlinkClick r:id="${rel(REL.hyperlink, link.url, true)}"/>`;
+    if (link.kind === 'action') return `<a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=${JUMP[link.action]}"/>`;
+    const n = c.slideNumber?.(link.key);
+    return n ? `<a:hlinkClick r:id="${rel(REL.slide, `slide${n}.xml`)}" action="ppaction://hlinksldjump"/>` : '';
 }
 
 const xfrmXml = (it: { x: number; y: number; w: number; h: number; rot?: number; flipH?: boolean; flipV?: boolean }, c: Ctx, tag = 'a:xfrm', group = false): string => {
@@ -186,11 +208,14 @@ const xfrmXml = (it: { x: number; y: number; w: number; h: number; rot?: number;
     return `<${tag}${attrs ? ' ' + attrs : ''}><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/>${ch}</${tag}>`;
 };
 
-const cNvPr = (it: { id: number; name: string }, descr?: string) =>
-    `<p:cNvPr id="${it.id}" name="${esc(it.name)}"${descr ? ` descr="${esc(descr)}"` : ''}/>`;
+const cNvPr = (it: { id: number; name: string; link?: DeckLink }, c: Ctx, descr?: string) => {
+    const head = `<p:cNvPr id="${it.id}" name="${esc(it.name)}"${descr ? ` descr="${esc(descr)}"` : ''}`;
+    const link = hlinkXml(it.link, c);
+    return link ? `${head}>${link}</p:cNvPr>` : `${head}/>`;
+};
 
 function shapeXml(it: ShapeItem, c: Ctx): string {
-    const nv = `<p:nvSpPr>${cNvPr(it)}<p:cNvSpPr${it.textBox ? ' txBox="1"' : ''}/><p:nvPr/></p:nvSpPr>`;
+    const nv = `<p:nvSpPr>${cNvPr(it, c)}<p:cNvSpPr${it.textBox ? ' txBox="1"' : ''}/><p:nvPr/></p:nvSpPr>`;
     const sp = `<p:spPr>${xfrmXml(it, c)}${geomXml(it.geom, it.w, it.h)}${paintXml(it.fill)}${lineXml(it.line, c.s)}</p:spPr>`;
     const tx = it.text ? txBodyXml(it.text, c.s)
         // PowerPoint gives every shape a text body so the user can type into it.
@@ -200,13 +225,13 @@ function shapeXml(it: ShapeItem, c: Ctx): string {
 
 function connectorXml(it: ConnectorItem, c: Ctx): string {
     const glue = (tag: string, e?: { id: number; idx: number }) => e ? `<a:${tag} id="${e.id}" idx="${e.idx}"/>` : '';
-    const nv = `<p:nvCxnSpPr>${cNvPr(it)}<p:cNvCxnSpPr>${glue('stCxn', it.start)}${glue('endCxn', it.end)}</p:cNvCxnSpPr><p:nvPr/></p:nvCxnSpPr>`;
+    const nv = `<p:nvCxnSpPr>${cNvPr(it, c)}<p:cNvCxnSpPr>${glue('stCxn', it.start)}${glue('endCxn', it.end)}</p:cNvCxnSpPr><p:nvPr/></p:nvCxnSpPr>`;
     return `<p:cxnSp>${nv}<p:spPr>${xfrmXml(it, c)}${geomXml(it.geom, it.w, it.h)}<a:noFill/>${lineXml(it.line, c.s)}</p:spPr></p:cxnSp>`;
 }
 
 function pictureXml(it: PictureItem, c: Ctx): string {
     const rid = c.media(it.media);
-    const nv = `<p:nvPicPr>${cNvPr(it, it.descr)}<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`;
+    const nv = `<p:nvPicPr>${cNvPr(it, c, it.descr)}<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`;
     const alpha = it.alpha !== undefined && it.alpha < 1 ? `<a:alphaModFix amt="${pct(it.alpha)}"/>` : '';
     const cr = it.crop;
     const src = cr ? `<a:srcRect l="${pct(cr.l)}" t="${pct(cr.t)}" r="${pct(cr.r)}" b="${pct(cr.b)}"/>` : '';
@@ -215,7 +240,7 @@ function pictureXml(it: PictureItem, c: Ctx): string {
 }
 
 function groupXml(it: GroupItem, c: Ctx): string {
-    const nv = `<p:nvGrpSpPr>${cNvPr(it)}<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`;
+    const nv = `<p:nvGrpSpPr>${cNvPr(it, c)}<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`;
     return `<p:grpSp>${nv}<p:grpSpPr>${xfrmXml(it, c, 'a:xfrm', true)}</p:grpSpPr>${it.children.map(ch => itemXml(ch, c)).join('')}</p:grpSp>`;
 }
 
@@ -293,6 +318,51 @@ const MASTER = XML_DECL + `<p:sldMaster ${ROOT_NS}><p:cSld><p:bg><p:bgRef idx="1
 const LAYOUT = XML_DECL + `<p:sldLayout ${ROOT_NS} type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>${EMPTY_TREE_HEADER}</p:spTree></p:cSld>`
     + '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>';
 
+// ── Speaker notes ───────────────────────────────────────────────────────────────────────────
+// A notes slide needs a notes master, and a notes master needs a theme. The master's placeholder
+// layout (header, date, slide image, notes body, footer, number on a portrait 7.5″×10″ page) is
+// PowerPoint's default, as DeckCraft writes it (crates/pptx/src/write.rs `notes_master_shapes`).
+
+const NOTES_W = 6858000, NOTES_H = 9144000;
+
+const notesPh = (id: number, name: string, type: string, idx: number, x: number, y: number, w: number, h: number, body = '') => {
+    const xfrm = `<a:xfrm><a:off x="${Math.round(NOTES_W * x)}" y="${Math.round(NOTES_H * y)}"/><a:ext cx="${Math.round(NOTES_W * w)}" cy="${Math.round(NOTES_H * h)}"/></a:xfrm>`;
+    const img = type === 'sldImg';
+    const sz = img ? '' : ' sz="quarter"';
+    const spPr = img
+        ? `<p:spPr>${xfrm}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln w="12700"><a:solidFill><a:prstClr val="black"/></a:solidFill></a:ln></p:spPr>`
+        : `<p:spPr>${xfrm}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>`;
+    const locks = img ? '<a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/>' : '<a:spLocks noGrp="1"/>';
+    const tx = img ? '' : `<p:txBody><a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0"/><a:lstStyle/>${body || '<a:p><a:endParaRPr lang="en-US"/></a:p>'}</p:txBody>`;
+    return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr>${locks}</p:cNvSpPr><p:nvPr><p:ph type="${type}"${sz} idx="${idx}"/></p:nvPr></p:nvSpPr>${spPr}${tx}</p:sp>`;
+};
+
+const notesLvl = Array.from({ length: 9 }, (_, i) =>
+    `<a:lvl${i + 1}pPr marL="${i * 457200}" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1200" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl${i + 1}pPr>`).join('');
+
+const NOTES_MASTER = XML_DECL + `<p:notesMaster ${ROOT_NS}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>${EMPTY_TREE_HEADER}`
+    + notesPh(2, 'Header Placeholder 1', 'hdr', 0, 0, 0, 0.43, 0.05)
+    + notesPh(3, 'Date Placeholder 2', 'dt', 1, 0.57, 0, 0.43, 0.05)
+    + notesPh(4, 'Slide Image Placeholder 3', 'sldImg', 2, 0.125, 0.125, 0.75, 0.375)
+    + notesPh(5, 'Notes Placeholder 4', 'body', 3, 0.1, 0.53, 0.8, 0.36, '<a:p><a:pPr lvl="0"/><a:r><a:rPr lang="en-US"/><a:t>Click to edit Master text styles</a:t></a:r></a:p>')
+    + notesPh(6, 'Footer Placeholder 5', 'ftr', 4, 0, 0.95, 0.43, 0.05)
+    + notesPh(7, 'Slide Number Placeholder 6', 'sldNum', 5, 0.57, 0.95, 0.43, 0.05)
+    + '</p:spTree></p:cSld>'
+    + '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>'
+    + `<p:notesStyle>${notesLvl}</p:notesStyle></p:notesMaster>`;
+
+/** One paragraph per line of the notes; a blank line stays an empty paragraph, as PowerPoint keeps it. */
+export function notesXml(notes: string): string {
+    const paras = notes.replace(/\r\n?/g, '\n').split('\n')
+        .map(line => line ? `<a:p><a:r><a:rPr lang="en-US" dirty="0"/><a:t>${esc(line)}</a:t></a:r></a:p>` : '<a:p><a:endParaRPr lang="en-US" dirty="0"/></a:p>')
+        .join('');
+    const img = '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Slide Image Placeholder 1"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr><p:spPr/></p:sp>';
+    const body = '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Notes Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/>'
+        + `<p:txBody><a:bodyPr/><a:lstStyle/>${paras}</p:txBody></p:sp>`;
+    return XML_DECL + `<p:notes ${ROOT_NS}><p:cSld><p:spTree>${EMPTY_TREE_HEADER}${img}${body}</p:spTree></p:cSld>`
+        + '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:notes>';
+}
+
 const PRES_PROPS = XML_DECL + `<p:presentationPr ${ROOT_NS}/>`;
 const VIEW_PROPS = XML_DECL + `<p:viewPr ${ROOT_NS}><p:normalViewPr><p:restoredLeft sz="15620"/><p:restoredTop sz="94660"/></p:normalViewPr><p:gridSpacing cx="76200" cy="76200"/></p:viewPr>`;
 const TABLE_STYLES = XML_DECL + `<a:tblStyleLst xmlns:a="${NS.a}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`;
@@ -302,9 +372,9 @@ const coreXml = (title: string, now: string) => XML_DECL
     + `<dc:title>${esc(title)}</dc:title><dc:creator>YappyDraw</dc:creator><cp:lastModifiedBy>YappyDraw</cp:lastModifiedBy>`
     + `<dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`;
 
-const appXml = (n: number) => XML_DECL
+const appXml = (n: number, notes: number) => XML_DECL
     + '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">'
-    + `<Application>YappyDraw</Application><Slides>${n}</Slides><PresentationFormat>Custom</PresentationFormat></Properties>`;
+    + `<Application>YappyDraw</Application><Slides>${n}</Slides><Notes>${notes}</Notes><PresentationFormat>Custom</PresentationFormat></Properties>`;
 
 // ── Package ─────────────────────────────────────────────────────────────────────────────────
 
@@ -331,8 +401,11 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
     const mediaExts = new Set<Media['ext']>();
     let mediaN = 0;
     const slides = deck.slides.length ? deck.slides : [{ items: [] } as Slide];
+    const slideNumberOf = new Map<string, number>();
+    slides.forEach((sl, i) => { if (sl.key) slideNumberOf.set(sl.key, i + 1); });
 
     const presRels: Rel[] = [{ id: 'rId1', type: REL.slideMaster, target: 'slideMasters/slideMaster1.xml' }];
+    const hasNotes = slides.some(sl => !!sl.notes?.trim());
     let sldIds = '';
     slides.forEach((slide, i) => {
         const n = i + 1;
@@ -341,6 +414,7 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
         const fit = slide.fit ?? { scale: 1, dx: 0, dy: 0 };
         const ctx: Ctx = {
             s: fit.scale * k, dx: fit.dx * k, dy: fit.dy * k, rels,
+            slideNumber: (key) => slideNumberOf.get(key) ?? null,
             media: (m) => {
                 const known = mediaRid.get(m);
                 if (known) return known;
@@ -355,6 +429,15 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
             },
         };
         parts.set(`ppt/slides/slide${n}.xml`, slideXml(slide, ctx));
+        if (slide.notes?.trim()) {
+            rels.push({ id: `rId${rels.length + 1}`, type: REL.notesSlide, target: `../notesSlides/notesSlide${n}.xml` });
+            parts.set(`ppt/notesSlides/notesSlide${n}.xml`, notesXml(slide.notes));
+            parts.set(`ppt/notesSlides/_rels/notesSlide${n}.xml.rels`, relsXml([
+                { id: 'rId1', type: REL.notesMaster, target: '../notesMasters/notesMaster1.xml' },
+                { id: 'rId2', type: REL.slide, target: `../slides/slide${n}.xml` },
+            ]));
+            overrides.push([`/ppt/notesSlides/notesSlide${n}.xml`, CT.notesSlide]);
+        }
         parts.set(`ppt/slides/_rels/slide${n}.xml.rels`, relsXml(rels));
         overrides.push([`/ppt/slides/slide${n}.xml`, CT.slide]);
         const rid = `rId${n + 1}`;
@@ -368,9 +451,20 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
         { id: `rId${base + 2}`, type: REL.viewProps, target: 'viewProps.xml' },
         { id: `rId${base + 3}`, type: REL.tableStyles, target: 'tableStyles.xml' },
     );
+    const notesMasterRid = `rId${base + 4}`;
+    if (hasNotes) {
+        presRels.push({ id: notesMasterRid, type: REL.notesMaster, target: 'notesMasters/notesMaster1.xml' });
+        parts.set('ppt/notesMasters/notesMaster1.xml', NOTES_MASTER);
+        parts.set('ppt/notesMasters/_rels/notesMaster1.xml.rels', relsXml([
+            { id: 'rId1', type: REL.theme, target: '../theme/theme2.xml' },
+        ]));
+        parts.set('ppt/theme/theme2.xml', THEME);
+        overrides.push(['/ppt/notesMasters/notesMaster1.xml', CT.notesMaster], ['/ppt/theme/theme2.xml', CT.theme]);
+    }
 
     const pres = XML_DECL + `<p:presentation ${ROOT_NS} saveSubsetFonts="1">`
         + '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>'
+        + (hasNotes ? `<p:notesMasterIdLst><p:notesMasterId r:id="${notesMasterRid}"/></p:notesMasterIdLst>` : '')
         + `<p:sldIdLst>${sldIds}</p:sldIdLst>`
         + `<p:sldSz cx="${sldCx}" cy="${sldCy}"/><p:notesSz cx="6858000" cy="9144000"/>`
         + `<p:defaultTextStyle>${lvlStyle(1800)}</p:defaultTextStyle></p:presentation>`;
@@ -392,7 +486,7 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
     parts.set('ppt/tableStyles.xml', TABLE_STYLES);
     const now = opts.now ?? new Date().toISOString().replace(/\.\d+Z$/, 'Z');
     parts.set('docProps/core.xml', coreXml(deck.title || 'YappyDraw presentation', now));
-    parts.set('docProps/app.xml', appXml(slides.length));
+    parts.set('docProps/app.xml', appXml(slides.length, slides.filter(sl => !!sl.notes?.trim()).length));
     parts.set('_rels/.rels', relsXml([
         { id: 'rId1', type: REL.officeDocument, target: 'ppt/presentation.xml' },
         { id: 'rId2', type: REL.coreProps, target: 'docProps/core.xml' },

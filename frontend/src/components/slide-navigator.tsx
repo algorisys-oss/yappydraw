@@ -1,7 +1,9 @@
 import { For, Show, createSignal, createEffect, onMount, onCleanup } from "solid-js";
-import { store, setActiveSlide, addSlide, deleteSlide, duplicateSlide, reorderSlides, insertNewSlide, pageNoun } from "../store/app-store";
+import { store, setActiveSlide, addSlide, deleteSlide, duplicateSlide, reorderSlides, insertNewSlide, pageNoun, insertSlideWithLayout } from "../store/app-store";
 import { isPagedDocType } from "../types/slide-types";
-import { X, Zap, Copy } from "lucide-solid";
+import { X, Zap, Copy, LayoutTemplate } from "lucide-solid";
+import { SLIDE_LAYOUTS } from "../utils/slide-layouts";
+import { t } from "../i18n";
 import { SlideTransitionPicker } from "./slide-transition-picker";
 import "./slide-navigator.css";
 
@@ -12,6 +14,7 @@ export const SlideNavigator = () => {
     const [dragOverIndex, setDragOverIndex] = createSignal<number | null>(null);
     const [draggedIndex, setDraggedIndex] = createSignal<number | null>(null);
     const [contextMenu, setContextMenu] = createSignal<{ visible: boolean; x: number; y: number; index: number } | null>(null);
+    const [layoutsOpen, setLayoutsOpen] = createSignal(false);
 
     // Auto-scroll to active slide in the navigator
     createEffect(() => {
@@ -82,8 +85,11 @@ export const SlideNavigator = () => {
         });
     };
 
-    const closeContextMenu = () => {
+    const closeContextMenu = (e?: Event) => {
         setContextMenu(null);
+        // Solid delegates onClick to the document too, so stopPropagation can't keep this
+        // listener from seeing the click that opened the layouts menu; look at where it landed.
+        if (!(e?.target instanceof Element && e.target.closest('.add-slide-container'))) setLayoutsOpen(false);
     };
 
     // Close context menu on global click
@@ -176,6 +182,34 @@ export const SlideNavigator = () => {
                     >
                         <span class="icon">+ Add {pageNoun()}</span>
                     </button>
+                    {/* New slide from a layout, after the current one. Slides only: a design
+                        document's pages are free-form. */}
+                    <Show when={store.docType === 'slides'}>
+                        <button
+                            class={`add-slide-layout-btn ${layoutsOpen() ? 'active' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); setLayoutsOpen(v => !v); }}
+                            title={t('layouts.open')}
+                            aria-label={t('layouts.open')}
+                            aria-expanded={layoutsOpen()}
+                        >
+                            <LayoutTemplate size={18} />
+                        </button>
+                        <Show when={layoutsOpen()}>
+                            <div class="slide-layout-menu" role="menu" aria-label={t('layouts.open')} onClick={(e) => e.stopPropagation()}>
+                                <div class="slide-layout-menu-title">{t('layouts.heading')}</div>
+                                <div class="slide-layout-grid">
+                                    <For each={SLIDE_LAYOUTS}>
+                                        {(id) => (
+                                            <button class="slide-layout-item" role="menuitem" data-layout={id}
+                                                onClick={() => { setLayoutsOpen(false); insertSlideWithLayout(id); }}>
+                                                {t(`layouts.name.${id}` as any)}
+                                            </button>
+                                        )}
+                                    </For>
+                                </div>
+                            </div>
+                        </Show>
+                    </Show>
                 </div>
 
                 <Show when={contextMenu() && contextMenu()!.visible}>

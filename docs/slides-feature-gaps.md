@@ -57,8 +57,8 @@ improves the PowerPoint round trip.
 
 | Feature | DeckCraft | Yappy today | Value | Effort |
 |---|---|---|---|---|
-| **Speaker notes** per slide | Has; notes keep formatting; notes master | **Missing**: no notes field on `Slide`, no UI. `todo.md` Phase 73 lists it; PPTX import skips notes (`workspace.md` "Not imported yet"); export writes only `notesSz` (`pptx/write.ts:375`) | **High**. Notes are the most-used presenter feature, and losing them is the most visible PPTX round-trip loss. RT | S (field + panel + PPTX read/write) |
-| **Presenter view** (current + next slide, notes, timer, clock) | Has (egui viewport; timer pause/reset, notes size, see-all-slides) | **Missing**: no code. `todo.md` Phase 73 lists it | **High** once notes exist. A second browser window via `window.open` + `BroadcastChannel` fits Yappy's architecture | M |
+| **Speaker notes** per slide | Has; notes keep formatting; notes master | **Has** (feat/speaker-notes, 2026-11-01): `Slide.notes` (plain text), a docked notes pane under the canvas, PPTX notes read + written in both export modes, Markdown `Note:` / `<!-- -->`, template slides, `get/setSlideNotes`. Formatting inside notes is not kept | Done. RT | — |
+| **Presenter view** (current + next slide, notes, timer, clock) | Has (egui viewport; timer pause/reset, notes size, see-all-slides) | **Has** (feat/speaker-notes, 2026-11-01): Alt+F5 / HUD button opens a same-origin popup the editor renders into (shares the store, no channel needed); current + next slide, notes with size control, timer, clock, keys. No see-all-slides grid; current-slide picture ignores build state | Done | — |
 | Full-screen show, from start / from current | Has | **Has**: F5, Shift+F5, Esc (`help-dialog.tsx:204`); `togglePresentationMode` | — | — |
 | Build steps (on click / with previous / after previous), start hidden | Has, plus by-paragraph builds | **Has**: `AnimationTrigger` `on-click`, `with-prev`, `after-prev`, `on-load`, `on-hover` (`types/motion-types.ts:3`); `slide-build-manager.ts`; "Start hidden in presentation" (`animation.md` § Click-to-Advance) | — | — |
 | By-paragraph text builds (bullet by bullet) | Has | **Missing**: animations target whole elements | Medium; standard for bullet slides. RT (`bldP`) | M |
@@ -68,7 +68,7 @@ improves the PowerPoint round trip.
 | Auto-advance after N seconds, loop until Esc (kiosk) | Has (Set Up Slide Show) | **Missing**: no per-slide advance time; `todo.md` lists "Auto-advance Timer". (The API has a kiosk note at `api.ts:3756` for embedding, not a looping show) | Medium for unattended screens and recorded decks. RT (`advTm`) | S |
 | Rehearse timings | Has | **Missing** | Low | S after auto-advance |
 | Custom shows (subset/order of slides) | Has | **Missing** | Low | S–M |
-| Hyperlinks and actions: link to URL, jump to slide, end show | Has (`engine/src/cmd/insert/links.rs`; safe URL schemes only in the show) | **Partial**: `DrawingElement.link` exists (`types.ts:464`) and the editor context menu opens it (`context-menu-builder.ts:262`), but clicks in the show do not follow it, and there is no slide-target link. `todo.md` "Slide Hyperlinks" open | **High** for interactive and non-linear decks (menus, quizzes, agenda slides). RT (`hlinkClick`, `ppaction://hlinksldjump`) | S–M |
+| Hyperlinks and actions: link to URL, jump to slide, end show | Has (`engine/src/cmd/insert/links.rs`; safe URL schemes only in the show) | **Has** (feat/speaker-notes, 2026-11-01): `link` holds a URL, `#slide:<id>` or `#next/#previous/#first/#last/#end` (`utils/slide-links.ts`); clicking in the show follows it; Link ▸ menu; PPTX `hlinkClick` written and read. Safe schemes only. No run-level (single word) links | Done. RT | — |
 | Zoom links (summary/section/slide zoom) | Partial | **Partial in spirit**: slides live on one spatial canvas, so a Prezi-style "fly to slide" is natural but not exposed as an object | Medium; fits Yappy's spatial model better than PowerPoint's | M |
 
 ### Motion: transitions and animations
@@ -153,15 +153,13 @@ the first item below.
 
 Favours solo-user value and work that also closes a PowerPoint round-trip gap.
 
-1. **Speaker notes** (S): a `notes` field on `Slide`, a collapsible notes strip under the canvas,
-   PPTX notes read + write. Highest value per hour, and the most visible import loss today.
-2. **Presenter view** (M): a second window (current, next, notes, timer, clock) synced over
-   `BroadcastChannel`. Turns notes into something used while presenting.
-3. **Links that work in the show, including jump-to-slide** (S–M): the `link` field already
-   exists; follow it in present mode, add a slide target, write `hlinkClick` to PPTX.
-4. **Slide layouts picker + header/footer fields** (M): reuse `slide-element-factory.ts` for "New
-   slide ▸ layout"; replace the `=${slideNumber}` formula with real number/date/footer fields
-   that export as `a:fld`.
+1. ~~**Speaker notes** (S)~~ — done on `feat/speaker-notes` (2026-11-01).
+2. ~~**Presenter view** (M)~~ — done on `feat/speaker-notes` (2026-11-01).
+3. ~~**Links that work in the show, including jump-to-slide** (S–M)~~ — done on `feat/speaker-notes` (2026-11-01).
+4. ~~**Slide layouts picker + header/footer fields** (M)~~ — layouts picker done, `${date}` added,
+   fields and master artwork now in every export (feat/speaker-notes, 2026-11-01). Still open:
+   live placeholders linked to a layout, a Header & Footer dialog, and writing fields to PPTX
+   as `a:fld` (they go out as resolved text).
 5. **Hide slide, sections, auto-advance/loop** (S each): small flags on `Slide`, all with direct
    PPTX equivalents (`show="0"`, `p14:sectionLst`, `advTm`).
 6. **Morph across slides** (M): match elements by name/id/text between consecutive slides and

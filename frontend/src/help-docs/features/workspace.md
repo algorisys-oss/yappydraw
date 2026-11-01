@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint open pptx open powerpoint file drop pptx importPPTX table style pattern fill crop to shape potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
+keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint speaker notes pptx notes open pptx open powerpoint file drop pptx importPPTX table style pattern fill crop to shape potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
 ---
 
 # Workspace & Productivity
@@ -40,6 +40,8 @@ flyout still *pins* that specific tool, which is independent of this preference.
 ### The top bar's view controls
 
 The tool column holds things you *draw* with. Everything else lives in the cluster at the right of the top bar: **Pan** (<kbd>H</kbd>), **Commands & Tools** (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd>), the **Vector Tools** palette, **Shape Builder** (<kbd>Shift</kbd>+<kbd>M</kbd>), **Settings**, **Properties** (<kbd>Alt</kbd>+<kbd>Enter</kbd>), **Show Dimensions**, and **Help** — then the colour palette and the theme toggle. Buttons that are toggles light up while they're on; Pan is a tool, so clicking it again returns you to Select.
+
+**Themes and colours.** In **Dark** (and **Focus**) the infinite canvas turns dark, and black and grey colours are shown light so they stay visible; vivid colours stay as they are. Your colours are never changed, only how they're displayed. **Pages are different:** a slide or design page stays white in Dark and shows its true colours, exactly as it will export and present. **Focus** also darkens the page while you edit, so there black shows light, as on the canvas. Exports, slide thumbnails, recordings and presenting always use true colours.
 
 The full row needs about **700px** of width. Below that it collapses into the hamburger menu, where the same entries sit beside *Rulers & Guides*. Every iPad — mini through Pro, portrait or landscape — gets the full bar.
 
@@ -887,6 +889,11 @@ infinite canvas (or with **Export Selection Only**) you get one slide around you
 Untick **White Background** to leave the slide background out (PowerPoint then shows its own,
 white by default).
 
+**Speaker notes** go along in both types: each slide's notes become its PowerPoint notes, shown
+under the slide in PowerPoint's Normal view and in its Presenter View. With **Editable shapes**,
+**links** on objects become PowerPoint click actions (a web address, a jump to a slide, or
+next/previous/first/last slide and end show); a picture of a whole slide has none.
+
 **Fonts.** The file names each font (Handlee, Inter, Poppins…) but doesn't embed it. On a
 computer that doesn't have the font, PowerPoint substitutes another, so text can wrap a little
 differently. Installing the font, or switching to one PowerPoint ships with, fixes it.
@@ -930,10 +937,15 @@ size.
   placed on every slide that shows it.
 - **Backgrounds** (colour, gradient, picture — stretched or tiled, see-through ones included) and
   **transitions** (Fade, Push/Wipe/Cover → Slide, Zoom) carry over.
+- **Links** on objects (a web address, a jump to another slide, next/previous/first/last slide,
+  end show) come in as Yappy links that work while presenting. Other click actions (run a
+  program, play a sound, a macro) and links on single words in a text box are dropped.
+- **Speaker notes** come in as each slide's notes (as plain text: bold, bullets and indent levels
+  are not kept), and the notes pane opens so you can see them.
 
 Not imported yet: **charts and embedded objects** come in as labelled frames;
 **EMF/WMF/TIFF pictures** (common in older decks) as placeholders; **vertical text** comes in
-horizontal and **WordArt** text warps flat; animations, speaker notes and audio/video are skipped. A message tells you how many items weren't imported exactly, and the
+horizontal and **WordArt** text warps flat; animations and audio/video are skipped. A message tells you how many items weren't imported exactly, and the
 browser console lists them. A paragraph's own alignment shows on the canvas and in every
 export, but Yappy has no control for it yet: while you edit the text it shows the text box's
 alignment, and the toolbar's align buttons set the whole text box.

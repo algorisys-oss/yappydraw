@@ -16,7 +16,8 @@
  */
 import type { DrawingElement, RichTextSpan } from '../../types';
 import type { Slide as YappySlide, SlideTransition } from '../../types/slide-types';
-import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd } from './deck';
+import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink } from './deck';
+import { parseLink } from '../slide-links';
 import { parseSvgPath, transformCmds, cmdsBounds, affineCmds } from './custgeom';
 import { SvgRenderer } from '../../rendering/SvgRenderer';
 import { renderElement } from '../render-element';
@@ -913,7 +914,14 @@ function convertRun(els: DrawingElement[], depth: number, c: Conv): Item[] {
     };
     while (i < els.length) {
         const g = gid(els[i]);
-        if (!g) { out.push(...convertOne(els[i], c)); i++; continue; }
+        if (!g) {
+            const items = convertOne(els[i], c);
+            const link = deckLinkOf(els[i].link);
+            if (link) for (const it of items) it.link = link;
+            out.push(...items);
+            i++;
+            continue;
+        }
         let j = i;
         while (j < els.length && gid(els[j]) === g) j++;
         const children = convertRun(els.slice(i, j), depth + 1, c);
@@ -998,6 +1006,15 @@ function mixColor(a: Color, b: Color, t: number): Color {
     return al < 0.999 ? { hex: toHex(rgb), alpha: al } : { hex: toHex(rgb) };
 }
 
+/** An object's link (utils/slide-links.ts) as a PowerPoint click action; unsafe ones are dropped. */
+function deckLinkOf(link: string | null | undefined): DeckLink | undefined {
+    const t = parseLink(link);
+    if (t.kind === 'url') return { kind: 'url', url: t.url };
+    if (t.kind === 'slide') return { kind: 'slide', key: t.slideId };
+    if (t.kind === 'action') return { kind: 'action', action: t.action };
+    return undefined;
+}
+
 /** One page → one deck slide (native objects, pictures where unavoidable). */
 export function pageToSlide(page: PageInput, hooks: ConvertHooks, report: ConvertReport): Slide {
     const c: Conv = { ox: page.x, oy: page.y, nextId: 2, ids: new Map(), glue: [], hooks, report };
@@ -1008,6 +1025,8 @@ export function pageToSlide(page: PageInput, hooks: ConvertHooks, report: Conver
         items,
         background: backgroundOf(page, hooks),
         transition: transitionOf(page.slide?.transition),
+        notes: page.slide?.notes?.trim() ? page.slide.notes : undefined,
+        key: page.slide?.id,
     };
 }
 
