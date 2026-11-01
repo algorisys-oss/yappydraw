@@ -16,9 +16,10 @@
  */
 import type { DrawingElement, RichTextSpan } from '../../types';
 import type { Slide as YappySlide, SlideTransition } from '../../types/slide-types';
-import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink, DeckAnim } from './deck';
+import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink, DeckAnim, TableItem, TableCell } from './deck';
 import { buildOrder } from '../build-order';
 import { normalizeChart } from '../chart/chart-layout';
+import { defaultColWidths, defaultRowHeights, defaultTableData, getCellFormat, formatCellValue, getCellBorders, getBorderWidth } from '../table-utils';
 import { toDeckAnim } from './anim-map';
 import { parseLink } from '../slide-links';
 import { parseSvgPath, transformCmds, cmdsBounds, affineCmds } from './custgeom';
@@ -897,6 +898,93 @@ function recordedGroup(el: DrawingElement, ops: RecordedOp[], box: ReturnType<ty
     return { kind: 'group', id: c.nextId++, name: nameOf(el), ...box, children };
 }
 
+/** The table renderer's cell padding, left and right. */
+const TABLE_PAD = 6;
+
+/**
+ * A Yappy table as a real PowerPoint table: the same cells, text, header and row colours, column
+ * alignment, merges and borders, each cell spelled out. Sort arrows (an editing aid) are left
+ * out. null for a rotated or flipped table, which PowerPoint can't show: it goes out as shapes.
+ */
+function tableItem(el: DrawingElement, c: Conv): TableItem | null {
+    if (el.angle || el.flipX || el.flipY) return null;
+    const op = (el.opacity ?? 100) / 100;
+    const cols = el.tableCols ?? 3, rows = el.tableRows ?? 3;
+    const hasHeader = el.tableHeaders !== false;
+    const nRows = hasHeader ? rows + 1 : rows;
+    const colW = el.tableColWidths?.length === cols ? el.tableColWidths : defaultColWidths(cols);
+    const rowH = el.tableRowHeights?.length === nRows ? el.tableRowHeights : defaultRowHeights(nRows);
+    const order = el.tableColOrder?.length === cols ? el.tableColOrder : Array.from({ length: cols }, (_, i) => i);
+    const data = el.tableData ?? defaultTableData(nRows, cols);
+    const box = placed(el, c);
+    const sumW = colW.reduce((a, b) => a + b, 0) || 1, sumH = rowH.reduce((a, b) => a + b, 0) || 1;
+
+    const grid = lineOf(el, op);
+    const size = el.fontSize ?? 14;
+    const defaults = textDefaults(el, op, size);
+    const headerText = toColor(el.tableHeaderTextColor, op) ?? defaults?.color;
+    const solid = (css: string | undefined): Paint => { const col = toColor(css, op); return col ? { kind: 'solid', color: col } : { kind: 'none' }; };
+    const fillAt = (r: number): Paint => {
+        if (hasHeader && r === 0) return solid(el.tableHeaderColor);
+        const odd = (hasHeader ? r - 1 : r) % 2 === 1;
+        return solid(odd && el.tableAltRowColor ? el.tableAltRowColor : el.tableRowColor || el.tableAltRowColor);
+    };
+    // A custom border on either cell that shares an edge wins over the grid line.
+    const custom = (r: number, col: number, side: 'top' | 'bottom' | 'left' | 'right'): Line | undefined => {
+        const b = getCellBorders(el.tableCellBorders, r, col)?.[side];
+        const w = b ? getBorderWidth(b.style) : 0;
+        const color = b && w > 0 ? toColor(b.color, op) : null;
+        return color ? { width: w, color } : undefined;
+    };
+    const edge = (r: number, col: number, side: 'top' | 'bottom' | 'left' | 'right'): Line | null => {
+        const [nr, nc, opp] = side === 'top' ? [r - 1, col, 'bottom'] : side === 'bottom' ? [r + 1, col, 'top']
+            : side === 'left' ? [r, col - 1, 'right'] : [r, col + 1, 'left'];
+        return custom(r, col, side) ?? custom(nr as number, nc as number, opp as any) ?? grid;
+    };
+    const merges = el.tableMergedCells ?? [];
+    const mergeAt = (r: number, col: number) => merges.find(m => r >= m.startRow && r <= m.endRow && col >= m.startCol && col <= m.endCol);
+
+    const out: TableItem['rows'] = [];
+    for (let r = 0; r < nRows; r++) {
+        const header = hasHeader && r === 0;
+        const cells: TableCell[] = [];
+        for (let col = 0; col < cols; col++) {
+            const dataCol = order[col];
+            const m = mergeAt(r, col);
+            // Edges of a merged cell are its region's outer edges.
+            const top = m ? m.startRow : r, bottom = m ? m.endRow : r, left = m ? m.startCol : col, right = m ? m.endCol : col;
+            const cell: TableCell = {
+                fill: fillAt(m ? m.startRow : r),
+                borders: { t: edge(top, col, 'top'), b: edge(bottom, col, 'bottom'), l: edge(r, left, 'left'), r: edge(r, right, 'right') },
+            };
+            if (m && (r !== m.startRow || col !== m.startCol)) {
+                if (col > m.startCol) cell.hMerge = true;
+                if (r > m.startRow) cell.vMerge = true;
+                cells.push(cell);
+                continue;
+            }
+            if (m) { cell.gridSpan = m.endCol - m.startCol + 1; cell.rowSpan = m.endRow - m.startRow + 1; }
+            const raw = header ? (data[0]?.[dataCol] ?? `Col ${dataCol + 1}`)
+                : formatCellValue(data[r]?.[dataCol] ?? '', getCellFormat(el.tableCellFormats, r, col));
+            const align = el.tableColAlignments?.[dataCol] ?? 'center';
+            cell.text = {
+                paragraphs: plainParagraphs(String(raw), align === 'left' ? 'l' : align === 'right' ? 'r' : 'ctr'),
+                anchor: el.tableVerticalAlign === 'top' ? 't' : el.tableVerticalAlign === 'bottom' ? 'b' : 'ctr',
+                insets: { l: TABLE_PAD, r: TABLE_PAD, t: 4, b: 4 }, wrap: true,
+                defaults: header ? { ...defaults, bold: true, color: headerText } : defaults,
+            };
+            cells.push(cell);
+        }
+        out.push({ h: (rowH[r] / sumH) * box.h, cells });
+    }
+    c.report.native++;
+    return {
+        kind: 'table', id: c.nextId++, name: nameOf(el), x: box.x, y: box.y, w: box.w, h: box.h,
+        cols: order.map(dc => (colW[dc] / sumW) * box.w), rows: out,
+        firstRow: hasHeader || undefined, bandRow: !!el.tableAltRowColor || undefined,
+    };
+}
+
 function convertOne(el: DrawingElement, c: Conv): Item[] {
     if (needsRaster(el)) return pictureFrom([el], c, nameOf(el));
     try {
@@ -904,6 +992,10 @@ function convertOne(el: DrawingElement, c: Conv): Item[] {
         if (el.type === 'chart') {
             c.report.native++;
             return [{ kind: 'chart', id: c.nextId++, name: nameOf(el), ...placed(el, c), chart: normalizeChart((el as any).chart) }];
+        }
+        if (el.type === 'table') {
+            const t = tableItem(el, c);
+            if (t) return [t];
         }
         if (el.type === 'text' || el.type === 'richtext') return textItem(el, c);
         if (el.type === 'image') return imageItem(el, c);

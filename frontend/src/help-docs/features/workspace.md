@@ -872,6 +872,9 @@ Pick **PPTX** in the Export dialog and choose a **PowerPoint type**:
     they are glued to that shape, so they follow it when you move it in PowerPoint. Curves and
     elbow lines keep their exact path and arrowheads, but are not glued.
   - **Images** keep their crop and opacity; **groups** stay groups.
+  - **Tables** become real PowerPoint tables (text, header and row colours, widths, alignment,
+    merged cells, lines), so you can type into them there (see Tables ▸ PowerPoint). A rotated
+    table goes as a picture.
   - **Data charts** become real PowerPoint charts with their data in an embedded workbook, so
     **Edit Data** works in PowerPoint and the chart stays a chart (see Design Studio ▸ Charts).
   - **Slide backgrounds** (colour or gradient) and **transitions** carry over: *Fade* → Fade,
@@ -880,7 +883,7 @@ Pick **PPTX** in the Export dialog and choose a **PowerPoint type**:
     fills.
   - What PowerPoint can't draw is placed as a **picture of just that object**, where it sits:
     drop shadows, glows and feathering, masks, mesh/pattern/image fills, 3D extrude and inflate,
-    warps, image filters, text on a path, UML class boxes, tables and code blocks. A message says
+    warps, image filters, text on a path, UML class boxes, rotated tables and code blocks. A message says
     how many objects were placed as pictures.
 - **Pictures** — each slide is one image at the **Scale** you choose. It looks exactly like the
   canvas, sketch strokes and all, but nothing on the slide is editable.
@@ -936,8 +939,10 @@ size.
 - **Connectors** become lines and arrows **bound** to the shapes they were glued to.
 - **Pictures** keep their crop, transparency and grayscale; a picture **cropped to a shape** (an
   oval photo) comes in clipped to that shape, as a clipping mask you can still edit.
-- **Tables** become groups of cells coloured by the deck's own **table style** (header row,
-  banded rows and columns, borders). **Pattern fills** become Yappy pattern fills in the same
+- **Tables** become Yappy **tables** when their look fits one (one font, a bold header row, rows
+  in one colour or alternating, the same line on every edge — every table Yappy exports does);
+  any other table becomes a group of cells coloured by the deck's own **table style** (header row,
+  banded rows and columns, borders), drawn exactly. See Tables ▸ PowerPoint. **Pattern fills** become Yappy pattern fills in the same
   colours. **Groups** stay groups; the **slide master's own artwork** (logo bars, decorations) is
   placed on every slide that shows it.
 - **Backgrounds** (colour, gradient, picture — stretched or tiled, see-through ones included) and

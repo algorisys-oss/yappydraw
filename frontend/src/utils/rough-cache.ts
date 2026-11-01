@@ -320,6 +320,7 @@ export function computeElementHash(el: DrawingElement): string {
         if (el.tableColOrder) h += `|tco${el.tableColOrder.join(',')}`;
         h += `|thc${el.tableHeaderColor || ''}|trc${el.tableRowColor || ''}|tarc${el.tableAltRowColor || ''}`;
         h += `|thtc${el.tableHeaderTextColor || ''}|tsc${el.tableSortCol}|tsd${el.tableSortDir}`;
+        h += `|tsa${el.tableSortArrows !== false}|tva${el.tableVerticalAlign || ''}`;
         if (el.tableData) h += `|td${el.tableData.map(r => r.join('\t')).join('\n')}`;
         if (el.tableMergedCells) h += `|tmc${JSON.stringify(el.tableMergedCells)}`;
         if (el.tableCellFormats) h += `|tcf${JSON.stringify(el.tableCellFormats)}`;

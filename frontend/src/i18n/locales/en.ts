@@ -1389,6 +1389,13 @@ export const en = {
             none: 'None',
         },
     },
+    tableMenu: {
+        sortArrows: 'Show Sort Arrows',
+        verticalAlign: 'Align Text Vertically',
+        top: 'Top',
+        middle: 'Middle',
+        bottom: 'Bottom',
+    },
     morph: {
         option: 'Morph',
     },

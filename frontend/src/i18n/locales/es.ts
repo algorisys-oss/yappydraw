@@ -1363,6 +1363,13 @@ export const es: Dictionary = {
             none: 'Ninguna',
         },
     },
+    tableMenu: {
+        sortArrows: 'Mostrar flechas de orden',
+        verticalAlign: 'Alinear texto verticalmente',
+        top: 'Arriba',
+        middle: 'Centro',
+        bottom: 'Abajo',
+    },
     morph: {
         option: 'Transformación',
     },

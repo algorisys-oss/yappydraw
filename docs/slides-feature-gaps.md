@@ -85,7 +85,7 @@ improves the PowerPoint round trip.
 
 | Feature | DeckCraft | Yappy today | Value | Effort |
 |---|---|---|---|---|
-| Tables (styles, merge/split, cell formatting) | Has, table styles generated from theme accents (`pptx/src/tables.rs`, `model/src/table.rs`) | **Has** natively: `table` element with data, header, per-cell formats, merged cells (`types.ts:1036–1051`), plus table animations. **PPTX gap**: export sends it as grouped shapes (via recorded draw ops in `from-yappy.ts` `shapeItem`), import turns `a:tbl` into a group of cells (`read.ts:924`). Neither side is a real PowerPoint table | Medium. Export as native `a:tbl` makes tables editable in PowerPoint. RT | M |
+| Tables (styles, merge/split, cell formatting) | Has, table styles generated from theme accents (`pptx/src/tables.rs`, `model/src/table.rs`) | **Has** natively: `table` element with data, header, per-cell formats, merged cells, vertical alignment, plus table animations. **PPTX** (feat/pptx-tables): export writes a real `a:tbl` (`TableItem`, every cell spelled out under "No Style, No Grid"); import makes a Yappy table when the look fits the model, else the exact cell group as before (14 of the 46 tables in LibreOffice's corpus fit; the rest colour or format cells individually). Not yet: per-cell fills/text styles in the Yappy model, built-in table styles not defined in the file | Medium. Export as native `a:tbl` makes tables editable in PowerPoint. RT | M |
 | Charts with editable data | Has: column, bar, line, area, pie, doughnut, scatter + partial others; trendlines; PPTX chart parts read and written (`model/src/chart.rs`, `pptx/src/read/chart.rs`, `write/chart.rs`, `render/chart.rs`) | **Has** (feat/charts): data `chart` element — column, bar, line, area, pie, doughnut, stacked, labels, legend, gridlines — with a data grid that takes spreadsheet paste; real PPTX charts both ways. Still missing: scatter and the rarer types, trendlines. (The older `barChart`/`pieChart`/`xyChart` shapes remain for Mermaid and the Graph tool) | **High** for business decks; charts are the top import gap after notes. RT | L |
 | SmartArt | Partial (insert basics, layout, text pane; `pptx/src/dgm.rs`, `engine/src/cmd/smartart/`) | **Partial**: imported as its drawn shapes (v0.8.292). Yappy's mindmap, flowchart and layered auto-layout already cover the use case natively | Low; Yappy's diagrams are stronger | — |
 | Pictures: crop, transparency, corrections, alt text | Has | **Has** crop, filters, opacity. Alt text: **Partial**, see Accessibility | — | — |
@@ -127,7 +127,7 @@ improves the PowerPoint round trip.
 | PNG/JPEG per slide | Has | **Has**: Current Page Only, `exportPageToPng` | — | — |
 | Animated GIF / video of the deck | GIF yes (one frame per slide), no video | **Has**, ahead: page MP4/GIF with animations; whole-deck recording from the show (`animation.md` §602) | — | — |
 | HTML presentation export | Missing (web build is the app) | **Has**: self-contained HTML player with keyboard navigation (`whats-new.ts` 0.8.105) | Ahead | — |
-| PPTX export (editable) | Has | **Has** (v0.8.292): native shapes, text, lists, connectors, backgrounds, transitions; rasterizes what PowerPoint can't draw. Since then: notes, animations, charts, hidden slides, sections, links (v0.8.293–feat/charts). Gap: native tables | RT items above | — |
+| PPTX export (editable) | Has | **Has** (v0.8.292): native shapes, text, lists, connectors, backgrounds, transitions; rasterizes what PowerPoint can't draw. Since then: notes, animations, charts, hidden slides, sections, links (v0.8.293–feat/charts). Since then: native tables (feat/pptx-tables) | RT items above | — |
 | PPTX import | Has, broad; unknown XML kept and written back (`ShapeKind::Opaque`) | **Partial, Dev Mode**: shapes, text, bullets, SmartArt-as-shapes, connectors, pictures, tables-as-groups, master artwork, backgrounds, transitions. Since then: charts, animations, notes. Skipped: EMF/WMF/TIFF, audio/video, fonts | High; see the recommended order | — |
 | Keep unknown PPTX parts for round trip | Has (`Opaque` shapes, kept chart parts) | **Missing**: import → edit → export loses anything Yappy didn't model | Medium; matters only once import leaves Dev Mode | L |
 | `.potx` templates / `.ppsx` shows | Has | **Partial**: import accepts `.potx`/`.ppsx`; export writes `.pptx` only | Low | S |
@@ -174,8 +174,9 @@ Favours solo-user value and work that also closes a PowerPoint round-trip gap.
    scatter/radar/stock/bubble and `cx:` charts, combination charts, secondary axes, trendlines,
    per-point colours, 100% stacked, number formats.
 
-Close behind: native PPTX tables (M), alt text UI + accessibility checker (S–M), more transitions
-(wipe/cover/uncover/split, S–M), shrink-on-overflow autofit (M).
+Close behind: ~~native PPTX tables (M)~~ — done on `feat/pptx-tables` (2026-11-01); alt text UI +
+accessibility checker (S–M), more transitions (wipe/cover/uncover/split, S–M), shrink-on-overflow
+autofit (M).
 
 ## DeckCraft code worth porting
 

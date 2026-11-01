@@ -20,7 +20,7 @@
  * `readPptx`'s own "not a presentation" error.
  */
 import { unzipSync, strFromU8 } from 'fflate';
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink, DeckAnim } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink, DeckAnim, TableItem, TableCell } from './deck';
 import { effectOf, sideOf } from './anim-map';
 import type { ChartSpec, ChartSeries, ChartKind } from '../chart/chart-layout';
 import { EMU_PER_PX, EMU_PER_PT } from './ooxml';
@@ -1063,17 +1063,25 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
         const cols = kids(kid(tbl, 'tblGrid'), 'gridCol').map(c => px(num(c, 'w')));
         const look = tableLook(kid(tbl, 'tblPr'), r, sc.tableStyles);
         const cells: Item[] = [];
+        // The same table cell by cell, for a native Yappy table when its look fits one.
+        const grid: TableItem['rows'] = [];
         let y = box0.y;
         let cid = 1_000_000 + id * 1000;
         const rowsEl = kids(tbl, 'tr');
         rowsEl.forEach((tr, ri) => {
             const h = px(num(tr, 'h'));
+            const row: TableCell[] = [];
+            grid.push({ h, cells: row });
             let x = box0.x, ci = 0;
             for (const tc of kids(tr, 'tc')) {
                 const span = Math.max(1, num(tc, 'gridSpan', 1));
                 const w = cols.slice(ci, ci + span).reduce((a, b) => a + b, 0);
                 ci += span;
-                if (bool(tc, 'hMerge') || bool(tc, 'vMerge')) { x += w; continue; }
+                if (bool(tc, 'hMerge') || bool(tc, 'vMerge')) {
+                    row.push({ fill: { kind: 'none' }, borders: { l: null, r: null, t: null, b: null }, hMerge: bool(tc, 'hMerge') || undefined, vMerge: bool(tc, 'vMerge') || undefined });
+                    x += w;
+                    continue;
+                }
                 const rowSpan = Math.max(1, num(tc, 'rowSpan', 1));
                 const tcPr = kid(tc, 'tcPr');
                 const cellH = rowSpan > 1 ? h * rowSpan : h;
@@ -1088,8 +1096,12 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
                 const border = lineOf(kid(tcPr, 'lnB'), r) ?? lineOf(kid(tcPr, 'lnT'), r)
                     ?? (cl ? cl.border ?? null : { width: 1, color: { hex: '#bfbfbf' } });
                 const styleFill: Paint | undefined = cl?.fill;
+                const fill = fillOf(tcPr, r) ?? styleFill ?? { kind: 'none' };
                 cells.push({ kind: 'shape', id: cid++, name: `${name} cell`, ...frame({ x, y, w, h: cellH, rot: 0, flipH: false, flipV: false }),
-                    geom: { kind: 'preset', prst: 'rect' }, fill: fillOf(tcPr, r) ?? styleFill ?? { kind: 'none' }, line: border, text });
+                    geom: { kind: 'preset', prst: 'rect' }, fill, line: border, text });
+                const side = (n: string) => { const own = lineOf(kid(tcPr, n), r); return own !== undefined ? own : border; };
+                row.push({ text: text ?? undefined, fill, borders: { l: side('lnL'), r: side('lnR'), t: side('lnT'), b: side('lnB') },
+                    gridSpan: span > 1 ? span : undefined, rowSpan: rowSpan > 1 ? rowSpan : undefined });
                 x += w;
             }
             y += h;
@@ -1100,7 +1112,16 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
             cells.unshift({ kind: 'shape', id: cid++, name: `${name} background`, x: b.x, y: b.y, w: b.w, h: b.h, rot: 0, flipH: false, flipV: false,
                 geom: { kind: 'preset', prst: 'rect' }, fill: look.background, line: null } as Item);
         }
-        return { kind: 'group', id, name, ...bounds(cells), children: cells };
+        const group: GroupItem = { kind: 'group', id, name, ...bounds(cells), children: cells };
+        // A table under a background, with a row that doesn't fill the grid, or turned by its
+        // group, only fits as its drawing.
+        const fr = frame({ ...box0, w: cols.reduce((a, b) => a + b, 0), h: grid.reduce((a, rw) => a + rw.h, 0) });
+        if (look?.background || fr.rot || fr.flipH || fr.flipV || grid.some(rw => rw.cells.length !== cols.length)) return group;
+        const sx = fr.w / Math.max(1e-6, cols.reduce((a, b) => a + b, 0)), sy = fr.h / Math.max(1e-6, grid.reduce((a, rw) => a + rw.h, 0));
+        const f = (n: string) => bool(kid(tbl, 'tblPr'), n) ?? false;
+        return { kind: 'table', id, name, x: fr.x, y: fr.y, w: fr.w, h: fr.h,
+            cols: cols.map(cw => cw * sx), rows: grid.map(rw => ({ ...rw, h: rw.h * sy })),
+            firstRow: f('firstRow') || undefined, bandRow: f('bandRow') || undefined, fallback: group };
     }
     const uri = attr(gd, 'uri') || '';
     if (/diagram/.test(uri)) {

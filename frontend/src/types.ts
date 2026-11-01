@@ -1050,6 +1050,8 @@ export interface DrawingElement {
     tableRowColor?: string;       // body row base color (even rows, or all if no alt)
     tableAltRowColor?: string;    // alternating (odd) row color
     tableColAlignments?: ('left' | 'center' | 'right')[]; // text alignment per column
+    tableVerticalAlign?: 'top' | 'middle' | 'bottom'; // where text sits in its cell, whole table (default middle)
+    tableSortArrows?: boolean;    // header sort arrows (click to sort); default true, off for tables opened from PowerPoint
     tableMergedCells?: { startRow: number; startCol: number; endRow: number; endCol: number }[]; // merged cell regions
     tableCellFormats?: TableCellFormat[][];  // per-cell format settings [row][col]
     tableCellBorders?: TableCellBorders[][]; // per-cell border settings [row][col]

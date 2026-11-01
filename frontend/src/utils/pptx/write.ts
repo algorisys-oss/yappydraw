@@ -7,7 +7,7 @@
  * on the blank layout, so nothing inherits placeholder text or positions: what the deck model
  * says is what PowerPoint shows.
  */
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink, DeckAnim, ChartItem } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink, DeckAnim, ChartItem, TableItem, TableCell } from './deck';
 import { chartXml, chartWorkbook, NS_C } from './chart-xml';
 import { custGeomXml, presetGeomXml } from './custgeom';
 import { EMU_PER_PX, ang, esc, fontSz, pct, NS, REL, XML_DECL, relsXml, zipPackage, type Rel } from './ooxml';
@@ -259,8 +259,53 @@ function chartFrameXml(it: ChartItem, c: Ctx): string {
         + `<a:graphic><a:graphicData uri="${NS_C}"><c:chart xmlns:c="${NS_C}" r:id="${rid}"/></a:graphicData></a:graphic></p:graphicFrame>`;
 }
 
+const NS_TABLE = 'http://schemas.openxmlformats.org/drawingml/2006/table';
+/** "No Style, No Grid": every cell carries its own fill and lines, so PowerPoint adds nothing. */
+const NO_STYLE_TABLE = '{2D5ABB26-0587-4C30-8999-92F81FD0307C}';
+
+/** Lengths that sum exactly to the rounded total, so the grid fills the frame without a gap. */
+function emuRuns(px: number[], s: number): number[] {
+    let acc = 0, prev = 0;
+    return px.map(v => {
+        acc += v * s * EMU_PER_PX;
+        const at = Math.round(acc), out = Math.max(0, at - prev);
+        prev = at;
+        return out;
+    });
+}
+
+function tableCellXml(cell: TableCell, c: Ctx): string {
+    const attrs = [
+        cell.gridSpan && cell.gridSpan > 1 ? `gridSpan="${cell.gridSpan}"` : '',
+        cell.rowSpan && cell.rowSpan > 1 ? `rowSpan="${cell.rowSpan}"` : '',
+        cell.hMerge ? 'hMerge="1"' : '',
+        cell.vMerge ? 'vMerge="1"' : '',
+    ].filter(Boolean).join(' ');
+    // A covered cell still needs a text body; PowerPoint expects one in every a:tc.
+    const text = cell.text ?? { paragraphs: [], anchor: 'ctr', insets: { l: 0, t: 0, r: 0, b: 0 }, wrap: true };
+    const ins = (v: number) => Math.max(0, Math.round(v * c.s * EMU_PER_PX));
+    const edge = (tag: string, l: Line | null) => lineXml(l, c.s).replace(/^<a:ln\b/, `<a:${tag}`).replace(/<\/a:ln>$/, `</a:${tag}>`);
+    const b = cell.borders;
+    const tcPr = `<a:tcPr marL="${ins(text.insets.l)}" marR="${ins(text.insets.r)}" marT="${ins(text.insets.t)}" marB="${ins(text.insets.b)}" anchor="${text.anchor}">`
+        + edge('lnL', b.l) + edge('lnR', b.r) + edge('lnT', b.t) + edge('lnB', b.b) + paintXml(cell.fill) + '</a:tcPr>';
+    return `<a:tc${attrs ? ' ' + attrs : ''}>${txBodyXml(text, c.s, 'a:txBody')}${tcPr}</a:tc>`;
+}
+
+function tableFrameXml(it: TableItem, c: Ctx): string {
+    if (!it.cols.length || !it.rows.length) return '';
+    const flags = [it.firstRow ? 'firstRow="1"' : '', it.bandRow ? 'bandRow="1"' : ''].filter(Boolean).join(' ');
+    const grid = emuRuns(it.cols, c.s).map(w => `<a:gridCol w="${w}"/>`).join('');
+    const heights = emuRuns(it.rows.map(r => r.h), c.s);
+    const rows = it.rows.map((r, i) => `<a:tr h="${heights[i]}">${r.cells.map(cell => tableCellXml(cell, c)).join('')}</a:tr>`).join('');
+    return `<p:graphicFrame><p:nvGraphicFramePr>${cNvPr(it, c)}<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`
+        + xfrmXml({ x: it.x, y: it.y, w: it.w, h: it.h }, c, 'p:xfrm')
+        + `<a:graphic><a:graphicData uri="${NS_TABLE}"><a:tbl><a:tblPr${flags ? ' ' + flags : ''}><a:tableStyleId>${NO_STYLE_TABLE}</a:tableStyleId></a:tblPr>`
+        + `<a:tblGrid>${grid}</a:tblGrid>${rows}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+}
+
 function itemXml(it: Item, c: Ctx): string {
     switch (it.kind) {
+        case 'table': return tableFrameXml(it, c);
         case 'chart': return chartFrameXml(it, c);
         case 'shape': return shapeXml(it, c);
         case 'connector': return connectorXml(it, c);

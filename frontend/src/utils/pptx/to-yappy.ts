@@ -13,7 +13,7 @@
 import type { DrawingElement, PathSubpath, PathAnchor, RichTextSpan, TextAlign, PatternFill } from '../../types';
 import type { SlideDocument, Slide as YappySlide, SlideTransition } from '../../types/slide-types';
 import { createSlideDocument, createDefaultSlide } from '../../types/slide-types';
-import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink, DeckAnim } from './deck';
+import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink, DeckAnim, TableItem } from './deck';
 import { slideLink, actionLink } from '../slide-links';
 import { fromDeckAnim } from './anim-map';
 import { normalizeChart } from '../chart/chart-layout';
@@ -605,6 +605,132 @@ function pictureElement(it: PictureItem, c: Conv, groups: string[]): DrawingElem
     return [el, mask];
 }
 
+const sameColor = (a?: Color | null, b?: Color | null) =>
+    (!a && !b) || (!!a && !!b && a.hex.toLowerCase() === b.hex.toLowerCase() && Math.abs((a.alpha ?? 1) - (b.alpha ?? 1)) < 0.01);
+const samePaint = (a: Paint, b: Paint) =>
+    a.kind === b.kind && (a.kind === 'none' || (a.kind === 'solid' && b.kind === 'solid' && sameColor(a.color, b.color)));
+const sameLine = (a: Line | null, b: Line | null) =>
+    (!a && !b) || (!!a && !!b && Math.abs(a.width - b.width) < 0.05 && sameColor(a.color, b.color) && (a.dash ?? 'solid') === (b.dash ?? 'solid'));
+const allSame = <T>(xs: T[], eq: (a: T, b: T) => boolean) => xs.every(x => eq(x, xs[0]));
+
+/**
+ * A PowerPoint table as a native Yappy table, when its look is one a Yappy table can draw: one
+ * font and size, plain text, a header row (bold) and body rows each in one
+ * colour (alternating at most), one alignment per column, one vertical alignment for the whole
+ * table, and the same line on every edge. Anything else — a cell coloured on its own, mixed
+ * formatting in a cell, one cell aligned to the top and another to the middle —
+ * returns null and the table comes in as its exact drawing instead.
+ */
+export function tableElement(it: TableItem, c: Conv, groups: string[]): DrawingElement | null {
+    // The header flag decides nothing visible on its own: some writers (LibreOffice) drop it from
+    // a bold first row, and decks flag a first row that looks like any other. Read the table
+    // as flagged, then the other way; the same checks make sure it draws the same.
+    const flagged = !!it.firstRow;
+    return tableElementAs(it, flagged, c, groups) ?? (it.rows.length < 2 ? null : tableElementAs(it, !flagged, c, groups));
+}
+
+function tableElementAs(it: TableItem, header: boolean, c: Conv, groups: string[]): DrawingElement | null {
+    const nRows = it.rows.length, nCols = it.cols.length;
+    if (!nRows || !nCols) return null;
+    const fills: Paint[][] = it.rows.map(r => r.cells.map(cl => cl.fill));
+    if (fills.flat().some(p => p.kind !== 'none' && p.kind !== 'solid')) return null;
+
+    type Props = { size: number; font?: string; bold: boolean; italic: boolean; color?: Color };
+    const data: string[][] = [];
+    const props: { row: number; col: number; p: Props }[] = [];
+    const aligns: (Paragraph['align'] | undefined)[][] = Array.from({ length: nCols }, () => []);
+    const anchors: TextBody['anchor'][] = [];
+    for (let r = 0; r < nRows; r++) {
+        const line: string[] = [];
+        for (let col = 0; col < nCols; col++) {
+            const cell = it.rows[r].cells[col];
+            const t = cell.text;
+            const text = t ? t.paragraphs.map(p => p.runs.map(run => (run.br ? '\n' : run.text)).join('')).join('\n') : '';
+            line.push(cell.hMerge || cell.vMerge ? '' : text);
+            if (cell.hMerge || cell.vMerge || !t || !text.trim()) continue;
+            anchors.push(t.anchor);
+            if (t.paragraphs.some(p => p.bullet)) return null;
+            const d = t.defaults ?? {};
+            for (const p of t.paragraphs) {
+                aligns[col].push(p.align ?? 'l');
+                for (const run of p.runs) {
+                    if (run.br || !run.text.trim()) continue;
+                    if (run.underline ?? d.underline) return null;
+                    if (run.strike ?? d.strike) return null;
+                    props.push({ row: r, col, p: { size: run.size ?? d.size ?? 18, font: run.font ?? d.font, bold: !!(run.bold ?? d.bold), italic: !!(run.italic ?? d.italic), color: run.color ?? d.color } });
+                }
+            }
+        }
+        data.push(line);
+    }
+    const ps = props.map(x => x.p);
+    if (ps.length && (!allSame(ps, (a, b) => Math.abs(a.size - b.size) < 0.5 && (a.font ?? '') === (b.font ?? '') && a.italic === b.italic))) return null;
+    const headPs = props.filter(x => header && x.row === 0).map(x => x.p);
+    const bodyPs = props.filter(x => !(header && x.row === 0)).map(x => x.p);
+    if (!allSame(bodyPs, (a, b) => a.bold === b.bold && sameColor(a.color, b.color))) return null;
+    if (!allSame(headPs, (a, b) => sameColor(a.color, b.color))) return null;
+    const bodyBold = bodyPs[0]?.bold ?? false;
+    // Yappy draws the header bold: a plain header only fits when there is no header.
+    if (headPs.some(p => !p.bold)) return null;
+    // One vertical alignment for the whole table, as a Yappy table has.
+    if (!allSame(anchors, (a, b) => a === b)) return null;
+    const colAlign: ('left' | 'center' | 'right')[] = [];
+    for (const a of aligns) {
+        if (!allSame(a, (x, y) => x === y)) return null;
+        colAlign.push(a[0] === 'r' ? 'right' : a[0] === 'ctr' ? 'center' : 'left');
+    }
+
+    // Colours: the header row one fill; body rows one fill each, even rows alike, odd rows alike.
+    const origin = (r: number, col: number) => !it.rows[r].cells[col].hMerge && !it.rows[r].cells[col].vMerge;
+    const rowFill = (r: number): Paint | null => {
+        const own = fills[r].filter((_, col) => origin(r, col));
+        return own.length && allSame(own, samePaint) ? own[0] : own.length ? null : { kind: 'none' };
+    };
+    const rf = it.rows.map((_, r) => rowFill(r));
+    if (rf.some(p => !p)) return null;
+    const body = rf.slice(header ? 1 : 0) as Paint[];
+    const even = body.filter((_, i) => i % 2 === 0), odd = body.filter((_, i) => i % 2 === 1);
+    if (!allSame(even, samePaint) || !allSame(odd, samePaint)) return null;
+    const solidCss = (p: Paint | undefined) => (p && p.kind === 'solid' ? css(p.color) : '');
+    const rowColor = solidCss(even[0]), altRaw = odd.length ? solidCss(odd[0]) : rowColor;
+    // An even row with no fill under coloured odd rows is something the renderer can't draw.
+    if (!rowColor && altRaw) return null;
+
+    // Lines: one line on every edge (or none anywhere).
+    const edges = it.rows.flatMap((rw, r) => rw.cells.filter((_, col) => origin(r, col)).flatMap(cl => [cl.borders.l, cl.borders.r, cl.borders.t, cl.borders.b]));
+    if (!allSame(edges, sameLine)) return null;
+    const grid = edges[0] ?? null;
+
+    const merges: NonNullable<DrawingElement['tableMergedCells']> = [];
+    it.rows.forEach((rw, r) => rw.cells.forEach((cl, col) => {
+        if ((cl.gridSpan ?? 1) > 1 || (cl.rowSpan ?? 1) > 1) {
+            merges.push({ startRow: r, startCol: col, endRow: Math.min(nRows - 1, r + (cl.rowSpan ?? 1) - 1), endCol: Math.min(nCols - 1, col + (cl.gridSpan ?? 1) - 1) });
+        }
+    }));
+
+    const w = it.cols.reduce((a, b) => a + b, 0), h = it.rows.reduce((a, rw) => a + rw.h, 0);
+    const el = base(c, 'table', { ...it, w, h }, groups);
+    const first = ps[0];
+    Object.assign(el, {
+        tableRows: header ? nRows - 1 : nRows, tableCols: nCols, tableHeaders: header,
+        tableData: data,
+        tableColWidths: it.cols.map(cw => cw / (w || 1)), tableRowHeights: it.rows.map(rw => rw.h / (h || 1)),
+        tableHeaderColor: header ? solidCss(rf[0]!) : '',
+        tableHeaderTextColor: headPs[0]?.color && !sameColor(headPs[0].color, bodyPs[0]?.color) ? css(headPs[0].color) : '',
+        tableRowColor: rowColor, tableAltRowColor: altRaw !== rowColor ? altRaw : '',
+        // A presentation table isn't a sortable list: no arrows in its header.
+        tableColAlignments: colAlign, tableSortCol: -1, tableSortDir: 'asc', tableSortArrows: false,
+        ...(anchors[0] && anchors[0] !== 'ctr' && { tableVerticalAlign: anchors[0] === 't' ? 'top' : 'bottom' }),
+        ...(merges.length && { tableMergedCells: merges }),
+        strokeColor: grid ? css(grid.color) : 'transparent', strokeWidth: grid ? grid.width : 1,
+        fontSize: first?.size ?? 14, fontFamily: fontKey(first?.font),
+        textColor: css(bodyPs[0]?.color ?? headPs[0]?.color ?? { hex: '#000000' }),
+        ...(bodyBold && { fontWeight: 'bold' }), ...(first?.italic && { fontStyle: 'italic' }),
+    });
+    if (grid?.dash && grid.dash !== 'solid') el.strokeStyle = /dot/i.test(grid.dash) ? 'dotted' : 'dashed';
+    return el;
+}
+
 function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[] {
     const out: DrawingElement[] = [];
     for (const it of items) {
@@ -615,6 +741,12 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
                 case 'connector': made.push(...connectorElements(it, c, groups)); break;
                 case 'picture': made.push(...pictureElement(it, c, groups)); break;
                 case 'group': made.push(...convertItems(it.children, c, [...groups, c.nextId('group')])); break;
+                case 'table': {
+                    const el = tableElement(it, c, groups);
+                    if (el) { c.stats.elements++; made.push(el); }
+                    else if (it.fallback) made.push(...convertItems([it.fallback], c, groups));
+                    break;
+                }
                 case 'chart': {
                     const el = base(c, 'chart', it, groups);
                     el.chart = normalizeChart(it.chart);

@@ -1363,6 +1363,13 @@ export const ja: Dictionary = {
             none: 'なし',
         },
     },
+    tableMenu: {
+        sortArrows: '並べ替えの矢印を表示',
+        verticalAlign: '文字の上下の配置',
+        top: '上',
+        middle: '中央',
+        bottom: '下',
+    },
     morph: {
         option: '変形',
     },

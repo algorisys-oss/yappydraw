@@ -3004,7 +3004,8 @@ export function selectionOnUp(
                     const iconFontSize = el.fontSize ?? 14;
                     const indicatorSize = clickedCell ? Math.min(iconFontSize * 0.6, clickedCell.h * 0.3) : 0;
                     const iconHitWidth = indicatorSize + iconPadding * 2;
-                    const isOnSortIcon = clickedCell && x >= (clickedCell.x + clickedCell.w - iconHitWidth);
+                    // No arrows shown, nothing to click: the header then just selects.
+                    const isOnSortIcon = el.tableSortArrows !== false && clickedCell && x >= (clickedCell.x + clickedCell.w - iconHitWidth);
 
                     if (isOnSortIcon) {
                         const currentSortCol = el.tableSortCol ?? -1;

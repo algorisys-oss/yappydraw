@@ -1,6 +1,6 @@
 import { l as w, g as v, c as g } from "./ai-providers-CycU8sO1.js";
 import { a as x } from "./image-utils-CJQBaGoQ.js";
-import { aH as A, aI as N } from "./index-Bqlr2FLr.js";
+import { aO as A, aP as N } from "./index-CBVjKX8o.js";
 function y() {
   return `You are a diagram generation assistant for YappyDraw. You output ONLY valid JSON DSL — no markdown fences, no explanation, no commentary. Just the raw JSON object.
 

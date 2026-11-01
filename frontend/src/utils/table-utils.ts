@@ -45,6 +45,18 @@ export function resizeTableData(
 /**
  * Create default equal fractional widths for N columns.
  */
+/**
+ * The middle of a cell's first text line (the renderer draws with textBaseline 'middle'), placed
+ * by the table's vertical alignment: centred by default, or 4px in from the top or bottom edge.
+ */
+export function firstLineY(top: number, height: number, textHeight: number, lineHeight: number,
+    align?: 'top' | 'middle' | 'bottom'): number {
+    const pad = 4;
+    if (align === 'top') return top + pad + lineHeight / 2;
+    if (align === 'bottom') return top + height - pad - textHeight + lineHeight / 2;
+    return top + (height - textHeight) / 2 + lineHeight / 2;
+}
+
 export function defaultColWidths(cols: number): number[] {
     return Array.from({ length: cols }, () => 1 / cols);
 }

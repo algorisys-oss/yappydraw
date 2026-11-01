@@ -1364,6 +1364,13 @@ export const de: Dictionary = {
             none: 'Keine',
         },
     },
+    tableMenu: {
+        sortArrows: 'Sortierpfeile anzeigen',
+        verticalAlign: 'Text vertikal ausrichten',
+        top: 'Oben',
+        middle: 'Mitte',
+        bottom: 'Unten',
+    },
     morph: {
         option: 'Morphen',
     },

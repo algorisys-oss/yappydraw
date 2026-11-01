@@ -11616,3 +11616,27 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Escape needs a window listener when focus can leave the dialog.** After a paste or a click
   on the backdrop focus can sit on `body`, where the dialog's own `onKeyDown` never sees the key.
 
+## Native PowerPoint tables (2026-11-01)
+
+- **Native only when it draws the same.** A Yappy table holds header/row/alternate colours, one
+  font and per-column alignment; PowerPoint cells each carry their own fill, runs and lines.
+  Converting every `a:tbl` to a Yappy table would have made most imports look worse, so the
+  reader keeps the exact cell group as `fallback` and `to-yappy` converts natively only when every
+  cell fits the model. Measure the fit on a real corpus: 6/46 at first, 14/46 after the two
+  cheapest gaps (vertical alignment; header flag inference) — the rest are genuinely per-cell.
+- **A rejection histogram picks the next feature.** Tagging each `return null` with its reason and
+  counting over LibreOffice's corpus showed 31 of 40 rejections were one thing — top-aligned text
+  — which became `tableVerticalAlign`. Guessing would have picked something else.
+- **The header flag is not the header.** LibreOffice writes an empty `a:tblPr` (no `firstRow`),
+  and decks flag first rows that look like any other row. Try the table both ways; the same
+  look checks guarantee either reading draws the same.
+- **Spell every cell out on export.** Writing `tableStyleId` "No Style, No Grid" plus explicit
+  `lnL/lnR/lnT/lnB` and fill on every `a:tc` means PowerPoint adds nothing of its own; a missing
+  `tableStyleId` lets readers apply the deck's default style (our own reader does exactly that).
+  `tcPr` children are order-sensitive: lines L, R, T, B, then the fill.
+- **Grid widths must sum to the frame.** Rounding each column to EMU separately leaves a gap or
+  overhang; round the running total instead (`emuRuns`).
+- **An editing aid is still ink.** The dimmed sort arrows a Yappy header always drew were the one
+  visible regression of importing natively (A/B against the old path showed it). Tables from
+  PowerPoint now get `tableSortArrows: false`, with a context-menu toggle.
+

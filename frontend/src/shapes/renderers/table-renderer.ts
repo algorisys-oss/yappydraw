@@ -10,7 +10,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, wrapText,
     isCellCoveredByMerge, isTopLeftOfMerge, getMergedCellBounds, type MergedCellRegion,
-    getCellFormat, formatCellValue, getCellBorders, getBorderWidth
+    getCellFormat, formatCellValue, getCellBorders, getBorderWidth, firstLineY
 } from "../../utils/table-utils";
 import type { RenderContext } from "../base/types";
 import type { DrawingElement } from "../../types";
@@ -352,8 +352,8 @@ export class TableRenderer extends ShapeRenderer {
                 const lineHeight = fontSize * 1.2;
                 const totalTextHeight = lines.length * lineHeight;
 
-                // Vertically center the text block
-                const startY = cellBounds.y + (cellBounds.h - totalTextHeight) / 2 + lineHeight / 2;
+                // Place the text block by the table's vertical alignment (middle by default)
+                const startY = firstLineY(cellBounds.y, cellBounds.h, totalTextHeight, lineHeight, el.tableVerticalAlign);
 
                 for (let i = 0; i < lines.length; i++) {
                     const lineY = startY + i * lineHeight;
@@ -363,8 +363,8 @@ export class TableRenderer extends ShapeRenderer {
                 renderer.restore();
             }
 
-            // --- Sort indicator for ALL header cells ---
-            if (isHeader && !mergeRegion) {
+            // --- Sort indicator for ALL header cells (unless the table hides them) ---
+            if (isHeader && !mergeRegion && el.tableSortArrows !== false) {
                 const indicatorSize = Math.min(fontSize * 0.6, cell.h * 0.3);
                 const ix = cell.x + cell.w - padding - indicatorSize / 2;
                 const iy = cell.y + cell.h / 2;
@@ -772,7 +772,7 @@ export class TableRenderer extends ShapeRenderer {
                 const lines = wrapText(renderer, cellText, maxTextWidth);
                 const lineHeight = fontSize * 1.2;
                 const totalTextHeight = lines.length * lineHeight;
-                const startY = cellBounds3.y + (cellBounds3.h - totalTextHeight) / 2 + lineHeight / 2;
+                const startY = firstLineY(cellBounds3.y, cellBounds3.h, totalTextHeight, lineHeight, el.tableVerticalAlign);
 
                 for (let i = 0; i < lines.length; i++) {
                     renderer.fillText(lines[i], textX, startY + i * lineHeight, maxTextWidth);
@@ -781,7 +781,7 @@ export class TableRenderer extends ShapeRenderer {
             }
 
             // Sort indicators
-            if (isHeader && !mergeRegion) {
+            if (isHeader && !mergeRegion && el.tableSortArrows !== false) {
                 const indicatorSize = Math.min(fontSize * 0.6, cell.h * 0.3);
                 const ix = cell.x + cell.w - padding - indicatorSize / 2;
                 const iy = cell.y + cell.h / 2;
@@ -1000,7 +1000,7 @@ export class TableRenderer extends ShapeRenderer {
             const lines = wrapText(renderer, cellText, maxTextWidth);
             const lineHeight = fontSize * 1.2;
             const totalTextHeight = lines.length * lineHeight;
-            const startTY = (y - headerOffset) + (headerH - totalTextHeight) / 2 + lineHeight / 2;
+            const startTY = firstLineY((y - headerOffset), headerH, totalTextHeight, lineHeight, el.tableVerticalAlign);
             for (let i = 0; i < lines.length; i++) {
                 renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
             }
@@ -1198,7 +1198,7 @@ export class TableRenderer extends ShapeRenderer {
             const lines = wrapText(renderer, cellText, maxTextWidth);
             const lineHeight = fontSize * 1.2;
             const totalTextHeight = lines.length * lineHeight;
-            const startTY = cb.y + (cb.h - totalTextHeight) / 2 + lineHeight / 2;
+            const startTY = firstLineY(cb.y, cb.h, totalTextHeight, lineHeight, el.tableVerticalAlign);
             for (let i = 0; i < lines.length; i++) {
                 renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
             }
@@ -1317,7 +1317,7 @@ export class TableRenderer extends ShapeRenderer {
                 const lines = wrapText(renderer, cellText, maxTextWidth);
                 const lineHeight = fontSize * 1.2;
                 const totalTextHeight = lines.length * lineHeight;
-                const startTY = cb.y + (cb.h - totalTextHeight) / 2 + lineHeight / 2;
+                const startTY = firstLineY(cb.y, cb.h, totalTextHeight, lineHeight, el.tableVerticalAlign);
                 for (let i = 0; i < lines.length; i++) {
                     renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
                 }
@@ -1552,7 +1552,7 @@ export class TableRenderer extends ShapeRenderer {
             const lines = wrapText(renderer, cellText, maxTextWidth);
             const lineHeight = fontSize * 1.2;
             const totalTextHeight = lines.length * lineHeight;
-            const startTY = cb.y + (cb.h - totalTextHeight) / 2 + lineHeight / 2;
+            const startTY = firstLineY(cb.y, cb.h, totalTextHeight, lineHeight, el.tableVerticalAlign);
             for (let i = 0; i < lines.length; i++) {
                 renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
             }

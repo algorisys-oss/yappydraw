@@ -1,4 +1,4 @@
-import { s as o, b as m, d as b, z as W, h as z, g as a, i as U, j as Z } from "./index-Bqlr2FLr.js";
+import { s as o, b as m, d as M, z as W, h as z, g as a, i as U, j as B } from "./index-CBVjKX8o.js";
 const h = /* @__PURE__ */ new Set(), x = [], G = {
   ArrowLeft: "left",
   a: "left",
@@ -99,24 +99,24 @@ class A {
     return this.set({ opacity: 100 });
   }
   destroy() {
-    B(this.id);
+    H(this.id);
   }
 }
 const C = (e, i) => {
   a("elements", (s) => s.id === e, i);
-}, B = (e) => {
+}, H = (e) => {
   a("elements", (i) => i.filter((s) => s.id !== e));
 };
-let g = null, y = null, w = [], k = 0, M = 0, c = null, T = !1, F = "", f = 0;
-const H = "SCORE ";
-let $ = null, N = !1, E = () => {
+let g = null, y = null, w = [], k = 0, b = 0, c = null, T = !1, F = "", f = 0;
+const N = "SCORE ";
+let $ = null, V = !1, E = () => {
 };
 const ie = (e) => {
   E = e;
-}, V = (e) => {
+}, J = (e) => {
   $ = e, E();
 }, P = (e) => {
-  T = e, N = e, E();
+  T = e, V = e, E();
 }, L = (e) => {
   try {
     e();
@@ -134,13 +134,13 @@ const ie = (e) => {
   const i = G[e.key];
   i && h.delete(i);
 };
-let J = 0;
-function Y() {
+let j = 0;
+function X() {
   const e = o.slides[o.activeSlideIndex] || o.slides[0];
   return e ? { x: e.spatialPosition.x, y: e.spatialPosition.y, width: e.dimensions.width, height: e.dimensions.height } : { x: 0, y: 0, width: 800, height: 600 };
 }
-function j() {
-  const e = Y(), i = {
+function Y() {
+  const e = X(), i = {
     strokeColor: "transparent",
     strokeWidth: 0,
     strokeStyle: "solid",
@@ -154,7 +154,7 @@ function j() {
     roundness: null
   }, s = (n, t, r, d, l, S) => {
     const D = {
-      id: `game-${Date.now()}-${++J}`,
+      id: `game-${Date.now()}-${++j}`,
       type: n,
       x: t,
       y: r,
@@ -217,7 +217,7 @@ function j() {
     },
     score: (n) => {
       f += n;
-      const t = H + f;
+      const t = N + f;
       if (c && o.elements.some((r) => r.id === c))
         C(c, { text: t });
       else {
@@ -237,20 +237,20 @@ function j() {
     getScore: () => f,
     goToState: (n) => {
       const t = o.states.find((r) => r.name === n || r.id === n);
-      t && Z(t.id);
+      t && B(t.id);
     },
     playAnim: (n, t) => {
-      n?.alive && import("./index-Bqlr2FLr.js").then((r) => r.aY).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
+      n?.alive && import("./index-CBVjKX8o.js").then((r) => r.b3).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
       }));
     },
     goToPage: (n) => {
       n >= 0 && n < o.slides.length && U(n);
     },
     sound: (n) => {
-      import("./index-Bqlr2FLr.js").then((t) => t.aZ).then((t) => t.playSfx(n));
+      import("./index-CBVjKX8o.js").then((t) => t.b4).then((t) => t.playSfx(n));
     },
     music: (n) => {
-      import("./index-Bqlr2FLr.js").then((t) => t.aZ).then((t) => n ? t.startMusic() : t.stopMusic());
+      import("./index-CBVjKX8o.js").then((t) => t.b4).then((t) => n ? t.startMusic() : t.stopMusic());
     },
     end: (n) => {
       if (P(!0), n) {
@@ -266,13 +266,13 @@ function j() {
         });
       }
     },
-    pad: (n) => V(n),
+    pad: (n) => J(n),
     random: (n, t) => n + Math.random() * (t - n),
     clamp: (n, t, r) => Math.max(t, Math.min(r, n))
   };
 }
 const re = () => o.gameActive;
-function X(e) {
+function Z(e) {
   o.gameActive && p();
   const i = e ?? o.gameScript;
   if (!i?.trim())
@@ -291,22 +291,22 @@ ${i}`);
   } catch (t) {
     return m(`Game script error: ${t?.message || t}`, "error"), g = null, !1;
   }
-  b(() => {
+  M(() => {
     a("selection", []), a("gameActive", !0), a("appMode", "presentation");
   }), W();
   try {
-    s(j());
+    s(Y());
   } catch (t) {
     return m(`Game error: ${t?.message || t}`, "error"), p(), !1;
   }
-  window.addEventListener("keydown", K, !0), window.addEventListener("keyup", O, !0), k = performance.now(), M = k;
+  window.addEventListener("keydown", K, !0), window.addEventListener("keyup", O, !0), k = performance.now(), b = k;
   const n = (t) => {
     y = requestAnimationFrame(n);
-    const r = Math.min(0.05, (t - M) / 1e3);
-    if (M = t, T) return;
+    const r = Math.min(0.05, (t - b) / 1e3);
+    if (b = t, T) return;
     const d = (t - k) / 1e3;
     try {
-      b(() => {
+      M(() => {
         for (const l of w) l(r, d);
       });
     } catch (l) {
@@ -316,9 +316,9 @@ ${i}`);
   return y = requestAnimationFrame(n), !0;
 }
 function p() {
-  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-Bqlr2FLr.js").then((e) => e.aZ).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
+  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-CBVjKX8o.js").then((e) => e.b4).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
     const e = g;
-    g = null, b(() => {
+    g = null, M(() => {
       a("elements", JSON.parse(e.elements)), a("selection", e.selection), a("activeSlideIndex", e.activeSlideIndex), a("appMode", e.appMode), a("gameActive", !1);
     }), z(e.viewState);
   } else
@@ -327,11 +327,11 @@ function p() {
 }
 function se() {
   const e = F;
-  p(), e && X(e);
+  p(), e && Z(e);
 }
 export {
   A as Sprite,
-  N as gameEnded,
+  V as gameEnded,
   te as gamePointerDown,
   ee as gamePointerMove,
   ne as gamePointerUp,
@@ -341,6 +341,6 @@ export {
   q as padRelease,
   $ as padVisibleOverride,
   se as restartGame,
-  X as startGame,
+  Z as startGame,
   p as stopGame
 };

@@ -175,7 +175,33 @@ export interface ChartItem extends Placed {
     chart: import('../chart/chart-layout').ChartSpec;
 }
 
-export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem | ChartItem;
+/** One cell of a table (`a:tc`), fully specified: the writer applies no table style. */
+export interface TableCell {
+    text?: TextBody;     // its insets and anchor are the cell's margins and vertical alignment
+    fill: Paint;
+    /** Edge lines; null = no line. */
+    borders: { l: Line | null; r: Line | null; t: Line | null; b: Line | null };
+    gridSpan?: number;   // a merge's top-left cell: columns it covers
+    rowSpan?: number;    // … and rows
+    hMerge?: boolean;    // covered by the merge to its left
+    vMerge?: boolean;    // covered by the merge above
+}
+
+/**
+ * A PowerPoint table (`a:tbl` in a graphic frame). Every row has one cell per column, merged
+ * cells included. Tables can't rotate or flip in PowerPoint.
+ */
+export interface TableItem extends Placed {
+    kind: 'table';
+    cols: number[];                              // column widths, px
+    rows: { h: number; cells: TableCell[] }[];
+    firstRow?: boolean;                          // the first row is a header row
+    bandRow?: boolean;                           // body rows alternate
+    /** Import: the table drawn exactly as cell shapes, for when it doesn't fit a Yappy table. */
+    fallback?: GroupItem;
+}
+
+export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem | ChartItem | TableItem;
 
 export type TransitionKind = 'fade' | 'push' | 'zoom' | 'morph';
 export interface Transition {

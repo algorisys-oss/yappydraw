@@ -390,7 +390,9 @@ describe("readPptx: table styles defined in the file", () => {
         'ppt/_rels/presentation.xml.rels': REL([['rId2', 'slide', 'slides/slide1.xml'], ['rId3', 'tableStyles', 'tableStyles.xml']]),
         'ppt/tableStyles.xml': style,
     });
-    const cells = (read(bytes).deck.slides[0].items.find(i => i.name === 'T') as GroupItem).children as ShapeItem[];
+    // A styled table arrives as a table item; its exact drawing (the cells as shapes) is its fallback.
+    const asGroup = (it: any): GroupItem => (it.kind === 'table' ? it.fallback : it);
+    const cells = asGroup(read(bytes).deck.slides[0].items.find(i => i.name === 'T')).children as ShapeItem[];
     const fillOfRow = (ri: number) => (cells[ri * 2].fill as any).color.hex;
     it("layers whole table, bands and header as PowerPoint does", () => {
         expect(fillOfRow(0)).toBe('#c00000');   // header
@@ -642,5 +644,48 @@ describe("readPptx: data charts (c:chartSpace)", () => {
         const { deck, warnings } = read(zipSync(files));
         expect(deck.slides[0].items[0].kind).toBe('shape');
         expect(warnings.join(' ')).toContain('placeholder');
+    });
+});
+
+describe("tables: written as a:tbl, read back cell for cell", () => {
+    const line = { width: 1, color: { hex: '#94a3b8' } };
+    const edges = { l: line, r: line, t: line, b: line };
+    const txt = (text: string, bold?: boolean) => ({ paragraphs: [{ runs: [{ text }], align: 'ctr' as const }], anchor: 'ctr' as const,
+        insets: { l: 6, t: 2, r: 6, b: 2 }, wrap: true, defaults: { size: 16, font: 'Inter', color: { hex: '#111111' }, bold } });
+    const table = {
+        kind: 'table', id: 3, name: 'Prices', x: 100, y: 80, w: 300, h: 120, cols: [100, 120, 80], firstRow: true, bandRow: true,
+        rows: [
+            { h: 40, cells: [{ text: txt('Plan', true), fill: { kind: 'solid', color: { hex: '#1e3a8a' } }, borders: edges, gridSpan: 2 },
+                { fill: { kind: 'none' }, borders: edges, hMerge: true },
+                { text: txt('Price', true), fill: { kind: 'solid', color: { hex: '#1e3a8a' } }, borders: edges }] },
+            { h: 40, cells: ['a', 'b', 'c'].map(t => ({ text: txt(t), fill: { kind: 'none' }, borders: edges })) },
+            { h: 40, cells: ['d', 'e', 'f'].map(t => ({ text: txt(t), fill: { kind: 'solid', color: { hex: '#eef2ff' } }, borders: edges })) },
+        ],
+    } as any;
+    const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [table] }] });
+
+    it("writes a graphic frame with the grid, spans, margins and lines PowerPoint expects", () => {
+        const xml = strFromU8(unzipSync(bytes)['ppt/slides/slide1.xml']);
+        expect(xml).toContain('<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"><a:tableStyleId>{2D5ABB26-0587-4C30-8999-92F81FD0307C}</a:tableStyleId>');
+        expect(xml.match(/<a:gridCol w="(\d+)"\/>/g)!.length).toBe(3);
+        expect(xml).toContain('<a:tc gridSpan="2">');
+        expect(xml).toContain('<a:tc hMerge="1">');
+        // tcPr children in schema order: lines L, R, T, B, then the fill.
+        expect(xml).toMatch(/<a:tcPr marL="\d+" marR="\d+" marT="\d+" marB="\d+" anchor="ctr"><a:lnL [^>]*>.*?<\/a:lnL><a:lnR [^>]*>.*?<\/a:lnR><a:lnT [^>]*>.*?<\/a:lnT><a:lnB [^>]*>.*?<\/a:lnB><a:solidFill>/);
+        expect(parseXml(xml).getElementsByTagName('parsererror').length).toBe(0);
+    });
+
+    it("reads back as a table with the same cells, sizes and flags", () => {
+        const it = read(bytes).deck.slides[0].items[0] as any;
+        expect(it.kind).toBe('table');
+        expect(it).toMatchObject({ x: 100, y: 80, firstRow: true, bandRow: true });
+        expect(it.cols.map((v: number) => Math.round(v))).toEqual([100, 120, 80]);
+        expect(it.rows.map((r: any) => Math.round(r.h))).toEqual([40, 40, 40]);
+        expect(it.rows[0].cells[0]).toMatchObject({ gridSpan: 2, fill: { kind: 'solid', color: { hex: '#1e3a8a' } } });
+        expect(it.rows[0].cells[1].hMerge).toBe(true);
+        expect(it.rows[0].cells[0].text.paragraphs[0].runs[0]).toMatchObject({ text: 'Plan', bold: true });
+        expect(it.rows[2].cells[1].text.paragraphs[0].runs[0].text).toBe('e');
+        expect(it.rows[1].cells[2].borders.r).toMatchObject({ color: { hex: '#94a3b8' } });
+        expect(it.fallback.kind).toBe('group');
     });
 });

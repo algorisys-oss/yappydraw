@@ -885,6 +885,31 @@ function buildContextMenuItems(
                 ];
                 tableItems.push({ label: 'Align Column', submenu: alignmentItems });
 
+                tableItems.push({
+                    label: t('tableMenu.sortArrows'),
+                    icon: el.tableSortArrows !== false ? '✓' : undefined,
+                    onClick: () => {
+                        pushToHistory();
+                        updateElement(el.id!, { tableSortArrows: el.tableSortArrows === false ? undefined : false }, false);
+                        requestAnimationFrame(redrawFn);
+                    },
+                });
+
+                // Where text sits in its cell: one setting for the whole table.
+                const currentV = el.tableVerticalAlign ?? 'middle';
+                tableItems.push({
+                    label: t('tableMenu.verticalAlign'),
+                    submenu: (['top', 'middle', 'bottom'] as const).map(v => ({
+                        label: t(`tableMenu.${v}` as const),
+                        icon: currentV === v ? '✓' : undefined,
+                        onClick: () => {
+                            pushToHistory();
+                            updateElement(el.id!, { tableVerticalAlign: v === 'middle' ? undefined : v }, false);
+                            requestAnimationFrame(redrawFn);
+                        },
+                    })),
+                });
+
                 // Cell Format options
                 tableItems.push({ separator: true });
                 const formatItems = buildFormatMenuItems(el, hitCell, cellSelection, pushToHistory, updateElement, redrawFn);

@@ -411,6 +411,10 @@ interface ElementOptions {
     tableColWidths?: number[];
     tableRowHeights?: number[];
     tableColAlignments?: ('left' | 'center' | 'right')[];
+    /** Where text sits in its cell, for the whole table (default 'middle'). */
+    tableVerticalAlign?: 'top' | 'middle' | 'bottom';
+    /** Header sort arrows (click one to sort by that column). Default true; tables opened from PowerPoint have them off. */
+    tableSortArrows?: boolean;
     tableHeaderColor?: string;
     tableHeaderTextColor?: string;
     tableRowColor?: string;
@@ -1719,6 +1723,19 @@ export const YappyAPI = {
 
         alignments[colIndex] = alignment;
         updateElement(tableId, { tableColAlignments: alignments }, true);
+    },
+
+    /**
+     * Where text sits in its cell, for the whole table: 'top', 'middle' (the default) or
+     * 'bottom'. Goes to PowerPoint as the cells' vertical alignment, and comes back from it.
+     */
+    setTableVerticalAlign(tableId: string, align: 'top' | 'middle' | 'bottom') {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+        updateElement(tableId, { tableVerticalAlign: align === 'middle' ? undefined : align }, true);
     },
 
     /**

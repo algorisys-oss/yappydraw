@@ -5,7 +5,7 @@ icon: "📊"
 category: Structure
 description: Create and edit tables with rows, columns, and data
 seoTitle: "Add a table to a diagram — editable, sortable tables"
-seoDescription: "Editable tables on the canvas: resize columns, merge cells, sort, format numbers and paste straight from a spreadsheet."
+seoDescription: "Editable tables on the canvas: resize columns, merge cells, sort, format numbers, paste straight from a spreadsheet, and round-trip to PowerPoint as real tables."
 ---
 
 # 📊 Table
@@ -19,7 +19,7 @@ Tables in Yappy provide a powerful way to display structured data on your canvas
 :::cards
 📝 Editable Cells | Double-click any cell to edit its content. Text automatically wraps within cells.
 📐 Resizable | Drag column and row edges to resize. Double-click edges to auto-fit content.
-🔢 Sortable | Click column headers to sort data ascending or descending (numeric-aware).
+🔢 Sortable | Click the arrows in a column header to sort ascending or descending (numeric-aware).
 📋 Clipboard | Copy/paste data to and from Excel, Google Sheets, or other spreadsheets.
 🔗 Merge Cells | Combine multiple cells into one. Select cells with Shift+click, then merge via context menu.
 💲 Cell Formatting | Format cells as numbers, currency, percentages, or dates with customizable patterns.
@@ -137,10 +137,13 @@ Yappy.setTableColumnWidth(tableId, 0, 0.5);  // First column = 50%
 
 ### Interactive Sorting
 
-- Click on any header cell to sort by that column
+- Click the arrows at the right of a header cell to sort by that column
 - Click again to toggle between ascending and descending
 - Sort indicator (▲/▼) appears in the active column header
 - Sorting is **numeric-aware** - numbers sort correctly (3, 20, 100 not 100, 20, 3)
+- Right-click a cell → **Show Sort Arrows** hides the arrows (and sorting by click) for a table that is
+  for showing, not sorting — a slide, say. Click it again to bring them back. Tables opened from
+  PowerPoint start with the arrows hidden.
 
 ### Using the API
 
@@ -169,6 +172,15 @@ A checkmark (✓) indicates the current alignment.
 Yappy.setTableColumnAlignment(tableId, 0, 'left');
 Yappy.setTableColumnAlignment(tableId, 1, 'center');
 Yappy.setTableColumnAlignment(tableId, 2, 'right');
+```
+
+## Vertical Alignment
+
+Right-click on a table cell → **Align Text Vertically** → **Top**, **Middle** (default) or **Bottom**.
+It applies to every cell of the table and is kept when the table goes to PowerPoint and back.
+
+```
+Yappy.setTableVerticalAlign(tableId, 'top');
 ```
 
 ## Table Styling
@@ -359,6 +371,7 @@ Every table can be built and driven from code. The API is exposed on the global 
 | `deleteTableColumn(id, index)` | Delete a column at index |
 | `sortTableColumn(id, colIndex, direction)` | Sort by column ('asc' or 'desc') |
 | `setTableColumnAlignment(id, col, align)` | Set column alignment ('left', 'center', 'right') |
+| `setTableVerticalAlign(id, align)` | Where text sits in its cell, whole table ('top', 'middle', 'bottom') |
 | `setTableColumnWidth(id, col, width)` | Set column width (0-1 fraction) |
 | `setTableStyle(id, options)` | Set table colors and styling |
 | `copyTableToClipboard(id)` | Copy table data to clipboard as TSV |
@@ -368,6 +381,21 @@ Every table can be built and driven from code. The API is exposed on the global 
 | `mergeCells(id, startRow, startCol, endRow, endCol)` | Merge a range of cells |
 | `unmergeCells(id, row, col)` | Unmerge cells at position |
 | `getMergedCells(id)` | Get all merged cell regions |
+
+## PowerPoint
+
+**Export** (PowerPoint type *Editable shapes*): a table becomes a real PowerPoint table — the same
+text, header and row colours, column widths, alignment, merged cells and lines — so you can type
+into it, add rows and restyle it in PowerPoint. Number formats go as the text they show. The sort
+arrows are left out. PowerPoint can't turn a table, so a **rotated or flipped** table goes as a
+picture instead.
+
+**Import** (opening a .pptx): a table comes in as a Yappy table when its look is one a Yappy table
+can draw — one font and size, a bold header row and body rows each in one colour (alternating at
+most), one alignment per column and one vertical alignment for the table, and the same line on
+every edge. Tables Yappy exported always qualify. A table with anything else — a cell coloured on
+its own, mixed formatting inside a cell, different lines on different edges — comes in as its exact
+drawing instead: a group of cells you can edit one by one, but not as a table.
 
 ## Keyboard Shortcuts
 
