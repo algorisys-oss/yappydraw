@@ -114,7 +114,15 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
 1. **Update docs** — record learnings in `docs/learnings.md`, log any fixes in `docs/bugs/bug-fixes.md`, review the relevant **web help doc** (`frontend/src/help-docs/`) for completeness and refresh help docs / hotkeys (`components/help-dialog.tsx`), and update `api.ts` if features/attributes changed.
 2. **Bump the version** in `package.json` (patch unless I say otherwise).
 3. **Write a release note** — ALWAYS create `release-notes/<version>.md` for the version being shipped (e.g. `release-notes/0.5.2.md`). Use the template in `release-notes/README.md`: date, highlights, features, fixes, internal/test changes, and any breaking changes / migration notes. One file per version; never skip this step. If older shipped versions are missing notes, backfill them as applicable. **Also add a matching entry (newest first) to `frontend/src/data/whats-new.ts`** — the in-app "What's new" popup (opened by clicking the version number). Keep that copy user-facing (what it does FOR them), skipping purely internal/test-only releases.
-4. **Refresh the repo map** (`npm run repograph`) and verify the build passes — use
+4. **Rebuild the HTML player** (`npm run build:player`) when the release touches shapes,
+   renderers, the store, the animation/slide code or `components/player-app.tsx`, and commit the
+   regenerated `frontend/src/assets/player-assets.ts`. Exported HTML presentations run that
+   embedded bundle, and `npm run build` does NOT rebuild it: it was 45 releases stale (built at
+   v0.8.255) and drew no data charts before v0.8.301 (bug #469). Nothing fails when it is stale — an
+   export just looks wrong — so when in doubt, rebuild it; `tests/accessibility.spec.ts` exports a
+   deck with a chart and opens it. Do it here, after the last source change of the release — a
+   rebuild part-way through goes stale again (v0.8.301 shipped one; v0.8.302 fixed it).
+   **Refresh the repo map** (`npm run repograph`) and verify the build passes — use
    `npm run build:memory`, which runs `npm run build` and additionally reports its peak memory
    against a budget (see below). Plain `npm run build` is fine if you only need the artifact.
    **The build is memory-bound, and `npm run build:memory` is how you know where it stands.**

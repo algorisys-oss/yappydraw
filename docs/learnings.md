@@ -11741,3 +11741,10 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   rendering mode 3 is read by screen readers, search and copy, and `pdftotext` proves it in a test
   — the same layer OCR'd scans use.
 
+## A release step written down is a release step followed (2026-11-01, v0.8.302)
+
+- Following the new "rebuild the HTML player" step on the very next release found the bundle
+  already stale again: it had been rebuilt part-way through v0.8.301 and the code changed after.
+  Rebuild it as the last code step of a release, after every source change, not when the feature
+  that needed it was written.
+
