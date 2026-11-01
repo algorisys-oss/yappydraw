@@ -65,6 +65,7 @@ import { generateId } from "../utils/id-generator"; // New Import
 import { layoutGuidePositions, DEFAULT_LAYOUT_GRID, type LayoutGridSpec } from "../utils/layout-guides";
 import { layoutElements, paletteFor, isSlideLayout, type SlideLayoutId, type LayoutText } from '../utils/slide-layouts';
 import { firstShowIndex, nextShowIndex, prevShowIndex } from '../utils/show-order';
+import { normalizeChart, defaultChartSpec, type ChartSpec } from '../utils/chart/chart-layout';
 import { parseLink, targetSlideIndex } from '../utils/slide-links';
 import { canvasCenterClient, canvasViewport, SPEAKER_NOTES_H, slideNavigatorRight, statusBarHeight } from "../utils/dock-layout";
 import {
@@ -2984,6 +2985,56 @@ export const addSlide = () => {
     setActiveSlide(nextIndex);
 
     showToast(`${pageNoun()} added`, 'success');
+};
+
+/**
+ * Replace a data chart's spec (no history: callers push their own step). Clears the field before
+ * assigning, because a store write of an object MERGES into the existing one: keys the new spec
+ * leaves out (an unticked `stacked`) would survive, and the undo snapshot — which shares the old
+ * object — would be changed along with it.
+ */
+export const replaceChart = (id: string, spec: ChartSpec) => {
+    const i = store.elements.findIndex(e => e.id === id);
+    if (i < 0 || store.elements[i].type !== 'chart') return;
+    batch(() => {
+        setStore('elements', i, 'chart' as any, undefined);
+        setStore('elements', i, 'chart' as any, normalizeChart(spec));
+    });
+    bumpDirtyRevision();
+};
+
+/**
+ * Place a data chart: on the current slide or page (centred, 60% of its width), otherwise at the
+ * middle of the view. `spec` defaults to a sample column chart. Selects it; one undo step.
+ * Returns the new element's id.
+ */
+export const insertChart = (spec?: Partial<ChartSpec>, box?: { x: number; y: number; width: number; height: number }): string => {
+    const slide = isPagedDocType(store.docType) ? store.slides[store.activeSlideIndex] : undefined;
+    let b = box;
+    if (!b) {
+        if (slide) {
+            const w = slide.dimensions.width * 0.6, h = Math.min(slide.dimensions.height * 0.6, w * 0.6);
+            b = { x: slide.spatialPosition.x + (slide.dimensions.width - w) / 2, y: slide.spatialPosition.y + (slide.dimensions.height - h) / 2, width: w, height: h };
+        } else {
+            const { scale, panX, panY } = store.viewState;
+            const cx = (window.innerWidth / 2 - panX) / scale, cy = (window.innerHeight / 2 - panY) / scale;
+            b = { x: cx - 300, y: cy - 180, width: 600, height: 360 };
+        }
+    }
+    const layer = store.layers.find(l => l.id === store.activeLayerId && !l.isMaster) ?? store.layers.find(l => !l.isMaster) ?? store.layers[0];
+    const el = {
+        id: generateId('chart'), type: 'chart', ...b,
+        chart: normalizeChart({ ...defaultChartSpec(), ...(spec || {}) }),
+        strokeColor: '#1f2937', backgroundColor: 'transparent', fillStyle: 'solid', strokeWidth: 1, strokeStyle: 'solid',
+        opacity: 100, roughness: 1, angle: 0, renderStyle: store.defaultElementStyles.renderStyle ?? 'architectural',
+        seed: Math.floor(Math.random() * 2 ** 31), roundness: null, locked: false, link: null,
+        layerId: layer?.id ?? 'default-layer',
+    } as unknown as DrawingElement;
+    pushToHistory();
+    setStore('elements', prev => [...prev, el]);
+    setStore('selection', [el.id]);
+    bumpDirtyRevision();
+    return el.id;
 };
 
 /**

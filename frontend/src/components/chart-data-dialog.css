@@ -1,0 +1,156 @@
+.chart-data-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10060;
+    background: rgba(15, 23, 42, 0.25);
+}
+
+.chart-data-dialog {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10061;
+    width: min(760px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--bg-panel, #ffffff);
+    color: var(--text-primary, #1e293b);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    font-size: 13px;
+}
+
+.chart-data-dialog header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chart-data-dialog h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.chart-data-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: flex-end;
+}
+
+.chart-data-options label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    color: var(--text-secondary, #475569);
+    font-size: 12px;
+}
+
+.chart-data-options label.grow {
+    flex: 1;
+    min-width: 160px;
+}
+
+.chart-data-options label.check {
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    padding-bottom: 6px;
+}
+
+.chart-data-options select,
+.chart-data-options input[type="text"],
+.chart-data-grid input {
+    font: inherit;
+    color: var(--text-primary, #1e293b);
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 5px;
+    padding: 5px 7px;
+}
+
+.chart-data-grid-wrap {
+    overflow: auto;
+    min-height: 120px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+}
+
+.chart-data-grid {
+    border-collapse: collapse;
+}
+
+.chart-data-grid th,
+.chart-data-grid td {
+    padding: 3px;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    text-align: left;
+}
+
+.chart-data-grid thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-panel, #ffffff);
+}
+
+.chart-data-grid input {
+    width: 96px;
+}
+
+.chart-data-grid td input {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.cell-with-action {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.chart-data-icon {
+    display: flex;
+    padding: 4px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-secondary, #64748b);
+    cursor: pointer;
+}
+
+.chart-data-icon:hover:not(:disabled) {
+    background: var(--bg-hover, rgba(0, 0, 0, 0.06));
+    color: var(--text-primary, #1e293b);
+}
+
+.chart-data-icon:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.chart-data-add {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    padding: 5px 8px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--accent, #2563eb);
+    background: none;
+    border: 1px dashed var(--border-color, #cbd5e1);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.chart-data-hint,
+.chart-data-note {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary, #64748b);
+}

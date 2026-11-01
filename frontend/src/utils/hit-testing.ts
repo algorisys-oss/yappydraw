@@ -323,7 +323,7 @@ function hitTestGeometry(
         el.type === 'microservice' || el.type === 'shield' ||
         el.type === 'barChart' || el.type === 'pieChart' || el.type === 'trendUp' ||
         el.type === 'trendDown' || el.type === 'funnel' || el.type === 'gauge' ||
-        el.type === 'table' ||
+        el.type === 'table' || el.type === 'chart' ||
         el.type === 'puzzlePiece' || el.type === 'chainLink' || el.type === 'bridge' ||
         el.type === 'magnet' || el.type === 'scale' || el.type === 'seedling' ||
         el.type === 'tree' || el.type === 'mountain' ||

@@ -3,8 +3,8 @@ id: design-studio
 name: Design Studio
 icon: "🎨"
 category: Design
-description: "Canva-style design documents: pages & size presets, slides & presentations (slide master, slide numbers, transitions, presenting), templates, Magic Resize, brand kit, unified elements search (icons/shapes/photos), text effects, AI assists, version history, offline PWA"
-keywords: "slides presentation new presentation slide deck slides panel add slide insert slide above below duplicate slide reorder slides slide transition fade zoom easing duration morph magic move morph transition smart animation duplicate slide move objects slide master use as slide master crown master layer logo footer watermark every slide slide number page number slideNumber totalSlides date field ${date} footer formula hide slide hidden slide skip slide section sections auto-advance advance after timing self-running kiosk loop until esc setSlideHidden setSlideSection setSlideAdvanceAfter setSlideShowLoop new slide layout layouts title and content two columns section header comparison key numbers timeline cards closing insertSlideWithLayout getSlideLayouts equals present F5 Shift+F5 present from current slide presentation mode laser pointer ink highlighter ink brush eraser exit presentation importMarkdownSlides markdown slides addSlide updateSlideTransition updateSlideBackground togglePresentationMode speaker notes notes pane presenter notes setSlideNotes getSlideNotes toggleSpeakerNotes markdown notes presenter view link hyperlink jump to slide button menu agenda quiz interactive presentation non-linear setLink getLink end show alt+f5 openPresenterView presenter window timer next slide second screen projector dual monitor canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
+description: "Canva-style design documents: pages & size presets, slides & presentations (slide master, data charts, slide numbers, transitions, presenting), templates, Magic Resize, brand kit, unified elements search (icons/shapes/photos), text effects, AI assists, version history, offline PWA"
+keywords: "data chart chart data column chart bar chart line chart area chart pie chart doughnut chart insert chart paste from excel google sheets stacked data labels legend gridlines insertChart updateChart getChart openChartData powerpoint chart slides presentation new presentation slide deck slides panel add slide insert slide above below duplicate slide reorder slides slide transition fade zoom easing duration morph magic move morph transition smart animation duplicate slide move objects slide master use as slide master crown master layer logo footer watermark every slide slide number page number slideNumber totalSlides date field ${date} footer formula hide slide hidden slide skip slide section sections auto-advance advance after timing self-running kiosk loop until esc setSlideHidden setSlideSection setSlideAdvanceAfter setSlideShowLoop new slide layout layouts title and content two columns section header comparison key numbers timeline cards closing insertSlideWithLayout getSlideLayouts equals present F5 Shift+F5 present from current slide presentation mode laser pointer ink highlighter ink brush eraser exit presentation importMarkdownSlides markdown slides addSlide updateSlideTransition updateSlideBackground togglePresentationMode speaker notes notes pane presenter notes setSlideNotes getSlideNotes toggleSpeakerNotes markdown notes presenter view link hyperlink jump to slide button menu agenda quiz interactive presentation non-linear setLink getLink end show alt+f5 openPresenterView presenter window timer next slide second screen projector dual monitor canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
 ---
 
 # Design Studio
@@ -167,6 +167,56 @@ Y.getLink(buttonId);                       // → '#slide:<id>', '#end', 'https:
 Y.togglePresentationMode(true);            // present
 ```
 
+## Charts
+
+A **data chart** draws numbers you type or paste: **Column**, **Bar**, **Line**, **Area**,
+**Pie** or **Doughnut**. Insert one from the **Data/Metrics** tools in the toolbar (the
+**Data chart** button at the end of the list), or run **Insert data chart** from the command
+palette (<kbd>Ctrl+K</kbd>). It lands on the current slide (or the middle of the view) with sample
+data, and the **Chart data** window opens.
+
+**Chart data.** Rows are categories (Q1, Q2…) and columns are series. Click a cell and type; the
+chart updates as you go.
+
+- **+ Row** and **+ Series** add one; the bin icon beside a category or series name removes it.
+- **Paste from a spreadsheet.** Copy cells in Excel, Google Sheets or Numbers and paste into any
+  cell: the block fills right and down from there, and the grid grows to fit. Pasting into a
+  series name or category cell fills the names too.
+- Numbers can be typed as `1,250` or `12%`. A blank cell (or text that isn't a number) is a gap:
+  no bar, a break in the line.
+- Above the grid: **Type**, **Title**, **Legend** (Bottom, Right, Top, None), **Stacked**,
+  **Data labels** and **Gridlines**. Negative values go below the zero line; stacked charts stack
+  positives up and negatives down.
+- A **Pie** or **Doughnut** shows the first series only (the window says so), and leaves out
+  negative values.
+- Close with **✕**, <kbd>Esc</kbd> or a click outside. Everything you changed while it was open is
+  **one undo step**.
+
+Double-click a chart to open its data again. Move, resize and rotate it like any object; it has no
+background until you give it a **fill**. Charts draw cleanly in the Architectural style and
+hand-drawn (hachured bars and slices) in Sketch, and go into every export. **PowerPoint**
+export writes a real PowerPoint chart, with the data in an embedded workbook so **Edit Data**
+works there, and opening a .pptx turns its charts back into data charts (see Workspace ▸
+PowerPoint).
+
+The **Bar Chart** and **Pie Chart** icons among the Data/Metrics tools are different: they are
+small illustration shapes, edited with right-click → **Edit Chart Data…** (see Illustrator tools).
+
+```
+const Y = window.Yappy;
+const id = Y.insertChart({ kind: 'line', title: 'Visitors',
+  categories: ['Jan', 'Feb', 'Mar'],
+  series: [{ name: '2025', values: [120, 180, 240] }, { name: '2026', values: [150, null, 300], color: '#ed7d31' }] });
+Y.updateChart(id, { kind: 'column', stacked: true, legend: 'right', dataLabels: true }); // one undo step
+Y.getChart(id);              // → { kind, categories, series, title, stacked, legend, … }
+Y.openChartData(id);         // open the Chart data window
+```
+
+:::note
+Scatter, radar, stock and combination charts, secondary axes, trendlines and per-point colours
+aren't supported yet: pie slices always take the standard palette, in PowerPoint too. A 100% stacked chart from PowerPoint comes in as an ordinary stacked chart.
+:::
+
 ## Design templates & My Templates
 
 **Menu → Templates → Designs** holds 30+ ready-made designs — Instagram posts (product, quote, tips, testimonial, hiring, podcast, sale), stories (event, countdown, quote), YouTube thumbnails, deck title/section slides, webinar banners, posters, flyers (sale, café menu, open house), business cards, price lists, certificates, vouchers, and invitations — each opens as a design document at its native page size. A **search box** at the top matches names, descriptions, and tags across every category. In a design document, templates that **fit your page** (same size or aspect ratio) float to the top with a green *✓ fits* badge — and picking a size in **New Design…** opens the template browser automatically so you can start from a matching layout — or click the first card, **Blank page**, to start from an empty page at the size you just picked. **Save Current as Template** (in the template browser header) snapshots the whole document into **My Templates**; delete via the × on a card.
@@ -307,3 +357,4 @@ await Y.exportPageToPng(0, 2);           // export page 1 at 2×
 | Text effects | `getTextEffectPresets()`, `applyTextEffect(id, ids?)` |
 | AI assists | `magicWrite(mode?)`, `generateImage(prompt)`, `generateDesign(brief, size?)`, `removeBackground(id?)`, `magicEditImage(instr)`, `expandImage(opts?)` |
 | Version history | `snapshotVersion(label?)`, `listVersions()`, `restoreVersion(id)` |
+| Charts | `insertChart(spec?, box?)`, `getChart(id)`, `updateChart(id, spec)`, `openChartData(id)` |

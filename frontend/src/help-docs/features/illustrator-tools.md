@@ -478,7 +478,7 @@ Yappy.resetPerspectiveGrid();
 
 ## 📊 Graph data · 🫧 Symbolism brush · 🪣 Live Paint Selection
 
-- **Graph tool**: bar & pie charts are data-driven — right-click a chart → “Edit Chart Data…”, or `Yappy.setChartData(id, [10,80,45,95])`.
+- **Graph tool**: bar & pie charts are data-driven — right-click a chart → “Edit Chart Data…”, or `Yappy.setChartData(id, [10,80,45,95])`. For a real chart with categories, series, axes and a legend that goes to PowerPoint as a chart, use a **data chart** (Design Studio ▸ Charts).
 - **Symbolism brush** (the symbol sub-tools): brush over sprayed symbol instances to *Sizer* (scale), *Spinner* (rotate), *Shifter* (nudge), *Screener* (fade), *Stainer* (tint) or *Styler* — pick a mode in the hint bar, <kbd>[</kbd><kbd>]</kbd> resize, Alt reverses.
 - **Live Paint Selection**: in the Live Paint tool the face under the cursor highlights; click to fill it, or **Alt-click to clear** that face's colour.
 

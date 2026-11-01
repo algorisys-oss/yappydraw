@@ -12,7 +12,7 @@ import {
     toggleSymmetry, toggleSymmetryAxis, setSymmetryMode, toggleSymmetryEditing,
     setSymmetryCenter, mirrorAcrossSymmetry,
     moveSelectionZIndex, undo, redo, deleteElements, toggleTheme,
-    setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode, toggleSpeakerNotes,
+    setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode, toggleSpeakerNotes, insertChart,
     updateGlobalSettings, togglePenStabilization,
     toggleShapeBuilder, togglePathfinderBar, setGridStyle, setWidthProfilePreset, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, openDistortDialog,
     toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical,
@@ -34,6 +34,7 @@ import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
 import { openSupport } from "../components/support-dialog";
 import { openAbout } from "../components/about-dialog";
 import { openPresenterView } from "../components/presenter-view";
+import { openChartData } from "../components/chart-data-dialog";
 import { isMultiPageDocType } from "../types/slide-types";
 import { hasSupportLinks } from "../config/support";
 import type { ToolType } from "../types";
@@ -507,6 +508,7 @@ export const getCommands = (): Command[] => {
         { id: 'view-present-start', label: t('commands.view-present-start'), category: 'View', action: () => togglePresentationMode(true, 0), shortcut: 'F5' },
         { id: 'view-present-current', label: t('commands.view-present-current'), category: 'View', action: () => togglePresentationMode(true), shortcut: 'Shift+F5' },
         { id: 'view-presenter', label: t('commands.view-presenter'), category: 'View', action: () => { if (isMultiPageDocType(store.docType)) openPresenterView(); }, shortcut: 'Alt+F5' },
+        { id: 'insert-chart', label: t('commands.insert-chart'), category: 'Actions', action: () => { const id = insertChart(); openChartData(id); } },
         { id: 'toggle-speaker-notes', label: t('commands.toggle-speaker-notes'), category: 'View', action: () => toggleSpeakerNotes() },
 
         // File

@@ -169,7 +169,13 @@ export interface GroupItem extends Placed {
     children: Item[];
 }
 
-export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem;
+/** A data chart, written as a real PowerPoint chart (a chart part plus its embedded workbook). */
+export interface ChartItem extends Placed {
+    kind: 'chart';
+    chart: import('../chart/chart-layout').ChartSpec;
+}
+
+export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem | ChartItem;
 
 export type TransitionKind = 'fade' | 'push' | 'zoom' | 'morph';
 export interface Transition {

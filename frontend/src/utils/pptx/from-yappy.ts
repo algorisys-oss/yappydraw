@@ -18,6 +18,7 @@ import type { DrawingElement, RichTextSpan } from '../../types';
 import type { Slide as YappySlide, SlideTransition } from '../../types/slide-types';
 import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink, DeckAnim } from './deck';
 import { buildOrder } from '../build-order';
+import { normalizeChart } from '../chart/chart-layout';
 import { toDeckAnim } from './anim-map';
 import { parseLink } from '../slide-links';
 import { parseSvgPath, transformCmds, cmdsBounds, affineCmds } from './custgeom';
@@ -899,6 +900,11 @@ function recordedGroup(el: DrawingElement, ops: RecordedOp[], box: ReturnType<ty
 function convertOne(el: DrawingElement, c: Conv): Item[] {
     if (needsRaster(el)) return pictureFrom([el], c, nameOf(el));
     try {
+        // A real PowerPoint chart, its data editable there (Edit Data opens the embedded workbook).
+        if (el.type === 'chart') {
+            c.report.native++;
+            return [{ kind: 'chart', id: c.nextId++, name: nameOf(el), ...placed(el, c), chart: normalizeChart((el as any).chart) }];
+        }
         if (el.type === 'text' || el.type === 'richtext') return textItem(el, c);
         if (el.type === 'image') return imageItem(el, c);
         if (el.type === 'line' || el.type === 'arrow') return lineItems(el, c);

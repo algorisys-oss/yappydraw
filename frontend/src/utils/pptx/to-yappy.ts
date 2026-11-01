@@ -16,6 +16,7 @@ import { createSlideDocument, createDefaultSlide } from '../../types/slide-types
 import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink, DeckAnim } from './deck';
 import { slideLink, actionLink } from '../slide-links';
 import { fromDeckAnim } from './anim-map';
+import { normalizeChart } from '../chart/chart-layout';
 import { geometryPathsPx, textRectPx, loadPresets, type GeomDef } from './guides';
 import { cmdsBounds } from './custgeom';
 import { reverseFontFamily } from '../text-utils';
@@ -614,6 +615,14 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
                 case 'connector': made.push(...connectorElements(it, c, groups)); break;
                 case 'picture': made.push(...pictureElement(it, c, groups)); break;
                 case 'group': made.push(...convertItems(it.children, c, [...groups, c.nextId('group')])); break;
+                case 'chart': {
+                    const el = base(c, 'chart', it, groups);
+                    el.chart = normalizeChart(it.chart);
+                    el.fontFamily = 'sans-serif';
+                    c.stats.elements++;
+                    made.push(el);
+                    break;
+                }
             }
             // A linked group is a button made of parts: every part follows the link, unless a
             // part has its own.

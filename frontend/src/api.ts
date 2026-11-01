@@ -23,7 +23,7 @@ import {
     setSymmetryRings, setSymmetryRingSpacing,
     setSymmetryAngleDeg, setSymmetryCenter, noteMandalaArmedSymmetry, setSymmetryEditing, toggleSymmetryEditing,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
-    updateSlideTransition, updateSlideBackground, updateSlideNotes, toggleSpeakerNotes, followLink, insertSlideWithLayout, setSlideHidden, setSlideSection, setSlideAdvanceAfter, setSlideShowLoop, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
+    updateSlideTransition, updateSlideBackground, updateSlideNotes, toggleSpeakerNotes, followLink, insertSlideWithLayout, insertChart, replaceChart, setSlideHidden, setSlideSection, setSlideAdvanceAfter, setSlideShowLoop, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
     setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
@@ -40,6 +40,8 @@ import { setPrintPreview, printPreviewActive } from './utils/print-preview';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
 import { slideLink, actionLink, normaliseLinkInput, SHOW_ACTIONS, type ShowAction } from './utils/slide-links';
+import { normalizeChart } from './utils/chart/chart-layout';
+import { openChartData } from './components/chart-data-dialog';
 import { SLIDE_LAYOUTS } from './utils/slide-layouts';
 import { openPresenterView, closePresenterView, isPresenterViewOpen } from './components/presenter-view';
 import { exportToSvg, exportToPdf, exportToPptx, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
@@ -3867,6 +3869,35 @@ export const YappyAPI = {
     setSlideAdvanceAfter(slideIndex: number, ms: number | null) { setSlideAdvanceAfter(slideIndex, ms); },
     /** Loop the show until Esc: after the last slide it starts again from the first. Saved with the document. */
     setSlideShowLoop(loop: boolean) { setSlideShowLoop(loop); },
+    /**
+     * Insert a data chart (column, bar, line, area, pie or doughnut). `spec` is merged over a
+     * sample: `{ kind, categories, series: [{ name, values, color? }], title?, stacked?,
+     * legend?: 'bottom'|'right'|'top'|'none', dataLabels?, gridlines?, yMin?, yMax? }`. Placed on the
+     * current slide (or the middle of the view) unless `box` says where. Returns the element id.
+     * Double-click the chart, or `openChartData(id)`, to edit its data in a grid.
+     *
+     *   Y.insertChart({ kind: 'line', categories: ['Jan', 'Feb', 'Mar'],
+     *                   series: [{ name: 'Visitors', values: [120, 180, 240] }] });
+     */
+    insertChart(spec?: Partial<import('./utils/chart/chart-layout').ChartSpec>, box?: { x: number; y: number; width: number; height: number }): string { return insertChart(spec, box); },
+    /** A data chart's data and options (normalised), or null if `id` isn't a data chart. */
+    getChart(id: string): import('./utils/chart/chart-layout').ChartSpec | null {
+        const el = store.elements.find(e => e.id === id);
+        return el?.type === 'chart' ? normalizeChart((el as any).chart) : null;
+    },
+    /**
+     * Change a data chart's data or options (merged over what it has). One undo step. Returns
+     * false if `id` isn't a data chart. (`setChartData` is the Graph tool's bar/pie icons.)
+     */
+    updateChart(id: string, spec: Partial<import('./utils/chart/chart-layout').ChartSpec>): boolean {
+        const el = store.elements.find(e => e.id === id);
+        if (el?.type !== 'chart') return false;
+        pushToHistory();
+        replaceChart(id, normalizeChart({ ...normalizeChart((el as any).chart), ...spec }));
+        return true;
+    },
+    /** Open the chart data dialog for a chart. */
+    openChartData(id: string) { openChartData(id); },
     /** The layout ids `insertSlideWithLayout` accepts. */
     getSlideLayouts(): string[] { return [...SLIDE_LAYOUTS]; },
     /** Close the presenter view (the show keeps running). */

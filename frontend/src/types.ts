@@ -24,7 +24,7 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
     | 'stickFigure' | 'sittingPerson' | 'presentingPerson' | 'handPointRight' | 'thumbsUp' | 'faceHappy' | 'faceSad' | 'faceConfused'
     | 'checkbox' | 'checkboxChecked' | 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag' | 'pin' | 'stamp'
     | 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield'
-    | 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'ganttChart' | 'journeyDiagram' | 'quadrantChart' | 'xyChart' | 'table'
+    | 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'ganttChart' | 'journeyDiagram' | 'quadrantChart' | 'xyChart' | 'table' | 'chart'
     | 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
     | 'polyline' | 'elbow' | 'codeBlock' | 'qrCode'
     | 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
@@ -887,6 +887,9 @@ export interface DrawingElement {
     journeyTasks?: Array<{ label: string; score: number; actors: string[]; section: string; color?: string }>;
     // Quadrant Chart data (from Mermaid quadrantChart DSL)
     quadrantData?: { title?: string; xAxisLabel?: [string, string]; yAxisLabel?: [string, string]; quadrantLabels: [string, string, string, string]; points: Array<{ label: string; x: number; y: number; color?: string }> };
+    /** Data chart (`chart` elements): kind, categories, series and options. Edited in the chart
+     *  data dialog; round-trips PowerPoint charts. See utils/chart/chart-layout.ts. */
+    chart?: import('./utils/chart/chart-layout').ChartSpec;
     // XY Chart data (from Mermaid xychart DSL)
     xyChartData?: { title?: string; xAxis: { labels?: string[]; label?: string }; yAxis: { label?: string; min?: number; max?: number }; bars?: number[]; lines?: number[][] };
     skewX?: number; // -1 to 1 (X offset of back face)

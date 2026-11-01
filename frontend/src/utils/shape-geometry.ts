@@ -2111,6 +2111,7 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         case 'trendUp':
         case 'trendDown':
         case 'table':
+        case 'chart':
             return { type: 'rect', x: x, y: y, w: w, h: h };
 
         case 'pieChart': {

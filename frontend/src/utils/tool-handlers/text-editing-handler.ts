@@ -1,3 +1,4 @@
+import { openChartData } from '../../components/chart-data-dialog';
 import { lineHeightPx } from '../text-line-height';
 /**
  * Text Editing Handler
@@ -277,6 +278,12 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
                     // Hit a control handle, don't open text editor
                     return;
                 }
+            }
+
+            // A chart's double-click edits its data, not a label.
+            if (el.type === 'chart') {
+                openChartData(el.id);
+                return;
             }
 
             // Only allow editing containerText for shapes and lines

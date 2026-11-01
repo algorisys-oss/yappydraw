@@ -589,3 +589,58 @@ describe("readPptx: build animations (p:timing)", () => {
         expect(xml).not.toContain('p:timing');
     });
 });
+
+describe("readPptx: data charts (c:chartSpace)", () => {
+    const chartItem = (chart: any) => ({ kind: 'chart', id: 2, name: 'Chart 1', x: 100, y: 100, w: 600, h: 400, chart }) as any;
+    const sample = { categories: ['Q1', 'Q2', 'Q3'], series: [{ name: 'North & co', values: [1.5, null, 3] }, { name: 'South', values: [2, 4, 1], color: '#ff0000' }],
+        title: 'Sales <2026>', legend: 'right', dataLabels: true, gridlines: true, yMin: 0, yMax: 5 };
+
+    it("round-trips every kind, with data, gaps, colours, title and options", () => {
+        for (const kind of ['column', 'bar', 'line', 'area', 'pie', 'doughnut'] as const) {
+            const stacked = kind === 'column' || kind === 'area';
+            const spec = { ...sample, kind, ...(stacked && { stacked: true }) };
+            const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem(spec)] }] });
+            const { deck, warnings } = read(bytes);
+            expect(warnings).toEqual([]);
+            const it = deck.slides[0].items[0] as any;
+            expect(it.kind).toBe('chart');
+            expect([it.x, it.y, it.w, it.h]).toEqual([100, 100, 600, 400]);
+            const c = it.chart;
+            expect(c.kind).toBe(kind);
+            expect(c.categories).toEqual(['Q1', 'Q2', 'Q3']);
+            const round = kind === 'pie' || kind === 'doughnut';
+            expect(c.series.map((s: any) => s.name)).toEqual(round ? ['North & co'] : ['North & co', 'South']);
+            expect(c.series[0].values).toEqual([1.5, null, 3]);
+            if (!round) expect(c.series[1].color).toBe('#ff0000');
+            expect([c.title, c.legend, c.dataLabels, !!c.stacked]).toEqual(['Sales <2026>', 'right', true, stacked]);
+            if (!round) expect([c.yMin, c.yMax, c.gridlines]).toEqual([0, 5, true]);
+        }
+    });
+
+    it("writes a chart part, its workbook and the content types; every part parses", () => {
+        const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ ...sample, kind: 'column' })] }] });
+        const files = unzipSync(bytes);
+        expect(Object.keys(files)).toEqual(expect.arrayContaining(['ppt/charts/chart1.xml', 'ppt/charts/_rels/chart1.xml.rels', 'ppt/embeddings/Microsoft_Excel_Worksheet1.xlsx']));
+        const ct = strFromU8(files['[Content_Types].xml']);
+        expect(ct).toContain('Extension="xlsx"');
+        expect(ct).toContain('PartName="/ppt/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"');
+        for (const name of Object.keys(files).filter(n => n.endsWith('.xml') || n.endsWith('.rels'))) parseXml(strFromU8(files[name]));
+        // The workbook holds the same data: names across row 1, categories down column A.
+        const book = unzipSync(files['ppt/embeddings/Microsoft_Excel_Worksheet1.xlsx']);
+        const sheet = strFromU8(book['xl/worksheets/sheet1.xml']);
+        parseXml(sheet);
+        expect(sheet).toContain('<c r="B1" t="inlineStr"><is><t>North &amp; co</t></is></c>');
+        expect(sheet).toContain('<c r="A4" t="inlineStr"><is><t>Q3</t></is></c>');
+        expect(sheet).toContain('<c r="C3"><v>4</v></c>');
+        expect(sheet).not.toContain('r="B3"');                    // the gap stays empty
+    });
+
+    it("leaves charts it can't draw (scatter) as the labelled frame", () => {
+        const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ ...sample, kind: 'column' })] }] });
+        const files = unzipSync(bytes);
+        files['ppt/charts/chart1.xml'] = strToU8(strFromU8(files['ppt/charts/chart1.xml']).replace(/<c:barChart>.*<\/c:barChart>/s, '<c:scatterChart><c:scatterStyle val="lineMarker"/></c:scatterChart>'));
+        const { deck, warnings } = read(zipSync(files));
+        expect(deck.slides[0].items[0].kind).toBe('shape');
+        expect(warnings.join(' ')).toContain('placeholder');
+    });
+});

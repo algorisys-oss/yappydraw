@@ -7,7 +7,8 @@
  * on the blank layout, so nothing inherits placeholder text or positions: what the deck model
  * says is what PowerPoint shows.
  */
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink, DeckAnim } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink, DeckAnim, ChartItem } from './deck';
+import { chartXml, chartWorkbook, NS_C } from './chart-xml';
 import { custGeomXml, presetGeomXml } from './custgeom';
 import { EMU_PER_PX, ang, esc, fontSz, pct, NS, REL, XML_DECL, relsXml, zipPackage, type Rel } from './ooxml';
 
@@ -31,6 +32,7 @@ const CT = {
     tableStyles: 'application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml',
     notesMaster: 'application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml',
     notesSlide: 'application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml',
+    chart: 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml',
     core: 'application/vnd.openxmlformats-package.core-properties+xml',
     app: 'application/vnd.openxmlformats-officedocument.extended-properties+xml',
 };
@@ -178,6 +180,8 @@ interface Ctx {
     media: (m: Media) => string;          // returns the rel id
     /** Slide number (1-based) for a slide link's key, when that slide is in the deck. */
     slideNumber?: (key: string) => number | null;
+    /** Add a chart part (and its workbook) for this slide; returns the slide's rel id to it. */
+    chart?: (spec: ChartItem['chart']) => string;
 }
 
 const JUMP: Record<string, string> = { next: 'nextslide', previous: 'previousslide', first: 'firstslide', last: 'lastslide', end: 'endshow' };
@@ -247,8 +251,17 @@ function groupXml(it: GroupItem, c: Ctx): string {
     return `<p:grpSp>${nv}<p:grpSpPr>${xfrmXml(it, c, 'a:xfrm', true)}</p:grpSpPr>${it.children.map(ch => itemXml(ch, c)).join('')}</p:grpSp>`;
 }
 
+function chartFrameXml(it: ChartItem, c: Ctx): string {
+    const rid = c.chart?.(it.chart);
+    if (!rid) return '';
+    return `<p:graphicFrame><p:nvGraphicFramePr>${cNvPr(it, c)}<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`
+        + xfrmXml(it, c, 'p:xfrm')
+        + `<a:graphic><a:graphicData uri="${NS_C}"><c:chart xmlns:c="${NS_C}" r:id="${rid}"/></a:graphicData></a:graphic></p:graphicFrame>`;
+}
+
 function itemXml(it: Item, c: Ctx): string {
     switch (it.kind) {
+        case 'chart': return chartFrameXml(it, c);
         case 'shape': return shapeXml(it, c);
         case 'connector': return connectorXml(it, c);
         case 'picture': return pictureXml(it, c);
@@ -556,12 +569,14 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
     const overrides: [string, string][] = [];
     const mediaExts = new Set<Media['ext']>();
     let mediaN = 0;
+    let chartN = 0;
     const slides = deck.slides.length ? deck.slides : [{ items: [] } as Slide];
     const slideNumberOf = new Map<string, number>();
     slides.forEach((sl, i) => { if (sl.key) slideNumberOf.set(sl.key, i + 1); });
 
     const presRels: Rel[] = [{ id: 'rId1', type: REL.slideMaster, target: 'slideMasters/slideMaster1.xml' }];
     const hasNotes = slides.some(sl => !!sl.notes?.trim());
+    let hasCharts = false;
     let sldIds = '';
     slides.forEach((slide, i) => {
         const n = i + 1;
@@ -571,6 +586,18 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
         const ctx: Ctx = {
             s: fit.scale * k, dx: fit.dx * k, dy: fit.dy * k, rels,
             slideNumber: (key) => slideNumberOf.get(key) ?? null,
+            chart: (spec) => {
+                chartN++;
+                const book = `Microsoft_Excel_Worksheet${chartN}.xlsx`;
+                parts.set(`ppt/charts/chart${chartN}.xml`, chartXml(spec));
+                parts.set(`ppt/charts/_rels/chart${chartN}.xml.rels`, relsXml([{ id: 'rId1', type: REL.package, target: `../embeddings/${book}` }]));
+                parts.set(`ppt/embeddings/${book}`, chartWorkbook(spec));
+                overrides.push([`/ppt/charts/chart${chartN}.xml`, CT.chart]);
+                hasCharts = true;
+                const id = `rId${rels.length + 1}`;
+                rels.push({ id, type: REL.chart, target: `../charts/chart${chartN}.xml` });
+                return id;
+            },
             media: (m) => {
                 const known = mediaRid.get(m);
                 if (known) return known;
@@ -664,6 +691,7 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
         + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
         + '<Default Extension="xml" ContentType="application/xml"/>'
         + [...mediaExts].map(e => `<Default Extension="${e}" ContentType="${MEDIA_CT[e]}"/>`).join('')
+        + (hasCharts ? '<Default Extension="xlsx" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>' : '')
         + overrides.map(([p, t]) => `<Override PartName="${p}" ContentType="${t}"/>`).join('')
         + '</Types>';
     parts.set('[Content_Types].xml', ct);

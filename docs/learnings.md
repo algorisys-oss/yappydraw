@@ -11593,3 +11593,26 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **LibreOffice as the second reader again:** it named every effect we wrote (fade in, fly in,
   spin, fade-out-and-zoom) and its re-export read back identical.
 
+## Data charts and PowerPoint charts (2026-11-01)
+
+- **A Solid `setStore` with an object merges.** Writing a whole chart spec with
+  `setStore('elements', i, 'chart', spec)` kept every key the new spec left out, so unticking
+  *Stacked* (the key is dropped when false) did nothing — and the merge mutated the object the
+  undo snapshot pointed at. `replaceChart` sets the field to `undefined` first, then assigns, in
+  one `batch`. Any "replace this nested object" write needs the same two steps.
+- **An event that bubbles out of a dialog reaches the canvas.** A paste into the data grid
+  bubbled to the app's document paste handler, which treated it as a shape paste and pushed a
+  history entry, splitting the dialog's single undo step in two. The grid now stops propagation
+  on every paste, not only the ones it handles.
+- **RoughJS: never pass `undefined` options.** Rough merges options over its defaults, so
+  `{ seed: undefined, bowing: undefined }` replaces them and every stroke becomes NaN — the chart
+  drew nothing in Sketch with no error. Build the options object from defined values only.
+- **A chart has its own colours.** PowerPoint charts carry a `themeOverride` part (the colour
+  scheme of the workbook they were made in) and resolve `accent1…6` against it, not the slide
+  theme. Ignoring it gave every imported chart the deck's palette instead of its own.
+- **Read the cache, not the workbook.** Every `c:ser` stores the values PowerPoint last drew
+  (`c:strCache`/`c:numCache`), so import needs no xlsx parser. On export the embedded workbook
+  is still required for PowerPoint's *Edit Data*; a minimal xlsx with inline strings is enough.
+- **Escape needs a window listener when focus can leave the dialog.** After a paste or a click
+  on the backdrop focus can sit on `body`, where the dialog's own `onKeyDown` never sees the key.
+

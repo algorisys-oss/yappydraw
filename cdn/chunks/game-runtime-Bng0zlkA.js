@@ -1,4 +1,4 @@
-import { s as o, b as m, d as b, z as R, h as U, g as a, i as W, j as z } from "./index-zg1eC33A.js";
+import { s as o, b as m, d as b, z as W, h as z, g as a, i as U, j as Z } from "./index-Bqlr2FLr.js";
 const h = /* @__PURE__ */ new Set(), x = [], G = {
   ArrowLeft: "left",
   a: "left",
@@ -113,7 +113,7 @@ let $ = null, N = !1, E = () => {
 };
 const ie = (e) => {
   E = e;
-}, J = (e) => {
+}, V = (e) => {
   $ = e, E();
 }, P = (e) => {
   T = e, N = e, E();
@@ -123,24 +123,24 @@ const ie = (e) => {
   } catch (i) {
     console.error("[arcade] script error:", i), m(`Game error: ${i?.message || i}`, "error"), p();
   }
-}, V = (e) => {
+}, K = (e) => {
   if (e.key === "Escape") {
     p();
     return;
   }
   const i = G[e.key];
   i && (e.preventDefault(), h.has(i) || (h.add(i), I(i)));
-}, K = (e) => {
+}, O = (e) => {
   const i = G[e.key];
   i && h.delete(i);
 };
-let j = 0;
-function X() {
+let J = 0;
+function Y() {
   const e = o.slides[o.activeSlideIndex] || o.slides[0];
   return e ? { x: e.spatialPosition.x, y: e.spatialPosition.y, width: e.dimensions.width, height: e.dimensions.height } : { x: 0, y: 0, width: 800, height: 600 };
 }
-function Y() {
-  const e = X(), i = {
+function j() {
+  const e = Y(), i = {
     strokeColor: "transparent",
     strokeWidth: 0,
     strokeStyle: "solid",
@@ -154,7 +154,7 @@ function Y() {
     roundness: null
   }, s = (n, t, r, d, l, S) => {
     const D = {
-      id: `game-${Date.now()}-${++j}`,
+      id: `game-${Date.now()}-${++J}`,
       type: n,
       x: t,
       y: r,
@@ -165,7 +165,7 @@ function Y() {
       ...i,
       ...S
     };
-    return a("elements", (O) => [...O, D]), new A(D.id);
+    return a("elements", (R) => [...R, D]), new A(D.id);
   };
   return {
     x: e.x,
@@ -237,20 +237,20 @@ function Y() {
     getScore: () => f,
     goToState: (n) => {
       const t = o.states.find((r) => r.name === n || r.id === n);
-      t && z(t.id);
+      t && Z(t.id);
     },
     playAnim: (n, t) => {
-      n?.alive && import("./index-zg1eC33A.js").then((r) => r.aU).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
+      n?.alive && import("./index-Bqlr2FLr.js").then((r) => r.aY).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
       }));
     },
     goToPage: (n) => {
-      n >= 0 && n < o.slides.length && W(n);
+      n >= 0 && n < o.slides.length && U(n);
     },
     sound: (n) => {
-      import("./index-zg1eC33A.js").then((t) => t.aV).then((t) => t.playSfx(n));
+      import("./index-Bqlr2FLr.js").then((t) => t.aZ).then((t) => t.playSfx(n));
     },
     music: (n) => {
-      import("./index-zg1eC33A.js").then((t) => t.aV).then((t) => n ? t.startMusic() : t.stopMusic());
+      import("./index-Bqlr2FLr.js").then((t) => t.aZ).then((t) => n ? t.startMusic() : t.stopMusic());
     },
     end: (n) => {
       if (P(!0), n) {
@@ -266,13 +266,13 @@ function Y() {
         });
       }
     },
-    pad: (n) => J(n),
+    pad: (n) => V(n),
     random: (n, t) => n + Math.random() * (t - n),
     clamp: (n, t, r) => Math.max(t, Math.min(r, n))
   };
 }
 const re = () => o.gameActive;
-function Z(e) {
+function X(e) {
   o.gameActive && p();
   const i = e ?? o.gameScript;
   if (!i?.trim())
@@ -293,13 +293,13 @@ ${i}`);
   }
   b(() => {
     a("selection", []), a("gameActive", !0), a("appMode", "presentation");
-  }), R();
+  }), W();
   try {
-    s(Y());
+    s(j());
   } catch (t) {
     return m(`Game error: ${t?.message || t}`, "error"), p(), !1;
   }
-  window.addEventListener("keydown", V, !0), window.addEventListener("keyup", K, !0), k = performance.now(), M = k;
+  window.addEventListener("keydown", K, !0), window.addEventListener("keyup", O, !0), k = performance.now(), M = k;
   const n = (t) => {
     y = requestAnimationFrame(n);
     const r = Math.min(0.05, (t - M) / 1e3);
@@ -316,18 +316,18 @@ ${i}`);
   return y = requestAnimationFrame(n), !0;
 }
 function p() {
-  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", V, !0), window.removeEventListener("keyup", K, !0), import("./index-zg1eC33A.js").then((e) => e.aV).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
+  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-Bqlr2FLr.js").then((e) => e.aZ).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
     const e = g;
     g = null, b(() => {
       a("elements", JSON.parse(e.elements)), a("selection", e.selection), a("activeSlideIndex", e.activeSlideIndex), a("appMode", e.appMode), a("gameActive", !1);
-    }), U(e.viewState);
+    }), z(e.viewState);
   } else
     a("gameActive", !1);
   P(!1);
 }
 function se() {
   const e = F;
-  p(), e && Z(e);
+  p(), e && X(e);
 }
 export {
   A as Sprite,
@@ -341,6 +341,6 @@ export {
   q as padRelease,
   $ as padVisibleOverride,
   se as restartGame,
-  Z as startGame,
+  X as startGame,
   p as stopGame
 };

@@ -1,10 +1,12 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
 import { createFlyoutPlacement } from "../utils/tool-flyout";
-import { store, setSelectedTool, setSelectedDataMetricsType, setToolLocked, showPropertiesPanel } from "../store/app-store";
+import { store, setSelectedTool, setSelectedDataMetricsType, setToolLocked, showPropertiesPanel, insertChart } from "../store/app-store";
+import { openChartData } from "./chart-data-dialog";
+import { t } from "../i18n";
 import type { ElementType } from "../types";
 import {
-    ChevronDown
+    ChevronDown, ChartColumnBig
 } from "lucide-solid";
 import "./pen-tool-group.css"; // Reuse the same CSS
 
@@ -177,6 +179,15 @@ const DataMetricsToolGroup: Component = () => {
                                 <tool.icon size={16} />
                             </button>
                         ))}
+                        {/* A data chart isn't drawn with a drag: it's placed and its data opened. */}
+                        <button
+                            class="dropdown-item"
+                            on:click={() => { setIsOpen(false); openChartData(insertChart()); }}
+                            title={t('chart.insert')}
+                            aria-label={t('chart.insert')}
+                        >
+                            <ChartColumnBig size={16} />
+                        </button>
                     </div>
                 </Portal>
             </Show>

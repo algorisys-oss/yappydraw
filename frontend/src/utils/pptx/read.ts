@@ -22,6 +22,7 @@
 import { unzipSync, strFromU8 } from 'fflate';
 import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink, DeckAnim } from './deck';
 import { effectOf, sideOf } from './anim-map';
+import type { ChartSpec, ChartSeries, ChartKind } from '../chart/chart-layout';
 import { EMU_PER_PX, EMU_PER_PT } from './ooxml';
 import { geometryPathsPx, textRectPx, type GeomDef } from './guides';
 
@@ -182,15 +183,22 @@ interface Ctx {
 
 const DEFAULT_CLRMAP: Record<string, string> = { bg1: 'lt1', tx1: 'dk1', bg2: 'lt2', tx2: 'dk2' };
 
-function readTheme(root: El | null): Theme {
-    const t: Theme = { colors: {}, major: 'Calibri Light', minor: 'Calibri', fills: [], lines: [], bgFills: [] };
-    const te = kid(root, 'themeElements');
-    for (const c of kids(kid(te, 'clrScheme'))) {
+/** A colour scheme (`a:clrScheme`): dk1, lt1, accent1 … → hex. */
+function schemeColors(scheme: El | null): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const c of kids(scheme)) {
         const v = kids(c)[0];
         if (!v) continue;
         const hex = v.localName === 'sysClr' ? attr(v, 'lastClr') : attr(v, 'val');
-        if (hex && /^[0-9a-f]{6}$/i.test(hex)) t.colors[c.localName] = '#' + hex.toLowerCase();
+        if (hex && /^[0-9a-f]{6}$/i.test(hex)) out[c.localName] = '#' + hex.toLowerCase();
     }
+    return out;
+}
+
+function readTheme(root: El | null): Theme {
+    const t: Theme = { colors: {}, major: 'Calibri Light', minor: 'Calibri', fills: [], lines: [], bgFills: [] };
+    const te = kid(root, 'themeElements');
+    t.colors = schemeColors(kid(te, 'clrScheme'));
     const fs = kid(te, 'fontScheme');
     t.major = attr(path(fs, 'majorFont', 'latin'), 'typeface') || t.major;
     t.minor = attr(path(fs, 'minorFont', 'latin'), 'typeface') || t.minor;
@@ -1101,11 +1109,106 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
         const listed = smartArtText(gd, level, sc, frame, box0, id, name, r);
         if (listed) return listed;
     }
+    if (/drawingml\/2006\/chart$/.test(uri)) {
+        const chart = chartOf(gd, level, sc);
+        if (chart) return { kind: 'chart', id, name, ...frame(box0), chart };
+    }
     const what = /chart/.test(uri) ? 'Chart' : /diagram/.test(uri) ? 'SmartArt diagram' : 'Embedded object';
     sc.warnings.push(`${what} "${name}" was imported as a placeholder frame.`);
     return { kind: 'shape', id, name, ...frame(box0), geom: { kind: 'preset', prst: 'rect' },
         fill: { kind: 'solid', color: { hex: '#f1f3f5' } }, line: { width: 1, color: { hex: '#adb5bd' }, dash: 'dash' },
         text: { paragraphs: [{ runs: [{ text: `${what}: ${name}`, size: 16, color: { hex: '#495057' } }], align: 'ctr' }], anchor: 'ctr', insets: { l: 8, t: 8, r: 8, b: 8 }, wrap: true } };
+}
+
+
+/** Plot elements we can draw, with what they become; 3-D charts come in flat. */
+const PLOTS: Record<string, ChartKind> = {
+    barChart: 'column', bar3DChart: 'column', lineChart: 'line', line3DChart: 'line',
+    areaChart: 'area', area3DChart: 'area', pieChart: 'pie', pie3DChart: 'pie', ofPieChart: 'pie', doughnutChart: 'doughnut',
+};
+
+/**
+ * A PowerPoint chart (`c:chartSpace`) as a data chart: its first plot we can draw (column/bar,
+ * line, area, pie, doughnut), the series with their names, values and colours, the categories,
+ * title, legend, data labels, gridlines and value-axis range — read from the values PowerPoint
+ * cached in the chart part, so the embedded workbook isn't needed. null for scatter, radar,
+ * stock, bubble and the 2016 chart types (`cx:`): those keep the labelled placeholder.
+ */
+function chartOf(gd: El | null, level: Level, sc: SlideCtx): ChartSpec | null {
+    const ref = findDeep(gd, 'chart', 2);
+    const rel = ref ? sc.pkg.rels(level.part).get(attr(ref, 'r:id') || '') : undefined;
+    const root = rel && !rel.external ? sc.pkg.xml(rel.target) : null;
+    const chart = kid(root, 'chart');
+    const plotArea = kid(chart, 'plotArea');
+    if (!plotArea) return null;
+    const plot = elementKids(plotArea).find(k => PLOTS[k.localName]);
+    if (!plot) return null;
+    const plots = elementKids(plotArea).filter(k => /Chart$/.test(k.localName));
+    if (plots.length > 1) sc.warnings.push('A combination chart came in as its first chart type only.');
+    let kind = PLOTS[plot.localName];
+    if (kind === 'column' && attr(kid(plot, 'barDir'), 'val') === 'bar') kind = 'bar';
+    const grouping = attr(kid(plot, 'grouping'), 'val') || '';
+    if (grouping === 'percentStacked') sc.warnings.push('A 100% stacked chart came in as a stacked chart.');
+    // A chart resolves scheme colours against its own theme override (a colour scheme copied in
+    // from the workbook it was made in), when it has one, and its own colour-map override.
+    let ctx = sc.ctx;
+    const overridePart = sc.pkg.relOfType(rel!.target, 'themeOverride');
+    const scheme = overridePart ? kid(sc.pkg.xml(overridePart), 'clrScheme') : null;
+    if (scheme) {
+        const colors = { ...ctx.theme.colors, ...schemeColors(scheme) };
+        ctx = { ...ctx, theme: { ...ctx.theme, colors } };
+    }
+    const clrOvr = kid(root, 'clrMapOvr');
+    if (clrOvr && clrOvr.attributes.length) {
+        const m: Record<string, string> = { ...ctx.clrMap };
+        for (let i = 0; i < clrOvr.attributes.length; i++) m[clrOvr.attributes[i].localName ?? clrOvr.attributes[i].name] = clrOvr.attributes[i].value;
+        ctx = { ...ctx, clrMap: m };
+    }
+    // Cached points: `c:pt idx` with `c:v`, in a str/num cache, a literal, or a multi-level cache's first level.
+    const points = (holder: El | null, n?: number): string[] => {
+        const cache = findDeep(holder, 'strCache', 3) ?? findDeep(holder, 'numCache', 3) ?? findDeep(holder, 'strLit', 2) ?? findDeep(holder, 'numLit', 2)
+            ?? kid(findDeep(holder, 'multiLvlStrCache', 3), 'lvl');
+        if (!cache) return [];
+        const count = Math.min(10000, n ?? num(kid(cache, 'ptCount'), 'val'));
+        const out: string[] = new Array(Math.max(0, count)).fill('');
+        for (const pt of kids(cache, 'pt')) {
+            const i = num(pt, 'idx');
+            if (i >= 0 && i < 10000) out[i] = kid(pt, 'v')?.textContent ?? '';
+        }
+        return out;
+    };
+    const sers = kids(plot, 'ser').slice(0, 64);
+    if (!sers.length) return null;
+    const categories = points(kid(sers[0], 'cat'));
+    const series: ChartSeries[] = sers.map((s, i) => {
+        const raw = points(kid(s, 'val'));
+        const values = raw.map(v => (v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null));
+        const name = points(kid(s, 'tx'))[0] || kid(s, 'tx')?.textContent?.trim() || `Series ${i + 1}`;
+        const spPr = kid(s, 'spPr');
+        const color = colorIn(kid(spPr, 'solidFill'), ctx) ?? colorIn(kid(kid(spPr, 'ln'), 'solidFill'), ctx);
+        return { name, values, ...(color && { color: color.hex }) };
+    });
+    const n = Math.max(categories.length, ...series.map(s => s.values.length));
+    while (categories.length < n) categories.push(String(categories.length + 1));
+    const titleEl = kid(chart, 'title');
+    const title = titleEl
+        ? (findAll(titleEl, 't', 8).map(t => t.textContent ?? '').join('').trim() || (series.length === 1 ? series[0].name : ''))
+        : '';
+    const legendPos = attr(path(chart, 'legend', 'legendPos'), 'val');
+    const valAx = kid(plotArea, 'valAx');
+    const scaling = kid(valAx, 'scaling');
+    const lbl = (holder: El | null) => { const d = kid(holder, 'dLbls'); return !!d && (attr(kid(d, 'showVal'), 'val') === '1' || attr(kid(d, 'showPercent'), 'val') === '1'); };
+    const max = attr(kid(scaling, 'max'), 'val'), min = attr(kid(scaling, 'min'), 'val');
+    return {
+        kind, categories, series,
+        ...(title && { title }),
+        ...((grouping === 'stacked' || grouping === 'percentStacked') && { stacked: true }),
+        legend: !kid(chart, 'legend') ? 'none' : legendPos === 'b' ? 'bottom' : legendPos === 't' ? 'top' : 'right',
+        ...((lbl(plot) || sers.some(lbl)) && { dataLabels: true }),
+        gridlines: !!kid(valAx, 'majorGridlines'),
+        ...(max !== null && Number.isFinite(Number(max)) && { yMax: Number(max) }),
+        ...(min !== null && Number.isFinite(Number(min)) && { yMin: Number(min) }),
+    };
 }
 
 /**

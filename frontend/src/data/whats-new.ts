@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.298', date: '2026-11-01', items: [
+        'Data charts: column, bar, line, area, pie and doughnut charts with a legend, data labels and gridlines. Insert one from the Data/Metrics tools or the command palette.',
+        'Edit the numbers in a grid — or copy cells from Excel or Google Sheets and paste them in; the grid grows to fit. Double-click a chart to change its data.',
+        'Charts go to PowerPoint as real, editable charts (Edit Data works there), and charts in PowerPoint files you open come in as charts you can edit.',
+    ] },
     { version: '0.8.297', date: '2026-11-01', items: [
         'Animations go to PowerPoint: export a deck and your build animations come along as the closest PowerPoint effects — fades, fly-ins from the same side, zooms, spins, pulses — in the order you built them.',
         'And they come back: opening a PowerPoint file brings its animations in, playing in the same order.',

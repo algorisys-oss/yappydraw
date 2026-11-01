@@ -1,3 +1,4 @@
+import { ChartRenderer } from './renderers/chart-renderer';
 import { shapeRegistry } from "./shape-registry";
 import { RectangleRenderer } from "./renderers/rectangle-renderer";
 import { CircleRenderer } from "./renderers/circle-renderer";
@@ -130,6 +131,7 @@ export function registerShapes() {
     dataMetricsTypes.forEach(type => shapeRegistry.register(type, dataMetricsRenderer));
 
     shapeRegistry.register('table', new TableRenderer());
+    shapeRegistry.register('chart', new ChartRenderer());
     shapeRegistry.register('codeBlock', new CodeBlockRenderer());
     shapeRegistry.register('qrCode', new QrCodeRenderer());
 
