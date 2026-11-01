@@ -191,6 +191,12 @@ export interface Slide {
     notes?: string;
     /** Stable name for slide links to point at (see DeckLink). */
     key?: string;
+    /** Skipped in the show (`show="0"`). */
+    hidden?: boolean;
+    /** Advance by itself after this many ms (`p:transition advTm`). */
+    advanceAfterMs?: number;
+    /** A section starts at this slide, with this name (`p14:sectionLst`). */
+    section?: string;
 }
 
 export interface Deck {
@@ -198,4 +204,6 @@ export interface Deck {
     height: number;  // px
     slides: Slide[];
     title?: string;
+    /** Loop the show until Esc (`p:showPr loop="1"`). */
+    loop?: boolean;
 }

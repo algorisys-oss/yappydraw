@@ -11524,3 +11524,33 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Reuse the generators, not just their output.** The layout picker is twelve lines of
   placeholder content over `createSlideElements`, plus scaling for slides that aren't 1920×1080.
 
+## Hide slide, sections, auto-advance, loop (2026-11-01)
+
+- **One rule for "the next slide the show goes to".** `utils/show-order.ts` (hidden skipped,
+  loop wraps) is used by advance, back, presenting from the start and the presenter view's
+  "Next" panel. Four call sites with four inline loops would have disagreed within a release.
+- **A timer re-armed on every step needs no pause logic.** Auto-advance arms when a slide (or a
+  build step) appears and re-arms on every advance, so a manual click just restarts the count,
+  and leaving the show clears it.
+- **Match the producer's XML, not just the schema.** A bare `<p:transition advTm="3000"/>` is
+  valid and our reader reads it, but LibreOffice ignores it; PowerPoint wraps even an
+  effect-less transition in `mc:AlternateContent`, and that form imports everywhere. Found by
+  converting our file and grepping LibreOffice's `presentation:duration`; the fix was copied
+  from a PowerPoint-authored deck in LibreOffice's own test corpus.
+- **Sections are all-or-nothing in PowerPoint.** Once a `p14:sectionLst` exists every slide
+  must be in one, so slides before the first named section go into "Default Section".
+
+## Dependency advisories (2026-11-01, #465)
+
+- **Check the mirror's alerts, not just this repo's.** Dependabot is off here and on for the
+  OSS mirror, which is built from the same lockfiles.
+- **`cargo update -p X` stops at what the rest of the lock allows; `--precise` shows why.** The
+  plain update went to 2.12.0 silently; asking for 2.14.1 revealed it needed a newer Tauri.
+- **"Build passed" is not "build works".** Overriding `minimatch` to fix an advisory made
+  `glob` match nothing, and the service worker shipped with 5 of 204 files — no error anywhere.
+  The precache count in the build log is the number to compare after any build-tooling bump.
+- **Dependabot lags `npm audit`.** The mirror showed 5 alerts; `npm audit` on the same lockfile
+  showed 19, including two runtime libraries.
+- **An advisory with no fix is a decision, not a task.** `deepmerge` has no patched release;
+  recording why it isn't reachable is the useful action.
+

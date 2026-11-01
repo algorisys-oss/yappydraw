@@ -160,8 +160,7 @@ Favours solo-user value and work that also closes a PowerPoint round-trip gap.
    fields and master artwork now in every export (feat/speaker-notes, 2026-11-01). Still open:
    live placeholders linked to a layout, a Header & Footer dialog, and writing fields to PPTX
    as `a:fld` (they go out as resolved text).
-5. **Hide slide, sections, auto-advance/loop** (S each): small flags on `Slide`, all with direct
-   PPTX equivalents (`show="0"`, `p14:sectionLst`, `advTm`).
+5. ~~**Hide slide, sections, auto-advance/loop** (S each)~~ — done on `feat/slide-show-flags` (2026-11-01).
 6. **Morph across slides** (M): match elements by name/id/text between consecutive slides and
    tween them with the existing morph animator. A standout feature that writes `p159:morph`.
 7. **Animations in PPTX export (then import)** (L; M for entrance/exit): build the PowerPoint

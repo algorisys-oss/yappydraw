@@ -2134,7 +2134,7 @@ export const exportToPptx = async (
     const allElements = exportScene().filter(isExportable);
     if (allElements.length === 0) return;
 
-    const [{ buildPptx }, { pageToSlide, fitInto, transitionOf, mediaOf: pictureMedia }] = await Promise.all([import('./pptx/write'), import('./pptx/from-yappy')]);
+    const [{ buildPptx }, { pageToSlide, fitInto, transitionOf, showFields, mediaOf: pictureMedia }] = await Promise.all([import('./pptx/write'), import('./pptx/from-yappy')]);
     type PageInput = import('./pptx/from-yappy').PageInput;
     type DeckSlide = import('./pptx/deck').Slide;
 
@@ -2206,6 +2206,7 @@ export const exportToPptx = async (
                 // A picture of the slide still keeps its notes: they are for the presenter.
                 notes: page.slide?.notes?.trim() ? page.slide.notes : undefined,
                 key: page.slide?.id,
+                ...showFields(page.slide),
                 items: media ? [{ kind: 'picture', id: 2, name: page.name || 'Page', x: 0, y: 0, w: page.w, h: page.h, media }] : [],
             };
         } else {
@@ -2216,7 +2217,7 @@ export const exportToPptx = async (
         slides.push(slide);
     }
 
-    const bytes = buildPptx({ width: deckW, height: deckH, slides, title: 'YappyDraw presentation' });
+    const bytes = buildPptx({ width: deckW, height: deckH, slides, title: 'YappyDraw presentation', ...(isSlides && store.globalSettings.slideShowLoop && { loop: true }) });
     if (mode === 'editable' && report.pictures > 0) showToast(t('pptxExport.someAsPictures', { count: report.pictures }), 'info', 6000);
     const blob = new Blob([bytes as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
     if (download) {

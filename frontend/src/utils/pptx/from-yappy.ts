@@ -1015,6 +1015,15 @@ function deckLinkOf(link: string | null | undefined): DeckLink | undefined {
     return undefined;
 }
 
+/** A slide's show settings for the deck: hidden, auto-advance, the section it starts. */
+export function showFields(s: YappySlide | undefined): Pick<Slide, 'hidden' | 'advanceAfterMs' | 'section'> {
+    return {
+        ...(s?.hidden && { hidden: true }),
+        ...(s?.advanceAfter && s.advanceAfter > 0 && { advanceAfterMs: s.advanceAfter }),
+        ...(s?.section && { section: s.section }),
+    };
+}
+
 /** One page → one deck slide (native objects, pictures where unavoidable). */
 export function pageToSlide(page: PageInput, hooks: ConvertHooks, report: ConvertReport): Slide {
     const c: Conv = { ox: page.x, oy: page.y, nextId: 2, ids: new Map(), glue: [], hooks, report };
@@ -1027,6 +1036,7 @@ export function pageToSlide(page: PageInput, hooks: ConvertHooks, report: Conver
         transition: transitionOf(page.slide?.transition),
         notes: page.slide?.notes?.trim() ? page.slide.notes : undefined,
         key: page.slide?.id,
+        ...showFields(page.slide),
     };
 }
 

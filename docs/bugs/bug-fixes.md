@@ -1,5 +1,36 @@
 # Bug Fixes Log
 
+## 2026-11-01 — Dependabot: zip (critical/high/medium), minimatch
+
+### 465. Five open advisories on the OSS mirror
+
+**Reported** by GitHub on the push of v0.8.294 to `algorisys-oss/yappydraw` (this repo has
+Dependabot alerts disabled, so the mirror is where they surface).
+
+- **`zip` < 9.0.5** (Rust, desktop app; critical GHSA "zip cloaking" → arbitrary file overwrite,
+  high symlink-target exhaustion, medium AES HMAC bypass). It came in through
+  `tauri-plugin-updater` 2.10.1, which pins `zip ^4`; 2.14.1 (2026-10-28) moved to `zip ^9`.
+  `cargo update -p tauri-plugin-updater --precise 2.14.1` → zip 9.2.0, pulling Tauri 2.11.5 →
+  2.12.5 (and wry/webview2/windows crates) with it. `cargo check` clean, no warnings. The updater
+  unpacks downloaded update archives, so this was the one advisory on a reachable path.
+- **`minimatch` < 11.0.1** (npm, DoS via globparts amplification). Two copies: 3.1.5 under
+  `lcms-wasm → tape` (a test runner `lcms-wasm` lists as a runtime dependency but never loads —
+  its dist doesn't reference it) and 10.2.5 under `vite-plugin-pwa → workbox-build → glob@11`
+  (build time). `overrides.minimatch: ^11.0.1` alone **broke offline support while the build
+  reported success**: `glob@11` matches nothing with `minimatch@11` (0 files for `assets/*.js`),
+  so the service worker precached 5 entries instead of 204. `workbox-build` still asks for
+  `glob ^11` in its latest release, so it also gets `glob ^14.0.3` (built for `minimatch ^11`)
+  via a scoped override. Verified by the precache count in the build log (204 entries, 5.8 MB)
+  and `temp/glob-probe.cjs`.
+- **`npm audit` found 19 more** that Dependabot had not raised yet, among them runtime ones:
+  `dompurify` 3.4.15 → 3.4.17 and `solid-js` 1.9.11 → 1.9.18 (via `seroval` 1.5.6 → 1.6.12),
+  plus `vite` 7.3.7, `shell-quote`/`concurrently`, `browserslist`, `nanoid`, `body-parser`,
+  `proxy-addr`, `fast-uri`, `qs`, `source-map-js`, `serialize-javascript`. All in-range
+  (`npm audit fix`, no `--force`); four lows remain, all the `deepmerge` chain below.
+- **`deepmerge` 4.3.1** (low, prototype poisoning in `mergeObject`): **no patched version
+  exists**. Only `@rollup/plugin-node-resolve` uses it, at build time, on our own config — not
+  reachable with untrusted input. Left open until upstream ships a fix.
+
 ## 2026-11-01 — Exports dropped Slide Master artwork and printed field formulas
 
 ### 464. Master logo/footer only on page 1 of an export; "=Page ${slideNumber}" printed as typed

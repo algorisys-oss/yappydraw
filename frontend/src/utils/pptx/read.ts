@@ -1270,6 +1270,37 @@ function transitionOf(root: El): Transition | undefined {
     }
 }
 
+/** `advTm` on the slide's transition: advance by itself after this many ms. */
+function advanceAfterOf(root: El): number | undefined {
+    const t = elementKids(root).find(k => k.localName === 'transition');
+    const v = t ? attr(t, 'advTm') : null;
+    const ms = v !== null ? Number(v) : NaN;
+    return Number.isFinite(ms) && ms > 0 ? ms : undefined;
+}
+
+/**
+ * Sections (`p14:sectionLst` in the presentation's extLst): slide part → the name of the section
+ * that STARTS at that slide. Empty sections, and slides PowerPoint puts in an unnamed default
+ * section, start nothing.
+ */
+function sectionsOf(pres: El, presRels: Map<string, { target: string }>): Map<string, string> {
+    const out = new Map<string, string>();
+    const partOfSldId = new Map<string, string>();
+    for (const s of kids(kid(pres, 'sldIdLst'), 'sldId')) {
+        const rel = presRels.get(attr(s, 'r:id') || '');
+        const id = attr(s, 'id');
+        if (rel && id) partOfSldId.set(id, rel.target);
+    }
+    const lst = findDeep(kid(pres, 'extLst'), 'sectionLst', 4);
+    for (const sec of kids(lst, 'section')) {
+        const name = (attr(sec, 'name') || '').trim();
+        const first = kids(kid(sec, 'sldIdLst'), 'sldId')[0];
+        const part = first ? partOfSldId.get(attr(first, 'id') || '') : undefined;
+        if (name && part && !out.has(part)) out.set(part, name);
+    }
+    return out;
+}
+
 // ── Entry ───────────────────────────────────────────────────────────────────────────────────
 
 export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult {
@@ -1325,6 +1356,7 @@ export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult 
         return m;
     };
 
+    const sections = sectionsOf(pres, presRels);
     const slides: Slide[] = [];
     slideParts.forEach((part, si) => {
         const root = pkg.xml(part);
@@ -1361,9 +1393,14 @@ export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult 
         if (sc.master && showMaster) items.push(...readShapes(sc.master.tree, sc.master, sc, IDENTITY, 0, false));
         if (sc.layout && bool(root, 'showMasterSp') !== false) items.push(...readShapes(sc.layout.tree, sc.layout, sc, IDENTITY, 0, false));
         items.push(...readShapes(sc.slide.tree, sc.slide, sc, IDENTITY, 0, true));
-        slides.push({ items, background, transition: transitionOf(root), name: attr(kid(root, 'cSld'), 'name') || undefined, notes: notesOf(pkg, part), key: part });
+        slides.push({ items, background, transition: transitionOf(root), name: attr(kid(root, 'cSld'), 'name') || undefined, notes: notesOf(pkg, part), key: part,
+            ...(attr(root, 'show') === '0' && { hidden: true }),
+            ...(advanceAfterOf(root) && { advanceAfterMs: advanceAfterOf(root) }),
+            ...(sections.has(part) && { section: sections.get(part) }) });
     });
     if (!slides.length) warn('The presentation has no slides.');
     const title = path(pkg.xml('docProps/core.xml'), 'title')?.textContent || undefined;
-    return { deck: { width, height, slides, title }, warnings };
+    const presPropsPart = pkg.relOfType(presPart, 'presProps');
+    const loop = attr(kid(presPropsPart ? pkg.xml(presPropsPart) : null, 'showPr'), 'loop');
+    return { deck: { width, height, slides, title, ...((loop === '1' || loop === 'true') && { loop: true }) }, warnings };
 }

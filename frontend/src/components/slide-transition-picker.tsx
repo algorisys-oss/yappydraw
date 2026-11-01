@@ -1,6 +1,7 @@
-import { onMount, onCleanup } from "solid-js";
+import { onMount, onCleanup, Show } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, updateSlideTransition } from "../store/app-store";
+import { store, updateSlideTransition, setSlideAdvanceAfter, setSlideShowLoop } from "../store/app-store";
+import { t } from "../i18n";
 import { slideTransitionManager } from "../utils/animation";
 import type { SlideTransitionType, SlideTransitionEasing } from "../types/slide-types";
 import { X, Play } from "lucide-solid";
@@ -110,6 +111,34 @@ export const SlideTransitionPicker = (props: SlideTransitionPickerProps) => {
                         <option value="easeSpring">Spring</option>
                     </select>
                 </div>
+
+                {/* Show timing: slides documents only (a design document isn't presented). */}
+                <Show when={store.docType === 'slides'}>
+                    <div class="transition-field">
+                        <label for="advance-after">{t('sections.advanceAfter')}</label>
+                        <input
+                            id="advance-after"
+                            type="number"
+                            min="0"
+                            max="3600"
+                            step="0.5"
+                            placeholder={t('sections.onClick')}
+                            value={slide()?.advanceAfter ? slide()!.advanceAfter! / 1000 : ''}
+                            onChange={(e) => {
+                                const v = e.currentTarget.value.trim();
+                                setSlideAdvanceAfter(props.index, v === '' ? null : parseFloat(v) * 1000);
+                            }}
+                        />
+                    </div>
+                    <label class="transition-check">
+                        <input
+                            type="checkbox"
+                            checked={!!store.globalSettings.slideShowLoop}
+                            onChange={(e) => setSlideShowLoop(e.currentTarget.checked)}
+                        />
+                        {t('sections.loop')}
+                    </label>
+                </Show>
 
                 <div class="transition-actions">
                     <button class="preview-btn" onClick={handlePreview} title="Preview Transition">

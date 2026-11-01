@@ -69,6 +69,15 @@ export interface Slide {
     /** Speaker notes: plain text, one paragraph per line. Shown in the notes strip under the
      *  canvas and in the presenter view; never drawn on the slide. Round-trips PPTX notes. */
     notes?: string;
+    /** Skipped by the show (next/previous, presenting from the start) but kept in the file,
+     *  the navigator and exports. A link can still go to it, as in PowerPoint. PPTX `show="0"`. */
+    hidden?: boolean;
+    /** A named section starts at this slide and runs to the next slide that names one
+     *  (PowerPoint's `p14:sectionLst`). Absent: the slide belongs to the section above it. */
+    section?: string;
+    /** While presenting, move on by itself this many ms after the slide (or its last build step)
+     *  appears. Absent: wait for a click. PPTX `advTm`. */
+    advanceAfter?: number;
 }
 
 /**
@@ -158,6 +167,10 @@ export interface GlobalSettings {
      * features. Default OFF. Gate new WIP UI with `isDevMode()` from the store.
      */
     devMode?: boolean;
+    /** The show starts again from the first slide after the last one, until Esc — for a kiosk
+     *  or an unattended screen (PowerPoint's "Loop continuously until Esc"). Saved with the
+     *  document, unlike the editor preferences above. */
+    slideShowLoop?: boolean;
 }
 
 /**

@@ -64,6 +64,7 @@ import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
 import { layoutGuidePositions, DEFAULT_LAYOUT_GRID, type LayoutGridSpec } from "../utils/layout-guides";
 import { layoutElements, paletteFor, isSlideLayout, type SlideLayoutId, type LayoutText } from '../utils/slide-layouts';
+import { firstShowIndex, nextShowIndex, prevShowIndex } from '../utils/show-order';
 import { parseLink, targetSlideIndex } from '../utils/slide-links';
 import { canvasCenterClient, canvasViewport, SPEAKER_NOTES_H, slideNavigatorRight, statusBarHeight } from "../utils/dock-layout";
 import {
@@ -2848,6 +2849,7 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean, bui
             if (autoPlayVideo) {
                 startVideoPlayback(autoPlayVideo.id);
             }
+            scheduleAutoAdvance();
         }
     }
 
@@ -2867,12 +2869,20 @@ export const advancePresentation = async () => {
     // 2. Check for Build Animations (On-Click)
     if (slideBuildManager.hasMoreSteps()) {
         await slideBuildManager.playNext();
+        scheduleAutoAdvance();
         return;
     }
 
-    // 3. Next Slide
-    if (store.activeSlideIndex < store.slides.length - 1) {
-        await setActiveSlide(store.activeSlideIndex + 1);
+    // 3. Next slide the show includes: hidden slides are skipped, and a looping deck goes
+    // from the last one back to the first.
+    const next = nextShowIndex(store.slides, store.activeSlideIndex, !!store.globalSettings.slideShowLoop);
+    if (next === store.activeSlideIndex) {
+        // A loop of one slide: setActiveSlide ignores the slide already showing, so replay it here.
+        slideBuildManager.init(next);
+        slideBuildManager.playInitial();
+        scheduleAutoAdvance();
+    } else if (next !== null) {
+        await setActiveSlide(next);
     }
 };
 
@@ -2888,10 +2898,29 @@ export const retreatPresentation = async () => {
     }
 
     // 2. Previous Slide — shown fully built. Going back should land on the slide as you last
-    // saw it, not replay its reveals from an empty stage.
-    if (store.activeSlideIndex > 0) {
-        await setActiveSlide(store.activeSlideIndex - 1, undefined, true);
+    // saw it, not replay its reveals from an empty stage. Hidden slides are skipped.
+    const prev = prevShowIndex(store.slides, store.activeSlideIndex);
+    if (prev !== null) {
+        await setActiveSlide(prev, undefined, true);
     }
+};
+
+// ─── Auto-advance ───────────────────────────────────────────────────────────────────────────
+// A slide with `advanceAfter` moves on by itself that long after it (or its latest build step)
+// appears. Every step — a click, a key, the timer itself — goes through setActiveSlide or
+// advancePresentation, which re-arm the timer, so a manual click simply restarts the count.
+let autoAdvanceTimer: number | undefined;
+
+export const scheduleAutoAdvance = () => {
+    if (autoAdvanceTimer !== undefined) window.clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = undefined;
+    if (store.appMode !== 'presentation') return;
+    const ms = store.slides[store.activeSlideIndex]?.advanceAfter;
+    if (!ms || !(ms > 0)) return;
+    autoAdvanceTimer = window.setTimeout(() => {
+        autoAdvanceTimer = undefined;
+        void advancePresentation();
+    }, ms);
 };
 
 /**
@@ -3222,6 +3251,45 @@ export const reorderSlides = (fromIndex: number, toIndex: number) => {
 /**
  * Update the transition settings for a specific slide
  */
+/** Hide a slide from the show (it stays in the file, the navigator and exports). One undo step. */
+export const setSlideHidden = (slideIndex: number, hidden: boolean) => {
+    const s = store.slides[slideIndex];
+    if (!s || !!s.hidden === hidden) return;
+    pushToHistory();
+    setStore('slides', slideIndex, 'hidden', hidden || undefined);
+    bumpDirtyRevision();
+};
+
+/** Start a named section at this slide; null or '' removes it (the slide joins the section above). */
+export const setSlideSection = (slideIndex: number, name: string | null) => {
+    const s = store.slides[slideIndex];
+    if (!s) return;
+    const next = typeof name === 'string' && name.trim() ? name.trim().slice(0, 120) : undefined;
+    if (s.section === next) return;
+    pushToHistory();
+    setStore('slides', slideIndex, 'section', next);
+    bumpDirtyRevision();
+};
+
+/** Auto-advance after `ms` while presenting; null, 0 or a bad value means "on click". */
+export const setSlideAdvanceAfter = (slideIndex: number, ms: number | null) => {
+    const s = store.slides[slideIndex];
+    if (!s) return;
+    const next = typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? Math.round(Math.min(ms, 24 * 3600 * 1000)) : undefined;
+    if (s.advanceAfter === next) return;
+    pushToHistory();
+    setStore('slides', slideIndex, 'advanceAfter', next);
+    bumpDirtyRevision();
+    if (slideIndex === store.activeSlideIndex) scheduleAutoAdvance();
+};
+
+/** Loop the show until Esc (whole deck). Saved with the document. */
+export const setSlideShowLoop = (loop: boolean) => {
+    if (!!store.globalSettings.slideShowLoop === loop) return;
+    setStore('globalSettings', 'slideShowLoop', loop || undefined);
+    bumpDirtyRevision();
+};
+
 export const updateSlideTransition = (slideIndex: number, transition: Partial<SlideTransition>) => {
     if (slideIndex < 0 || slideIndex >= store.slides.length) return;
 
@@ -6424,6 +6492,8 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
     const newState = visible ?? !isPresentation;
 
     if (newState) {
+        // "From the start" means the first slide the show includes (hidden ones are skipped).
+        if (fromSlide === 0) fromSlide = firstShowIndex(store.slides);
         // Navigate to requested slide before entering presentation
         if (fromSlide !== undefined && fromSlide >= 0 && fromSlide < store.slides.length && fromSlide !== store.activeSlideIndex) {
             await setActiveSlide(fromSlide, true);
@@ -6522,6 +6592,9 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             dsTextSnapshots.clear();
         }
     });
+
+    // The current slide's auto-advance starts with the show and stops with it.
+    scheduleAutoAdvance();
 
     // Handle Fullscreen API
     if (newState) {

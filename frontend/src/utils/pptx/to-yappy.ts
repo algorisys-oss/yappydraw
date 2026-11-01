@@ -725,10 +725,14 @@ export async function deckToDocument(deck: Deck, nextId: (type: string) => strin
         const tr = transitionOf(s.transition);
         if (tr) slide.transition = tr;
         if (s.notes) slide.notes = s.notes;
+        if (s.hidden) slide.hidden = true;
+        if (s.advanceAfterMs) slide.advanceAfter = s.advanceAfterMs;
+        if (s.section) slide.section = s.section;
         doc.slides.push(slide);
         stats.slides++;
     });
     if (!doc.slides.length) doc.slides.push(createDefaultSlide(undefined, 'Slide 1', 0, 0, { width: W, height: H }));
+    if (deck.loop) doc.globalSettings = { ...(doc.globalSettings || {}), slideShowLoop: true };
     return { doc, warnings: [...new Set(warnings)], stats };
 }
 

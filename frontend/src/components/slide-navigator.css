@@ -499,3 +499,56 @@
     background: #334155;
     color: white;
 }
+/* Sections: the name of the section that starts at the next slide. */
+.slide-section-header {
+    margin: 4px 0 -6px 32px;
+    padding: 2px 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+    user-select: none;
+}
+
+:is([data-theme="dark"], [data-theme="focus"]) .slide-section-header {
+    color: #cbd5e1;
+    border-bottom-color: #334155;
+}
+
+/* Hidden slides: dimmed, struck-through number, eye-off badge (as PowerPoint marks them). */
+.slide-thumbnail-wrapper.is-hidden .slide-preview {
+    opacity: 0.4;
+}
+
+.slide-thumbnail-wrapper.is-hidden .slide-index {
+    text-decoration: line-through;
+}
+
+.slide-hidden-badge {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    z-index: 3;
+    display: flex;
+    padding: 3px;
+    border-radius: 4px;
+    color: #ffffff;
+    background: rgba(15, 23, 42, 0.75);
+    pointer-events: none;
+}
+
+.slide-context-menu .menu-separator {
+    height: 1px;
+    margin: 4px 0;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+:is([data-theme="dark"], [data-theme="focus"]) .slide-context-menu .menu-separator {
+    background: rgba(255, 255, 255, 0.1);
+}

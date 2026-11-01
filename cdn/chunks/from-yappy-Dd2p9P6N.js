@@ -1,5 +1,5 @@
-import { a1 as et, a2 as pt, a3 as mt, a4 as xt, a5 as gt, a6 as yt, a7 as kt, a8 as bt, a9 as G, aa as Mt, ab as wt, ac as vt, ad as St, ae as At, af as $t, ag as It, ah as Ct, ai as Tt, aj as Pt, ak as zt, al as Ft } from "./index-v2rH-W8-.js";
-import { d as F, g as j, t as C, h as Lt } from "./custgeom-gp_HWEYw.js";
+import { a1 as et, a2 as pt, a3 as mt, a4 as xt, a5 as gt, a6 as yt, a7 as kt, a8 as bt, a9 as G, aa as Mt, ab as wt, ac as vt, ad as St, ae as At, af as $t, ag as It, ah as Ct, ai as Tt, aj as Ft, ak as Pt, al as zt } from "./index-B_V19zDs.js";
+import { d as z, g as j, t as C, h as Lt } from "./custgeom-CEAI2znd.js";
 function Et(t) {
   const { l: n, c: e, h: r } = t, i = r * Math.PI / 180, o = e * Math.cos(i), l = e * Math.sin(i), f = n + 0.3963377774 * o + 0.2158037573 * l, s = n - 0.1055613458 * o - 0.0638541728 * l, a = n - 0.0894841775 * o - 1.291485548 * l, c = f * f * f, u = s * s * s, p = a * a * a, d = 1.2270138511 * c - 0.5577999807 * u + 0.2812561489 * p, h = -0.0405801784 * c + 1.1122568696 * u - 0.0716766787 * p, x = -0.0763812845 * c - 0.4214819787 * u + 1.5861632204 * p, g = 2.4039459 * d - 0.9898517 * h - 0.4141151 * x, k = -0.7797967 * d + 1.5445214 * h + 0.0352745 * x, m = 0.0384795 * d - 0.1141381 * h + 1.0756786 * x, y = (b) => {
     const M = Math.abs(b), w = M > 31308e-7 ? 1.055 * Math.pow(M, 1 / 2.4) - 0.055 : 12.92 * M;
@@ -58,10 +58,10 @@ function T(t) {
   }
   return Rt(n);
 }
-const P = /* @__PURE__ */ new Map();
+const F = /* @__PURE__ */ new Map();
 let $;
 function Rt(t) {
-  if (P.has(t)) return P.get(t);
+  if (F.has(t)) return F.get(t);
   let n = null;
   try {
     if ($ === void 0) {
@@ -76,7 +76,7 @@ function Rt(t) {
   } catch {
     n = null;
   }
-  return P.size < 512 && P.set(t, n), n;
+  return F.size < 512 && F.set(t, n), n;
 }
 const L = (t) => "#" + t.map((n) => n.toString(16).padStart(2, "0")).join("");
 function Xt(t) {
@@ -172,13 +172,13 @@ function Wt(t, n, e, r) {
     s && (o.bulletColor = s);
   }
   t.listMarkerScale && t.listMarkerScale !== 1 && (o.bulletScale = t.listMarkerScale);
-  const l = Ft(t), f = r(t);
+  const l = zt(t), f = r(t);
   return o.marL = f, o.indent = l - f, o;
 }
 function at(t, n, e, r) {
   const i = [];
   let o = { runs: [], align: n }, l = !1, f = null;
-  const s = Pt(Yt, t, r), a = () => {
+  const s = Ft(Yt, t, r), a = () => {
     i.push(o), o = { runs: [], align: n }, l = !1;
   };
   for (const c of t)
@@ -232,7 +232,7 @@ function ft(t, n) {
 }
 function jt(t, n, e) {
   const r = [], i = Math.abs(n) / 2, o = Math.abs(e) / 2, l = (s, a, c) => {
-    const u = C(F(s), i, o);
+    const u = C(z(s), i, o);
     if (u.length === 0) return;
     const p = a, d = { fill: p.noFill ? !1 : void 0, stroke: p.noStroke ? !1 : void 0 };
     if (c) {
@@ -386,7 +386,7 @@ function Qt(t, n) {
   const e = (t.opacity ?? 100) / 100, r = N(t, e, !0), i = bt(t), o = [];
   if (r) {
     const l = t.type === "arrow", f = l ? t.startArrowhead : null, s = l ? t.endArrowhead || (t.startArrowhead ? null : "arrow") : null, a = { ...r, head: J(f, G(t, "start"), t.strokeWidth), tail: J(s, G(t, "end"), t.strokeWidth) };
-    if (!i.d || Kt(F(i.d), i.start, i.end)) {
+    if (!i.d || Kt(z(i.d), i.start, i.end)) {
       const { start: c, end: u } = i, p = {
         kind: "connector",
         id: n.nextId++,
@@ -409,7 +409,7 @@ function Qt(t, n) {
         p.start = d(t.startBinding, c), p.end = d(t.endBinding, u);
       }), o.push(p);
     } else {
-      const c = F(i.d), u = j(c);
+      const c = z(i.d), u = j(c);
       if (u) {
         const p = Math.max(u.maxX - u.minX, 0.01), d = Math.max(u.maxY - u.minY, 0.01);
         o.push({
@@ -471,7 +471,7 @@ const en = (t) => {
   return e.length === 6 && e.every(Number.isFinite) ? e : [1, 0, 0, 1, 0, 0];
 }, Q = (t, n, e) => ({ x: t[0] * n + t[2] * e + t[4], y: t[1] * n + t[3] * e + t[5] });
 function rn(t) {
-  const n = zt.generator(), e = (i) => {
+  const n = Pt.generator(), e = (i) => {
     for (const o of n.toPaths(i))
       t.save(), o.fill && o.fill !== "none" && (!o.stroke || o.stroke === "none") ? (t.fillStyle = o.fill, t.fillPath(o.d)) : o.stroke && o.stroke !== "none" && o.strokeWidth > 0 && (t.strokeStyle = o.stroke, t.lineWidth = o.strokeWidth, t.strokePath(o.d)), t.restore();
     return i;
@@ -540,7 +540,7 @@ function on(t) {
         f = "fail";
         return;
       }
-      const d = en(c.getAttribute("transform")), h = Lt(F(p || ""), d);
+      const d = en(c.getAttribute("transform")), h = Lt(z(p || ""), d);
       if (!h.length) continue;
       const x = c.getAttribute("fill"), g = c.getAttribute("stroke"), k = !!x && x.startsWith("url("), m = +(c.getAttribute("fill-opacity") ?? 1), y = +(c.getAttribute("stroke-opacity") ?? 1);
       l.push({
@@ -637,14 +637,14 @@ function an(t, n) {
 }
 const cn = (t) => t.map((n) => n.op === "Z" ? "Z" : n.op === "C" ? `C ${n.x1} ${n.y1} ${n.x2} ${n.y2} ${n.x} ${n.y}` : `${n.op} ${n.x} ${n.y}`).join(" ");
 let B = null;
-const z = 28;
+const P = 28;
 function D(t, n, e) {
   B ??= document.createElement("canvas").getContext("2d");
   const r = [];
   if (!B) return r;
   const i = t.map((o) => new Path2D(cn(o)));
-  for (let o = 0; o < z; o++) for (let l = 0; l < z; l++) {
-    const f = e.minX + (l + 0.5) / z * (e.maxX - e.minX), s = e.minY + (o + 0.5) / z * (e.maxY - e.minY);
+  for (let o = 0; o < P; o++) for (let l = 0; l < P; l++) {
+    const f = e.minX + (l + 0.5) / P * (e.maxX - e.minX), s = e.minY + (o + 0.5) / P * (e.maxY - e.minY);
     r.push(i.some((a) => B.isPointInPath(a, f, s, n)));
   }
   return r;
@@ -798,7 +798,14 @@ function xn(t) {
   if (n.kind === "slide") return { kind: "slide", key: n.slideId };
   if (n.kind === "action") return { kind: "action", action: n.action };
 }
-function kn(t, n, e) {
+function gn(t) {
+  return {
+    ...t?.hidden && { hidden: !0 },
+    ...t?.advanceAfter && t.advanceAfter > 0 && { advanceAfterMs: t.advanceAfter },
+    ...t?.section && { section: t.section }
+  };
+}
+function bn(t, n, e) {
   const r = { ox: t.x, oy: t.y, nextId: 2, ids: /* @__PURE__ */ new Map(), glue: [], hooks: n, report: e }, i = ht(t.elements, 0, r);
   return r.glue.forEach((o) => o()), {
     name: t.name,
@@ -806,18 +813,20 @@ function kn(t, n, e) {
     background: hn(t, n),
     transition: dn(t.slide?.transition),
     notes: t.slide?.notes?.trim() ? t.slide.notes : void 0,
-    key: t.slide?.id
+    key: t.slide?.id,
+    ...gn(t.slide)
   };
 }
-function bn(t, n, e, r) {
+function Mn(t, n, e, r) {
   const i = Math.min(e / Math.max(t, 1), r / Math.max(n, 1));
   return { scale: i, dx: (e - t * i) / 2, dy: (r - n * i) / 2 };
 }
 export {
-  bn as fitInto,
+  Mn as fitInto,
   _ as mediaOf,
-  kn as pageToSlide,
+  bn as pageToSlide,
   pn as remapPageStops,
+  gn as showFields,
   S as toColor,
   dn as transitionOf,
   rt as typefaceOf

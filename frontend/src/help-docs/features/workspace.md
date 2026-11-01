@@ -892,7 +892,8 @@ white by default).
 **Speaker notes** go along in both types: each slide's notes become its PowerPoint notes, shown
 under the slide in PowerPoint's Normal view and in its Presenter View. With **Editable shapes**,
 **links** on objects become PowerPoint click actions (a web address, a jump to a slide, or
-next/previous/first/last slide and end show); a picture of a whole slide has none.
+next/previous/first/last slide and end show); a picture of a whole slide has none. Hidden slides,
+auto-advance times, sections and the loop setting go to PowerPoint in both types.
 
 **Fonts.** The file names each font (Handlee, Inter, Poppins…) but doesn't embed it. On a
 computer that doesn't have the font, PowerPoint substitutes another, so text can wrap a little
@@ -940,6 +941,8 @@ size.
 - **Links** on objects (a web address, a jump to another slide, next/previous/first/last slide,
   end show) come in as Yappy links that work while presenting. Other click actions (run a
   program, play a sound, a macro) and links on single words in a text box are dropped.
+- **Hidden slides**, **auto-advance times** ("After" in PowerPoint), **sections** and **Loop
+  continuously until Esc** come in as their Yappy equivalents.
 - **Speaker notes** come in as each slide's notes (as plain text: bold, bullets and indent levels
   are not kept), and the notes pane opens so you can see them.
 

@@ -18,6 +18,7 @@ import { createSignal, createEffect, on, onCleanup, Show } from "solid-js";
 import { render } from "solid-js/web";
 import { store, togglePresentationMode, advancePresentation, retreatPresentation } from "../store/app-store";
 import { renderPageAtSize } from "../utils/export";
+import { nextShowIndex } from "../utils/show-order";
 import { showToast } from "./toast";
 import { t } from "../i18n";
 
@@ -63,12 +64,15 @@ const PresenterView = (props: { win: Window }) => {
     // Pictures follow the slide. Redrawn once more shortly after, because images on the slide
     // may still be decoding the first time round.
     let redraw = 0;
+    // What the show will actually go to next: hidden slides skipped, a looping deck wrapping.
+    const nextIndex = () => nextShowIndex(store.slides, store.activeSlideIndex, !!store.globalSettings.slideShowLoop);
     const drawPictures = () => {
         const i = store.activeSlideIndex;
+        const n = nextIndex();
         setCurrent(slidePicture(i, 1280));
-        setNext(i + 1 < store.slides.length ? slidePicture(i + 1, 800) : '');
+        setNext(n !== null ? slidePicture(n, 800) : '');
     };
-    createEffect(on(() => [store.activeSlideIndex, store.slides.length], () => {
+    createEffect(on(() => [store.activeSlideIndex, store.slides.length, store.slides.map(s => !!s.hidden).join(), !!store.globalSettings.slideShowLoop], () => {
         drawPictures();
         props.win.clearTimeout(redraw);
         redraw = props.win.setTimeout(drawPictures, 600);
@@ -96,7 +100,7 @@ const PresenterView = (props: { win: Window }) => {
     };
 
     const notes = () => store.slides[store.activeSlideIndex]?.notes ?? '';
-    const isLast = () => store.activeSlideIndex >= store.slides.length - 1;
+    const isLast = () => nextIndex() === null;
     const clock = () => new Date(now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (

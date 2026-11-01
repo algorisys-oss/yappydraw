@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.295](0.8.295.md) — Hide slide, sections, auto-advance and loop until Esc (PowerPoint keeps all four); security updates including a critical `zip` advisory in the desktop updater and 19 `npm audit` fixes (#465)
 - [0.8.294](0.8.294.md) — Speaker notes, a presenter view (Alt+F5), links that work in the show, new slide from a layout; Slide Master artwork and slide numbers on every exported page (#464). Fixes black vanishing from slides in Dark (#460), the white slide panel (#461), slides fitted under the navigator and off-centre when presenting (#462), and Open Link opening any scheme (#463)
 - [0.8.290](0.8.290.md) — Stroke Text (Hershey single-line fonts) in the Command Palette: one entry per face, prompt for the words, centred and selected. Reachable without the console for the first time since it shipped in 0.8.274
 - [0.8.283](0.8.283.md) — Switching Text on Path on no longer "resets" the Properties panel: the shape stays selected and its Text group shows and edits the text on its outline; off brings the label back (#440)

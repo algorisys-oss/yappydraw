@@ -1,7 +1,7 @@
 import { For, Show, createSignal, createEffect, onMount, onCleanup } from "solid-js";
-import { store, setActiveSlide, addSlide, deleteSlide, duplicateSlide, reorderSlides, insertNewSlide, pageNoun, insertSlideWithLayout } from "../store/app-store";
+import { store, setActiveSlide, addSlide, deleteSlide, duplicateSlide, reorderSlides, insertNewSlide, pageNoun, insertSlideWithLayout, setSlideHidden, setSlideSection } from "../store/app-store";
 import { isPagedDocType } from "../types/slide-types";
-import { X, Zap, Copy, LayoutTemplate } from "lucide-solid";
+import { X, Zap, Copy, LayoutTemplate, EyeOff } from "lucide-solid";
 import { SLIDE_LAYOUTS } from "../utils/slide-layouts";
 import { t } from "../i18n";
 import { SlideTransitionPicker } from "./slide-transition-picker";
@@ -107,9 +107,16 @@ export const SlideNavigator = () => {
                 <div class="slide-navigator-header">{pageNoun()}s</div>
                 <div class="slide-list-container" ref={listContainerRef}>
                     <For each={store.slides}>
-                        {(slide, index) => (
+                        {(slide, index) => (<>
+                            {/* A section starts here: its name heads the slides it covers. */}
+                            <Show when={store.docType === 'slides' && slide.section}>
+                                <div class="slide-section-header" title={t('sections.headerTitle')}
+                                    onDblClick={() => { const n = window.prompt(t('sections.renamePrompt'), slide.section); if (n !== null) setSlideSection(index(), n); }}>
+                                    {slide.section}
+                                </div>
+                            </Show>
                             <div
-                                class={`slide-thumbnail-wrapper ${getDragClass(index())}`}
+                                class={`slide-thumbnail-wrapper ${getDragClass(index())} ${slide.hidden ? 'is-hidden' : ''}`}
                                 draggable={true}
                                 onDragStart={(e) => handleDragStart(e, index())}
                                 onDragOver={(e) => handleDragOver(e, index())}
@@ -154,6 +161,12 @@ export const SlideNavigator = () => {
                                         <Copy size={14} />
                                     </button>
 
+                                    <Show when={slide.hidden}>
+                                        <span class="slide-hidden-badge" title={t('sections.hiddenBadge')} aria-label={t('sections.hiddenBadge')}>
+                                            <EyeOff size={14} />
+                                        </span>
+                                    </Show>
+
                                     <div class="slide-preview">
                                         <Show when={slide.thumbnail} fallback={
                                             <div class="slide-name-tag">{slide.name || `${pageNoun()} ${index() + 1}`}</div>
@@ -171,7 +184,7 @@ export const SlideNavigator = () => {
                                     />
                                 </Show>
                             </div>
-                        )}
+                        </>)}
                     </For>
                 </div>
                 <div class="add-slide-container">
@@ -234,6 +247,32 @@ export const SlideNavigator = () => {
                         }}>
                             Insert {pageNoun()} Below
                         </div>
+                        {/* Show settings: slides only — a design document isn't presented. */}
+                        <Show when={store.docType === 'slides'}>
+                            {(() => {
+                                const i = contextMenu()!.index;
+                                const s = store.slides[i];
+                                return (<>
+                                    <div class="menu-separator" />
+                                    <div class="menu-item" onClick={(e) => { e.stopPropagation(); setSlideHidden(i, !s?.hidden); closeContextMenu(); }}>
+                                        {s?.hidden ? t('sections.show') : t('sections.hide')}
+                                    </div>
+                                    <div class="menu-item" onClick={(e) => {
+                                        e.stopPropagation();
+                                        closeContextMenu();
+                                        const n = window.prompt(s?.section ? t('sections.renamePrompt') : t('sections.addPrompt'), s?.section || '');
+                                        if (n !== null) setSlideSection(i, n);
+                                    }}>
+                                        {s?.section ? t('sections.rename') : t('sections.add')}
+                                    </div>
+                                    <Show when={s?.section}>
+                                        <div class="menu-item" onClick={(e) => { e.stopPropagation(); setSlideSection(i, null); closeContextMenu(); }}>
+                                            {t('sections.remove')}
+                                        </div>
+                                    </Show>
+                                </>);
+                            })()}
+                        </Show>
                     </div>
                 </Show>
             </div >

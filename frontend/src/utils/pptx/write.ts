@@ -256,8 +256,14 @@ function itemXml(it: Item, c: Ctx): string {
 const EMPTY_TREE_HEADER = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
     + '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
 
-function transitionXml(t: Transition | undefined): string {
-    if (!t) return '';
+function transitionXml(t: Transition | undefined, advanceAfterMs?: number): string {
+    // `advTm`: advance by itself after this many ms, with or without a visual transition.
+    const adv = advanceAfterMs && advanceAfterMs > 0 ? ` advTm="${Math.round(advanceAfterMs)}"` : '';
+    // Even with no visual effect, PowerPoint writes the transition in its AlternateContent
+    // wrapper — and LibreOffice ignores a bare <p:transition advTm> (checked against its import).
+    if (!t) return adv ? `<mc:AlternateContent xmlns:mc="${NS.mc}">`
+        + `<mc:Choice xmlns:p14="${NS.p14}" Requires="p14"><p:transition spd="fast" p14:dur="0"${adv}/></mc:Choice>`
+        + `<mc:Fallback><p:transition spd="fast"${adv}/></mc:Fallback></mc:AlternateContent>` : '';
     const dur = Math.max(0, Math.min(60000, Math.round(t.durationMs)));
     const spd = dur <= 600 ? 'fast' : dur <= 900 ? 'med' : 'slow';
     const effect = t.kind === 'push' ? `<p:push dir="${t.dir ?? 'l'}"/>`
@@ -265,8 +271,8 @@ function transitionXml(t: Transition | undefined): string {
         : '<p:fade/>';
     // PowerPoint 2010+ reads the exact duration from p14:dur; older readers take the Fallback.
     return `<mc:AlternateContent xmlns:mc="${NS.mc}">`
-        + `<mc:Choice xmlns:p14="${NS.p14}" Requires="p14"><p:transition spd="${spd}" p14:dur="${dur}">${effect}</p:transition></mc:Choice>`
-        + `<mc:Fallback><p:transition spd="${spd}">${effect}</p:transition></mc:Fallback>`
+        + `<mc:Choice xmlns:p14="${NS.p14}" Requires="p14"><p:transition spd="${spd}" p14:dur="${dur}"${adv}>${effect}</p:transition></mc:Choice>`
+        + `<mc:Fallback><p:transition spd="${spd}"${adv}>${effect}</p:transition></mc:Fallback>`
         + '</mc:AlternateContent>';
 }
 
@@ -281,8 +287,9 @@ function slideXml(slide: Slide, c: Ctx): string {
     }
     const items = slide.items.map(it => itemXml(it, c)).join('');
     const name = slide.name ? ` name="${esc(slide.name)}"` : '';
-    return XML_DECL + `<p:sld ${ROOT_NS}><p:cSld${name}>${bg}<p:spTree>${EMPTY_TREE_HEADER}${items}</p:spTree></p:cSld>`
-        + `<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>${transitionXml(slide.transition)}</p:sld>`;
+    const show = slide.hidden ? ' show="0"' : '';
+    return XML_DECL + `<p:sld ${ROOT_NS}${show}><p:cSld${name}>${bg}<p:spTree>${EMPTY_TREE_HEADER}${items}</p:spTree></p:cSld>`
+        + `<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>${transitionXml(slide.transition, slide.advanceAfterMs)}</p:sld>`;
 }
 
 // ── Fixed parts ─────────────────────────────────────────────────────────────────────────────
@@ -364,6 +371,26 @@ export function notesXml(notes: string): string {
 }
 
 const PRES_PROPS = XML_DECL + `<p:presentationPr ${ROOT_NS}/>`;
+/** "Loop continuously until Esc" (`p:showPr loop`). */
+const PRES_PROPS_LOOP = XML_DECL + `<p:presentationPr ${ROOT_NS}><p:showPr loop="1" showNarration="1"><p:present/><p:sldAll/></p:showPr></p:presentationPr>`;
+
+/**
+ * Sections as PowerPoint 2010+ stores them (`p14:sectionLst` in the presentation's extLst). Every
+ * slide must belong to a section once any exist, so slides before the first named one go into
+ * PowerPoint's "Default Section". '' when the deck has no sections.
+ */
+function sectionListXml(slides: Slide[], sldIdOf: (i: number) => number): string {
+    if (!slides.some(s => s.section)) return '';
+    const groups: { name: string; ids: number[] }[] = [];
+    slides.forEach((s, i) => {
+        if (s.section || !groups.length) groups.push({ name: s.section || 'Default Section', ids: [] });
+        groups[groups.length - 1].ids.push(sldIdOf(i));
+    });
+    const guid = (n: number) => `{8F3A1C2E-5B7D-4E9A-9C11-${(n + 1).toString(16).toUpperCase().padStart(12, '0')}}`;
+    return `<p:extLst><p:ext uri="{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"><p14:sectionLst xmlns:p14="${NS.p14}">`
+        + groups.map((g, n) => `<p14:section name="${esc(g.name)}" id="${guid(n)}"><p14:sldIdLst>${g.ids.map(id => `<p14:sldId id="${id}"/>`).join('')}</p14:sldIdLst></p14:section>`).join('')
+        + '</p14:sectionLst></p:ext></p:extLst>';
+}
 const VIEW_PROPS = XML_DECL + `<p:viewPr ${ROOT_NS}><p:normalViewPr><p:restoredLeft sz="15620"/><p:restoredTop sz="94660"/></p:normalViewPr><p:gridSpacing cx="76200" cy="76200"/></p:viewPr>`;
 const TABLE_STYLES = XML_DECL + `<a:tblStyleLst xmlns:a="${NS.a}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`;
 
@@ -467,7 +494,7 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
         + (hasNotes ? `<p:notesMasterIdLst><p:notesMasterId r:id="${notesMasterRid}"/></p:notesMasterIdLst>` : '')
         + `<p:sldIdLst>${sldIds}</p:sldIdLst>`
         + `<p:sldSz cx="${sldCx}" cy="${sldCy}"/><p:notesSz cx="6858000" cy="9144000"/>`
-        + `<p:defaultTextStyle>${lvlStyle(1800)}</p:defaultTextStyle></p:presentation>`;
+        + `<p:defaultTextStyle>${lvlStyle(1800)}</p:defaultTextStyle>${sectionListXml(slides, i => 256 + i)}</p:presentation>`;
 
     parts.set('ppt/presentation.xml', pres);
     parts.set('ppt/_rels/presentation.xml.rels', relsXml(presRels));
@@ -481,7 +508,7 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
         { id: 'rId1', type: REL.slideMaster, target: '../slideMasters/slideMaster1.xml' },
     ]));
     parts.set('ppt/theme/theme1.xml', THEME);
-    parts.set('ppt/presProps.xml', PRES_PROPS);
+    parts.set('ppt/presProps.xml', deck.loop ? PRES_PROPS_LOOP : PRES_PROPS);
     parts.set('ppt/viewProps.xml', VIEW_PROPS);
     parts.set('ppt/tableStyles.xml', TABLE_STYLES);
     const now = opts.now ?? new Date().toISOString().replace(/\.\d+Z$/, 'Z');

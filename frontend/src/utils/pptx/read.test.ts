@@ -512,3 +512,36 @@ describe("readPptx: links (hlinkClick)", () => {
         expect(links).toEqual([undefined, undefined, { kind: 'url', url: 'mailto:a@b.c' }, { kind: 'action', action: 'last' }]);
     });
 });
+
+describe("readPptx: show settings (hidden, auto-advance, sections, loop)", () => {
+    it("round-trips through our writer", () => {
+        const deck: Deck = { width: 960, height: 540, loop: true, slides: [
+            { items: [], advanceAfterMs: 3000 },
+            { items: [], hidden: true, section: 'Middle & end', transition: { kind: 'fade', durationMs: 500 }, advanceAfterMs: 1500 },
+            { items: [] },
+            { items: [], section: 'Appendix' },
+        ] };
+        const bytes = buildPptx(deck);
+        const { deck: back, warnings } = read(bytes);
+        expect(warnings).toEqual([]);
+        expect(back.loop).toBe(true);
+        expect(back.slides.map(s => !!s.hidden)).toEqual([false, true, false, false]);
+        expect(back.slides.map(s => s.advanceAfterMs ?? null)).toEqual([3000, 1500, null, null]);
+        // Slides before the first named section go into PowerPoint's Default Section.
+        expect(back.slides.map(s => s.section ?? null)).toEqual(['Default Section', 'Middle & end', null, 'Appendix']);
+        expect(back.slides[1].transition).toEqual({ kind: 'fade', durationMs: 500 });
+        const files = unzipSync(bytes);
+        const pres = strFromU8(files['ppt/presentation.xml']);
+        // extLst is the presentation's last child, after defaultTextStyle.
+        expect(pres.indexOf('p14:sectionLst')).toBeGreaterThan(pres.indexOf('defaultTextStyle'));
+        for (const name of Object.keys(files).filter(n => n.endsWith('.xml'))) parseXml(strFromU8(files[name]));
+    });
+
+    it("writes none of it for a plain deck", () => {
+        const files = unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [] }] }));
+        expect(strFromU8(files['ppt/presentation.xml'])).not.toContain('sectionLst');
+        expect(strFromU8(files['ppt/presProps.xml'])).not.toContain('showPr');
+        expect(strFromU8(files['ppt/slides/slide1.xml'])).not.toContain('show=');
+        expect(strFromU8(files['ppt/slides/slide1.xml'])).not.toContain('transition');
+    });
+});

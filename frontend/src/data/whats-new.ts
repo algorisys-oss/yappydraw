@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.295', date: '2026-11-01', items: [
+        'Hide a slide: right-click it in the slides panel → Hide slide. The show skips it, but it stays in your deck — perfect for a backup slide you only show if asked.',
+        'Sections: right-click a slide → Add section here… to group your deck into named parts in the slides panel.',
+        'Self-running shows: set “Advance after” on a slide’s transition and tick “Loop until Esc” for a kiosk or a screen nobody is driving.',
+        'PowerPoint keeps hidden slides, timings, sections and looping, in both directions.',
+        'Security updates for the desktop app’s updater and several libraries.',
+    ] },
     { version: '0.8.294', date: '2026-11-01', items: [
         'Speaker notes: open the notes pane from the slide toolbar and write what you want to say on each slide. Notes come in from PowerPoint files and go out to them, and Markdown import reads Note: lines.',
         'Presenter view: press Alt+F5 to present with a second window just for you — the current and next slide, your notes, a timer and the clock — while the audience sees only the slides.',

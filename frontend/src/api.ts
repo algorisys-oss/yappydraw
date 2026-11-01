@@ -23,7 +23,7 @@ import {
     setSymmetryRings, setSymmetryRingSpacing,
     setSymmetryAngleDeg, setSymmetryCenter, noteMandalaArmedSymmetry, setSymmetryEditing, toggleSymmetryEditing,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
-    updateSlideTransition, updateSlideBackground, updateSlideNotes, toggleSpeakerNotes, followLink, insertSlideWithLayout, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
+    updateSlideTransition, updateSlideBackground, updateSlideNotes, toggleSpeakerNotes, followLink, insertSlideWithLayout, setSlideHidden, setSlideSection, setSlideAdvanceAfter, setSlideShowLoop, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
     setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
@@ -3854,6 +3854,17 @@ export const YappyAPI = {
      *   Y.insertSlideWithLayout('two-column');
      */
     insertSlideWithLayout(layout: import('./utils/slide-layouts').SlideLayoutId): number { return insertSlideWithLayout(layout); },
+    /**
+     * Hide a slide from the show: next/previous and presenting from the start skip it; it stays
+     * in the file, the navigator and exports, and a link can still go to it. PPTX `show="0"`.
+     */
+    setSlideHidden(slideIndex: number, hidden: boolean) { setSlideHidden(slideIndex, hidden); },
+    /** Start a named section at this slide (shown as a heading in the slides panel); null removes it. */
+    setSlideSection(slideIndex: number, name: string | null) { setSlideSection(slideIndex, name); },
+    /** While presenting, move on by itself `ms` after the slide (or its latest build step) appears; null = on click. */
+    setSlideAdvanceAfter(slideIndex: number, ms: number | null) { setSlideAdvanceAfter(slideIndex, ms); },
+    /** Loop the show until Esc: after the last slide it starts again from the first. Saved with the document. */
+    setSlideShowLoop(loop: boolean) { setSlideShowLoop(loop); },
     /** The layout ids `insertSlideWithLayout` accepts. */
     getSlideLayouts(): string[] { return [...SLIDE_LAYOUTS]; },
     /** Close the presenter view (the show keeps running). */

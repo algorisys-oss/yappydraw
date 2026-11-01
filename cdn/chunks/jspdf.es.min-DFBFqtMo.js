@@ -8050,7 +8050,7 @@ function c1() {
     });
   }
   function e() {
-    return ($t.DOMPurify ? Promise.resolve($t.DOMPurify) : import("./purify.es-C2Qa7b4C.js")).catch(function(u) {
+    return ($t.DOMPurify ? Promise.resolve($t.DOMPurify) : import("./purify.es-B0KlbA1O.js")).catch(function(u) {
       return Promise.reject(new Error("Could not load dompurify: " + u));
     }).then(function(u) {
       return u.default ? u.default : u;
@@ -8760,7 +8760,7 @@ endobj\r
   var d = c.getContext("2d");
   d.fillStyle = "#fff", d.fillRect(0, 0, c.width, c.height);
   var m = { ignoreMouse: !0, ignoreAnimation: !0, ignoreDimensions: !0 }, A = this;
-  return ($t.canvg ? Promise.resolve($t.canvg) : import("./index.es-m_qpxIjM.js")).catch(function(P) {
+  return ($t.canvg ? Promise.resolve($t.canvg) : import("./index.es-yTIj1Pnc.js")).catch(function(P) {
     return Promise.reject(new Error("Could not load canvg: " + P));
   }).then(function(P) {
     return P.default ? P.default : P;
