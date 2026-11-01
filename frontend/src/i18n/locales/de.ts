@@ -1433,6 +1433,7 @@ export const de: Dictionary = {
         pictures: 'Bilder',
         picturesHint: 'Ein Bild pro Folie. Sieht genau aus wie die Zeichenfläche, handgezeichnete Striche inklusive, aber nichts auf der Folie lässt sich bearbeiten.',
         someAsPictures: '{{ count }} Objekt(e), die PowerPoint nicht nativ darstellen kann (Effekte, Masken, besondere Füllungen), wurden als Bilder eingefügt.',
+        animsSkipped: '{{ count }} Animation(en) ohne Entsprechung in PowerPoint (Bewegungspfade, Eigenschafts- und Keyframe-Animationen, Hover-Auslöser) wurden weggelassen.',
         failed: 'PowerPoint-Export fehlgeschlagen: {{ message }}',
     },
     pdfExport: {

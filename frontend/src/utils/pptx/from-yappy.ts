@@ -16,7 +16,9 @@
  */
 import type { DrawingElement, RichTextSpan } from '../../types';
 import type { Slide as YappySlide, SlideTransition } from '../../types/slide-types';
-import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink } from './deck';
+import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink, DeckAnim } from './deck';
+import { buildOrder } from '../build-order';
+import { toDeckAnim } from './anim-map';
 import { parseLink } from '../slide-links';
 import { parseSvgPath, transformCmds, cmdsBounds, affineCmds } from './custgeom';
 import { SvgRenderer } from '../../rendering/SvgRenderer';
@@ -52,9 +54,16 @@ export interface PageInput {
     slide?: YappySlide;        // absent for the infinite canvas / a selection
     background?: string;       // flat colour for a non-slide page (export "background" option)
     elements: DrawingElement[]; // posed, exportable, in render order
+    /** Layers, for the build order (utils/build-order.ts). Without them, animations are left out. */
+    layers?: readonly { id: string; order?: number }[];
 }
 
-export interface ConvertReport { native: number; pictures: number }
+export interface ConvertReport {
+    native: number; pictures: number;
+    /** Build animations PowerPoint has no counterpart for (property/keyframe tweens, motion paths,
+     *  hover triggers), left out of the file. */
+    animsSkipped?: number;
+}
 
 // ── Colours ─────────────────────────────────────────────────────────────────────────────────
 
@@ -412,6 +421,8 @@ interface Conv {
     glue: (() => void)[];
     hooks: ConvertHooks;
     report: ConvertReport;
+    /** Element id → the top-level item that shows it, for build animations. */
+    animTargets?: Map<string, number>;
 }
 
 const nameOf = (el: DrawingElement) => (el as any).name || el.type;
@@ -915,9 +926,15 @@ function convertRun(els: DrawingElement[], depth: number, c: Conv): Item[] {
     while (i < els.length) {
         const g = gid(els[i]);
         if (!g) {
-            const items = convertOne(els[i], c);
+            let items = convertOne(els[i], c);
             const link = deckLinkOf(els[i].link);
             if (link) for (const it of items) it.link = link;
+            // An animated object that came out as several items (a shape and its label) is
+            // grouped, so one PowerPoint effect moves all of it.
+            if (c.animTargets && els[i].animations?.length && items.length > 1) {
+                items = [{ kind: 'group', id: c.nextId++, name: nameOf(els[i]), ...itemsBounds(items), children: items }];
+            }
+            if (c.animTargets && items.length === 1) c.animTargets.set(els[i].id, items[0].id);
             out.push(...items);
             i++;
             continue;
@@ -929,6 +946,9 @@ function convertRun(els: DrawingElement[], depth: number, c: Conv): Item[] {
             const b = itemsBounds(children);
             const grp: GroupItem = { kind: 'group', id: c.nextId++, name: els[i].groupNames?.[g] || 'Group', ...b, children };
             out.push(grp);
+            // PowerPoint animates top-level items only: a grouped object's effects go to its
+            // outermost group (this level runs after the inner ones, so it wins).
+            if (c.animTargets) for (const el of els.slice(i, j)) c.animTargets.set(el.id, grp.id);
         } else out.push(...children);
         i = j;
     }
@@ -1027,9 +1047,10 @@ export function showFields(s: YappySlide | undefined): Pick<Slide, 'hidden' | 'a
 
 /** One page → one deck slide (native objects, pictures where unavoidable). */
 export function pageToSlide(page: PageInput, hooks: ConvertHooks, report: ConvertReport): Slide {
-    const c: Conv = { ox: page.x, oy: page.y, nextId: 2, ids: new Map(), glue: [], hooks, report };
+    const c: Conv = { ox: page.x, oy: page.y, nextId: 2, ids: new Map(), glue: [], hooks, report, ...(page.layers && { animTargets: new Map() }) };
     const items = convertRun(page.elements, 0, c);
     c.glue.forEach(f => f());
+    const anims = page.layers && c.animTargets ? deckAnims(page.elements, page.layers, c.animTargets, report) : [];
     return {
         name: page.name,
         items,
@@ -1038,7 +1059,49 @@ export function pageToSlide(page: PageInput, hooks: ConvertHooks, report: Conver
         notes: page.slide?.notes?.trim() ? page.slide.notes : undefined,
         key: page.slide?.id,
         ...showFields(page.slide),
+        ...(anims.length && { anims }),
     };
+}
+
+/**
+ * A page's build animations as PowerPoint effects, in the order the show plays them. Yappy plays
+ * every on-load step (with whatever is chained to it) as the slide appears, wherever it sits in
+ * the build order; PowerPoint plays strictly in sequence, so those runs go first. Steps on
+ * hover or from a script have no PowerPoint start and are skipped, like effects with no
+ * counterpart; both are counted in `report.animsSkipped`.
+ */
+function deckAnims(elements: DrawingElement[], layers: readonly { id: string; order?: number }[], targets: Map<string, number>, report: ConvertReport): DeckAnim[] {
+    // Master copies (`<id>@page<n>`) aren't built: the show builds the master's home page only.
+    const steps = buildOrder(elements.filter(el => !el.id.includes('@page')), layers);
+    type Run = { load: boolean; skip: boolean; steps: typeof steps };
+    const runs: Run[] = [];
+    let skipped = 0;
+    for (const s of steps) {
+        const tr = s.animation.trigger;
+        if (tr === 'with-prev' || tr === 'after-prev') {
+            const run = runs[runs.length - 1];
+            // Chained to a hover/script step, or to nothing (it never plays in Yappy either).
+            if (!run || run.skip) skipped++; else run.steps.push(s);
+        } else if (tr === 'on-load' || tr === 'on-click') runs.push({ load: tr === 'on-load', skip: false, steps: [s] });
+        else { runs.push({ load: false, skip: true, steps: [] }); skipped++; } // hover / programmatic
+    }
+    const out: DeckAnim[] = [];
+    for (const run of [...runs.filter(r => r.load && !r.skip), ...runs.filter(r => !r.load && !r.skip)]) {
+        const seen = new Set<string>();
+        run.steps.forEach((s, k) => {
+            const target = targets.get(s.elementId);
+            const start = k === 0 ? (run.load ? 'with' : 'click') : s.animation.trigger === 'after-prev' ? 'after' : 'with';
+            const d = target !== undefined ? toDeckAnim(s.animation, target, start) : null;
+            if (!d) { skipped++; return; }
+            // Members of one group map to one item: the group plays each effect once.
+            const key = `${target}|${d.cls}|${d.effect}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            out.push(d);
+        });
+    }
+    if (skipped) report.animsSkipped = (report.animsSkipped ?? 0) + skipped;
+    return out;
 }
 
 /** Uniformly fit a page of size (w,h) into the deck size, centred. */

@@ -4,7 +4,7 @@ name: Animation
 icon: "🎬"
 category: Features
 description: Animate elements with presets, keyframes, and spring physics — and play tinyfly animations on shapes
-keywords: tinyfly import json timeline animation document spring stagger motion path bake keyframes scene timeline
+keywords: powerpoint animations pptx animations export animations import animations fly in wipe swivel spinner teeter tinyfly import json timeline animation document spring stagger motion path bake keyframes scene timeline
 seoTitle: "Animate a diagram — 40+ presets, keyframes and path animation"
 seoDescription: "Animate shapes with entrance, exit and emphasis presets, keyframes, spring physics, shape morphing and motion along a path. Export to MP4, WebM or GIF."
 ---
@@ -259,6 +259,28 @@ Yappy includes a rich library of animation presets organized by category:
 | **wobble** | Element wobbles back and forth |
 | **jello** | Element jiggles like jello |
 | **heartBeat** | Element pulses like a heartbeat |
+
+## Animations in PowerPoint
+
+**Export.** Exporting to PowerPoint with **Editable shapes** turns each slide's build animations into PowerPoint animations on the same objects, in the order the show plays them, with their **Start** (On Click / With Previous / After Previous — *on load* becomes With Previous at the start of the slide), duration, delay and repeat. Each Yappy effect becomes the PowerPoint effect closest to it:
+
+| Yappy | PowerPoint |
+|---|---|
+| Fade In / Out (and its small-slide variants) | Fade |
+| Slide In / Out, Back In / Out, Light Speed, the *Big* fades | Fly In / Out, from or to that side |
+| Bounce In / Out | Bounce |
+| Zoom In / Out, Scale In / Out, Jack in the Box | Zoom |
+| Rotate In / Out, Roll, Hinge | Spinner |
+| Flip | Swivel |
+| Draw In / Out, Typewriter, word-, line- and letter-by-letter text | Wipe from the left |
+| Pulse, Heart Beat, Flash | Pulse |
+| Rubber Band, Jello | Grow/Shrink |
+| Shake, Head Shake, Wobble, Swing, Tada, Bounce (attention) | Teeter |
+| Rotate, Auto Spin | Spin, by the same angle |
+
+Motion paths, property and keyframe animations, morphs and hover triggers have no PowerPoint equivalent: they are left out, and a message says how many. An object that exports as several pieces (a shape and its label) is grouped so the effect moves all of it; an object inside a group animates the whole group, since PowerPoint animates only top-level objects. **Pictures** exports have no animations (each slide is one picture).
+
+**Import.** Opening a PowerPoint file brings its animations in the same way round: Fade, Fly, Zoom, Bounce, Spinner, Swivel, Wipe, Spin, Pulse, Grow/Shrink and Teeter become the matching Yappy effect; other PowerPoint effects come in as a fade (entrances and exits) or a pulse (emphasis). Effects that play before the first click play as the slide appears. Their order is kept across objects. Not imported: motion paths, triggers (an effect started by clicking a particular shape), and by-paragraph text builds.
 
 ## Text Animations
 

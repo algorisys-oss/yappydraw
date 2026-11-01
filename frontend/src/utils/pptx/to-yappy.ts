@@ -13,8 +13,9 @@
 import type { DrawingElement, PathSubpath, PathAnchor, RichTextSpan, TextAlign, PatternFill } from '../../types';
 import type { SlideDocument, Slide as YappySlide, SlideTransition } from '../../types/slide-types';
 import { createSlideDocument, createDefaultSlide } from '../../types/slide-types';
-import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink } from './deck';
+import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink, DeckAnim } from './deck';
 import { slideLink, actionLink } from '../slide-links';
+import { fromDeckAnim } from './anim-map';
 import { geometryPathsPx, textRectPx, loadPresets, type GeomDef } from './guides';
 import { cmdsBounds } from './custgeom';
 import { reverseFontFamily } from '../text-utils';
@@ -104,6 +105,28 @@ interface Conv {
     gray: Map<string, string>;
     /** Deck slide key → the Yappy slide id it became, for slide links. */
     slideIds?: Map<string, string>;
+    /** Item id → the elements it became, for build animations. */
+    itemEls?: Map<number, DrawingElement[]>;
+}
+
+/**
+ * PowerPoint build effects onto the elements their shapes became. Effects before the first
+ * click play as the slide appears (on-load). A shape that became several elements (a group, a
+ * shape and its label) gives each the effect, the later ones with the first. `order` keeps
+ * PowerPoint's sequence across objects (utils/build-order.ts).
+ */
+function applyAnims(anims: DeckAnim[], c: Conv, nextId: (type: string) => string) {
+    let clicked = false;
+    anims.forEach((d, n) => {
+        if (d.start === 'click') clicked = true;
+        const els = c.itemEls?.get(d.target);
+        if (!els?.length) { c.warnings.push('An animation on a shape that wasn\'t imported was skipped.'); return; }
+        els.forEach((el, k) => {
+            const a = fromDeckAnim(k === 0 ? d : { ...d, start: 'with', delayMs: d.delayMs }, nextId('anim'), !clicked);
+            a.order = n + k / (els.length + 1);
+            (el.animations ??= []).push(a);
+        });
+    });
 }
 
 /** A deck click action as a Yappy link (utils/slide-links.ts); null when it can't be kept. */
@@ -596,6 +619,8 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
             // part has its own.
             const link = linkOf(it.link, c);
             if (link) for (const el of made) if (!el.link) el.link = link;
+            // Later items win: a slide's own shapes are read after its master's, which can reuse ids.
+            c.itemEls?.set(it.id, made);
             out.push(...made);
         } catch (e) {
             c.warnings.push(`"${it.name}" couldn't be converted and was skipped.`);
@@ -718,8 +743,9 @@ export async function deckToDocument(deck: Deck, nextId: (type: string) => strin
         const x = i * (W + PAGE_GAP);
         const slide = createDefaultSlide(ids[i], s.name || `Slide ${i + 1}`, x, 0, { width: W, height: H });
         slide.order = i;
-        const c: Conv = { ox: x, oy: 0, presets, nextId, out: [], byPptId: new Map(), glue: [], warnings, stats, images, slideBg: laidOut[i], gray, slideIds };
+        const c: Conv = { ox: x, oy: 0, presets, nextId, out: [], byPptId: new Map(), glue: [], warnings, stats, images, slideBg: laidOut[i], gray, slideIds, itemEls: new Map() };
         doc.elements.push(...convertItems(s.items, c, []));
+        applyAnims(s.anims ?? [], c, nextId);
         c.glue.forEach(f => f());
         applyBackground(slide, s.background, c);
         const tr = transitionOf(s.transition);

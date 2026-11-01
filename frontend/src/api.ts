@@ -2473,6 +2473,8 @@ export const YappyAPI = {
      * alignment, bullets and numbering; straight lines become connectors glued to the shapes they
      * touch; curves and elbows become paths with arrowheads; images keep their crop and opacity;
      * groups stay groups; slide backgrounds and transitions (fade, slide → Push, zoom, Morph) carry over.
+     * Build animations go as the closest PowerPoint effects, in playing order (motion paths and
+     * keyframe/property tweens are left out and counted). `importPPTX` reads them back.
      * Hand-drawn (sketch) strokes come out clean, and hatched fills become pattern fills. Objects
      * PowerPoint can't draw — shadows, glows, masks, mesh/pattern/image fills, 3-D, warps, image
      * filters, text on a path, UML class boxes — are placed as pictures of just that object.

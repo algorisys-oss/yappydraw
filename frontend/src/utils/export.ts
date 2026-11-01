@@ -2162,6 +2162,7 @@ export const exportToPptx = async (
             pages.push({
                 x: slide.spatialPosition.x, y: slide.spatialPosition.y, w, h, name: slide.name, slide,
                 elements: allElements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx),
+                layers: store.layers,
             });
         });
     } else {
@@ -2180,7 +2181,7 @@ export const exportToPptx = async (
     }
 
     const deckW = pages[0].w, deckH = pages[0].h;
-    const report = { native: 0, pictures: 0 };
+    const report: import("./pptx/from-yappy").ConvertReport = { native: 0, pictures: 0 };
     const hooks = {
         rasterize: (els: DrawingElement[]) => rasterizePosed(els, Math.max(2, scale)),
         rasterizeBackground: (slide: import('../types/slide-types').Slide) => {
@@ -2232,6 +2233,7 @@ export const exportToPptx = async (
 
     const bytes = buildPptx({ width: deckW, height: deckH, slides, title: 'YappyDraw presentation', ...(isSlides && store.globalSettings.slideShowLoop && { loop: true }) });
     if (mode === 'editable' && report.pictures > 0) showToast(t('pptxExport.someAsPictures', { count: report.pictures }), 'info', 6000);
+    if (mode === 'editable' && report.animsSkipped) showToast(t('pptxExport.animsSkipped', { count: report.animsSkipped }), 'info', 6000);
     const blob = new Blob([bytes as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
     if (download) {
         await saveBlob(blob, 'yappy_drawing.pptx', {

@@ -559,3 +559,33 @@ describe("readPptx: Morph transition", () => {
         expect(xml).toContain('<mc:Fallback><p:transition spd="slow" advTm="4000"><p:fade/>');
     });
 });
+
+describe("readPptx: build animations (p:timing)", () => {
+    const box = (id: number): ShapeItem => ({ kind: 'shape', id, name: `b${id}`, x: 100 * id, y: 100, w: 80, h: 80,
+        geom: { kind: 'preset', prst: 'rect' }, fill: { kind: 'solid', color: { hex: '#cccccc' } }, line: null });
+    const anims: Deck['slides'][0]['anims'] = [
+        { target: 2, cls: 'entr', effect: 'fade', presetId: 10, subtype: 0, start: 'with', durationMs: 500, delayMs: 0 },
+        { target: 3, cls: 'entr', effect: 'fly', presetId: 2, subtype: 8, dir: 'l', start: 'click', durationMs: 700, delayMs: 200 },
+        { target: 4, cls: 'emph', effect: 'spin', presetId: 8, subtype: 0, start: 'after', durationMs: 1000, delayMs: 0, degrees: 180 },
+        { target: 2, cls: 'exit', effect: 'zoom', presetId: 53, subtype: 16, start: 'click', durationMs: 400, delayMs: 0, repeat: 2 },
+        { target: 3, cls: 'emph', effect: 'pulse', presetId: 26, subtype: 0, start: 'with', durationMs: 300, delayMs: 0, repeat: -1 },
+    ];
+
+    it("round-trips effects, order, starts, timing, sides and spins through our writer", () => {
+        const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [box(2), box(3), box(4)], anims }] });
+        const { deck, warnings } = read(bytes);
+        expect(warnings).toEqual([]);
+        expect(deck.slides[0].anims).toEqual(anims);
+        const xml = strFromU8(unzipSync(bytes)['ppt/slides/slide1.xml']);
+        parseXml(xml);
+        // Schema order: transition, then timing; a build entry per animated shape and effect.
+        expect(xml).toContain('<p:bldP spid="2" grpId="1" animBg="1"/>');
+        const ids = [...xml.matchAll(/<p:cTn id="(\d+)"/g)].map(m => Number(m[1]));
+        expect(ids).toEqual(ids.map((_, i) => i + 1));          // node ids unique and in document order
+    });
+
+    it("writes nothing for a slide without animations", () => {
+        const xml = strFromU8(unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [box(2)] }] }))['ppt/slides/slide1.xml']);
+        expect(xml).not.toContain('p:timing');
+    });
+});

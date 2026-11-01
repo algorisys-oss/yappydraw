@@ -1,5 +1,5 @@
-import { s as o, b as m, d as b, z as R, h as W, g as a, i as z, j as B } from "./index-NbpsufU1.js";
-const h = /* @__PURE__ */ new Set(), x = [], D = {
+import { s as o, b as m, d as b, z as R, h as U, g as a, i as W, j as z } from "./index-zg1eC33A.js";
+const h = /* @__PURE__ */ new Set(), x = [], G = {
   ArrowLeft: "left",
   a: "left",
   A: "left",
@@ -20,10 +20,10 @@ const h = /* @__PURE__ */ new Set(), x = [], D = {
   X: "b",
   Shift: "b"
 }, Q = (e) => {
-  h.has(e) || (h.add(e), G(e));
+  h.has(e) || (h.add(e), I(e));
 }, q = (e) => {
   h.delete(e);
-}, G = (e) => {
+}, I = (e) => {
   for (const i of x) i.button === e && L(i.fn);
 }, u = { x: 0, y: 0, down: !1 }, v = [], ee = (e, i) => {
   u.x = e, u.y = i;
@@ -99,39 +99,39 @@ class A {
     return this.set({ opacity: 100 });
   }
   destroy() {
-    H(this.id);
+    B(this.id);
   }
 }
 const C = (e, i) => {
   a("elements", (s) => s.id === e, i);
-}, H = (e) => {
+}, B = (e) => {
   a("elements", (i) => i.filter((s) => s.id !== e));
 };
-let g = null, y = null, w = [], k = 0, M = 0, c = null, I = !1, F = "", f = 0;
-const N = "SCORE ";
-let $ = null, V = !1, E = () => {
+let g = null, y = null, w = [], k = 0, M = 0, c = null, T = !1, F = "", f = 0;
+const H = "SCORE ";
+let $ = null, N = !1, E = () => {
 };
 const ie = (e) => {
   E = e;
 }, J = (e) => {
   $ = e, E();
 }, P = (e) => {
-  I = e, V = e, E();
+  T = e, N = e, E();
 }, L = (e) => {
   try {
     e();
   } catch (i) {
     console.error("[arcade] script error:", i), m(`Game error: ${i?.message || i}`, "error"), p();
   }
-}, U = (e) => {
+}, V = (e) => {
   if (e.key === "Escape") {
     p();
     return;
   }
-  const i = D[e.key];
-  i && (e.preventDefault(), h.has(i) || (h.add(i), G(i)));
+  const i = G[e.key];
+  i && (e.preventDefault(), h.has(i) || (h.add(i), I(i)));
 }, K = (e) => {
-  const i = D[e.key];
+  const i = G[e.key];
   i && h.delete(i);
 };
 let j = 0;
@@ -153,7 +153,7 @@ function Y() {
     layerId: o.activeLayerId || "default-layer",
     roundness: null
   }, s = (n, t, r, d, l, S) => {
-    const T = {
+    const D = {
       id: `game-${Date.now()}-${++j}`,
       type: n,
       x: t,
@@ -165,7 +165,7 @@ function Y() {
       ...i,
       ...S
     };
-    return a("elements", (O) => [...O, T]), new A(T.id);
+    return a("elements", (O) => [...O, D]), new A(D.id);
   };
   return {
     x: e.x,
@@ -217,7 +217,7 @@ function Y() {
     },
     score: (n) => {
       f += n;
-      const t = N + f;
+      const t = H + f;
       if (c && o.elements.some((r) => r.id === c))
         C(c, { text: t });
       else {
@@ -237,20 +237,20 @@ function Y() {
     getScore: () => f,
     goToState: (n) => {
       const t = o.states.find((r) => r.name === n || r.id === n);
-      t && B(t.id);
+      t && z(t.id);
     },
     playAnim: (n, t) => {
-      n?.alive && import("./index-NbpsufU1.js").then((r) => r.aT).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
+      n?.alive && import("./index-zg1eC33A.js").then((r) => r.aU).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
       }));
     },
     goToPage: (n) => {
-      n >= 0 && n < o.slides.length && z(n);
+      n >= 0 && n < o.slides.length && W(n);
     },
     sound: (n) => {
-      import("./index-NbpsufU1.js").then((t) => t.aU).then((t) => t.playSfx(n));
+      import("./index-zg1eC33A.js").then((t) => t.aV).then((t) => t.playSfx(n));
     },
     music: (n) => {
-      import("./index-NbpsufU1.js").then((t) => t.aU).then((t) => n ? t.startMusic() : t.stopMusic());
+      import("./index-zg1eC33A.js").then((t) => t.aV).then((t) => n ? t.startMusic() : t.stopMusic());
     },
     end: (n) => {
       if (P(!0), n) {
@@ -299,11 +299,11 @@ ${i}`);
   } catch (t) {
     return m(`Game error: ${t?.message || t}`, "error"), p(), !1;
   }
-  window.addEventListener("keydown", U, !0), window.addEventListener("keyup", K, !0), k = performance.now(), M = k;
+  window.addEventListener("keydown", V, !0), window.addEventListener("keyup", K, !0), k = performance.now(), M = k;
   const n = (t) => {
     y = requestAnimationFrame(n);
     const r = Math.min(0.05, (t - M) / 1e3);
-    if (M = t, I) return;
+    if (M = t, T) return;
     const d = (t - k) / 1e3;
     try {
       b(() => {
@@ -316,11 +316,11 @@ ${i}`);
   return y = requestAnimationFrame(n), !0;
 }
 function p() {
-  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", U, !0), window.removeEventListener("keyup", K, !0), import("./index-NbpsufU1.js").then((e) => e.aU).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
+  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", V, !0), window.removeEventListener("keyup", K, !0), import("./index-zg1eC33A.js").then((e) => e.aV).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
     const e = g;
     g = null, b(() => {
       a("elements", JSON.parse(e.elements)), a("selection", e.selection), a("activeSlideIndex", e.activeSlideIndex), a("appMode", e.appMode), a("gameActive", !1);
-    }), W(e.viewState);
+    }), U(e.viewState);
   } else
     a("gameActive", !1);
   P(!1);
@@ -331,7 +331,7 @@ function se() {
 }
 export {
   A as Sprite,
-  V as gameEnded,
+  N as gameEnded,
   te as gamePointerDown,
   ee as gamePointerMove,
   ne as gamePointerUp,

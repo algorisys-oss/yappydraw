@@ -1432,6 +1432,7 @@ export const ja: Dictionary = {
         pictures: '画像',
         picturesHint: 'スライドごとに 1 枚の画像。手描きの線も含めてキャンバスどおりに見えますが、スライド上のものは編集できません。',
         someAsPictures: 'PowerPoint でそのまま描けない {{ count }} 個のオブジェクト（エフェクト、マスク、特殊な塗り）を画像として配置しました。',
+        animsSkipped: 'PowerPoint に対応するものがない {{ count }} 個のアニメーション（モーション パス、プロパティ／キーフレーム アニメーション、ホバー トリガー）は含まれていません。',
         failed: 'PowerPoint への書き出しに失敗しました: {{ message }}',
     },
     pdfExport: {

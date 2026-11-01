@@ -180,8 +180,35 @@ export interface Transition {
     durationMs: number;
 }
 
+/** PowerPoint effects we write and read (utils/pptx/anim-map.ts maps Yappy's presets onto these). */
+export type DeckEffect = 'appear' | 'fade' | 'fly' | 'wipe' | 'bounce' | 'grow' | 'swivel' | 'spinner' | 'zoom'
+    | 'growShrink' | 'spin' | 'pulse' | 'teeter';
+
+/** One build effect on a slide (`p:timing`), in playing order. */
+export interface DeckAnim {
+    /** The item it animates (its cNvPr id); only top-level items can be animated. */
+    target: number;
+    cls: 'entr' | 'exit' | 'emph';
+    effect: DeckEffect;
+    /** PowerPoint's preset number and subtype for the effect. */
+    presetId: number;
+    subtype: number;
+    /** Side for Fly / Wipe: where it comes from (entrance) or leaves to (exit). */
+    dir?: 'l' | 'r' | 't' | 'b';
+    /** On click, with the previous effect, or after it. */
+    start: 'click' | 'with' | 'after';
+    durationMs: number;
+    delayMs: number;
+    /** Times to play (−1: until the next click). Absent: once. */
+    repeat?: number;
+    /** Spin: degrees, clockwise positive. */
+    degrees?: number;
+}
+
 export interface Slide {
     items: Item[];
+    /** Build effects in playing order. */
+    anims?: DeckAnim[];
     background?: Paint;
     transition?: Transition;
     /** Uniform scale + offset into the deck's slide size (slides of a different size are fitted). */

@@ -1458,6 +1458,7 @@ export const en = {
         pictures: 'Pictures',
         picturesHint: 'One picture per slide. Looks exactly like the canvas, hand-drawn strokes included, but nothing on the slide can be edited.',
         someAsPictures: '{{ count }} object(s) PowerPoint can’t draw natively (effects, masks, special fills) were placed as pictures.',
+        animsSkipped: '{{ count }} animation(s) with no PowerPoint equivalent (motion paths, property and keyframe tweens, hover triggers) were left out.',
         failed: 'PowerPoint export failed: {{ message }}',
     },
     pdfExport: {

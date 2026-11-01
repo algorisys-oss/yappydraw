@@ -1432,6 +1432,7 @@ export const es: Dictionary = {
         pictures: 'Imágenes',
         picturesHint: 'Una imagen por diapositiva. Se ve exactamente como el lienzo, trazos a mano incluidos, pero no se puede editar nada de la diapositiva.',
         someAsPictures: '{{ count }} objeto(s) que PowerPoint no puede dibujar de forma nativa (efectos, máscaras, rellenos especiales) se colocaron como imágenes.',
+        animsSkipped: 'Se omitieron {{ count }} animación(es) sin equivalente en PowerPoint (trayectorias, animaciones de propiedades y fotogramas clave, activadores al pasar el ratón).',
         failed: 'Falló la exportación a PowerPoint: {{ message }}',
     },
     pdfExport: {

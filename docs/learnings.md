@@ -11574,3 +11574,22 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Ported logic gets a notice.** `utils/morph.ts` adapts DeckCraft's matching order, so the MIT
   notice went into THIRD_PARTY_NOTICES.md along with a header comment, as the gaps doc required.
 
+## Animations in PowerPoint (2026-11-01)
+
+- **An implicit order is a bug waiting for an importer.** Yappy built a slide by layer, then by
+  element id ("arbitrary but stable"). Imported elements get fresh ids, so a PowerPoint sequence
+  across objects would have played in id order. Animations gain an optional `order`; the sort
+  (now `utils/build-order.ts`, shared by the show and the exporter) uses it first.
+- **Yappy's on-load is "whenever", PowerPoint's sequence is strict.** On-load steps play as the
+  slide appears wherever they sit in the build order, so the exporter moves on-load runs (with
+  their chained with/after steps) to the front, as an automatic first step.
+- **Skip whole chains, not just their head.** A with-previous step chained to a hover step must
+  be skipped too, or it becomes the start of a new click step in PowerPoint.
+- **PowerPoint animates top-level shapes only.** An animated object that exports as several
+  items is grouped; a grouped object's effect goes to its outermost group, de-duplicated.
+- **Assign node ids in document order.** Building a behaviour list as `setVis + body` after
+  computing `body` gave the `set` the later id; PowerPoint only needs uniqueness, but in-order ids
+  make the XML readable and the test strict.
+- **LibreOffice as the second reader again:** it named every effect we wrote (fade in, fly in,
+  spin, fade-out-and-zoom) and its re-export read back identical.
+

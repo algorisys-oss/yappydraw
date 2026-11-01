@@ -164,8 +164,9 @@ Favours solo-user value and work that also closes a PowerPoint round-trip gap.
 6. ~~**Morph across slides** (M)~~ — done on `feat/slide-morph` (2026-11-01): `utils/morph.ts`
    (DeckCraft's matching order + nearest-wins), overlay frames, `p159:morph` both ways. Not yet:
    outline (geometry) morphing between different shapes, word/character text morph.
-7. **Animations in PPTX export (then import)** (L; M for entrance/exit): build the PowerPoint
-   timing tree from Yappy's build steps. Port the mapping from DeckCraft (see below).
+7. ~~**Animations in PPTX export (then import)**~~ — done on `feat/pptx-animations` (2026-11-01),
+   both directions: `utils/pptx/anim-map.ts` (preset ↔ effect), `p:timing` writer/reader, explicit
+   `order` on imported animations. Not yet: motion paths, triggers, by-paragraph builds.
 8. **Charts with a data grid, round-tripped as PPTX charts** (L): biggest remaining import gap for
    business decks. Do after the above because it is the largest item.
 

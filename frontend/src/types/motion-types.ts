@@ -29,6 +29,9 @@ export interface BaseAnimation {
     yoyo?: boolean;   // Reverse on alternate
     restoreAfter?: boolean; // Restore element state after animation finishes
     startHidden?: boolean;  // Hide element until this animation plays (presentation mode)
+    /** Position in the slide's build sequence. Set by PowerPoint import, whose effects play in a
+     *  given order across objects; without it a slide builds by layer, then element (build-order.ts). */
+    order?: number;
 }
 
 // 1. Preset Animation (Extensions of current entrance/exit)

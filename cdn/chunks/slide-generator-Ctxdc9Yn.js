@@ -1,5 +1,5 @@
 import { h as T, b as C, c as k } from "./ai-providers-CycU8sO1.js";
-import { aE as A, J as N, P as v, K as x, q } from "./index-NbpsufU1.js";
+import { aF as A, J as N, P as v, K as x, q } from "./index-zg1eC33A.js";
 const L = `You are a presentation design assistant. Given a topic or description, generate a structured JSON slide deck.
 
 ## Output Format
@@ -174,7 +174,7 @@ When the prompt mentions multiple products, services, or offerings:
 16. If URLs or websites are mentioned, use your knowledge of those products/companies to provide accurate details. Include specific feature names, real capabilities, and actual use cases — not generic descriptions.
 17. For company profiles with multiple products, structure as: Company Overview → Product 1 (section) → Product 2 (section) → ... → Combined Value / Why Us → Closing.
 `;
-function U(t, e) {
+function F(t, e) {
   let i = t;
   return e?.style && e.style !== "auto" && (i += `
 
@@ -182,7 +182,7 @@ Tone suggestion: "${e.style}" style.`), e?.slideCount && (i += `
 
 Generate exactly ${e.slideCount} slides (across all sections).`), i;
 }
-const F = `You are a presentation visual designer. You receive structured slide content from a content strategist and your job is to map it to the optimal visual layout for each slide.
+const U = `You are a presentation visual designer. You receive structured slide content from a content strategist and your job is to map it to the optimal visual layout for each slide.
 
 ## Your Role
 You focus ONLY on **visual design decisions** — which slide type, which palette, which icons. Do NOT rewrite or reduce the content. Preserve all text, metrics, and data exactly as provided.
@@ -288,7 +288,7 @@ async function D(t, e, i) {
     return { success: !1, error: "No API key configured. Open AI Settings to add one." };
   const { provider: o, model: n, apiKey: u } = C();
   i?.("Researching and writing content...");
-  const d = U(t, {
+  const d = F(t, {
     style: e.style,
     slideCount: e.slideCount || void 0
   }), p = e.slideCount || 10, r = Math.min(Math.max(p * 300, 4096), 16384), s = await k({
@@ -322,7 +322,7 @@ async function D(t, e, i) {
     provider: o,
     model: n,
     apiKey: u,
-    systemPrompt: F,
+    systemPrompt: U,
     userPrompt: JSON.stringify(m),
     temperature: 0.3,
     maxTokens: b

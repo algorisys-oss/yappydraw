@@ -20,7 +20,8 @@
  * `readPptx`'s own "not a presentation" error.
  */
 import { unzipSync, strFromU8 } from 'fflate';
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink, DeckAnim } from './deck';
+import { effectOf, sideOf } from './anim-map';
 import { EMU_PER_PX, EMU_PER_PT } from './ooxml';
 import { geometryPathsPx, textRectPx, type GeomDef } from './guides';
 
@@ -1284,6 +1285,72 @@ function transitionOf(root: El): Transition | undefined {
     }
 }
 
+/**
+ * The slide's build animations (`p:timing`): the main sequence's effects in playing order. Each
+ * effect node (`p:cTn` with a presetClass) gives the class, preset, subtype and start; its
+ * behaviours give the target shape, the duration and, for a spin, the angle. Motion paths,
+ * media and triggered (interactive) sequences are not read; they are counted in `skipped`.
+ */
+function animsOf(root: El, warn: (s: string) => void): DeckAnim[] {
+    const tnLst = path(root, 'timing', 'tnLst');
+    if (!tnLst) return [];
+    const out: DeckAnim[] = [];
+    let skipped = 0;
+    const effects: El[] = [];
+    const visit = (el: El, depth: number) => {
+        if (depth > 40) return;
+        for (const k of elementKids(el)) {
+            if (k.localName === 'seq') {
+                const tn = kid(k, 'cTn');
+                const type = attr(tn, 'nodeType');
+                if (type && type !== 'mainSeq') { skipped++; continue; } // interactive (triggered) sequence
+            }
+            if (k.localName === 'cTn' && attr(k, 'presetClass')) { effects.push(k); continue; }
+            visit(k, depth + 1);
+        }
+    };
+    visit(tnLst, 0);
+    for (const tn of effects) {
+        const cls = attr(tn, 'presetClass');
+        if (cls !== 'entr' && cls !== 'exit' && cls !== 'emph') { skipped++; continue; }
+        const presetId = num(tn, 'presetID');
+        const subtype = num(tn, 'presetSubtype');
+        const nodeType = attr(tn, 'nodeType');
+        const start = nodeType === 'clickEffect' ? 'click' : nodeType === 'afterEffect' ? 'after' : 'with';
+        const delay = Number(attr(path(tn, 'stCondLst', 'cond'), 'delay'));
+        // Behaviours: every cBhvr's cTn; the target is the first shape any of them names.
+        const bhvrs = findAll(kid(tn, 'childTnLst'), 'cBhvr', 4);
+        const spTgt = bhvrs.map(b => findDeep(b, 'spTgt', 2)).find(Boolean);
+        const target = spTgt ? num(spTgt, 'spid') : NaN;
+        if (!Number.isFinite(target) || findDeep(spTgt!, 'txEl', 1)) { skipped++; continue; } // paragraph builds: not modelled
+        const durs = bhvrs.map(b => Number(attr(kid(b, 'cTn'), 'dur'))).filter(d => Number.isFinite(d) && d > 1);
+        const durationMs = durs.length ? Math.max(...durs) : 500;
+        const { effect, known } = effectOf(cls, presetId);
+        if (!known) warn(`An animation PowerPoint calls preset ${presetId} (${cls}) came in as a plain ${effect}.`);
+        const rotBy = findAll(kid(tn, 'childTnLst'), 'animRot', 2)[0];
+        const repeatCount = attr(tn, 'repeatCount');
+        out.push({
+            target, cls, effect, presetId, subtype, start,
+            durationMs, delayMs: Number.isFinite(delay) ? Math.max(0, delay) : 0,
+            ...(sideOf(subtype) && (effect === 'fly' || effect === 'wipe') && { dir: sideOf(subtype) }),
+            ...(effect === 'spin' && rotBy && { degrees: num(rotBy, 'by') / 60000 }),
+            ...(repeatCount === 'indefinite' ? { repeat: -1 } : repeatCount && Number(repeatCount) > 1000 ? { repeat: Math.round(Number(repeatCount) / 1000) } : {}),
+        });
+    }
+    if (skipped) warn(`${skipped} animation(s) couldn't be imported (motion paths, triggered or by-paragraph effects).`);
+    return out;
+}
+
+function findAll(el: El | null, local: string, depth: number): El[] {
+    if (!el || depth < 0) return [];
+    const out: El[] = [];
+    for (const k of elementKids(el)) {
+        if (k.localName === local) out.push(k);
+        else out.push(...findAll(k, local, depth - 1));
+    }
+    return out;
+}
+
 /** `advTm` on the slide's transition: advance by itself after this many ms. */
 function advanceAfterOf(root: El): number | undefined {
     const t = elementKids(root).find(k => k.localName === 'transition');
@@ -1411,6 +1478,8 @@ export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult 
             ...(attr(root, 'show') === '0' && { hidden: true }),
             ...(advanceAfterOf(root) && { advanceAfterMs: advanceAfterOf(root) }),
             ...(sections.has(part) && { section: sections.get(part) }) });
+        const anims = animsOf(root, warn);
+        if (anims.length) slides[slides.length - 1].anims = anims;
     });
     if (!slides.length) warn('The presentation has no slides.');
     const title = path(pkg.xml('docProps/core.xml'), 'title')?.textContent || undefined;

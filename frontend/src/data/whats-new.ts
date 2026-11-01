@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.297', date: '2026-11-01', items: [
+        'Animations go to PowerPoint: export a deck and your build animations come along as the closest PowerPoint effects — fades, fly-ins from the same side, zooms, spins, pulses — in the order you built them.',
+        'And they come back: opening a PowerPoint file brings its animations in, playing in the same order.',
+    ] },
     { version: '0.8.296', date: '2026-11-01', items: [
         'Morph between slides: duplicate a slide, move, resize, turn or recolour things on the copy, and set its transition to Morph. While presenting, everything glides into its new place; what is new fades in.',
         'PowerPoint keeps Morph in both directions (PowerPoint 2019 / 365).',

@@ -1454,6 +1454,7 @@ export const fr: Dictionary = {
         pictures: 'Images',
         picturesHint: 'Une image par diapositive. Identique au canevas, tracés à main levée compris, mais rien sur la diapositive n’est modifiable.',
         someAsPictures: '{{ count }} objet(s) que PowerPoint ne sait pas dessiner nativement (effets, masques, remplissages spéciaux) ont été placés en images.',
+        animsSkipped: '{{ count }} animation(s) sans équivalent dans PowerPoint (trajectoires, animations de propriétés et d’images clés, déclencheurs au survol) n’ont pas été exportées.',
         failed: 'Échec de l’export PowerPoint : {{ message }}',
     },
     pdfExport: {

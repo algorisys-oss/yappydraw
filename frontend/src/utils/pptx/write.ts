@@ -7,7 +7,7 @@
  * on the blank layout, so nothing inherits placeholder text or positions: what the deck model
  * says is what PowerPoint shows.
  */
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink, DeckAnim } from './deck';
 import { custGeomXml, presetGeomXml } from './custgeom';
 import { EMU_PER_PX, ang, esc, fontSz, pct, NS, REL, XML_DECL, relsXml, zipPackage, type Rel } from './ooxml';
 
@@ -286,6 +286,125 @@ function transitionXml(t: Transition | undefined, advanceAfterMs?: number): stri
         + '</mc:AlternateContent>';
 }
 
+// ── Build animations (p:timing) ─────────────────────────────────────────────────────────────
+// The node structure is what PowerPoint writes and what DeckCraft's writer emits
+// (crates/pptx/src/write/timing.rs): a main sequence of click steps; each step holds groups that
+// start one after another, each group effects that start together. Behaviours are the plain ones
+// PowerPoint uses for each preset (set visibility, a property tween, a filter, a rotation).
+
+const JUMP_SIDE = { l: ['0-#ppt_w/2', '#ppt_y'], r: ['1+#ppt_w/2', '#ppt_y'], t: ['#ppt_x', '0-#ppt_h/2'], b: ['#ppt_x', '1+#ppt_h/2'] } as const;
+const WIPE_FILTER = { l: 'wipe(right)', r: 'wipe(left)', t: 'wipe(down)', b: 'wipe(up)' } as const;
+
+function timingXml(anims: DeckAnim[], items: Item[]): string {
+    if (!anims.length) return '';
+    let id = 0;
+    const next = () => ++id;
+    const tgt = (spid: number) => `<p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl>`;
+    const cbhvr = (a: DeckAnim, dur: number, attrs: string[] = [], delay?: number, additive?: string) =>
+        `<p:cBhvr${additive ? ` additive="${additive}"` : ''}>`
+        + (delay !== undefined
+            ? `<p:cTn id="${next()}" dur="${Math.max(1, dur)}" fill="hold"><p:stCondLst><p:cond delay="${delay}"/></p:stCondLst></p:cTn>`
+            : `<p:cTn id="${next()}" dur="${Math.max(1, dur)}" fill="hold"/>`)
+        + tgt(a.target)
+        + (attrs.length ? `<p:attrNameLst>${attrs.map(n => `<p:attrName>${n}</p:attrName>`).join('')}</p:attrNameLst>` : '')
+        + '</p:cBhvr>';
+    const setVis = (a: DeckAnim, delay: number, visible: boolean) =>
+        `<p:set>${cbhvr(a, 1, ['style.visibility'], delay)}<p:to><p:strVal val="${visible ? 'visible' : 'hidden'}"/></p:to></p:set>`;
+    const prop = (a: DeckAnim, dur: number, attr: string, from: string, to: string) =>
+        `<p:anim calcmode="lin" valueType="num">${cbhvr(a, dur, [attr], undefined, 'base')}<p:tavLst>`
+        + `<p:tav tm="0"><p:val><p:strVal val="${from}"/></p:val></p:tav><p:tav tm="100000"><p:val><p:strVal val="${to}"/></p:val></p:tav></p:tavLst></p:anim>`;
+    const filter = (a: DeckAnim, dur: number, f: string, out: boolean) =>
+        `<p:animEffect transition="${out ? 'out' : 'in'}" filter="${f}">${cbhvr(a, dur)}</p:animEffect>`;
+    const rot = (a: DeckAnim, dur: number, deg: number) =>
+        `<p:animRot by="${Math.round(Math.max(-36000, Math.min(36000, deg)) * 60000)}">${cbhvr(a, dur, ['r'])}</p:animRot>`;
+    const scale = (a: DeckAnim, dur: number, pct: number) =>
+        `<p:animScale>${cbhvr(a, dur)}<p:by x="${pct * 1000}" y="${pct * 1000}"/></p:animScale>`;
+
+    const behaviours = (a: DeckAnim): string => {
+        const d = Math.max(1, Math.min(3_600_000, a.durationMs));
+        const side = a.dir ?? 'b';
+        if (a.cls === 'emph') {
+            if (a.effect === 'spin') return rot(a, d, a.degrees ?? 360);
+            if (a.effect === 'teeter') return rot(a, d, 4);
+            return scale(a, d, a.effect === 'growShrink' ? 150 : 105);
+        }
+        const out = a.cls === 'exit';
+        // Built in document order, so node ids run in order: an entrance shows its shape first.
+        let body = out ? '' : setVis(a, 0, true);
+        switch (a.effect) {
+            case 'appear': break;
+            case 'fly': {
+                const [x, y] = JUMP_SIDE[side];
+                body += out ? prop(a, d, 'ppt_x', '#ppt_x', x) + prop(a, d, 'ppt_y', '#ppt_y', y)
+                    : prop(a, d, 'ppt_x', x, '#ppt_x') + prop(a, d, 'ppt_y', y, '#ppt_y');
+                break;
+            }
+            case 'zoom': case 'grow': case 'spinner': case 'bounce': case 'swivel': {
+                const w = a.effect === 'swivel' ? prop(a, d, 'ppt_w', out ? '#ppt_w' : '0', out ? '0' : '#ppt_w')
+                    : prop(a, d, 'ppt_w', out ? '#ppt_w' : '0', out ? '0' : '#ppt_w') + prop(a, d, 'ppt_h', out ? '#ppt_h' : '0', out ? '0' : '#ppt_h');
+                body += w;
+                if (a.effect === 'spinner') body += rot(a, d, out ? -360 : 360);
+                body += filter(a, d, 'fade', out);
+                break;
+            }
+            case 'wipe': body += filter(a, d, WIPE_FILTER[a.dir ?? 'l'], out); break;
+            default: body += filter(a, d, 'fade', out);
+        }
+        return out ? body + setVis(a, a.effect === 'appear' ? 0 : d - 1, false) : body;
+    };
+
+    // grpId counts effects per shape, as PowerPoint numbers them.
+    const grpCount = new Map<number, number>();
+    const grpOf = new Map<DeckAnim, number>();
+    for (const a of anims) { const g = grpCount.get(a.target) ?? 0; grpOf.set(a, g); grpCount.set(a.target, g + 1); }
+
+    const effectPar = (a: DeckAnim) => {
+        const node = a.start === 'click' ? 'clickEffect' : a.start === 'with' ? 'withEffect' : 'afterEffect';
+        const repeat = a.repeat === -1 ? ' repeatCount="indefinite"' : a.repeat && a.repeat > 1 ? ` repeatCount="${Math.min(10000, a.repeat) * 1000}"` : '';
+        const autoRev = a.cls === 'emph' && (a.effect === 'pulse' || a.effect === 'growShrink') ? ' autoRev="1"' : '';
+        return `<p:par><p:cTn id="${next()}" presetID="${a.presetId}" presetClass="${a.cls}" presetSubtype="${a.subtype}"${repeat}${autoRev} fill="hold" grpId="${grpOf.get(a)}" nodeType="${node}">`
+            + `<p:stCondLst><p:cond delay="${Math.min(3_600_000, a.delayMs)}"/></p:stCondLst><p:childTnLst>${behaviours(a)}</p:childTnLst></p:cTn></p:par>`;
+    };
+    const endOf = (a: DeckAnim) => a.delayMs + a.durationMs * (a.repeat && a.repeat > 1 ? Math.min(100, a.repeat) : 1);
+
+    // Click steps → groups that start in turn → effects that start together. Leading effects that
+    // aren't on a click form an automatic first step (they play as the slide appears).
+    const steps: { auto: boolean; groups: DeckAnim[][] }[] = [];
+    for (const a of anims) {
+        const step = steps[steps.length - 1];
+        if (a.start === 'click' || !step) steps.push({ auto: a.start !== 'click', groups: [[a]] });
+        else if (a.start === 'with') step.groups[step.groups.length - 1].push(a);
+        else step.groups.push([a]);
+    }
+    // Node ids run in document order: root, main sequence, then each step and what it holds.
+    const root = next(), main = next();
+    const body = steps.map(st => {
+        const cond = st.auto ? '<p:cond delay="indefinite"/><p:cond evt="onBegin" delay="0"><p:tn val="2"/></p:cond>' : '<p:cond delay="indefinite"/>';
+        const stepId = next();
+        let t = 0;
+        const groups = st.groups.map(g => {
+            const gid = next();
+            const x = `<p:par><p:cTn id="${gid}" fill="hold"><p:stCondLst><p:cond delay="${t}"/></p:stCondLst><p:childTnLst>${g.map(effectPar).join('')}</p:childTnLst></p:cTn></p:par>`;
+            t += Math.max(...g.map(endOf));
+            return x;
+        }).join('');
+        return `<p:par><p:cTn id="${stepId}" fill="hold"><p:stCondLst>${cond}</p:stCondLst><p:childTnLst>${groups}</p:childTnLst></p:cTn></p:par>`;
+    }).join('');
+
+    // Shapes carry a text body, and PowerPoint expects a build entry for an animated one.
+    const shapeIds = new Set<number>();
+    const walk = (list: Item[]) => list.forEach(it => { if (it.kind === 'shape') shapeIds.add(it.id); });
+    walk(items);
+    const bld = [...new Set(anims.map(a => a.target))].filter(spid => shapeIds.has(spid))
+        .flatMap(spid => Array.from({ length: grpCount.get(spid) ?? 1 }, (_, g) => `<p:bldP spid="${spid}" grpId="${g}" animBg="1"/>`)).join('');
+
+    return `<p:timing><p:tnLst><p:par><p:cTn id="${root}" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>`
+        + `<p:seq concurrent="1" nextAc="seek"><p:cTn id="${main}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${body}</p:childTnLst></p:cTn>`
+        + '<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>'
+        + '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>'
+        + `</p:childTnLst></p:cTn></p:par></p:tnLst>${bld ? `<p:bldLst>${bld}</p:bldLst>` : ''}</p:timing>`;
+}
+
 function slideXml(slide: Slide, c: Ctx): string {
     let bg = '';
     const b = slide.background;
@@ -299,7 +418,7 @@ function slideXml(slide: Slide, c: Ctx): string {
     const name = slide.name ? ` name="${esc(slide.name)}"` : '';
     const show = slide.hidden ? ' show="0"' : '';
     return XML_DECL + `<p:sld ${ROOT_NS}${show}><p:cSld${name}>${bg}<p:spTree>${EMPTY_TREE_HEADER}${items}</p:spTree></p:cSld>`
-        + `<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>${transitionXml(slide.transition, slide.advanceAfterMs)}</p:sld>`;
+        + `<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>${transitionXml(slide.transition, slide.advanceAfterMs)}${timingXml(slide.anims ?? [], slide.items)}</p:sld>`;
 }
 
 // ── Fixed parts ─────────────────────────────────────────────────────────────────────────────

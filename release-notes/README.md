@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.297](0.8.297.md) — Build animations to and from PowerPoint (closest effects, playing order kept); animations gain an explicit `order`
 - [0.8.296](0.8.296.md) — Morph between slides: objects on both slides glide, resize, turn and recolour into place; PowerPoint keeps it (p159:morph)
 - [0.8.295](0.8.295.md) — Hide slide, sections, auto-advance and loop until Esc (PowerPoint keeps all four); security updates including a critical `zip` advisory in the desktop updater and 19 `npm audit` fixes (#465)
 - [0.8.294](0.8.294.md) — Speaker notes, a presenter view (Alt+F5), links that work in the show, new slide from a layout; Slide Master artwork and slide numbers on every exported page (#464). Fixes black vanishing from slides in Dark (#460), the white slide panel (#461), slides fitted under the navigator and off-centre when presenting (#462), and Open Link opening any scheme (#463)

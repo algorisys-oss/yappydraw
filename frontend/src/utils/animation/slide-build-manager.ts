@@ -1,3 +1,4 @@
+import { buildOrder } from '../build-order';
 import { store, setStore } from '../../store/app-store';
 import type { ElementAnimation } from '../../types/motion-types';
 import { sequenceAnimator } from './sequence-animator';
@@ -30,45 +31,9 @@ class SlideBuildManager {
             ? store.elements
             : getElementsOnSlide(slideIndex, store.elements, store.slides);
 
-        const allBuilds: BuildStep[] = [];
-
-        // Flatten all animations from all elements
-        slideElements.forEach(el => {
-            if (el.animations && el.animations.length > 0) {
-                el.animations.forEach(anim => {
-                    allBuilds.push({
-                        elementId: el.id,
-                        animation: anim,
-                        played: false
-                    });
-                });
-            }
-        });
-
-        // SORTING LOGIC:
-        // For now, we sort by either:
-        // 1. Explicit order if we had a z-index/order property on animations (not yet)
-        // 2. Element layer order, then by animation index within the element.
-        // This ensures a predictable build order based on visual stacking.
-        this.buildSequence = allBuilds.sort((a, b) => {
-            const elA = slideElements.find(e => e.id === a.elementId)!;
-            const elB = slideElements.find(e => e.id === b.elementId)!;
-
-            // Layer comparison
-            if (elA.layerId !== elB.layerId) {
-                const layerA = store.layers.find(l => l.id === elA.layerId);
-                const layerB = store.layers.find(l => l.id === elB.layerId);
-                return (layerA?.order ?? 0) - (layerB?.order ?? 0);
-            }
-
-            // Same element? Preserve internal order
-            if (a.elementId === b.elementId) {
-                return (elA.animations?.indexOf(a.animation) ?? 0) - (elB.animations?.indexOf(b.animation) ?? 0);
-            }
-
-            // Same layer? Arbitrary but stable (ID)
-            return a.elementId.localeCompare(b.elementId);
-        });
+        // Layer order, then animation index within an element, then element id — the same order
+        // the PowerPoint exporter writes (utils/build-order.ts).
+        this.buildSequence = buildOrder(slideElements, store.layers).map(s => ({ ...s, played: false }));
 
         // Hide elements that have startHidden animations
         this.applyStartHidden();

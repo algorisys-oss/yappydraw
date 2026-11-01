@@ -893,7 +893,9 @@ white by default).
 under the slide in PowerPoint's Normal view and in its Presenter View. With **Editable shapes**,
 **links** on objects become PowerPoint click actions (a web address, a jump to a slide, or
 next/previous/first/last slide and end show); a picture of a whole slide has none. Hidden slides,
-auto-advance times, sections and the loop setting go to PowerPoint in both types.
+auto-advance times, sections and the loop setting go to PowerPoint in both types. With
+**Editable shapes**, build **animations** go too, as the closest PowerPoint effects (see
+Animation ▸ Animations in PowerPoint).
 
 **Fonts.** The file names each font (Handlee, Inter, Poppins…) but doesn't embed it. On a
 computer that doesn't have the font, PowerPoint substitutes another, so text can wrap a little
@@ -948,7 +950,9 @@ size.
 
 Not imported yet: **charts and embedded objects** come in as labelled frames;
 **EMF/WMF/TIFF pictures** (common in older decks) as placeholders; **vertical text** comes in
-horizontal and **WordArt** text warps flat; animations and audio/video are skipped. A message tells you how many items weren't imported exactly, and the
+horizontal and **WordArt** text warps flat; audio/video is skipped. **Animations** come in as
+Yappy build animations (see Animation ▸ Animations in PowerPoint); motion paths, triggers and
+by-paragraph builds don't. A message tells you how many items weren't imported exactly, and the
 browser console lists them. A paragraph's own alignment shows on the canvas and in every
 export, but Yappy has no control for it yet: while you edit the text it shows the text box's
 alignment, and the toolbar's align buttons set the whole text box.
