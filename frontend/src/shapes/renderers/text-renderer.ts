@@ -6,6 +6,7 @@ import type { IRenderer } from "../../rendering/IRenderer";
 import type { DrawingElement } from "../../types";
 import { resolveFontFamily, wrapText, measureVerticalText } from "../../utils/text-utils";
 import { fontShorthand } from "../../utils/font-variants";
+import { fittedElement } from "../../utils/text-fit";
 import { layoutRichText, buildSpanFontString, listMarkerText, listMarkerX, listMarkerStyle, alignedLineX } from "../../utils/rich-text-utils";
 
 export class TextRenderer extends ShapeRenderer {
@@ -19,7 +20,8 @@ export class TextRenderer extends ShapeRenderer {
 
     private renderCommon(context: RenderContext): void {
         const { renderer, isDarkMode } = context;
-        let el = context.element;
+        // Shrink on overflow draws a scaled copy; an auto-sizing box always fits, so never shrinks.
+        let el = context.element.autoResize || context.element.verticalText ? context.element : fittedElement(renderer, context.element, 'text');
 
         const fontSize = el.fontSize || 20;
         const fontFamily = resolveFontFamily(el.fontFamily);

@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint speaker notes pptx notes pptx charts powerpoint chart import chart open pptx open powerpoint file drop pptx importPPTX table style pattern fill crop to shape potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
+keywords: "accessibility alt text alternative text screen reader decorative mark as decorative contrast wcag check accessibility setAltText checkAccessibility layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint speaker notes pptx notes pptx charts powerpoint chart import chart open pptx open powerpoint file drop pptx importPPTX table style pattern fill crop to shape potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
 ---
 
 # Workspace & Productivity
@@ -697,6 +697,41 @@ Two things worth knowing:
 
 A language is only offered once it is complete, so you will never get a half-translated interface. Translations are our own work rather than a native speaker's review; if a word is wrong in your language, [tell us](https://github.com/rajeshpillai/yappy/issues) — that is the fastest way for it to get fixed.
 
+## Accessibility
+
+**Alt text.** Right-click any object → **Alt Text…** and describe it for people who can't see it:
+what it shows and why it matters (*"Bar chart: sales doubled from Q1 to Q4"*, not *"chart"*).
+Screen readers read it aloud. For borders, backgrounds and ornaments that mean nothing, tick
+**Mark as decorative** instead, and screen readers skip them. Saving is one undo step. Alt text goes
+to **PowerPoint** (its Alt Text and "Mark as decorative", read back when you open the file) and to
+**SVG** export (each described object becomes an image named by a `<title>`; decorative ones are
+hidden from screen readers). A selected group's alt text goes on its first part.
+
+**Check accessibility** (command palette, <kbd>Ctrl+K</kbd>) opens a panel listing:
+
+| Issue | What it means |
+|---|---|
+| **Alt text** | A picture, video, chart or QR code with no alt text that isn't marked decorative. |
+| **Contrast** | Text below WCAG AA contrast against what is behind it — its own box or shape fill, else the page: 4.5:1, or 3:1 for large text (24px and up, or about 18.7px bold). |
+| **No text** | A page with no text at all: a screen reader has nothing to read, and nothing to find the page by. |
+
+**Go to** shows the object (or page); **Add alt text** opens the dialog for it. The list updates as
+you work, so each issue disappears once fixed. Slide Master artwork is listed once, not per page.
+
+:::note
+Contrast is measured against a solid page colour or the object's own fill. Text over a picture, a
+gradient or another shape isn't checked, and see-through text colours are skipped. PDF and the
+HTML player don't carry alt text yet.
+:::
+
+```
+Y.setAltText(id, 'Team photo at the 2026 offsite');
+Y.setAltText(borderId, '', { decorative: true });
+Y.getAltText(id);              // → { text, decorative }
+Y.checkAccessibility();        // → [{ kind: 'alt-text' | 'contrast' | 'no-text', page, elementId?, ratio?, needed? }]
+Y.openAccessibilityCheck();    // the panel
+```
+
 ## Export
 
 From the menu (or right-click → Export) save your work as **PNG**, **JPG**, **SVG**, **PDF**, **PowerPoint (PPTX)** or copy it to the clipboard — the whole canvas or just the selection. **Artboards** export their region to a fixed-size PNG (see the Artboards doc).
@@ -743,7 +778,7 @@ now enough to keep it out of both the pixels *and* the box.
 
 ### True-vector SVG
 
-SVG export is real **vector**: shapes become `<path>`s, text becomes ` <text>`, and gradients & gradient-mesh fills export as proper ` <linearGradient>`/`<radialGradient>`/`<pattern>` definitions — so the file stays crisp at any size and is editable in Illustrator, Inkscape or the browser. Sketch-style strokes export as vector too (via rough.js). A few highly decorative shapes fall back to an embedded raster image.
+SVG export is real **vector**: shapes become `<path>`s, text becomes ` <text>`, and gradients & gradient-mesh fills export as proper ` <linearGradient>`/`<radialGradient>`/`<pattern>` definitions — so the file stays crisp at any size and is editable in Illustrator, Inkscape or the browser. Sketch-style strokes export as vector too (via rough.js). A few highly decorative shapes fall back to an embedded raster image. Objects with **alt text** export as images named by a `<title>`, and decorative ones are hidden from screen readers (see Accessibility).
 
 ### Vector PDF
 
@@ -865,20 +900,22 @@ Pick **PPTX** in the Export dialog and choose a **PowerPoint type**:
     (a database keeps its lid). Shapes with several colours, such as shaded 3D blocks and icons,
     become a **group** of shapes.
   - **Text stays text** in its font, size, colour, bold/italic/underline/strikethrough and
-    alignment, with bullets, numbering and list levels — including a list's own bullet glyph,
+    alignment, with **Shrink text on overflow** where you set it, with bullets, numbering and list levels — including a list's own bullet glyph,
     bullet colour and size, numbering style (1. a) (iv)…), start number, indents and the space
     between paragraphs. A shape's label is the shape's own text.
   - **Straight lines and arrows are connectors**: when an end sits on the middle of a shape's side
     they are glued to that shape, so they follow it when you move it in PowerPoint. Curves and
     elbow lines keep their exact path and arrowheads, but are not glued.
-  - **Images** keep their crop and opacity; **groups** stay groups.
+  - **Images** keep their crop and opacity; **groups** stay groups. **Alt text** and **Mark as
+    decorative** go on every object that has them (see Accessibility).
   - **Tables** become real PowerPoint tables (text, header and row colours, widths, alignment,
     merged cells, lines), so you can type into them there (see Tables ▸ PowerPoint). A rotated
     table goes as a picture.
   - **Data charts** become real PowerPoint charts with their data in an embedded workbook, so
     **Edit Data** works in PowerPoint and the chart stays a chart (see Design Studio ▸ Charts).
   - **Slide backgrounds** (colour or gradient) and **transitions** carry over: *Fade* → Fade,
-    *Slide left/right/up/down* → Push, *Zoom in/out* → Zoom, at the same duration.
+    *Slide left/right/up/down* → Push, *Zoom in/out* → Zoom, *Wipe*, *Cover*, *Uncover* and
+    *Split* → PowerPoint's own, in the same direction and duration.
   - Hand-drawn (sketch) strokes come out **clean**, and hatched fills become PowerPoint pattern
     fills.
   - What PowerPoint can't draw is placed as a **picture of just that object**, where it sits:
@@ -924,7 +961,7 @@ size.
   shapes. Every other PowerPoint shape (arrows, callouts, flowchart, stars, clouds, freeforms)
   becomes a vector **path** with its exact outline, so it looks right and you can edit its points.
 - **Text** keeps its font size, colour, bold/italic/underline and alignment, paragraph by
-  paragraph: a centred heading over left-aligned lines stays centred. Text styled by
+  paragraph (text PowerPoint shrank to fit comes in at that size, with **Shrink on overflow** on): a centred heading over left-aligned lines stays centred. Text styled by
   the slide master and layouts (titles, body placeholders) gets that styling, and theme colours
   and fonts are resolved. Fonts Yappy doesn't have use the closest built-in face (sans-serif, serif
   or monospace).
@@ -946,12 +983,15 @@ size.
   colours. **Groups** stay groups; the **slide master's own artwork** (logo bars, decorations) is
   placed on every slide that shows it.
 - **Backgrounds** (colour, gradient, picture — stretched or tiled, see-through ones included) and
-  **transitions** (Fade, Push/Wipe/Cover → Slide, Zoom, Morph) carry over.
+  **transitions** (Fade, Push → Slide, Wipe, Cover, Uncover, Split, Zoom, Morph) carry over;
+  diagonal covers take their nearest straight direction, and other effects come in as a fade.
 - **Links** on objects (a web address, a jump to another slide, next/previous/first/last slide,
   end show) come in as Yappy links that work while presenting. Other click actions (run a
   program, play a sound, a macro) and links on single words in a text box are dropped.
 - **Hidden slides**, **auto-advance times** ("After" in PowerPoint), **sections** and **Loop
   continuously until Esc** come in as their Yappy equivalents.
+- **Alt text** and **Mark as decorative** come in on every object (a group's alt text on its
+  first part).
 - **Speaker notes** come in as each slide's notes (as plain text: bold, bullets and indent levels
   are not kept), and the notes pane opens so you can see them.
 - **Charts** (column, bar, line, area, pie, doughnut, and their 3-D versions drawn flat) come in

@@ -1,5 +1,24 @@
 # Bug Fixes Log
 
+## 2026-11-01 — Switching slides could copy one slide's background onto another
+
+### 466. A slide took the previous slide's background after a slide switch
+
+**Found** while testing the new Wipe/Cover/Split transitions: two slides set to red and blue both
+came out blue after switching back to the first one.
+
+- **Cause.** Switching slides set `activeSlideIndex` first; `canvasBackgroundColor` (and texture
+  and size), which mirror the active slide, were only updated after an `await` in
+  `setActiveSlide`. An autosave landing in between (`forceAutoSave` → `buildSlideDocument` →
+  `saveActiveSlide`) wrote the mirrored — previous slide's — background into the slide just
+  switched to. Reproducible whenever a slide's background had changed while another slide was the
+  canvas's (e.g. right after Add Slide); in use, recolouring a slide and then switching away could
+  recolour the slide you went to.
+- **Fix.** `enterSlide(index)` sets the index and the mirrored fields together in one `batch`; the
+  transition manager uses it at all three places it switched the index.
+- **Test.** `tests/slide-transitions.spec.ts` ("switching slides keeps each slide its own
+  background").
+
 ## 2026-11-01 — Dependabot: zip (critical/high/medium), minimatch
 
 ### 465. Five open advisories on the OSS mirror

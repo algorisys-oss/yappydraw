@@ -161,10 +161,17 @@ function paragraphXml(p: Paragraph, body: TextBody, s: number): string {
 const stripUndef = <T extends object>(o: T): Partial<T> =>
     Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
 
+/** `a:normAutofit` (shrink on overflow, at the scale given) or `a:noAutofit`. */
+const autofitXml = (shrink: number | undefined): string => {
+    if (shrink === undefined) return '<a:noAutofit/>';
+    const k = Math.max(0.25, Math.min(1, shrink));
+    return k < 0.9995 ? `<a:normAutofit fontScale="${Math.round(k * 100000)}"/>` : '<a:normAutofit/>';
+};
+
 function txBodyXml(t: TextBody | undefined, s: number, tag = 'p:txBody'): string {
     if (!t) return '';
     const ins = (v: number) => Math.max(0, Math.round(v * s * EMU_PER_PX));
-    const bodyPr = `<a:bodyPr wrap="${t.wrap ? 'square' : 'none'}" lIns="${ins(t.insets.l)}" tIns="${ins(t.insets.t)}" rIns="${ins(t.insets.r)}" bIns="${ins(t.insets.b)}" anchor="${t.anchor}" rtlCol="0"><a:noAutofit/></a:bodyPr>`;
+    const bodyPr = `<a:bodyPr wrap="${t.wrap ? 'square' : 'none'}" lIns="${ins(t.insets.l)}" tIns="${ins(t.insets.t)}" rIns="${ins(t.insets.r)}" bIns="${ins(t.insets.b)}" anchor="${t.anchor}" rtlCol="0">${autofitXml(t.shrink)}</a:bodyPr>`;
     const paras = t.paragraphs.length ? t.paragraphs : [{ runs: [] }];
     return `<${tag}>${bodyPr}<a:lstStyle/>${paras.map(p => paragraphXml(p, t, s)).join('')}</${tag}>`;
 }
@@ -215,10 +222,16 @@ const xfrmXml = (it: { x: number; y: number; w: number; h: number; rot?: number;
     return `<${tag}${attrs ? ' ' + attrs : ''}><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/>${ch}</${tag}>`;
 };
 
-const cNvPr = (it: { id: number; name: string; link?: DeckLink }, c: Ctx, descr?: string) => {
+/** PowerPoint's "Mark as decorative" (Office 2019+): an extension on the object's cNvPr. */
+const DECORATIVE_EXT = '<a:extLst><a:ext uri="{C183D7F6-B498-43B3-948B-1728B52AA6E4}">'
+    + '<adec:decorative xmlns:adec="http://schemas.microsoft.com/office/drawing/2017/decorative" val="1"/></a:ext></a:extLst>';
+
+const cNvPr = (it: { id: number; name: string; link?: DeckLink; descr?: string; decorative?: boolean }, c: Ctx) => {
+    const descr = it.descr?.trim();
     const head = `<p:cNvPr id="${it.id}" name="${esc(it.name)}"${descr ? ` descr="${esc(descr)}"` : ''}`;
-    const link = hlinkXml(it.link, c);
-    return link ? `${head}>${link}</p:cNvPr>` : `${head}/>`;
+    // Children in schema order: the click link, then extensions.
+    const inner = hlinkXml(it.link, c) + (it.decorative ? DECORATIVE_EXT : '');
+    return inner ? `${head}>${inner}</p:cNvPr>` : `${head}/>`;
 };
 
 function shapeXml(it: ShapeItem, c: Ctx): string {
@@ -238,7 +251,7 @@ function connectorXml(it: ConnectorItem, c: Ctx): string {
 
 function pictureXml(it: PictureItem, c: Ctx): string {
     const rid = c.media(it.media);
-    const nv = `<p:nvPicPr>${cNvPr(it, c, it.descr)}<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`;
+    const nv = `<p:nvPicPr>${cNvPr(it, c)}<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`;
     const alpha = it.alpha !== undefined && it.alpha < 1 ? `<a:alphaModFix amt="${pct(it.alpha)}"/>` : '';
     const cr = it.crop;
     const src = cr ? `<a:srcRect l="${pct(cr.l)}" t="${pct(cr.t)}" r="${pct(cr.r)}" b="${pct(cr.b)}"/>` : '';
@@ -327,7 +340,8 @@ function transitionXml(t: Transition | undefined, advanceAfterMs?: number): stri
         + `<mc:Fallback><p:transition spd="fast"${adv}/></mc:Fallback></mc:AlternateContent>` : '';
     const dur = Math.max(0, Math.min(60000, Math.round(t.durationMs)));
     const spd = dur <= 600 ? 'fast' : dur <= 900 ? 'med' : 'slow';
-    const effect = t.kind === 'push' ? `<p:push dir="${t.dir ?? 'l'}"/>`
+    const effect = t.kind === 'push' || t.kind === 'wipe' || t.kind === 'cover' || t.kind === 'pull' ? `<p:${t.kind} dir="${t.dir ?? 'l'}"/>`
+        : t.kind === 'split' ? `<p:split orient="${t.orient ?? 'horz'}" dir="${t.inward ? 'in' : 'out'}"/>`
         : t.kind === 'zoom' ? `<p:zoom dir="${t.zoomIn === false ? 'out' : 'in'}"/>`
         : '<p:fade/>';
     // Morph is a PowerPoint 2019 / 365 transition (p159); everything older falls back to a fade.

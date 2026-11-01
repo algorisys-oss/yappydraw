@@ -11640,3 +11640,59 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   visible regression of importing natively (A/B against the old path showed it). Tables from
   PowerPoint now get `tableSortArrows: false`, with a context-menu toggle.
 
+## Wipe, Cover, Uncover, Split (2026-11-01, bug #466)
+
+- **Two slides at once means an overlay, and bitmaps make it cheap.** The view-pan transitions
+  can only show the active slide. Like Morph, these switch to the new slide first and draw on an
+  overlay; unlike Morph nothing moves *inside* a slide, so each slide is rendered once into a
+  bitmap and a frame is two `drawImage` calls under a clip or an offset.
+- **Keep the geometry pure.** `composite-frame.ts` (which type means what, where each slide sits
+  at progress t) has no DOM or store imports, so its unit test pins every direction; the browser
+  spec then only has to sample the overlay at a few points (red old slide vs blue new one).
+- **Name the direction once and check it against a second reader.** "wipe-left" could mean "from
+  the left" or "towards the left". The type follows `slide-left` ↔ `push dir="l"` (motion towards
+  the left), and LibreOffice's reading of the written file (`barWipe leftToRight` for
+  `wipe dir="r"`, `slideWipe fromBottom` for `cover dir="u"`) confirmed each mapping.
+- **A mirror field updated after an `await` is a race with anything that saves.** Switching slides
+  set `activeSlideIndex` and only later the canvas background that mirrors it; the autosave in
+  between wrote the previous slide's background into the new one (#466). Set an index and the
+  state derived from it in one `batch` (`enterSlide`). It showed up only because the transition
+  test used two different backgrounds — a test fixture with distinct values per slide finds this
+  class of bug for free.
+
+## Shrink text on overflow (2026-11-01)
+
+- **Shrink when drawing, never in the data.** `textFit: 'shrink'` leaves `fontSize` alone and the
+  renderers draw a scaled copy (`fittedElement`). Writing the shrunk size back would ratchet: the
+  text could never grow again when it got shorter, and undo would be full of size changes.
+- **One helper, four render paths, one line each.** Text box plain/rich and shape label
+  plain/rich each lay text out differently (4px vs 10px padding, different default sizes, rich
+  layout vs wrap). The fit measures each with that path's own layout and hands back a scaled
+  element, so the renderers change by a single line and the fit can't disagree with the drawing.
+- **Wrapping makes height a step function of size.** Bisect to 1 % instead of solving; cache by
+  content and box, since a frame redraws everything.
+- **Import fidelity beats semantic purity.** PowerPoint stores the scale it last shrank to
+  (`normAutofit fontScale`). Keeping it in the imported sizes (and setting the flag) shows exactly
+  what PowerPoint showed; re-fitting from the full sizes with substitute fonts would not. Export
+  writes full sizes plus our scale, which is what PowerPoint itself writes.
+- **A stub renderer is enough to unit-test layout.** Half a character per pixel of font size makes
+  wrapping predictable in bun, with no canvas.
+
+## Alt text and the accessibility check (2026-11-01)
+
+- **Adapt a check to the model instead of copying it.** DeckCraft flags "missing slide title";
+  Yappy pages have no title placeholder, so the closest honest check is "no text on this page"
+  (nothing to read, nothing to find it by). Its flat 3:1 contrast threshold became WCAG AA proper
+  (4.5:1, 3:1 for large text), measured against the object's own fill when it has one rather than
+  always the page — white-on-navy labels on a white slide are fine.
+- **Report master artwork once.** `pageScene` copies Slide Master objects onto every page with
+  `@page<n>` ids; strip the suffix before reporting or one logo becomes ten issues.
+- **Post-process cross-cutting attributes in one place.** `cNvPr descr` and the decorative
+  extension apply to every object kind; reading them in `readOne` (where links were already
+  handled) beat adding them to each of six item readers. The same on export: `convertRun` sets
+  them on whatever an element became, grouping multi-item objects so the text is read once.
+- **Yappy groups hold no properties.** An imported group's alt text goes on its first part; the
+  Alt Text dialog on a group selection edits that same part, so the two agree.
+- **LibreOffice confirmed both attributes** (`svg:desc`, `loext:decorative="true"`) from the
+  written file — the extension URI and namespace have to be exactly PowerPoint's.
+

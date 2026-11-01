@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.300', date: '2026-11-01', items: [
+        'New slide transitions: Wipe, Cover, Uncover and Split, in every direction — and PowerPoint keeps them.',
+        'Shrink text on overflow: turn on Text Fit in Properties and long text shrinks to fit its box, then grows back when it has room.',
+        'Alt text: right-click any picture, chart or shape → Alt Text… to describe it for screen readers, or mark it as decorative. It goes to PowerPoint and SVG too.',
+        'Check accessibility (Ctrl+K): a list of missing alt text, hard-to-read text and pages with no text, with a button to fix each.',
+        'Fixed: switching slides could give a slide the previous slide’s background colour.',
+    ] },
     { version: '0.8.299', date: '2026-11-01', items: [
         'Tables go to PowerPoint as real tables: type into them, add rows and restyle them there — colours, widths, merged cells and lines come along.',
         'And they come back: tables in PowerPoint files you open arrive as Yappy tables whenever they can look the same.',

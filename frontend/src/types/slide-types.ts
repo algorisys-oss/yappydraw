@@ -14,7 +14,13 @@ export type SlideTransitionType =
     | 'slide-down'
     | 'zoom-in'
     | 'zoom-out'
-    | 'morph';
+    | 'morph'
+    // Both slides on screen at once (utils/animation/composite-transition.ts). The direction is
+    // the way the effect moves: wipe-left reveals the new slide from the right edge, moving left.
+    | 'wipe-left' | 'wipe-right' | 'wipe-up' | 'wipe-down'
+    | 'cover-left' | 'cover-right' | 'cover-up' | 'cover-down'
+    | 'uncover-left' | 'uncover-right' | 'uncover-up' | 'uncover-down'
+    | 'split-horizontal-out' | 'split-horizontal-in' | 'split-vertical-out' | 'split-vertical-in';
 
 /**
  * Available easing functions for transitions

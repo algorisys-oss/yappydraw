@@ -52,6 +52,7 @@ import { openMandalaDialog } from '../components/mandala-dialog';
 import { openDoodleDialog, selectedDoodleId } from '../components/doodle-dialog';
 import { YappyAPI } from '../api';
 import { t } from '../i18n';
+import { openAltText } from '../components/accessibility-dialogs';
 import { refreshConnectors } from './binding-logic';
 import { autoLayout, autoLayoutCandidates } from './auto-layout';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
@@ -1708,7 +1709,10 @@ function buildContextMenuItems(
         // the whole selection; clicking any linked part follows it.
         if (selectionCount >= 1) {
             const selectedEls = store.selection.map(id => store.elements.find(e => e.id === id)).filter(Boolean) as DrawingElement[];
-            if (selectedEls.length) items.push(linkMenu(selectedEls), { separator: true });
+            if (selectedEls.length) items.push(linkMenu(selectedEls));
+            // Alt text describes one object; a group's goes on its first part (as PowerPoint import does).
+            if (selectedEls.length) items.push({ label: t('a11y.menu'), onClick: () => openAltText(selectedEls[0].id) });
+            if (selectedEls.length) items.push({ separator: true });
         }
 
         // Video-specific actions

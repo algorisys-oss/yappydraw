@@ -4,6 +4,7 @@ import { getShapeGeometry } from "../../utils/shape-geometry";
 import { geometryToDs } from "../../utils/geometry-to-ds";
 import { resolveDash } from "../../utils/stroke-dash";
 import { getFontString, measureContainerText, containerTextAvailableWidth } from "../../utils/text-utils";
+import { fittedElement } from "../../utils/text-fit";
 import { layoutRichText, buildSpanFontString, listMarkerText, listMarkerX, listMarkerStyle, alignedLineX } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
@@ -844,9 +845,14 @@ export class RenderPipeline {
     }
 
     static renderText(context: RenderContext, cx: number, cy: number) {
-        const { renderer, element: el, isDarkMode } = context;
-        if (el.isEditing) return; // Don't render text if we're currently editing it
+        if (context.element.isEditing) return; // Don't render text if we're currently editing it
         if (context.suppressText) return; // drawIn geometry capture — see RenderContext
+        // Shrink on overflow: lay the label out from a copy with every size scaled to fit.
+        if (context.element.textFit === 'shrink' && !context.element.curvedText) {
+            const fitted = fittedElement(context.renderer, context.element, 'label');
+            if (fitted !== context.element) context = { ...context, element: fitted };
+        }
+        const { renderer, element: el, isDarkMode } = context;
 
         // Rich text path — render per-span formatting
         if (el.richContainerText && el.richContainerText.length > 0) {

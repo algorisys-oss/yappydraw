@@ -276,7 +276,24 @@ export const properties: PropertyConfig[] = [
             { label: 'Slide Up', value: 'slide-up' },
             { label: 'Slide Down', value: 'slide-down' },
             { label: 'Zoom In', value: 'zoom-in' },
-            { label: 'Zoom Out', value: 'zoom-out' }
+            { label: 'Zoom Out', value: 'zoom-out' },
+            { label: 'Morph', value: 'morph' },
+            { label: 'Wipe ←', value: 'wipe-left' },
+            { label: 'Wipe →', value: 'wipe-right' },
+            { label: 'Wipe ↑', value: 'wipe-up' },
+            { label: 'Wipe ↓', value: 'wipe-down' },
+            { label: 'Cover ←', value: 'cover-left' },
+            { label: 'Cover →', value: 'cover-right' },
+            { label: 'Cover ↑', value: 'cover-up' },
+            { label: 'Cover ↓', value: 'cover-down' },
+            { label: 'Uncover ←', value: 'uncover-left' },
+            { label: 'Uncover →', value: 'uncover-right' },
+            { label: 'Uncover ↑', value: 'uncover-up' },
+            { label: 'Uncover ↓', value: 'uncover-down' },
+            { label: 'Split ↕ out', value: 'split-horizontal-out' },
+            { label: 'Split ↕ in', value: 'split-horizontal-in' },
+            { label: 'Split ↔ out', value: 'split-vertical-out' },
+            { label: 'Split ↔ in', value: 'split-vertical-in' }
         ],
         group: 'slide',
         applicableTo: ['slide'],
@@ -1208,6 +1225,18 @@ export const properties: PropertyConfig[] = [
         group: 'text',
         applicableTo: ['text', 'richtext', 'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'star', 'cloud', 'heart', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlObject', 'umlPort', 'umlHistory', 'umlAction', 'umlNode', 'umlArtifact', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnDataStore', 'bpmnAnnotation', 'bpmnGroup', 'bpmnPool', 'path'],
         defaultValue: 'middle'
+    },
+    {
+        key: 'textFit',
+        label: 'Text Fit',
+        type: 'select',
+        options: [
+            { label: 'None', value: 'none' },
+            { label: 'Shrink on overflow', value: 'shrink' }
+        ],
+        group: 'text',
+        applicableTo: ['text', 'richtext', 'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'star', 'cloud', 'heart', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlObject', 'umlPort', 'umlHistory', 'umlAction', 'umlNode', 'umlArtifact', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnDataStore', 'bpmnAnnotation', 'bpmnGroup', 'bpmnPool', 'path'],
+        defaultValue: 'none'
     },
     {
         key: 'arrowAnchorAlign',

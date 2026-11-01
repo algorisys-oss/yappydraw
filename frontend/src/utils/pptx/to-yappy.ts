@@ -311,6 +311,8 @@ function textFields(t: TextBody, container: boolean) {
         textColor: css(first?.color ?? { hex: '#000000' }),
     };
     if (t.lineSpacing && Math.abs(t.lineSpacing - 1) > 0.01) fields.lineHeight = Math.max(0.5, Math.min(4, t.lineSpacing * 1.2));
+    // "Shrink text on overflow": PowerPoint's scale is already in the sizes; keep fitting as text changes.
+    if (t.shrink !== undefined && t.wrap) fields.textFit = 'shrink';
     const plain = t.paragraphs.map(p => p.runs.map(r => r.br ? '\n' : r.text).join('')).join('\n');
     if (uniform) {
         if (first?.bold) fields.fontWeight = 700;
@@ -588,7 +590,6 @@ function pictureElement(it: PictureItem, c: Conv, groups: string[]): DrawingElem
         el.crop = { x: it.crop.l * img.w, y: it.crop.t * img.h, width: Math.max(1, (1 - it.crop.l - it.crop.r) * img.w), height: Math.max(1, (1 - it.crop.t - it.crop.b) * img.h) };
     }
     if (it.alpha !== undefined && it.alpha < 1) el.opacity = Math.round(it.alpha * 100);
-    if (it.descr) el.altText = it.descr;
     c.stats.elements++; c.stats.pictures++;
     if (!it.geom) return [el];
     // Cropped to a shape: the outline becomes a clipping mask over the picture, grouped with it —
@@ -758,6 +759,10 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
             }
             // A linked group is a button made of parts: every part follows the link, unless a
             // part has its own.
+            // Alt text goes on the object — for a group (Yappy groups hold no properties), on its
+            // first part, so a screen reader hears it once. "Decorative" applies to every part.
+            if (it.descr && made[0] && !made[0].altText) made[0].altText = it.descr;
+            if (it.decorative) for (const el of made) el.decorative = true;
             const link = linkOf(it.link, c);
             if (link) for (const el of made) if (!el.link) el.link = link;
             // Later items win: a slide's own shapes are read after its master's, which can reuse ids.
@@ -772,9 +777,12 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
 
 function transitionOf(t: Transition | undefined): SlideTransition | undefined {
     if (!t) return undefined;
-    const type = t.kind === 'morph' ? 'morph' : t.kind === 'fade' ? 'fade'
+    const side = t.dir === 'r' ? 'right' : t.dir === 'u' ? 'up' : t.dir === 'd' ? 'down' : 'left';
+    const type: SlideTransition['type'] = t.kind === 'morph' ? 'morph' : t.kind === 'fade' ? 'fade'
         : t.kind === 'zoom' ? (t.zoomIn === false ? 'zoom-out' : 'zoom-in')
-        : t.dir === 'r' ? 'slide-right' : t.dir === 'u' ? 'slide-up' : t.dir === 'd' ? 'slide-down' : 'slide-left';
+        : t.kind === 'split' ? `split-${t.orient === 'vert' ? 'vertical' : 'horizontal'}-${t.inward ? 'in' : 'out'}`
+        : t.kind === 'wipe' ? `wipe-${side}` : t.kind === 'cover' ? `cover-${side}` : t.kind === 'pull' ? `uncover-${side}`
+        : `slide-${side}`;
     return { type, duration: Math.max(100, Math.min(5000, t.durationMs)), easing: 'easeInOutQuad' };
 }
 

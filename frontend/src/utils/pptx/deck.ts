@@ -104,6 +104,9 @@ export interface TextBody {
     lineSpacing?: number;
     /** Default run properties for the body (applied when a run sets none). */
     defaults?: Omit<TextRun, 'text' | 'br'>;
+    /** Shrink text on overflow (`a:normAutofit`) is on; the value is the scale it is drawn at
+     *  (export: sizes are written full and PowerPoint applies it; import: already in the sizes). */
+    shrink?: number;
 }
 
 /**
@@ -119,6 +122,10 @@ interface Placed {
     id: number;      // unique within the slide (cNvPr id); 1 is the slide's spTree
     name: string;
     link?: DeckLink;
+    /** Alternative text (`cNvPr descr`), read aloud by screen readers. */
+    descr?: string;
+    /** Marked as decorative: screen readers skip it (PowerPoint's `adec:decorative`). */
+    decorative?: boolean;
     x: number; y: number; w: number; h: number;
     rot?: number;    // degrees, about the box centre
     flipH?: boolean;
@@ -157,7 +164,6 @@ export interface PictureItem extends Placed {
     /** Crop as fractions of the source image cut from each edge (`srcRect`). */
     crop?: { l: number; t: number; r: number; b: number };
     alpha?: number;
-    descr?: string;
     /** The picture's outline when it isn't a rectangle ("crop to shape": an ellipse, a star…). */
     geom?: Geometry;
     /** Shown in grey tones (`a:grayscl`). */
@@ -203,12 +209,17 @@ export interface TableItem extends Placed {
 
 export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem | ChartItem | TableItem;
 
-export type TransitionKind = 'fade' | 'push' | 'zoom' | 'morph';
+/** `pull` is PowerPoint's name for Uncover. */
+export type TransitionKind = 'fade' | 'push' | 'zoom' | 'morph' | 'wipe' | 'cover' | 'pull' | 'split';
 export interface Transition {
     kind: TransitionKind;
-    /** Push direction: the side the new slide comes FROM (DrawingML `dir`). */
+    /** Push / wipe / cover / pull: the way the effect moves (DrawingML `dir`; "l" = towards the
+     *  left, so a pushed-in slide comes from the right). */
     dir?: 'l' | 'r' | 'u' | 'd';
     zoomIn?: boolean;
+    /** Split: the line it opens along, and whether it opens out from it or closes in to it. */
+    orient?: 'horz' | 'vert';
+    inward?: boolean;
     durationMs: number;
 }
 

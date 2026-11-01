@@ -708,6 +708,12 @@ export interface DrawingElement {
     elbowRadius?: number;
     constrained?: boolean; // Keep proportions
     autoResize?: boolean; // Auto-resize based on text
+    /** Alternative text, read aloud by screen readers and written to PowerPoint, SVG and HTML exports. */
+    altText?: string;
+    /** Purely decorative: screen readers skip it, and the accessibility check doesn't ask for alt text. */
+    decorative?: boolean;
+    /** 'shrink': draw the text smaller (down to 25%) when it doesn't fit its box; sizes stay as set. Text boxes that don't auto-size, and shape labels. */
+    textFit?: 'none' | 'shrink';
     flipX?: boolean; // Mirror horizontally
     flipY?: boolean; // Mirror vertically
     // Clipping / opacity mask. The mask shape has isClipMask=true (not drawn on its own);

@@ -75,7 +75,7 @@ improves the PowerPoint round trip.
 
 | Feature | DeckCraft | Yappy today | Value | Effort |
 |---|---|---|---|---|
-| Transition gallery | Has: fade, push, wipe, split, cover, uncover, zoom, 3-D effects, Morph; effect options; transition sounds (`anim/src/transition_fx.rs`, `transition_geom.rs`) | **Partial**: 8 types (none, fade, slide ×4, zoom in/out) with duration and easing (`slide-types.ts:8`, `slide-transition-manager.ts`) | Medium. Wipe, cover/uncover and split are cheap canvas composites and map 1:1 to PPTX. RT | S–M |
+| Transition gallery | Has: fade, push, wipe, split, cover, uncover, zoom, 3-D effects, Morph; effect options; transition sounds (`anim/src/transition_fx.rs`, `transition_geom.rs`) | **Partial**: none, fade, slide ×4, zoom in/out, Morph, and (feat/slide-transitions) wipe ×4, cover ×4, uncover ×4, split ×4 — `composite-transition.ts` draws both slides from bitmaps on an overlay; all round-trip as PowerPoint's own elements. Missing: 3-D effects, effect options beyond direction, sounds | Medium. Wipe, cover/uncover and split are cheap canvas composites and map 1:1 to PPTX. RT | S–M |
 | Morph (match shapes across consecutive slides and tween them) | Has (`anim/src/morph.rs`, `geom/src/morph.rs`) | **Partial**: Display States "Magic Move" tweens one diagram between named states on the same slide (`DisplayState`, `types/motion-types.ts:111`; `morph-animator.ts`). No cross-slide matching | **High**: the single most-requested "modern" transition, and Yappy's element model (stable ids, names) makes matching easy. RT (`p159:morph`) | M |
 | Entrance / emphasis / exit / motion-path effects | Has | **Has**, and broader: 100+ presets, keyframes, paths, spin/orbit (`features/animation.md`) | — | — |
 | Animation pane (ordered list, reorder, timing) | Partial | **Partial**: Sequence builder and per-element animation panel (`animation.md` §355); no single deck-ordered list for the slide | Medium | M |
@@ -101,7 +101,7 @@ improves the PowerPoint round trip.
 | Feature | DeckCraft | Yappy today | Value | Effort |
 |---|---|---|---|---|
 | Bullets, numbering, levels, per-paragraph alignment | Has | **Has** (v0.8.290–.292; `design-studio.md` §182–184). Per-paragraph alignment renders but has no UI control yet (`workspace.md` PPTX section) | Small UI gap | S |
-| Autofit (shrink text on overflow / resize shape to fit) | Has (`crates/text/src/layout.rs`) | **Partial**: `autoResize` hugs the text (`types.ts:710`); no shrink-on-overflow. `normAutofit` is read only for import (`pptx/read.ts`) | Medium; placeholders without shrink-to-fit overflow constantly. RT | M |
+| Autofit (shrink text on overflow / resize shape to fit) | Has (`crates/text/src/layout.rs`) | **Has** (feat/text-autofit): `autoResize` hugs the text; `textFit: 'shrink'` draws text boxes and shape labels (plain and rich) at the largest scale that fits, down to 25% (`utils/text-fit.ts`), stored sizes unchanged. PPTX: written as `normAutofit fontScale`, read back as the flag (PowerPoint's stored scale stays in the sizes). Not yet: line-spacing reduction, fitting while the editor is open | Medium; placeholders without shrink-to-fit overflow constantly. RT | M |
 | Text columns | Has | **Missing** (`textColumns` not found) | Low–medium. RT (`numCol`) | M |
 | Vertical text | Has | **Has**: `verticalText` (`types.ts:586`); exported to PPTX as a picture (`from-yappy.ts:361`) | Low; could export as `vert="eaVert"`. RT | S |
 | Fields (date, slide number) | Has | **Partial**, see Header and footer | | |
@@ -112,8 +112,8 @@ improves the PowerPoint round trip.
 | Feature | DeckCraft | Yappy today | Value | Effort |
 |---|---|---|---|---|
 | Comments (add, reply, resolve) | Has, threaded, round-trips PPTX (`engine/src/cmd/review.rs`) | **Missing** for slides. (`umlNote` / sticky notes are content, not review comments) | Medium; mainly useful once collaboration exists. RT | M |
-| Alt text on objects | Has, in the Selection pane | **Partial**: `altText` is read from and written to PPTX for pictures only, as an untyped property (`(el as any).altText`, `from-yappy.ts:446`, `to-yappy.ts:485`). No UI, not on shapes, not in SVG/PDF/HTML exports | Medium; legal requirement for some users (schools, public sector). RT | S |
-| Accessibility checker (missing alt text, reading order, contrast, empty titles) | Has (`review.accessibility` in `engine/src/cmd/review.rs:249`) | **Missing** | Medium; Yappy already has contrast tooling in tests that could be reused | S–M |
+| Alt text on objects | Has, in the Selection pane | **Has** (feat/accessibility): typed `altText` + `decorative` on every element, right-click **Alt Text…** dialog, API; PPTX `descr` and `adec:decorative` on every object both ways; SVG `role=img` + `<title>` / `aria-hidden`. Not yet: PDF (tagged) and HTML player, alt text on Yappy groups themselves | Medium; legal requirement for some users (schools, public sector). RT | S |
+| Accessibility checker (missing alt text, reading order, contrast, empty titles) | Has (`review.accessibility` in `engine/src/cmd/review.rs:249`) | **Has** (feat/accessibility): `utils/accessibility-check.ts` + Accessibility panel — missing alt text (pictures, video, charts, QR), WCAG AA contrast against own fill or page (4.5 / 3:1 large), pages with no text (Yappy has no title placeholders). Not yet: reading order, text over pictures/gradients | — | — |
 | Reading order (selection pane order = screen-reader order) | Has | **Partial**: the layer/object tree orders elements; nothing labels it as reading order or carries it to exports | Low–medium | S |
 | Real-time collaboration | Missing | **Missing**: decisions locked, nothing built (`docs/collaboration-plan.md`) | Out of scope for this list | L |
 | Compare presentations | Partial (`engine/src/compare.rs`) | Missing | Low | M |
@@ -174,9 +174,10 @@ Favours solo-user value and work that also closes a PowerPoint round-trip gap.
    scatter/radar/stock/bubble and `cx:` charts, combination charts, secondary axes, trendlines,
    per-point colours, 100% stacked, number formats.
 
-Close behind: ~~native PPTX tables (M)~~ — done on `feat/pptx-tables` (2026-11-01); alt text UI +
-accessibility checker (S–M), more transitions (wipe/cover/uncover/split, S–M), shrink-on-overflow
-autofit (M).
+Close behind: ~~native PPTX tables (M)~~ — done on `feat/pptx-tables` (2026-11-01); ~~alt text UI +
+accessibility checker (S–M)~~ — done on `feat/accessibility` (2026-11-01), ~~more transitions (wipe/cover/uncover/split, S–M)~~ — done on
+`feat/slide-transitions` (2026-11-01), ~~shrink-on-overflow autofit (M)~~ — done on
+`feat/text-autofit` (2026-11-01).
 
 ## DeckCraft code worth porting
 

@@ -1887,6 +1887,21 @@ export const buildExportSvg = (onlySelected: boolean, themeOpts?: SvgExportOptio
                 tag.appendChild(node);
                 node = tag;
             }
+            // Alt text: an image role named by a <title>, which screen readers read; a decorative
+            // object is hidden from them instead.
+            const alt = el.altText?.trim();
+            if (alt || el.decorative) {
+                const a11y = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                if (el.decorative) a11y.setAttribute('aria-hidden', 'true');
+                else {
+                    a11y.setAttribute('role', 'img');
+                    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                    title.textContent = alt!;
+                    a11y.appendChild(title);
+                }
+                a11y.appendChild(node);
+                node = a11y;
+            }
             g.appendChild(node);
         }
     });

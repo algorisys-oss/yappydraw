@@ -1,4 +1,4 @@
-import { onMount, onCleanup, Show } from "solid-js";
+import { onMount, onCleanup, Show, For } from "solid-js";
 import { Portal } from "solid-js/web";
 import { store, updateSlideTransition, setSlideAdvanceAfter, setSlideShowLoop } from "../store/app-store";
 import { t } from "../i18n";
@@ -6,6 +6,14 @@ import { slideTransitionManager } from "../utils/animation";
 import type { SlideTransitionType, SlideTransitionEasing } from "../types/slide-types";
 import { X, Play } from "lucide-solid";
 import "./slide-transition-picker.css";
+
+/** Transitions that show both slides at once; the arrow in each label is the way it moves. */
+const COMPOSITE_TYPES: SlideTransitionType[] = [
+    'wipe-left', 'wipe-right', 'wipe-up', 'wipe-down',
+    'cover-left', 'cover-right', 'cover-up', 'cover-down',
+    'uncover-left', 'uncover-right', 'uncover-up', 'uncover-down',
+    'split-horizontal-out', 'split-horizontal-in', 'split-vertical-out', 'split-vertical-in',
+];
 
 interface SlideTransitionPickerProps {
     index: number;
@@ -83,6 +91,7 @@ export const SlideTransitionPicker = (props: SlideTransitionPickerProps) => {
                         <option value="zoom-in">Zoom In</option>
                         <option value="zoom-out">Zoom Out</option>
                         <option value="morph">{t('morph.option')}</option>
+                        <For each={COMPOSITE_TYPES}>{(k) => <option value={k}>{t(`transitionTypes.${k}` as any)}</option>}</For>
                     </select>
                 </div>
 

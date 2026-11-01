@@ -35,6 +35,7 @@ import { openSupport } from "../components/support-dialog";
 import { openAbout } from "../components/about-dialog";
 import { openPresenterView } from "../components/presenter-view";
 import { openChartData } from "../components/chart-data-dialog";
+import { openAltText, openAccessibilityCheck } from "../components/accessibility-dialogs";
 import { isMultiPageDocType } from "../types/slide-types";
 import { hasSupportLinks } from "../config/support";
 import type { ToolType } from "../types";
@@ -509,6 +510,8 @@ export const getCommands = (): Command[] => {
         { id: 'view-present-current', label: t('commands.view-present-current'), category: 'View', action: () => togglePresentationMode(true), shortcut: 'Shift+F5' },
         { id: 'view-presenter', label: t('commands.view-presenter'), category: 'View', action: () => { if (isMultiPageDocType(store.docType)) openPresenterView(); }, shortcut: 'Alt+F5' },
         { id: 'insert-chart', label: t('commands.insert-chart'), category: 'Actions', action: () => { const id = insertChart(); openChartData(id); } },
+        { id: 'check-accessibility', label: t('commands.check-accessibility'), category: 'Actions', action: () => openAccessibilityCheck() },
+        { id: 'edit-alt-text', label: t('commands.edit-alt-text'), category: 'Actions', action: () => { if (store.selection.length === 1) openAltText(store.selection[0]); } },
         { id: 'toggle-speaker-notes', label: t('commands.toggle-speaker-notes'), category: 'View', action: () => toggleSpeakerNotes() },
 
         // File

@@ -106,6 +106,7 @@ import { initAPI } from './api';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
 import { ChartDataDialog } from './components/chart-data-dialog';
+import { AltTextDialog, AccessibilityPanel } from './components/accessibility-dialogs';
 import { openPresenterView, isPresenterViewOpen } from './components/presenter-view';
 import { insertFrame, insertKeyframeAndSelect, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame, copyFrames, cutFrames, pasteFrames, duplicateFrames, stepCel, stepMarker, endPegEdit } from './store/anim-ops';
 import { createSymbol, simplifyPath } from './store/app-store';
@@ -1700,6 +1701,8 @@ const App: Component = () => {
         <ArtboardToolOverlay />
         <ArtboardDialog />
         <ChartDataDialog />
+        <AltTextDialog />
+        <AccessibilityPanel />
         <EffectDialog />
         <EyedropperHud />
         <SymbolEditBanner />

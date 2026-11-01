@@ -595,7 +595,8 @@ function textBodyOf(txBody: El | null, chain: TextChain, r: Res): TextBody | und
         if (na) spacingScale = 1 - Math.max(0, Math.min(0.9, num(na, 'lnSpcReduction') / 100000));
         if (kid(b, 'noAutofit') || kid(b, 'spAutoFit')) { fontScale = 1; spacingScale = 1; autofitNone = true; }
     }
-    void autofitNone;
+    // Shrink on overflow is on when the last word in the chain is normAutofit.
+    const shrinkOn = !autofitNone && [...chain.bodyPr, kid(txBody, 'bodyPr')].some(b => b && kid(b, 'normAutofit'));
     const ins = (k: string, d: number) => bp[k] !== undefined ? px(Number(bp[k]) || 0) : px(d);
     const anchor = bp.anchor === 'ctr' ? 'ctr' : bp.anchor === 'b' ? 'b' : 't';
     const lstOwn = kid(txBody, 'lstStyle');
@@ -664,6 +665,7 @@ function textBodyOf(txBody: El | null, chain: TextChain, r: Res): TextBody | und
         insets: { l: ins('lIns', 91440), t: ins('tIns', 45720), r: ins('rIns', 91440), b: ins('bIns', 45720) },
         wrap: bp.wrap !== 'none',
         lineSpacing: spacing,
+        ...(shrinkOn && { shrink: 1 }),
     };
 }
 
@@ -821,8 +823,15 @@ function linkOf(cNvPr: El | null, part: string, pkg: Pkg): DeckLink | undefined 
 function readOne(el: El, level: Level, sc: SlideCtx, frame: Frame, depth: number, includePh: boolean): Item | Item[] | null {
     const nv = kids(el).find(k => k.localName.startsWith('nv'));
     const out = readOneInner(el, level, sc, frame, depth, includePh);
-    const link = out ? linkOf(kid(nv ?? null, 'cNvPr'), level.part, sc.pkg) : undefined;
+    const cNvPr = kid(nv ?? null, 'cNvPr');
+    const link = out ? linkOf(cNvPr, level.part, sc.pkg) : undefined;
     if (link) for (const it of Array.isArray(out) ? out : [out!]) it.link = link;
+    // Alt text and "decorative" belong to the object; an object read as several items has neither.
+    if (out && !Array.isArray(out)) {
+        const descr = attr(cNvPr, 'descr')?.trim();
+        if (descr) out.descr = descr;
+        if (attr(findDeep(cNvPr, 'decorative', 3), 'val') === '1') out.decorative = true;
+    }
     return out;
 }
 
@@ -863,7 +872,7 @@ function readOneInner(el: El, level: Level, sc: SlideCtx, frame: Frame, depth: n
             const b = frame(box);
             const g = geometryOf(spPr, b)?.geom;
             const outline = g && !(g.kind === 'preset' && g.prst === 'rect') ? g : undefined;
-            return { kind: 'picture', id, name, ...b, media, crop, alpha: amt !== null ? Number(amt) / 100000 : undefined, descr: attr(cNvPr, 'descr') || undefined, geom: outline, ...(path(bf, 'blip', 'grayscl') ? { grayscale: true } : {}) };
+            return { kind: 'picture', id, name, ...b, media, crop, alpha: amt !== null ? Number(amt) / 100000 : undefined, geom: outline, ...(path(bf, 'blip', 'grayscl') ? { grayscale: true } : {}) };
         }
         case 'grpSp': {
             const gpr = kid(el, 'grpSpPr');
@@ -1399,9 +1408,13 @@ function transitionOf(root: El): Transition | undefined {
     const spd = attr(t, 'spd');
     const durationMs = attr(t, 'p14:dur') !== null ? num(t, 'p14:dur') : spd === 'fast' ? 500 : spd === 'slow' ? 1000 : 750;
     const dir = attr(fx, 'dir');
+    // Cover and pull also take diagonals ("lu", "rd"…): the horizontal part is the nearest we draw.
+    const side = (d: string | null): 'l' | 'r' | 'u' | 'd' => (d?.[0] === 'r' || d?.[0] === 'u' || d?.[0] === 'd' ? d[0] : 'l') as 'l' | 'r' | 'u' | 'd';
     switch (fx.localName) {
         case 'push': case 'cover': case 'pull': case 'wipe':
-            return { kind: 'push', dir: dir === 'r' || dir === 'u' || dir === 'd' ? dir : 'l', durationMs };
+            return { kind: fx.localName, dir: side(dir), durationMs };
+        case 'split':
+            return { kind: 'split', orient: attr(fx, 'orient') === 'vert' ? 'vert' : 'horz', inward: dir === 'in' || undefined, durationMs };
         case 'zoom': return { kind: 'zoom', zoomIn: dir !== 'out', durationMs };
         case 'morph': return { kind: 'morph', durationMs };
         case 'cut': return undefined;

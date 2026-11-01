@@ -3,12 +3,13 @@
  * Handles animated transitions between slides in presentation mode
  */
 
-import { store, setViewState, setStore, fitSlideViewState } from '../../store/app-store';
+import { store, setViewState, fitSlideViewState, enterSlide } from '../../store/app-store';
 import { animationEngine, generateAnimationId } from './animation-engine';
 import { lerp, getEasing } from './animation-types';
 import type { Slide, SlideTransition } from '../../types/slide-types';
 import { DEFAULT_SLIDE_TRANSITION } from '../../types/slide-types';
 import { runMorph } from './morph-transition';
+import { runComposite, compositeOf, reversed } from './composite-transition';
 
 export interface TransitionContext {
     fromSlide: Slide;
@@ -101,7 +102,7 @@ class SlideTransitionManager {
      * Immediately switch to a slide without animation
      */
     private applyImmediateSwitch(targetIndex: number): void {
-        setStore("activeSlideIndex", targetIndex);
+        enterSlide(targetIndex);
         const slide = store.slides[targetIndex];
         if (slide) {
             // Restore last view state if in design mode, otherwise calculate fresh fit
@@ -147,8 +148,11 @@ class SlideTransitionManager {
                 return this.executeZoom(context, transition);
             case 'morph':
                 return this.executeMorph(context, transition);
-            default:
+            default: {
+                const spec = compositeOf(transition.type);
+                if (spec) return this.executeComposite(context, transition, context.direction === 'backward' ? reversed(spec) : spec);
                 this.applyImmediateSwitch(context.toIndex);
+            }
         }
     }
 
@@ -157,6 +161,16 @@ class SlideTransitionManager {
      */
     private async executeMorph(context: TransitionContext, transition: SlideTransition): Promise<void> {
         const run = runMorph(context.fromIndex, context.toIndex, transition.duration, () => this.applyImmediateSwitch(context.toIndex));
+        this.cancelMorph = run.cancel;
+        try { await run.done; } finally { this.cancelMorph = null; }
+    }
+
+    /**
+     * Wipe, cover, uncover, split: both slides on screen at once (composite-transition.ts).
+     */
+    private async executeComposite(context: TransitionContext, transition: SlideTransition, spec: NonNullable<ReturnType<typeof compositeOf>>): Promise<void> {
+        const run = runComposite(spec, context.fromIndex, context.toIndex, transition.duration, getEasing(transition.easing),
+            () => this.applyImmediateSwitch(context.toIndex));
         this.cancelMorph = run.cancel;
         try { await run.done; } finally { this.cancelMorph = null; }
     }
@@ -249,7 +263,7 @@ class SlideTransitionManager {
             const startPanY = targetView.panY + offsetY;
 
             // Update active slide index immediately so elements render correctly
-            setStore("activeSlideIndex", context.toIndex);
+            enterSlide(context.toIndex);
 
             const animId = generateAnimationId('slide-transition');
             this.activeAnimationId = animId;
@@ -302,7 +316,7 @@ class SlideTransitionManager {
             const screenCY = window.innerHeight / 2;
 
             // Update active slide index
-            setStore("activeSlideIndex", context.toIndex);
+            enterSlide(context.toIndex);
 
             const animId = generateAnimationId('zoom-transition');
             this.activeAnimationId = animId;

@@ -42,6 +42,7 @@ import { initEmbedBridge } from "./embed-bridge";
 import { slideLink, actionLink, normaliseLinkInput, SHOW_ACTIONS, type ShowAction } from './utils/slide-links';
 import { normalizeChart } from './utils/chart/chart-layout';
 import { openChartData } from './components/chart-data-dialog';
+import { openAltText, openAccessibilityCheck, checkDocument } from './components/accessibility-dialogs';
 import { SLIDE_LAYOUTS } from './utils/slide-layouts';
 import { openPresenterView, closePresenterView, isPresenterViewOpen } from './components/presenter-view';
 import { exportToSvg, exportToPdf, exportToPptx, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
@@ -236,6 +237,8 @@ interface ElementOptions {
     lineHeight?: number;
     textAlign?: TextAlign;
     verticalAlign?: VerticalAlign;
+    /** 'shrink': draw the text smaller (down to 25%) when it overflows its box; the font size you set is kept. */
+    textFit?: 'none' | 'shrink';
     startArrowhead?: ArrowHead;
     endArrowhead?: ArrowHead;
     /** Arrowhead length in px (1–100). Unset = 6 + 5 × strokeWidth, clamped to 10–28. */
@@ -3816,6 +3819,45 @@ export const YappyAPI = {
     setActiveSlide(index: number) { setActiveSlide(index); },
     reorderSlides(fromIndex: number, toIndex: number) { reorderSlides(fromIndex, toIndex); },
     updateSlideTransition(slideIndex: number, transition: Partial<SlideTransition>) { updateSlideTransition(slideIndex, transition); },
+    /**
+     * Shrink text on overflow for text boxes and shape labels: 'shrink' draws the text smaller
+     * (down to 25%) when it doesn't fit its box, 'none' turns it off. The font size stays as set,
+     * so the text grows back when it fits again. One undo step. Auto-sizing text boxes always fit.
+     */
+    /**
+     * Alternative text for an object, read aloud by screen readers and written to PowerPoint
+     * (Alt Text) and SVG (a <title>). `decorative: true` marks it as decoration instead:
+     * screen readers skip it and the accessibility check stops asking. '' removes the text.
+     * One undo step. Returns false if there is no such object.
+     */
+    setAltText(id: string, text: string, opts?: { decorative?: boolean }): boolean {
+        if (!store.elements.some(e => e.id === id)) return false;
+        pushToHistory();
+        updateElement(id, { altText: text.trim() || undefined, ...(opts?.decorative !== undefined && { decorative: opts.decorative || undefined }) }, false);
+        return true;
+    },
+    /** An object's alt text and whether it is marked decorative, or null if there is no such object. */
+    getAltText(id: string): { text: string; decorative: boolean } | null {
+        const el = store.elements.find(e => e.id === id);
+        return el ? { text: el.altText ?? '', decorative: !!el.decorative } : null;
+    },
+    /**
+     * The accessibility check: `{ kind, page, elementId?, ratio?, needed? }` for each picture,
+     * video, chart or QR code without alt text ('alt-text'), text below WCAG AA contrast against
+     * what is behind it ('contrast': 4.5:1, or 3:1 for large text), and page with no text
+     * ('no-text'). `page` is the page index (null on the infinite canvas).
+     */
+    checkAccessibility() { return checkDocument(); },
+    /** Open the Accessibility panel (the same list, with Go to / Add alt text buttons). */
+    openAccessibilityCheck() { openAccessibilityCheck(); },
+    /** Open the Alt Text dialog for an object. */
+    openAltText(id: string) { openAltText(id); },
+    setTextFit(ids: string | string[], fit: 'none' | 'shrink') {
+        const list = (Array.isArray(ids) ? ids : [ids]).filter(id => store.elements.some(e => e.id === id));
+        if (!list.length) return;
+        pushToHistory();
+        for (const id of list) updateElement(id, { textFit: fit === 'shrink' ? 'shrink' : undefined }, false);
+    },
     updateSlideBackground(slideIndex: number, updates: Partial<Slide> | string) { updateSlideBackground(slideIndex, updates); },
     /**
      * Speaker notes of a slide (default: the active one) as plain text, one paragraph per

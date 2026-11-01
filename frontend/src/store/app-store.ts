@@ -2733,6 +2733,23 @@ export const updateSlideThumbnail = (index: number, dataUrl: string) => {
     setStore("slides", index, "thumbnail", dataUrl);
 };
 
+/**
+ * Make slide `index` the active one, together with the canvas fields that mirror the active
+ * slide (background, texture, size), in one step. Setting the index alone left those fields
+ * describing the previous slide until a later update; anything that saved in between (the
+ * autosave does, through saveActiveSlide) wrote the previous slide's background onto this one.
+ */
+export const enterSlide = (index: number) => {
+    const slide = store.slides[index];
+    batch(() => {
+        setStore("activeSlideIndex", index);
+        if (!slide) return;
+        if (slide.backgroundColor) setStore("canvasBackgroundColor", slide.backgroundColor);
+        setStore("canvasTexture", slide.canvasTexture ?? 'none');
+        setStore("dimensions", JSON.parse(JSON.stringify(slide.dimensions)));
+    });
+};
+
 export const saveActiveSlide = () => {
     const currentIndex = store.activeSlideIndex;
     if (currentIndex < 0 || currentIndex >= store.slides.length) return;

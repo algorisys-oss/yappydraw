@@ -5,7 +5,7 @@ icon: "⬜"
 category: Shapes
 description: Rectangle, circle, diamond, triangle - the fundamental building blocks
 seoTitle: "Rectangle, circle, diamond, triangle — the basic diagram shapes"
-seoDescription: "The four shapes every diagram is built from, with independent corner rounding, fill styles and the scripting API for each."
+seoDescription: "The four shapes every diagram is built from, with independent corner rounding, fill styles, text that shrinks to fit, and the scripting API for each."
 ---
 
 # Basic Shapes
@@ -176,6 +176,25 @@ their full width for text (a circle, a diamond, a banner) wrap inside their insc
 editor wraps there too. Press <kbd>Esc</kbd> or <kbd>Ctrl</kbd> +
 <kbd>Enter</kbd> to commit, <kbd>Enter</kbd> for a new line.
 
+### Shrink text on overflow
+
+Too much text for the box? Properties panel → **Text Fit** → **Shrink on overflow** draws a shape's
+label — or a text box you drew to a fixed size — smaller, just enough to fit (down to a quarter of
+its size). The font size you set is kept: shorten the text or enlarge the box and it grows back.
+Bold, coloured and mixed-size (rich) text shrinks together, keeping its proportions. **None** turns
+it off. Text boxes that size themselves to their text always fit, so the setting does nothing there.
+
+It goes to PowerPoint as **Shrink text on overflow** and comes back from it. PowerPoint stores the
+size it last shrank to, so text it had already shrunk comes in at that size.
+
+:::note
+While you type, the editor shows the text at its full size; it is fitted again when you finish.
+:::
+
+```
+Yappy.setTextFit(id, 'shrink');           // or 'none'; also an option: { textFit: 'shrink' }
+```
+
 ## Keyboard Shortcuts
 
 :::shortcuts
@@ -275,5 +294,5 @@ const ids = Yappy.createElements([
 Common `opts`: `backgroundColor`, `strokeColor`,
 `strokeWidth`, `fillStyle` (`'solid' | 'hachure' | 'cross-hatch'`),
 `strokeStyle` (`'solid' | 'dashed' | 'dotted'`),
-`roughness`, `opacity`, `borderRadius`.
+`roughness`, `opacity`, `borderRadius`, `textFit` (`'shrink'` to fit long labels).
 :::

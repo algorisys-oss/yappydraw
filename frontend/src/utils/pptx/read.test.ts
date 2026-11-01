@@ -689,3 +689,72 @@ describe("tables: written as a:tbl, read back cell for cell", () => {
         expect(it.fallback.kind).toBe('group');
     });
 });
+
+describe("wipe, cover, uncover (pull) and split transitions", () => {
+    const ts = [
+        { kind: 'wipe', dir: 'r', durationMs: 700 },
+        { kind: 'cover', dir: 'u', durationMs: 500 },
+        { kind: 'pull', dir: 'd', durationMs: 800 },
+        { kind: 'split', orient: 'vert', inward: true, durationMs: 600 },
+        { kind: 'split', orient: 'horz', durationMs: 600 },
+    ] as const;
+    const bytes = buildPptx({ width: 960, height: 540, slides: ts.map(transition => ({ items: [], transition: { ...transition } })) } as Deck);
+    it("writes PowerPoint's own elements", () => {
+        const files = unzipSync(bytes);
+        const slide = (n: number) => strFromU8(files[`ppt/slides/slide${n}.xml`]);
+        expect(slide(1)).toContain('<p:wipe dir="r"/>');
+        expect(slide(2)).toContain('<p:cover dir="u"/>');
+        expect(slide(3)).toContain('<p:pull dir="d"/>');
+        expect(slide(4)).toContain('<p:split orient="vert" dir="in"/>');
+        expect(slide(5)).toContain('<p:split orient="horz" dir="out"/>');
+    });
+    it("reads each back as itself, not as a push", () => {
+        expect(read(bytes).deck.slides.map(s => s.transition)).toEqual(ts.map(t => ({ ...t })));
+    });
+    it("takes a diagonal cover's horizontal part", () => {
+        const files = unzipSync(bytes);
+        files['ppt/slides/slide2.xml'] = strToU8(strFromU8(files['ppt/slides/slide2.xml']).replaceAll('<p:cover dir="u"/>', '<p:cover dir="rd"/>'));
+        expect(read(zipSync(files)).deck.slides[1].transition).toMatchObject({ kind: 'cover', dir: 'r' });
+    });
+});
+
+describe("shrink text on overflow (a:normAutofit)", () => {
+    const body = (shrink?: number) => ({ paragraphs: [{ runs: [{ text: 'Lots of text', size: 40 }] }], anchor: 't' as const,
+        insets: { l: 4, t: 4, r: 4, b: 4 }, wrap: true, ...(shrink !== undefined && { shrink }) });
+    const deck = (shrink?: number) => ({ width: 960, height: 540, slides: [{ items: [{ kind: 'shape', id: 2, name: 'T', x: 10, y: 10, w: 300, h: 100,
+        textBox: true, geom: { kind: 'preset', prst: 'rect' }, fill: { kind: 'none' }, line: null, text: body(shrink) }] }] }) as Deck;
+    it("writes full sizes with the scale PowerPoint applies, and reads both back", () => {
+        const bytes = buildPptx(deck(0.5));
+        expect(strFromU8(unzipSync(bytes)['ppt/slides/slide1.xml'])).toContain('<a:normAutofit fontScale="50000"/>');
+        const t = (read(bytes).deck.slides[0].items[0] as ShapeItem).text!;
+        expect(t.shrink).toBe(1);                              // the flag; the scale is now in the size
+        expect(t.paragraphs[0].runs[0].size).toBeCloseTo(20, 1);
+    });
+    it("writes a bare normAutofit when it fits, and noAutofit when it is off", () => {
+        expect(strFromU8(unzipSync(buildPptx(deck(1)))['ppt/slides/slide1.xml'])).toContain('<a:normAutofit/>');
+        const off = buildPptx(deck());
+        expect(strFromU8(unzipSync(off)['ppt/slides/slide1.xml'])).toContain('<a:noAutofit/>');
+        expect((read(off).deck.slides[0].items[0] as ShapeItem).text!.shrink).toBeUndefined();
+    });
+});
+
+describe("alt text and decorative on every kind of object", () => {
+    const shape = (o: object) => ({ kind: 'shape', id: 2, name: 'S', x: 10, y: 10, w: 100, h: 50, geom: { kind: 'preset', prst: 'rect' },
+        fill: { kind: 'solid', color: { hex: '#ff0000' } }, line: null, ...o }) as any;
+    const chart = { kind: 'chart', id: 3, name: 'C', x: 200, y: 10, w: 300, h: 200, descr: 'Sales doubled, Q1 to Q4',
+        chart: { kind: 'column', categories: ['Q1', 'Q4'], series: [{ name: 'Sales', values: [1, 2] }] } } as any;
+    const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [shape({ descr: 'A red "stop" box' }), chart, shape({ id: 4, name: 'Border', decorative: true })] }] });
+
+    it("writes descr and PowerPoint's decorative extension on the object", () => {
+        const xml = strFromU8(unzipSync(bytes)['ppt/slides/slide1.xml']);
+        expect(xml).toContain('descr="A red &quot;stop&quot; box"');
+        expect(xml).toContain('descr="Sales doubled, Q1 to Q4"');
+        expect(xml).toMatch(/<p:cNvPr id="4" name="Border"><a:extLst><a:ext uri="\{C183D7F6-B498-43B3-948B-1728B52AA6E4\}"><adec:decorative [^>]*val="1"\/>/);
+        expect(parseXml(xml).getElementsByTagName('parsererror').length).toBe(0);
+    });
+    it("reads them back", () => {
+        const items = read(bytes).deck.slides[0].items;
+        expect(items.map(i => [i.kind, i.descr, i.decorative])).toEqual([
+            ['shape', 'A red "stop" box', undefined], ['chart', 'Sales doubled, Q1 to Q4', undefined], ['shape', undefined, true]]);
+    });
+});

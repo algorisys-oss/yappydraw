@@ -30,7 +30,8 @@ import { getShapeGeometry, normalizeElementPoints, type ShapeGeometry } from '..
 import { connectorGeometry } from '../connector-geometry';
 import { arrowheadSize } from '../arrowhead-size';
 import { cssColorToRgb255 } from '../color-utils';
-import { resolveFontFamily } from '../text-utils';
+import { resolveFontFamily, getMeasurementRenderer } from '../text-utils';
+import { fitScale } from '../text-fit';
 import { listMarkerX, listTextXResolver } from '../rich-text-utils';
 import { normalizeFontWeight, normalizeFontStyle } from '../font-variants';
 import { lineHeightFactorOf, DEFAULT_LINE_HEIGHT } from '../text-line-height';
@@ -274,6 +275,7 @@ function textElementBody(el: DrawingElement, op: number): TextBody {
         anchor: anchorOf(el.verticalAlign), insets: { l: 4, t: 4, r: 4, b: 4 },
         wrap: !el.autoResize, lineSpacing: lineSpacingOf(el),
         defaults: textDefaults(el, op, el.fontSize || 20),
+        ...(el.textFit === 'shrink' && !el.autoResize && { shrink: fitScale(getMeasurementRenderer(), el, 'text') }),
     };
 }
 
@@ -287,6 +289,7 @@ function containerBody(el: DrawingElement, op: number): TextBody | undefined {
         anchor: anchorOf(el.verticalAlign), insets: { l: 10, t: 4, r: 10, b: 4 },
         wrap: true, lineSpacing: lineSpacingOf(el),
         defaults: textDefaults(el, op, el.fontSize || 16),
+        ...(el.textFit === 'shrink' && { shrink: fitScale(getMeasurementRenderer(), el, 'label') }),
     };
 }
 
@@ -457,7 +460,7 @@ function imageItem(el: DrawingElement, c: Conv): Item[] {
     }
     const op = (el.opacity ?? 100) / 100;
     c.report.native++;
-    return [{ kind: 'picture', id: c.nextId++, name: nameOf(el), ...placed(el, c), media, crop, alpha: op < 1 ? op : undefined, descr: (el as any).altText }];
+    return [{ kind: 'picture', id: c.nextId++, name: nameOf(el), ...placed(el, c), media, crop, alpha: op < 1 ? op : undefined }];
 }
 
 /** Connector label: PowerPoint connectors carry no text, so the label is a text box at the path midpoint. */
@@ -1029,8 +1032,14 @@ function convertRun(els: DrawingElement[], depth: number, c: Conv): Item[] {
             if (link) for (const it of items) it.link = link;
             // An animated object that came out as several items (a shape and its label) is
             // grouped, so one PowerPoint effect moves all of it.
-            if (c.animTargets && els[i].animations?.length && items.length > 1) {
+            // So is one with alt text: a screen reader reads it once, for the whole object.
+            const alt = els[i].altText?.trim(), decorative = !!els[i].decorative;
+            if (items.length > 1 && ((c.animTargets && els[i].animations?.length) || alt || decorative)) {
                 items = [{ kind: 'group', id: c.nextId++, name: nameOf(els[i]), ...itemsBounds(items), children: items }];
+            }
+            if (items.length === 1) {
+                if (alt) items[0].descr = alt;
+                if (decorative) items[0].decorative = true;
             }
             if (c.animTargets && items.length === 1) c.animTargets.set(els[i].id, items[0].id);
             out.push(...items);
@@ -1076,7 +1085,13 @@ export function transitionOf(t: SlideTransition | undefined): Transition | undef
         case 'zoom-in': return { kind: 'zoom', zoomIn: true, durationMs };
         case 'zoom-out': return { kind: 'zoom', zoomIn: false, durationMs };
         case 'morph': return { kind: 'morph', durationMs };
-        default: return undefined;
+        default: {
+            const m = /^(wipe|cover|uncover)-(left|right|up|down)$/.exec(t.type);
+            if (m) return { kind: m[1] === 'uncover' ? 'pull' : m[1] as 'wipe' | 'cover', dir: m[2][0] as 'l' | 'r' | 'u' | 'd', durationMs };
+            const sp = /^split-(horizontal|vertical)-(out|in)$/.exec(t.type);
+            if (sp) return { kind: 'split', orient: sp[1] === 'vertical' ? 'vert' : 'horz', inward: sp[2] === 'in' || undefined, durationMs };
+            return undefined;
+        }
     }
 }
 

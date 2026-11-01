@@ -1,6 +1,6 @@
-import { Q as T, R as it, S as nt, T as st, U as x, s as V, V as h, W as A, X as S, Y as g, Z as v, _ as at, $ as lt, a0 as C } from "./index-CBVjKX8o.js";
+import { al as T, am as it, an as nt, ao as at, ap as y, s as V, aq as h, ar as A, as as S, at as g, au as v, av as st, aw as lt, ax as C } from "./index-trzxrRhC.js";
 var ct = /* @__PURE__ */ C("<svg><rect rx=10 fill=black></svg>", !1, !0, !1), ut = /* @__PURE__ */ C("<div class=tour-spotlight-ring>"), dt = /* @__PURE__ */ C('<div class=tour-overlay role=dialog aria-modal=true aria-label="Product tour"><svg class=tour-mask width=100% height=100%><defs><mask id=tour-spotlight><rect width=100% height=100% fill=white></rect></mask></defs><rect width=100% height=100% fill=rgba(0,0,0,0.6) mask=url(#tour-spotlight)></rect></svg><div class=tour-tooltip><div class=tour-tooltip-head><span class=tour-step-count> of </span><button class=tour-skip>Skip tour</button></div><h3 class=tour-title></h3><p class=tour-content></p><div class=tour-nav><button class="tour-btn tour-btn-secondary">Back</button><button class="tour-btn tour-btn-primary"></button></div><div class=tour-dots>'), ht = /* @__PURE__ */ C("<button class=tour-dot>");
-const Z = "yappy:tour:seen", L = [{
+const Q = "yappy:tour:seen", L = [{
   id: "welcome",
   title: "Welcome to YappyDraw 👋",
   content: "A quick tour of the essentials — about a minute. Click Next to explore each area, or Skip anytime. You can replay this later from Help (?).",
@@ -38,100 +38,100 @@ const Z = "yappy:tour:seen", L = [{
   content: "That's the tour! Reopen it anytime from Help (?) → “Take the tour”. Have fun creating.",
   target: ".help-btn",
   position: "bottom"
-}], [w, j] = T(!1), [f, $] = T(0), ft = w;
+}], [w, X] = T(!1), [f, $] = T(0), ft = w;
 function pt() {
-  $(0), j(!0);
+  $(0), X(!0);
 }
-let J = !1;
+let Z = !1;
 function tt() {
-  J = !0;
+  Z = !0;
   try {
-    localStorage.setItem(Z, "1");
+    localStorage.setItem(Q, "1");
   } catch {
   }
 }
-function Q(s = !0) {
-  j(!1), s && tt();
+function j(a = !0) {
+  X(!1), a && tt();
 }
-function X() {
-  if (J) return !0;
+function J() {
+  if (Z) return !0;
   try {
-    return localStorage.getItem(Z) === "1";
+    return localStorage.getItem(Q) === "1";
   } catch {
     return !1;
   }
 }
 function gt() {
-  X() || V.appMode !== "presentation" && setTimeout(() => {
-    X() || V.appMode === "presentation" || (tt(), pt());
+  J() || V.appMode !== "presentation" && setTimeout(() => {
+    J() || V.appMode === "presentation" || (tt(), pt());
   }, 900);
 }
 const m = 340, b = 200, p = 16, mt = () => {
-  const [s, P] = T(null), [H, R] = T({
+  const [a, P] = T(null), [H, R] = T({
     top: 0,
     left: 0
-  }), _ = () => L[f()], D = () => L.length, M = () => f() === D() - 1, O = () => f() === 0, z = () => {
-    M() ? Q(!0) : $((e) => e + 1);
+  }), E = () => L[f()], D = () => L.length, M = () => f() === D() - 1, O = () => f() === 0, z = () => {
+    M() ? j(!0) : $((e) => e + 1);
   }, I = () => {
     O() || $((e) => e - 1);
-  }, Y = () => Q(!0), W = (e, l) => ({
+  }, q = () => j(!0), Y = (e, l) => ({
     top: Math.max(p, Math.min(e, window.innerHeight - b - p)),
     left: Math.max(p, Math.min(l, window.innerWidth - m - p))
-  }), q = () => {
-    const e = _();
+  }), F = () => {
+    const e = E();
     if (!e) return;
     const l = e.target ? document.querySelector(e.target) : null;
     if (!l || e.position === "center") {
-      P(l ? l.getBoundingClientRect() : null), R(W(window.innerHeight / 2 - b / 2, window.innerWidth / 2 - m / 2));
+      P(l ? l.getBoundingClientRect() : null), R(Y(window.innerHeight / 2 - b / 2, window.innerWidth / 2 - m / 2));
       return;
     }
     const r = l.getBoundingClientRect();
     P(r);
-    let c = 0, a = 0;
+    let c = 0, s = 0;
     switch (e.position ?? "bottom") {
       case "top":
-        c = r.top - b - p, a = r.left + r.width / 2 - m / 2;
+        c = r.top - b - p, s = r.left + r.width / 2 - m / 2;
         break;
       case "bottom":
-        c = r.bottom + p, a = r.left + r.width / 2 - m / 2;
+        c = r.bottom + p, s = r.left + r.width / 2 - m / 2;
         break;
       case "left":
-        c = r.top + r.height / 2 - b / 2, a = r.left - m - p;
+        c = r.top + r.height / 2 - b / 2, s = r.left - m - p;
         break;
       case "right":
-        c = r.top + r.height / 2 - b / 2, a = r.right + p;
+        c = r.top + r.height / 2 - b / 2, s = r.right + p;
         break;
     }
-    R(W(c, a));
+    R(Y(c, s));
   };
   it(() => {
-    w() && (f(), requestAnimationFrame(() => requestAnimationFrame(q)));
+    w() && (f(), requestAnimationFrame(() => requestAnimationFrame(F)));
   });
   const k = () => {
-    w() && q();
-  }, F = (e) => {
-    w() && (e.key === "Escape" ? (e.preventDefault(), Y()) : e.key === "ArrowRight" || e.key === "Enter" ? (e.preventDefault(), z()) : e.key === "ArrowLeft" && (e.preventDefault(), I()));
+    w() && F();
+  }, W = (e) => {
+    w() && (e.key === "Escape" ? (e.preventDefault(), q()) : e.key === "ArrowRight" || e.key === "Enter" ? (e.preventDefault(), z()) : e.key === "ArrowLeft" && (e.preventDefault(), I()));
   };
   return nt(() => {
-    window.addEventListener("resize", k), window.addEventListener("scroll", k, !0), document.addEventListener("keydown", F);
-  }), st(() => {
-    window.removeEventListener("resize", k), window.removeEventListener("scroll", k, !0), document.removeEventListener("keydown", F);
-  }), x(A, {
+    window.addEventListener("resize", k), window.addEventListener("scroll", k, !0), document.addEventListener("keydown", W);
+  }), at(() => {
+    window.removeEventListener("resize", k), window.removeEventListener("scroll", k, !0), document.removeEventListener("keydown", W);
+  }), y(A, {
     get when() {
       return w();
     },
     get children() {
       var e = dt(), l = e.firstChild, r = l.firstChild, c = r.firstChild;
       c.firstChild;
-      var a = l.nextSibling, B = a.firstChild, y = B.firstChild, et = y.firstChild, ot = y.nextSibling, G = B.nextSibling, K = G.nextSibling, N = K.nextSibling, E = N.firstChild, U = E.nextSibling, rt = N.nextSibling;
-      return h(c, x(A, {
+      var s = l.nextSibling, B = s.firstChild, x = B.firstChild, et = x.firstChild, ot = x.nextSibling, G = B.nextSibling, K = G.nextSibling, N = K.nextSibling, _ = N.firstChild, U = _.nextSibling, rt = N.nextSibling;
+      return h(c, y(A, {
         get when() {
-          return s();
+          return a();
         },
         get children() {
           var o = ct();
           return S((t) => {
-            var n = s().left - 6, i = s().top - 6, u = s().width + 12, d = s().height + 12;
+            var n = a().left - 6, i = a().top - 6, u = a().width + 12, d = a().height + 12;
             return n !== t.e && g(o, "x", t.e = n), i !== t.t && g(o, "y", t.t = i), u !== t.a && g(o, "width", t.a = u), d !== t.o && g(o, "height", t.o = d), t;
           }, {
             e: void 0,
@@ -140,14 +140,14 @@ const m = 340, b = 200, p = 16, mt = () => {
             o: void 0
           }), o;
         }
-      }), null), h(e, x(A, {
+      }), null), h(e, y(A, {
         get when() {
-          return s();
+          return a();
         },
         get children() {
           var o = ut();
           return S((t) => {
-            var n = `${s().top - 6}px`, i = `${s().left - 6}px`, u = `${s().width + 12}px`, d = `${s().height + 12}px`;
+            var n = `${a().top - 6}px`, i = `${a().left - 6}px`, u = `${a().width + 12}px`, d = `${a().height + 12}px`;
             return n !== t.e && v(o, "top", t.e = n), i !== t.t && v(o, "left", t.t = i), u !== t.a && v(o, "width", t.a = u), d !== t.o && v(o, "height", t.o = d), t;
           }, {
             e: void 0,
@@ -156,7 +156,7 @@ const m = 340, b = 200, p = 16, mt = () => {
             o: void 0
           }), o;
         }
-      }), a), h(y, () => f() + 1, et), h(y, D, null), ot.$$click = Y, h(G, () => _()?.title), h(K, () => _()?.content), E.$$click = I, U.$$click = z, h(U, () => M() ? "Get started" : "Next"), h(rt, x(at, {
+      }), s), h(x, () => f() + 1, et), h(x, D, null), ot.$$click = q, h(G, () => E()?.title), h(K, () => E()?.content), _.$$click = I, U.$$click = z, h(U, () => M() ? "Get started" : "Next"), h(rt, y(st, {
         each: L,
         children: (o, t) => (() => {
           var n = ht();
@@ -170,7 +170,7 @@ const m = 340, b = 200, p = 16, mt = () => {
         })()
       })), S((o) => {
         var t = `${H().top}px`, n = `${H().left}px`, i = O();
-        return t !== o.e && v(a, "top", o.e = t), n !== o.t && v(a, "left", o.t = n), i !== o.a && (E.disabled = o.a = i), o;
+        return t !== o.e && v(s, "top", o.e = t), n !== o.t && v(s, "left", o.t = n), i !== o.a && (_.disabled = o.a = i), o;
       }, {
         e: void 0,
         t: void 0,
@@ -183,8 +183,8 @@ lt(["click"]);
 export {
   mt as OnboardingTour,
   mt as default,
-  Q as endTour,
-  X as hasSeenTour,
+  j as endTour,
+  J as hasSeenTour,
   ft as isTourActive,
   gt as maybeAutoStartTour,
   pt as startTour,
