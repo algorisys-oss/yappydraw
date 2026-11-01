@@ -1327,6 +1327,9 @@ export const de: Dictionary = {
         exit: 'Druckvorschau beenden',
         failed: 'Die Druckvorschau konnte nicht gestartet werden.',
     },
+    morph: {
+        option: 'Morphen',
+    },
     sections: {
         hide: 'Folie ausblenden',
         show: 'Folie einblenden',

@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.296', date: '2026-11-01', items: [
+        'Morph between slides: duplicate a slide, move, resize, turn or recolour things on the copy, and set its transition to Morph. While presenting, everything glides into its new place; what is new fades in.',
+        'PowerPoint keeps Morph in both directions (PowerPoint 2019 / 365).',
+    ] },
     { version: '0.8.295', date: '2026-11-01', items: [
         'Hide a slide: right-click it in the slides panel → Hide slide. The show skips it, but it stays in your deck — perfect for a backup slide you only show if asked.',
         'Sections: right-click a slide → Add section here… to group your deck into named parts in the slides panel.',

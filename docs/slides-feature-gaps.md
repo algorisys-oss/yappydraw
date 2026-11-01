@@ -161,8 +161,9 @@ Favours solo-user value and work that also closes a PowerPoint round-trip gap.
    live placeholders linked to a layout, a Header & Footer dialog, and writing fields to PPTX
    as `a:fld` (they go out as resolved text).
 5. ~~**Hide slide, sections, auto-advance/loop** (S each)~~ — done on `feat/slide-show-flags` (2026-11-01).
-6. **Morph across slides** (M): match elements by name/id/text between consecutive slides and
-   tween them with the existing morph animator. A standout feature that writes `p159:morph`.
+6. ~~**Morph across slides** (M)~~ — done on `feat/slide-morph` (2026-11-01): `utils/morph.ts`
+   (DeckCraft's matching order + nearest-wins), overlay frames, `p159:morph` both ways. Not yet:
+   outline (geometry) morphing between different shapes, word/character text morph.
 7. **Animations in PPTX export (then import)** (L; M for entrance/exit): build the PowerPoint
    timing tree from Yappy's build steps. Port the mapping from DeckCraft (see below).
 8. **Charts with a data grid, round-tripped as PPTX charts** (L): biggest remaining import gap for

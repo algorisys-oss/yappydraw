@@ -206,6 +206,19 @@ function exportScene(): DrawingElement[] {
 }
 
 /**
+ * One page's elements as the page shows them — its own artwork, the Slide Master's copy for that
+ * page and field text filled in — in render order. Used by the Morph transition to draw the two
+ * slides it moves between.
+ */
+export function pageScene(pageIndex: number): DrawingElement[] {
+    const pages = [...store.slides].sort((a, b) => a.order - b.order);
+    const page = store.slides[pageIndex];
+    const idx = page ? pages.indexOf(page) : -1;
+    if (idx < 0) return [];
+    return exportScene().filter(el => isExportable(el) && ownerSlideIndex(el, pages) === idx);
+}
+
+/**
  * A paged document as its pages show it, which is what every exporter draws:
  *  - Slide Master artwork appears on EVERY page. It is stored once (on the page it was drawn
  *    on), and the canvas projects it onto whichever slide is showing; exports used to draw only

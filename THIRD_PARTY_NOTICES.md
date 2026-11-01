@@ -51,3 +51,38 @@ in implementations of the standard.
   <https://github.com/apache/poi> (`poi/src/main/resources/org/apache/poi/sl/draw/geom/presetShapeDefinitions.xml`).
   Fetched 2026-10-31.
 - Used by the PowerPoint importer to draw shapes with their exact outlines.
+
+## DeckCraft (logic adapted)
+
+`frontend/src/utils/morph.ts` adapts the slide-to-slide Morph matching order from DeckCraft's
+`crates/anim/src/morph.rs` (`morph_pairs`), rewritten in TypeScript. The PowerPoint writer's
+part list and notes-master layout (`frontend/src/utils/pptx/write.ts`) follow DeckCraft's
+`crates/pptx/src/write.rs`. DeckCraft is dual-licensed MIT OR Apache-2.0; Yappy uses it under
+the MIT licence below. No DeckCraft names, logos or brand assets are used.
+
+- Source: DeckCraft (Rust presentation app), read-only clone.
+
+```
+MIT License
+
+Copyright (c) 2026 ArtCraft Team and the DeckCraft contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+

@@ -1352,6 +1352,9 @@ export const en = {
         exit: 'Exit print preview',
         failed: 'Print preview could not start.',
     },
+    morph: {
+        option: 'Morph',
+    },
     sections: {
         hide: 'Hide slide',
         show: 'Show slide',

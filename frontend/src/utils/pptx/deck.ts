@@ -171,7 +171,7 @@ export interface GroupItem extends Placed {
 
 export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem;
 
-export type TransitionKind = 'fade' | 'push' | 'zoom';
+export type TransitionKind = 'fade' | 'push' | 'zoom' | 'morph';
 export interface Transition {
     kind: TransitionKind;
     /** Push direction: the side the new slide comes FROM (DrawingML `dir`). */

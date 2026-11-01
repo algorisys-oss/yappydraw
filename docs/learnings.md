@@ -11554,3 +11554,23 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **An advisory with no fix is a decision, not a task.** `deepmerge` has no patched release;
   recording why it isn't reachable is the useful action.
 
+## Morph between slides (2026-11-01)
+
+- **Draw the in-between on an overlay; let the real slide sit underneath.** The show switches to
+  the destination slide first and an overlay canvas over the slide's on-screen box draws
+  `morphFrame` for the duration. Nothing in the store is mutated, so there is nothing to restore
+  when the transition is cancelled or the show ends — the failure mode of animating store
+  properties (see the presentation snapshot/restore code).
+- **Nearest-wins makes "duplicate and move" work.** DeckCraft's passes (name, text, bare shape of
+  the same kind) pick the first candidate; with several plain rectangles that pairs them by list
+  order. Choosing the closest candidate (centre distance plus size difference, each slide in its
+  own frame) pairs each object with its own copy even when the copy was moved far.
+- **Copy the producer's fallback structure.** `p159:morph` goes in an `mc:Choice Requires="p159"`
+  with a fade in `mc:Fallback`. The general AlternateContent resolver must keep choosing the
+  fallback for unknown p159 content (3D models etc.), so the transition reader looks into the
+  Choice for this one element instead of adding p159 to the understood list.
+- **A cancel that doesn't resolve is a hang.** The first `cancel()` stopped the frame loop, so the
+  promise the transition awaited never settled; cancel now resolves it.
+- **Ported logic gets a notice.** `utils/morph.ts` adapts DeckCraft's matching order, so the MIT
+  notice went into THIRD_PARTY_NOTICES.md along with a header comment, as the gaps doc required.
+

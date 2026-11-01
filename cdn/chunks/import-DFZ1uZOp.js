@@ -1,9 +1,9 @@
 import { u as fe, a as de } from "./browser-DbZP-BrN.js";
-import { E as z, i as Ct, g as ue } from "./custgeom-CEAI2znd.js";
-import { aq as he, ar as Lt, as as pe, at as me, M as ge, q as xe, K as be } from "./index-B_V19zDs.js";
+import { E as z, i as Ct, g as ue } from "./custgeom-DThQ1Qnp.js";
+import { aq as he, ar as Lt, as as pe, at as me, M as ge, q as xe, K as be } from "./index-NbpsufU1.js";
 const ye = 1e4, ke = 1e5, qt = 6e4, nt = (t) => t / qt * (Math.PI / 180);
 function Zt(t, n, e, o = {}) {
-  const s = /* @__PURE__ */ new Map(), r = Math.max(0, n), a = Math.max(0, e), i = Math.min(r, a), l = Math.max(r, a), x = {
+  const s = /* @__PURE__ */ new Map(), r = Math.max(0, n), a = Math.max(0, e), i = Math.min(r, a), l = Math.max(r, a), g = {
     w: r,
     h: a,
     l: 0,
@@ -22,12 +22,12 @@ function Zt(t, n, e, o = {}) {
     "5cd8": 135e5,
     "7cd8": 189e5
   };
-  for (const [m, g] of Object.entries(x)) s.set(m, g);
+  for (const [m, x] of Object.entries(g)) s.set(m, x);
   for (const m of [2, 3, 4, 5, 6, 8, 10, 12, 16, 32])
     s.set(`wd${m}`, r / m), s.set(`hd${m}`, a / m), s.set(`ssd${m}`, i / m);
   const b = (m) => {
-    const g = s.get(m);
-    if (g !== void 0) return g;
+    const x = s.get(m);
+    if (x !== void 0) return x;
     const f = /^(wd|hd|ssd)(\d+)$/.exec(m);
     if (f) {
       const y = f[1] === "wd" ? r : f[1] === "hd" ? a : i, u = Number(f[2]);
@@ -35,12 +35,12 @@ function Zt(t, n, e, o = {}) {
     }
     const h = Number(m);
     return Number.isFinite(h) ? h : 0;
-  }, d = (m, g) => {
-    s.size > ye || s.set(m, we(g, b));
+  }, d = (m, x) => {
+    s.size > ye || s.set(m, we(x, b));
   };
-  for (const [m, g] of t.av ?? []) d(m, o[m] ?? g);
-  for (const [m, g] of Object.entries(o)) s.has(m) || d(m, g);
-  for (const [m, g] of t.gd ?? []) d(m, g);
+  for (const [m, x] of t.av ?? []) d(m, o[m] ?? x);
+  for (const [m, x] of Object.entries(o)) s.has(m) || d(m, x);
+  for (const [m, x] of t.gd ?? []) d(m, x);
   return s;
 }
 function we(t, n) {
@@ -106,26 +106,26 @@ function we(t, n) {
 const Et = (t, n, e) => Math.atan2(n * Math.sin(t), e * Math.cos(t));
 function ft(t, n, e, o = {}) {
   const s = Math.max(Math.abs(n), 0) * z, r = Math.max(Math.abs(e), 0) * z, a = Zt(t, s, r, o), i = (b) => typeof b == "number" ? b : a.get(b) ?? (Number.isFinite(Number(b)) ? Number(b) : 0), l = [];
-  let x = ke;
+  let g = ke;
   for (const b of t.paths) {
-    const d = b.w ? s / b.w : 1, m = b.h ? r / b.h : 1, g = (p) => i(p) * d / z, f = (p) => i(p) * m / z, h = [];
+    const d = b.w ? s / b.w : 1, m = b.h ? r / b.h : 1, x = (p) => i(p) * d / z, f = (p) => i(p) * m / z, h = [];
     let y = { x: 0, y: 0 }, u = { x: 0, y: 0 };
     for (const p of b.d) {
-      if (--x < 0) break;
+      if (--g < 0) break;
       switch (p[0]) {
         case "M":
-          y = { x: g(p[1]), y: f(p[2]) }, u = y, h.push({ op: "M", ...y });
+          y = { x: x(p[1]), y: f(p[2]) }, u = y, h.push({ op: "M", ...y });
           break;
         case "L":
-          y = { x: g(p[1]), y: f(p[2]) }, h.push({ op: "L", ...y });
+          y = { x: x(p[1]), y: f(p[2]) }, h.push({ op: "L", ...y });
           break;
         case "C": {
-          const w = g(p[1]), M = f(p[2]), S = g(p[3]), v = f(p[4]);
-          y = { x: g(p[5]), y: f(p[6]) }, h.push({ op: "C", x1: w, y1: M, x2: S, y2: v, ...y });
+          const w = x(p[1]), M = f(p[2]), S = x(p[3]), v = f(p[4]);
+          y = { x: x(p[5]), y: f(p[6]) }, h.push({ op: "C", x1: w, y1: M, x2: S, y2: v, ...y });
           break;
         }
         case "Q": {
-          const w = g(p[1]), M = f(p[2]), S = g(p[3]), v = f(p[4]);
+          const w = x(p[1]), M = f(p[2]), S = x(p[3]), v = f(p[4]);
           h.push({ op: "C", x1: y.x + 2 / 3 * (w - y.x), y1: y.y + 2 / 3 * (M - y.y), x2: S + 2 / 3 * (w - S), y2: v + 2 / 3 * (M - v), x: S, y: v }), y = { x: S, y: v };
           break;
         }
@@ -146,15 +146,15 @@ function ft(t, n, e, o = {}) {
 function Me(t, n, e, o, s, r) {
   if (Math.abs(e) < 1e-9 || Math.abs(o) < 1e-9 || r === 0) return n;
   const a = nt(s), i = Math.max(-4 * Math.PI, Math.min(4 * Math.PI, nt(r))), l = Et(a, e, o);
-  let x = Et(a + i, e, o);
-  if (Math.abs(i) >= 2 * Math.PI - 1e-9) x = l + Math.sign(i) * 2 * Math.PI;
+  let g = Et(a + i, e, o);
+  if (Math.abs(i) >= 2 * Math.PI - 1e-9) g = l + Math.sign(i) * 2 * Math.PI;
   else {
-    for (; i > 0 && x < l; ) x += 2 * Math.PI;
-    for (; i < 0 && x > l; ) x -= 2 * Math.PI;
+    for (; i > 0 && g < l; ) g += 2 * Math.PI;
+    for (; i < 0 && g > l; ) g -= 2 * Math.PI;
   }
-  const b = n.x - e * Math.cos(l), d = n.y - o * Math.sin(l), m = x - l, g = Math.max(1, Math.min(16, Math.ceil(Math.abs(m) / (Math.PI / 2)))), f = m / g, h = 4 / 3 * Math.tan(f / 4);
+  const b = n.x - e * Math.cos(l), d = n.y - o * Math.sin(l), m = g - l, x = Math.max(1, Math.min(16, Math.ceil(Math.abs(m) / (Math.PI / 2)))), f = m / x, h = 4 / 3 * Math.tan(f / 4);
   let y = l, u = n;
-  for (let p = 0; p < g; p++) {
+  for (let p = 0; p < x; p++) {
     const w = y + f, M = Math.cos(y), S = Math.sin(y), v = Math.cos(w), N = Math.sin(w);
     u = { x: b + e * v, y: d + o * N }, t.push({ op: "C", x1: b + e * (M - h * S), y1: d + o * (S + h * M), x2: b + e * (v + h * N), y2: d + o * (N - h * v), ...u }), y = w;
   }
@@ -163,8 +163,8 @@ function Me(t, n, e, o, s, r) {
 function Kt(t, n, e, o = {}) {
   const s = Math.abs(n), r = Math.abs(e);
   if (!t.rect) return { l: 0, t: 0, r: s, b: r };
-  const a = Zt(t, s * z, r * z, o), i = (m) => (a.get(m) ?? (Number.isFinite(Number(m)) ? Number(m) : 0)) / z, [l, x, b, d] = t.rect.map(i);
-  return { l, t: x, r: b, b: d };
+  const a = Zt(t, s * z, r * z, o), i = (m) => (a.get(m) ?? (Number.isFinite(Number(m)) ? Number(m) : 0)) / z, [l, g, b, d] = t.rect.map(i);
+  return { l, t: g, r: b, b: d };
 }
 let Ft = null;
 async function ve() {
@@ -180,7 +180,7 @@ const jt = 5e4, Se = 256 * 1024 * 1024, Dt = 1024 * 1024 * 1024, Ce = 1e4, Pe = 
   if (!t) return null;
   for (let e = t.firstChild; e; e = e.nextSibling) if (e.nodeType === 1 && e.localName === n) return e;
   return null;
-}, R = (t, ...n) => {
+}, A = (t, ...n) => {
   let e = t;
   for (const o of n) e = c(e, o);
   return e ?? null;
@@ -247,10 +247,10 @@ class Oe {
     o = /* @__PURE__ */ new Map();
     const s = e.includes("/") ? e.slice(0, e.lastIndexOf("/")) : "", r = e.slice(e.lastIndexOf("/") + 1), a = this.xml(`${s ? s + "/" : ""}_rels/${r}.rels`);
     for (const i of I(a, "Relationship")) {
-      const l = k(i, "Id"), x = k(i, "Type") || "", b = k(i, "Target") || "";
+      const l = k(i, "Id"), g = k(i, "Type") || "", b = k(i, "Target") || "";
       if (!l) continue;
       const d = k(i, "TargetMode") === "External";
-      o.set(l, { type: x.slice(x.lastIndexOf("/") + 1), target: d ? b : Re(s, b), external: d });
+      o.set(l, { type: g.slice(g.lastIndexOf("/") + 1), target: d ? b : Ae(s, b), external: d });
     }
     return this.relCache.set(e, o), o;
   }
@@ -260,7 +260,7 @@ class Oe {
   }
 }
 const et = (t) => t.replace(/\\/g, "/").replace(/^\/+/, "");
-function Re(t, n) {
+function Ae(t, n) {
   let e = n.split("#")[0];
   try {
     e = decodeURIComponent(e);
@@ -282,11 +282,11 @@ function gt(t) {
     i && /^[0-9a-f]{6}$/i.test(i) && (n.colors[r.localName] = "#" + i.toLowerCase());
   }
   const o = c(e, "fontScheme");
-  n.major = k(R(o, "majorFont", "latin"), "typeface") || n.major, n.minor = k(R(o, "minorFont", "latin"), "typeface") || n.minor;
+  n.major = k(A(o, "majorFont", "latin"), "typeface") || n.major, n.minor = k(A(o, "minorFont", "latin"), "typeface") || n.minor;
   const s = c(e, "fmtScheme");
   return n.fills = I(c(s, "fillStyleLst")), n.lines = I(c(s, "lnStyleLst")), n.bgFills = I(c(s, "bgFillStyleLst")), n;
 }
-const Ae = {
+const Re = {
   black: "#000000",
   white: "#ffffff",
   red: "#ff0000",
@@ -345,14 +345,14 @@ function Le(t, n) {
       break;
     }
     case "prstClr":
-      e = Ae[k(t, "val") || ""] ?? "#000000";
+      e = Re[k(t, "val") || ""] ?? "#000000";
       break;
     case "scrgbClr":
       e = ct(U(C(t, "r") / 1e5), U(C(t, "g") / 1e5), U(C(t, "b") / 1e5));
       break;
     case "hslClr": {
-      const [l, x, b] = xt(C(t, "hue") / 6e4, C(t, "sat") / 1e5, C(t, "lum") / 1e5);
-      e = ct(l, x, b);
+      const [l, g, b] = xt(C(t, "hue") / 6e4, C(t, "sat") / 1e5, C(t, "lum") / 1e5);
+      e = ct(l, g, b);
       break;
     }
     case "schemeClr": {
@@ -361,24 +361,24 @@ function Le(t, n) {
         n.phClr ? (e = n.phClr.hex, o = n.phClr.alpha ?? 1) : e = n.theme.colors.accent1 ?? "#4472c4";
         break;
       }
-      const x = n.clrMap[l] ?? Pt[l] ?? l;
-      e = n.theme.colors[x] ?? null;
+      const g = n.clrMap[l] ?? Pt[l] ?? l;
+      e = n.theme.colors[g] ?? null;
       break;
     }
   }
   if (!e) return null;
   let [s, r, a] = Qt(e);
   for (const l of I(t)) {
-    const x = C(l, "val") / 1e5;
+    const g = C(l, "val") / 1e5;
     switch (l.localName) {
       case "alpha":
-        o = x;
+        o = g;
         break;
       case "alphaMod":
-        o *= x;
+        o *= g;
         break;
       case "alphaOff":
-        o += x;
+        o += g;
         break;
       case "lumMod":
       case "lumOff":
@@ -387,14 +387,14 @@ function Le(t, n) {
       case "hueMod":
       case "hueOff": {
         let [b, d, m] = $t(s, r, a);
-        l.localName === "lumMod" ? m *= x : l.localName === "lumOff" ? m += x : l.localName === "satMod" ? d *= x : l.localName === "satOff" ? d += x : l.localName === "hueMod" ? b *= x : b += C(l, "val") / 6e4, [s, r, a] = xt(b, Math.max(0, Math.min(1, d)), Math.max(0, Math.min(1, m)));
+        l.localName === "lumMod" ? m *= g : l.localName === "lumOff" ? m += g : l.localName === "satMod" ? d *= g : l.localName === "satOff" ? d += g : l.localName === "hueMod" ? b *= g : b += C(l, "val") / 6e4, [s, r, a] = xt(b, Math.max(0, Math.min(1, d)), Math.max(0, Math.min(1, m)));
         break;
       }
       case "tint":
-        [s, r, a] = [s, r, a].map((b) => U(ot(b) * x + (1 - x)));
+        [s, r, a] = [s, r, a].map((b) => U(ot(b) * g + (1 - g)));
         break;
       case "shade":
-        [s, r, a] = [s, r, a].map((b) => U(ot(b) * x));
+        [s, r, a] = [s, r, a].map((b) => U(ot(b) * g));
         break;
       case "comp": {
         const [b, d, m] = $t(s, r, a);
@@ -485,8 +485,8 @@ function G(t, n) {
   const s = (i) => {
     const l = k(i, "type");
     if (!l || l === "none") return;
-    const x = l === "triangle" || l === "stealth" || l === "arrow" || l === "oval" || l === "diamond" ? l : "triangle", b = k(i, "len") || k(i, "w");
-    return { type: x, size: b === "sm" || b === "lg" ? b : "med" };
+    const g = l === "triangle" || l === "stealth" || l === "arrow" || l === "oval" || l === "diamond" ? l : "triangle", b = k(i, "len") || k(i, "w");
+    return { type: g, size: b === "sm" || b === "lg" ? b : "med" };
   }, r = Fe[k(c(t, "prstDash"), "val") || "solid"], a = k(t, "cap");
   return {
     // ECMA's default is 9525 EMU — 0.75 pt, one px.
@@ -536,14 +536,14 @@ const bt = (t) => t;
 function je(t, n) {
   const e = W(t);
   if (!e) return n;
-  const o = c(t, "chOff"), s = c(t, "chExt"), r = o ? E(C(o, "x")) : e.x, a = o ? E(C(o, "y")) : e.y, i = s ? E(C(s, "cx")) : e.w, l = s ? E(C(s, "cy")) : e.h, x = i > 0 ? e.w / i : 1, b = l > 0 ? e.h / l : 1, d = e.x + e.w / 2, m = e.y + e.h / 2, g = e.rot * Math.PI / 180;
+  const o = c(t, "chOff"), s = c(t, "chExt"), r = o ? E(C(o, "x")) : e.x, a = o ? E(C(o, "y")) : e.y, i = s ? E(C(s, "cx")) : e.w, l = s ? E(C(s, "cy")) : e.h, g = i > 0 ? e.w / i : 1, b = l > 0 ? e.h / l : 1, d = e.x + e.w / 2, m = e.y + e.h / 2, x = e.rot * Math.PI / 180;
   return (f) => {
-    let h = e.x + (f.x + f.w / 2 - r) * x, y = e.y + (f.y + f.h / 2 - a) * b, u = f.rot, p = f.flipH, w = f.flipV;
-    if (e.flipH && (h = 2 * d - h, p = !p, u = -u), e.flipV && (y = 2 * m - y, w = !w, u = -u), g) {
+    let h = e.x + (f.x + f.w / 2 - r) * g, y = e.y + (f.y + f.h / 2 - a) * b, u = f.rot, p = f.flipH, w = f.flipV;
+    if (e.flipH && (h = 2 * d - h, p = !p, u = -u), e.flipV && (y = 2 * m - y, w = !w, u = -u), x) {
       const v = h - d, N = y - m;
-      h = d + v * Math.cos(g) - N * Math.sin(g), y = m + v * Math.sin(g) + N * Math.cos(g), u += e.rot;
+      h = d + v * Math.cos(x) - N * Math.sin(x), y = m + v * Math.sin(x) + N * Math.cos(x), u += e.rot;
     }
-    const M = f.w * x, S = f.h * b;
+    const M = f.w * g, S = f.h * b;
     return n({ x: h - M / 2, y: y - S / 2, w: M, h: S, rot: (u % 360 + 360) % 360, flipH: p, flipV: w });
   };
 }
@@ -567,7 +567,7 @@ function te(t, n) {
     const a = k(c(t, "buSzPct"), "val") || "", i = a.endsWith("%") ? parseFloat(a) / 100 : Number(a) / 1e5;
     e.buSz = Number.isFinite(i) && i > 0 ? Math.max(0.25, Math.min(4, i)) : null;
   } else (c(t, "buSzTx") || c(t, "buSzPts")) && (e.buSz = null);
-  const o = R(t, "lnSpc", "spcPct");
+  const o = A(t, "lnSpc", "spcPct");
   o && (e.lnSpcPct = C(o, "val") / 1e5);
   const s = Bt(c(t, "spcBef")), r = Bt(c(t, "spcAft"));
   return s && (e.spcBef = s), r && (e.spcAft = r), Object.assign(e, ee(c(t, "defRPr"), n)), e;
@@ -615,19 +615,19 @@ function ze(t, n) {
 function Nt(t, n, e) {
   if (!t) return;
   const o = I(t, "p");
-  if (!o.some((g) => I(g).some((f) => (f.localName === "r" || f.localName === "fld") && (R(f, "t")?.textContent ?? "") !== ""))) return;
+  if (!o.some((x) => I(x).some((f) => (f.localName === "r" || f.localName === "fld") && (A(f, "t")?.textContent ?? "") !== ""))) return;
   const r = {};
   let a = 1, i = 1;
-  for (const g of [...n.bodyPr, c(t, "bodyPr")]) {
-    if (!g) continue;
-    for (let h = 0; h < g.attributes.length; h++) r[g.attributes[h].localName ?? g.attributes[h].name] = g.attributes[h].value;
-    const f = c(g, "normAutofit");
-    f && (a = k(f, "fontScale") !== null ? C(f, "fontScale") / 1e5 : 1), f && (i = 1 - Math.max(0, Math.min(0.9, C(f, "lnSpcReduction") / 1e5))), (c(g, "noAutofit") || c(g, "spAutoFit")) && (a = 1, i = 1);
+  for (const x of [...n.bodyPr, c(t, "bodyPr")]) {
+    if (!x) continue;
+    for (let h = 0; h < x.attributes.length; h++) r[x.attributes[h].localName ?? x.attributes[h].name] = x.attributes[h].value;
+    const f = c(x, "normAutofit");
+    f && (a = k(f, "fontScale") !== null ? C(f, "fontScale") / 1e5 : 1), f && (i = 1 - Math.max(0, Math.min(0.9, C(f, "lnSpcReduction") / 1e5))), (c(x, "noAutofit") || c(x, "spAutoFit")) && (a = 1, i = 1);
   }
-  const l = (g, f) => r[g] !== void 0 ? E(Number(r[g]) || 0) : E(f), x = r.anchor === "ctr" ? "ctr" : r.anchor === "b" ? "b" : "t", b = c(t, "lstStyle"), d = [];
+  const l = (x, f) => r[x] !== void 0 ? E(Number(r[x]) || 0) : E(f), g = r.anchor === "ctr" ? "ctr" : r.anchor === "b" ? "b" : "t", b = c(t, "lstStyle"), d = [];
   let m;
-  for (const g of o) {
-    const f = c(g, "pPr"), h = Math.max(0, Math.min(8, C(f, "lvl"))), y = n.fontRef ? { color: n.fontRef.color ?? void 0, font: n.fontRef.font } : {}, u = Xt(...n.levels.map((P) => zt(P, h, e)), y, zt(b, h, e), f ? te(f, e) : {});
+  for (const x of o) {
+    const f = c(x, "pPr"), h = Math.max(0, Math.min(8, C(f, "lvl"))), y = n.fontRef ? { color: n.fontRef.color ?? void 0, font: n.fontRef.font } : {}, u = Xt(...n.levels.map((P) => zt(P, h, e)), y, zt(b, h, e), f ? te(f, e) : {});
     u.lnSpcPct !== void 0 && m === void 0 && (m = u.lnSpcPct);
     const p = { runs: [], align: u.algn === "ctr" ? "ctr" : u.algn === "r" ? "r" : (u.algn === "just", "l"), level: h };
     if (u.bullet === "char" || u.bullet === "num") {
@@ -651,21 +651,21 @@ function Nt(t, n, e) {
         font: ze(L.font ?? "+mn-lt", e.ctx.theme)
       };
     };
-    for (const P of I(g))
+    for (const P of I(x))
       if (P.localName === "r" || P.localName === "fld") {
-        const L = R(P, "t")?.textContent ?? "";
+        const L = A(P, "t")?.textContent ?? "";
         if (!L) continue;
         L.split(/[\v\n]/).forEach((X, H) => {
           H > 0 && p.runs.push({ ...w(c(P, "rPr")), br: !0 }), X && p.runs.push({ ...w(c(P, "rPr")), text: X });
         });
       } else P.localName === "br" && p.runs.push({ ...w(c(P, "rPr")), br: !0 });
-    p.endSize = w(c(g, "endParaRPr")).size;
+    p.endSize = w(c(x, "endParaRPr")).size;
     const M = (p.runs.length ? Math.max(...p.runs.map((P) => P.size ?? 0)) : p.endSize ?? 0) * 1.2 * (u.lnSpcPct ?? 1), S = (P) => P ? ("px" in P ? P.px : P.lines * M) * i : 0, v = S(u.spcBef), N = S(u.spcAft);
     v > 0.05 && (p.spaceBefore = Math.round(v * 100) / 100), N > 0.05 && (p.spaceAfter = Math.round(N * 100) / 100), d.push(p);
   }
   return {
     paragraphs: d,
-    anchor: x,
+    anchor: g,
     insets: { l: l("lIns", 91440), t: l("tIns", 45720), r: l("rIns", 91440), b: l("bIns", 45720) },
     wrap: r.wrap !== "none",
     lineSpacing: m
@@ -706,19 +706,19 @@ function Ye(t) {
   const n = (r) => I(r, "gd").slice(0, 1e4).map((a) => [k(a, "name") || "", k(a, "fmla") || "val 0"]), e = I(c(t, "cxnLst"), "cxn").map((r) => [k(r, "ang") || "0", k(c(r, "pos"), "x") || "0", k(c(r, "pos"), "y") || "0"]), o = c(t, "rect"), s = I(c(t, "pathLst"), "path").slice(0, 1e3).map((r) => {
     const a = [];
     for (const l of I(r)) {
-      const x = I(l, "pt").map((b) => [k(b, "x") || "0", k(b, "y") || "0"]).flat();
+      const g = I(l, "pt").map((b) => [k(b, "x") || "0", k(b, "y") || "0"]).flat();
       switch (l.localName) {
         case "moveTo":
-          a.push(["M", ...x]);
+          a.push(["M", ...g]);
           break;
         case "lnTo":
-          a.push(["L", ...x]);
+          a.push(["L", ...g]);
           break;
         case "quadBezTo":
-          a.push(["Q", ...x]);
+          a.push(["Q", ...g]);
           break;
         case "cubicBezTo":
-          a.push(["C", ...x]);
+          a.push(["C", ...g]);
           break;
         case "arcTo":
           a.push(["A", k(l, "wR") || "0", k(l, "hR") || "0", k(l, "stAng") || "0", k(l, "swAng") || "0"]);
@@ -793,43 +793,43 @@ function _e(t, n, e) {
     return r?.external && /^(https?:|mailto:|tel:)/i.test(r.target) ? { kind: "url", url: r.target } : void 0;
 }
 function Ue(t, n, e, o, s, r) {
-  const a = I(t).find((x) => x.localName.startsWith("nv")), i = Ge(t, n, e, o, s, r), l = i ? _e(c(a ?? null, "cNvPr"), n.part, e.pkg) : void 0;
-  if (l) for (const x of Array.isArray(i) ? i : [i]) x.link = l;
+  const a = I(t).find((g) => g.localName.startsWith("nv")), i = Ge(t, n, e, o, s, r), l = i ? _e(c(a ?? null, "cNvPr"), n.part, e.pkg) : void 0;
+  if (l) for (const g of Array.isArray(i) ? i : [i]) g.link = l;
   return i;
 }
 function Ge(t, n, e, o, s, r) {
-  const a = { pkg: e.pkg, part: n.part, ctx: e.ctx }, i = I(t).find((d) => d.localName.startsWith("nv")), l = c(i ?? null, "cNvPr"), x = C(l, "id"), b = k(l, "name") || t.localName;
+  const a = { pkg: e.pkg, part: n.part, ctx: e.ctx }, i = I(t).find((d) => d.localName.startsWith("nv")), l = c(i ?? null, "cNvPr"), g = C(l, "id"), b = k(l, "name") || t.localName;
   if (k(l, "hidden") === "1") return null;
   switch (t.localName) {
     case "sp":
-      return Ze(t, n, e, o, x, b, r);
+      return Ze(t, n, e, o, g, b, r);
     case "cxnSp": {
       const d = c(t, "spPr"), m = W(c(d, "xfrm"));
       if (!m) return null;
-      const g = o(m), f = c(t, "style"), h = G(c(d, "ln"), a) ?? It(f, a) ?? { width: 1, color: { hex: "#000000" } };
+      const x = o(m), f = c(t, "style"), h = G(c(d, "ln"), a) ?? It(f, a) ?? { width: 1, color: { hex: "#000000" } };
       if (!h) return null;
-      const y = rt(d, g) ?? { geom: { kind: "preset", prst: "line" } }, u = (w) => w ? { id: C(w, "id"), idx: C(w, "idx") } : void 0, p = c(i ?? null, "cNvCxnSpPr");
-      return { kind: "connector", id: x, name: b, ...g, geom: y.geom, line: h, start: u(c(p, "stCxn")), end: u(c(p, "endCxn")) };
+      const y = rt(d, x) ?? { geom: { kind: "preset", prst: "line" } }, u = (w) => w ? { id: C(w, "id"), idx: C(w, "idx") } : void 0, p = c(i ?? null, "cNvCxnSpPr");
+      return { kind: "connector", id: g, name: b, ...x, geom: y.geom, line: h, start: u(c(p, "stCxn")), end: u(c(p, "endCxn")) };
     }
     case "pic": {
       const d = c(t, "spPr");
       let m = W(c(d, "xfrm"));
-      const g = K(c(i ?? null, "nvPr"));
-      if (!m && g && (m = Ve(g, e)), !m) return null;
+      const x = K(c(i ?? null, "nvPr"));
+      if (!m && x && (m = Ve(x, e)), !m) return null;
       const f = c(t, "blipFill"), h = f ? Jt(f, a) : null;
       if (!h)
         return e.warnings.push(`Picture "${b}" has no image the importer can read.`), null;
-      const y = c(f, "srcRect"), u = y ? { l: C(y, "l") / 1e5, t: C(y, "t") / 1e5, r: C(y, "r") / 1e5, b: C(y, "b") / 1e5 } : void 0, p = k(R(f, "blip", "alphaModFix"), "amt"), w = o(m), M = rt(d, w)?.geom, S = M && !(M.kind === "preset" && M.prst === "rect") ? M : void 0;
-      return { kind: "picture", id: x, name: b, ...w, media: h, crop: u, alpha: p !== null ? Number(p) / 1e5 : void 0, descr: k(l, "descr") || void 0, geom: S, ...R(f, "blip", "grayscl") ? { grayscale: !0 } : {} };
+      const y = c(f, "srcRect"), u = y ? { l: C(y, "l") / 1e5, t: C(y, "t") / 1e5, r: C(y, "r") / 1e5, b: C(y, "b") / 1e5 } : void 0, p = k(A(f, "blip", "alphaModFix"), "amt"), w = o(m), M = rt(d, w)?.geom, S = M && !(M.kind === "preset" && M.prst === "rect") ? M : void 0;
+      return { kind: "picture", id: g, name: b, ...w, media: h, crop: u, alpha: p !== null ? Number(p) / 1e5 : void 0, descr: k(l, "descr") || void 0, geom: S, ...A(f, "blip", "grayscl") ? { grayscale: !0 } : {} };
     }
     case "grpSp": {
-      const d = c(t, "grpSpPr"), m = c(d, "xfrm"), g = je(m, o), f = at(t, n, e, g, s + 1, r);
+      const d = c(t, "grpSpPr"), m = c(d, "xfrm"), x = je(m, o), f = at(t, n, e, x, s + 1, r);
       if (!f.length) return null;
       const h = ht(f);
-      return { kind: "group", id: x, name: b, ...h, children: f };
+      return { kind: "group", id: g, name: b, ...h, children: f };
     }
     case "graphicFrame":
-      return Je(t, n, e, o, x, b, s);
+      return Je(t, n, e, o, g, b, s);
     default:
       return null;
   }
@@ -841,10 +841,10 @@ function ht(t) {
   return { x: n, y: e, w: Math.max(0, o - n), h: Math.max(0, s - e) };
 }
 function Ve(t, n) {
-  const e = ut(n.layout?.tree ?? null, t), o = W(R(e, "spPr", "xfrm"));
+  const e = ut(n.layout?.tree ?? null, t), o = W(A(e, "spPr", "xfrm"));
   if (o) return o;
   const s = ut(n.master?.tree ?? null, { type: oe(t.type), idx: 0 });
-  return W(R(s, "spPr", "xfrm"));
+  return W(A(s, "spPr", "xfrm"));
 }
 function qe(...t) {
   for (const n of t) {
@@ -853,33 +853,33 @@ function qe(...t) {
   }
 }
 function Ze(t, n, e, o, s, r, a) {
-  const i = { pkg: e.pkg, part: n.part, ctx: e.ctx }, l = st(t), x = K(l);
-  if (x && !a) return null;
-  const b = c(t, "spPr"), d = c(t, "style"), m = k(R(t, "nvSpPr", "cNvSpPr"), "txBox") === "1", g = x && e.layout ? ut(e.layout.tree, x) : null, f = x && e.master ? ut(e.master.tree, { type: oe(g ? K(st(g))?.type ?? x.type : x.type), idx: 0 }) : null, h = g && e.layout ? { pkg: e.pkg, part: e.layout.part, ctx: e.ctx } : null, y = f && e.master ? { pkg: e.pkg, part: e.master.part, ctx: e.ctx } : null;
-  let u = W(c(b, "xfrm")) ?? W(R(g, "spPr", "xfrm")) ?? W(R(f, "spPr", "xfrm"));
+  const i = { pkg: e.pkg, part: n.part, ctx: e.ctx }, l = st(t), g = K(l);
+  if (g && !a) return null;
+  const b = c(t, "spPr"), d = c(t, "style"), m = k(A(t, "nvSpPr", "cNvSpPr"), "txBox") === "1", x = g && e.layout ? ut(e.layout.tree, g) : null, f = g && e.master ? ut(e.master.tree, { type: oe(x ? K(st(x))?.type ?? g.type : g.type), idx: 0 }) : null, h = x && e.layout ? { pkg: e.pkg, part: e.layout.part, ctx: e.ctx } : null, y = f && e.master ? { pkg: e.pkg, part: e.master.part, ctx: e.ctx } : null;
+  let u = W(c(b, "xfrm")) ?? W(A(x, "spPr", "xfrm")) ?? W(A(f, "spPr", "xfrm"));
   if (!u) return null;
   u = o(u);
-  const p = rt(b, u) ?? (g ? rt(c(g, "spPr"), u) : void 0) ?? (f ? rt(c(f, "spPr"), u) : void 0) ?? { geom: { kind: "preset", prst: "rect" } }, M = (B(t, "useBgFill") ? e.background?.kind === "image" ? { kind: "none" } : e.background ?? { kind: "solid", color: { hex: "#ffffff" } } : void 0) ?? V(b, i) ?? dt(d, i) ?? (h ? V(c(g, "spPr"), h) : void 0) ?? (y ? V(c(f, "spPr"), y) : void 0) ?? (h ? dt(c(g, "style"), h) : void 0) ?? { kind: "none" }, S = qe(
+  const p = rt(b, u) ?? (x ? rt(c(x, "spPr"), u) : void 0) ?? (f ? rt(c(f, "spPr"), u) : void 0) ?? { geom: { kind: "preset", prst: "rect" } }, M = (B(t, "useBgFill") ? e.background?.kind === "image" ? { kind: "none" } : e.background ?? { kind: "solid", color: { hex: "#ffffff" } } : void 0) ?? V(b, i) ?? dt(d, i) ?? (h ? V(c(x, "spPr"), h) : void 0) ?? (y ? V(c(f, "spPr"), y) : void 0) ?? (h ? dt(c(x, "style"), h) : void 0) ?? { kind: "none" }, S = qe(
     () => G(c(b, "ln"), i),
     () => It(d, i),
-    () => h ? G(R(g, "spPr", "ln"), h) : void 0,
-    () => y ? G(R(f, "spPr", "ln"), y) : void 0
+    () => h ? G(A(x, "spPr", "ln"), h) : void 0,
+    () => y ? G(A(f, "spPr", "ln"), y) : void 0
   ) ?? null, v = [];
-  if (x) {
-    const O = g ? K(st(g))?.type ?? x.type : x.type;
-    v.push(it.has(O) ? e.masterTx.title : ["body", "obj", "subTitle", "tbl", "chart", "dgm", "media", "pic", "clipArt"].includes(O) ? e.masterTx.body : e.masterTx.other), v.push(R(f, "txBody", "lstStyle"), R(g, "txBody", "lstStyle"));
+  if (g) {
+    const O = x ? K(st(x))?.type ?? g.type : g.type;
+    v.push(it.has(O) ? e.masterTx.title : ["body", "obj", "subTitle", "tbl", "chart", "dgm", "media", "pic", "clipArt"].includes(O) ? e.masterTx.body : e.masterTx.other), v.push(A(f, "txBody", "lstStyle"), A(x, "txBody", "lstStyle"));
   } else
     v.push(e.defaultText);
   const N = c(d, "fontRef"), P = {
     levels: v,
-    bodyPr: [R(f, "txBody", "bodyPr"), R(g, "txBody", "bodyPr")],
+    bodyPr: [A(f, "txBody", "bodyPr"), A(x, "txBody", "bodyPr")],
     fontRef: N ? { font: k(N, "idx") === "major" ? "+mj-lt" : "+mn-lt", color: D(N, i.ctx) } : void 0
   }, L = Nt(c(t, "txBody"), P, i);
   if (!(M.kind !== "none" || !!S || !!L)) return null;
   let H = p.textRect;
-  const T = W(c(b, "xfrm")), A = L ? W(c(t, "txXfrm")) : null;
-  if (A && T && T.w > 0 && T.h > 0) {
-    const O = u.w / T.w, Y = u.h / T.h, j = { l: (A.x - T.x) * O, t: (A.y - T.y) * Y, r: (A.x + A.w - T.x) * O, b: (A.y + A.h - T.y) * Y };
+  const T = W(c(b, "xfrm")), R = L ? W(c(t, "txXfrm")) : null;
+  if (R && T && T.w > 0 && T.h > 0) {
+    const O = u.w / T.w, Y = u.h / T.h, j = { l: (R.x - T.x) * O, t: (R.y - T.y) * Y, r: (R.x + R.w - T.x) * O, b: (R.y + R.h - T.y) * Y };
     (Math.abs(j.l) > 0.5 || Math.abs(j.t) > 0.5 || Math.abs(j.r - u.w) > 0.5 || Math.abs(j.b - u.h) > 0.5) && (H = j);
   }
   return { kind: "shape", id: s, name: r, ...u, geom: p.geom, fill: M, line: S, text: L, textBox: m || void 0, textRect: H };
@@ -893,8 +893,8 @@ function Ke(t, n) {
   const i = D(s, n.ctx) ?? D(c(s, "fontRef"), n.ctx);
   i && (e.text = i), k(s, "b") === "on" && (e.bold = !0);
   const l = c(o, "tcBdr");
-  for (const x of ["insideH", "bottom", "top", "left"]) {
-    const b = c(l, x);
+  for (const g of ["insideH", "bottom", "top", "left"]) {
+    const b = c(l, g);
     if (!b) continue;
     const d = G(c(b, "ln"), n) ?? It(b, n);
     if (d !== void 0) {
@@ -907,7 +907,7 @@ function Ke(t, n) {
 function Qe(t, n, e) {
   const o = ((c(t, "tableStyleId")?.textContent || "").trim() || k(e, "def") || Wt).toUpperCase(), s = (d) => B(t, d) ?? !1, r = { firstRow: s("firstRow"), lastRow: s("lastRow"), firstCol: s("firstCol"), lastCol: s("lastCol"), bandRow: s("bandRow"), bandCol: s("bandCol") }, a = I(e, "tblStyle").find((d) => (k(d, "styleId") || "").toUpperCase() === o);
   if (a) {
-    const d = (y) => Ke(c(a, y), n), m = c(a, "tblBg"), g = m ? c(m, "fill") ? V(c(m, "fill"), n) : dt(m, n) : void 0, f = {
+    const d = (y) => Ke(c(a, y), n), m = c(a, "tblBg"), x = m ? c(m, "fill") ? V(c(m, "fill"), n) : dt(m, n) : void 0, f = {
       whole: d("wholeTbl"),
       b1H: d("band1H"),
       b2H: d("band2H"),
@@ -925,41 +925,41 @@ function Qe(t, n, e) {
         P.fill && (N.fill = P.fill), P.text && (N.text = P.text), P.bold && (N.bold = !0), P.border !== void 0 && (N.border = P.border);
       return N;
     };
-    return g && g.kind !== "none" && (h.background = g), h;
+    return x && x.kind !== "none" && (h.background = x), h;
   }
   if (o !== Wt) return null;
   const i = n.ctx.theme.colors.accent1 ?? "#4472c4", l = (d) => {
-    const [m, g, f] = Qt(i);
-    return { hex: ct(U(ot(m) * d + (1 - d)), U(ot(g) * d + (1 - d)), U(ot(f) * d + (1 - d))) };
-  }, x = { hex: n.ctx.theme.colors.lt1 ?? "#ffffff" }, b = ne("tx1", n) ?? void 0;
+    const [m, x, f] = Qt(i);
+    return { hex: ct(U(ot(m) * d + (1 - d)), U(ot(x) * d + (1 - d)), U(ot(f) * d + (1 - d))) };
+  }, g = { hex: n.ctx.theme.colors.lt1 ?? "#ffffff" }, b = ne("tx1", n) ?? void 0;
   return (d) => {
-    const m = r.firstRow && d === 0, g = r.bandRow && !m && (d - (r.firstRow ? 1 : 0)) % 2 === 0;
+    const m = r.firstRow && d === 0, x = r.bandRow && !m && (d - (r.firstRow ? 1 : 0)) % 2 === 0;
     return {
-      fill: { kind: "solid", color: m ? { hex: i } : l(g ? 0.4 : 0.2) },
-      text: m ? x : b,
+      fill: { kind: "solid", color: m ? { hex: i } : l(x ? 0.4 : 0.2) },
+      text: m ? g : b,
       bold: m || void 0,
-      border: { width: 1.33, color: x }
+      border: { width: 1.33, color: g }
     };
   };
 }
 function Je(t, n, e, o, s, r, a = 0) {
   const i = { pkg: e.pkg, part: n.part, ctx: e.ctx }, l = W(c(t, "xfrm"));
   if (!l) return null;
-  const x = R(t, "graphic", "graphicData"), b = c(x, "tbl");
+  const g = A(t, "graphic", "graphicData"), b = c(g, "tbl");
   if (b) {
-    const g = I(c(b, "tblGrid"), "gridCol").map((w) => E(C(w, "w"))), f = Qe(c(b, "tblPr"), i, e.tableStyles), h = [];
+    const x = I(c(b, "tblGrid"), "gridCol").map((w) => E(C(w, "w"))), f = Qe(c(b, "tblPr"), i, e.tableStyles), h = [];
     let y = l.y, u = 1e6 + s * 1e3;
     const p = I(b, "tr");
     if (p.forEach((w, M) => {
       const S = E(C(w, "h"));
       let v = l.x, N = 0;
       for (const P of I(w, "tc")) {
-        const L = Math.max(1, C(P, "gridSpan", 1)), X = g.slice(N, N + L).reduce((tt, Z) => tt + Z, 0);
+        const L = Math.max(1, C(P, "gridSpan", 1)), X = x.slice(N, N + L).reduce((tt, Z) => tt + Z, 0);
         if (N += L, B(P, "hMerge") || B(P, "vMerge")) {
           v += X;
           continue;
         }
-        const H = Math.max(1, C(P, "rowSpan", 1)), T = c(P, "tcPr"), A = H > 1 ? S * H : S, O = f ? f(M, N - L, p.length, g.length) : null, Y = O?.text ? { color: O.text } : void 0, j = Nt(c(P, "txBody"), { levels: [e.defaultText], bodyPr: [], fontRef: Y }, i);
+        const H = Math.max(1, C(P, "rowSpan", 1)), T = c(P, "tcPr"), R = H > 1 ? S * H : S, O = f ? f(M, N - L, p.length, x.length) : null, Y = O?.text ? { color: O.text } : void 0, j = Nt(c(P, "txBody"), { levels: [e.defaultText], bodyPr: [], fontRef: Y }, i);
         j && O?.bold && j.paragraphs.forEach((tt) => tt.runs.forEach((Z) => {
           Z.bold === void 0 && (Z.bold = !0);
         })), j && (j.insets = { l: E(C(T, "marL", 91440)), r: E(C(T, "marR", 91440)), t: E(C(T, "marT", 45720)), b: E(C(T, "marB", 45720)) }, j.anchor = k(T, "anchor") === "ctr" ? "ctr" : k(T, "anchor") === "b" ? "b" : "t");
@@ -968,7 +968,7 @@ function Je(t, n, e, o, s, r, a = 0) {
           kind: "shape",
           id: u++,
           name: `${r} cell`,
-          ...o({ x: v, y, w: X, h: A, rot: 0, flipH: !1, flipV: !1 }),
+          ...o({ x: v, y, w: X, h: R, rot: 0, flipH: !1, flipV: !1 }),
           geom: { kind: "preset", prst: "rect" },
           fill: V(T, i) ?? q ?? { kind: "none" },
           line: _,
@@ -997,11 +997,11 @@ function Je(t, n, e, o, s, r, a = 0) {
     }
     return { kind: "group", id: s, name: r, ...ht(h), children: h };
   }
-  const d = k(x, "uri") || "";
+  const d = k(g, "uri") || "";
   if (/diagram/.test(d)) {
-    const g = tn(x, n, e, o, l, s, r, a);
-    if (g) return g;
-    const f = en(x, n, e, o, l, s, r, i);
+    const x = tn(g, n, e, o, l, s, r, a);
+    if (x) return x;
+    const f = en(g, n, e, o, l, s, r, i);
     if (f) return f;
   }
   const m = /chart/.test(d) ? "Chart" : /diagram/.test(d) ? "SmartArt diagram" : "Embedded object";
@@ -1017,7 +1017,7 @@ function Je(t, n, e, o, s, r, a = 0) {
   };
 }
 function tn(t, n, e, o, s, r, a, i) {
-  const l = e.pkg.rels(n.part), x = k(c(t, "relIds"), "r:dm"), b = x ? l.get(x) : void 0;
+  const l = e.pkg.rels(n.part), g = k(c(t, "relIds"), "r:dm"), b = g ? l.get(g) : void 0;
   let d;
   if (b && !b.external) {
     const u = Ot(e.pkg.xml(b.target), "dataModelExt", 6), p = u ? l.get(k(u, "relId") || "") : void 0;
@@ -1039,9 +1039,9 @@ function tn(t, n, e, o, s, r, a, i) {
   return y(f), { kind: "group", id: r, name: a, ...ht(f), children: f };
 }
 function en(t, n, e, o, s, r, a, i) {
-  const l = k(c(t, "relIds"), "r:dm"), x = l ? e.pkg.rels(n.part).get(l) : void 0;
-  if (!x || x.external) return null;
-  const b = e.pkg.xml(x.target), d = /* @__PURE__ */ new Map();
+  const l = k(c(t, "relIds"), "r:dm"), g = l ? e.pkg.rels(n.part).get(l) : void 0;
+  if (!g || g.external) return null;
+  const b = e.pkg.xml(g.target), d = /* @__PURE__ */ new Map();
   for (const u of I(c(b, "ptLst"), "pt")) d.set(k(u, "modelId") || "", u);
   const m = /* @__PURE__ */ new Map();
   for (const u of I(c(b, "cxnLst"), "cxn")) {
@@ -1049,8 +1049,8 @@ function en(t, n, e, o, s, r, a, i) {
     const p = k(u, "srcId") || "", w = k(u, "destId") || "";
     m.has(p) || m.set(p, []), m.get(p).push({ id: w, ord: C(u, "srcOrd") });
   }
-  const g = [...d.values()].find((u) => k(u, "type") === "doc");
-  if (!g) return null;
+  const x = [...d.values()].find((u) => k(u, "type") === "doc");
+  if (!x) return null;
   const f = [], h = /* @__PURE__ */ new Set(), y = (u, p) => {
     if (!(h.has(u) || p > 16 || f.length > 500)) {
       h.add(u);
@@ -1070,7 +1070,7 @@ function en(t, n, e, o, s, r, a, i) {
       }
     }
   };
-  return y(k(g, "modelId") || "", 0), f.length ? (e.warnings.push(`SmartArt diagram "${a}" had no saved drawing; its text was imported as a list.`), {
+  return y(k(x, "modelId") || "", 0), f.length ? (e.warnings.push(`SmartArt diagram "${a}" had no saved drawing; its text was imported as a list.`), {
     kind: "shape",
     id: r,
     name: a,
@@ -1104,7 +1104,7 @@ function yt(t, n) {
   }
 }
 function nn(t, n) {
-  const e = t.relOfType(n, "notesSlide"), o = e ? R(t.xml(e), "cSld", "spTree") : null;
+  const e = t.relOfType(n, "notesSlide"), o = e ? A(t.xml(e), "cSld", "spTree") : null;
   if (!o) return;
   const s = [], r = (i) => {
     for (const l of J(i)) {
@@ -1113,8 +1113,8 @@ function nn(t, n) {
         continue;
       }
       if (l.localName !== "sp") continue;
-      const x = K(st(l));
-      if (!(!x || x.type !== "body" && x.type !== "obj"))
+      const g = K(st(l));
+      if (!(!g || g.type !== "body" && g.type !== "obj"))
         for (const b of I(c(l, "txBody"), "p")) {
           let d = "";
           for (const m of I(b))
@@ -1130,6 +1130,14 @@ function nn(t, n) {
   return a.trim() ? a : void 0;
 }
 function on(t) {
+  for (const a of I(t, "AlternateContent"))
+    for (const i of I(a, "Choice")) {
+      const l = c(i, "transition");
+      if (l && c(l, "morph")) {
+        const g = k(l, "spd");
+        return { kind: "morph", durationMs: k(l, "p14:dur") !== null ? C(l, "p14:dur") : g === "fast" ? 500 : g === "slow" ? 1e3 : 750 };
+      }
+    }
   const n = J(t).find((a) => a.localName === "transition");
   if (!n) return;
   const e = I(n).find((a) => a.localName !== "sndAc" && a.localName !== "extLst");
@@ -1143,6 +1151,8 @@ function on(t) {
       return { kind: "push", dir: r === "r" || r === "u" || r === "d" ? r : "l", durationMs: s };
     case "zoom":
       return { kind: "zoom", zoomIn: r !== "out", durationMs: s };
+    case "morph":
+      return { kind: "morph", durationMs: s };
     case "cut":
       return;
     default:
@@ -1179,45 +1189,45 @@ function rn(t, n = {}) {
     throw new Error("This file is not a PowerPoint presentation (it is not a valid .pptx package).");
   }
   (a > jt || i > Dt) && o("The file is very large; some parts were skipped.");
-  const l = new Oe(r, s, o), x = l.relOfType("", "officeDocument") ?? "ppt/presentation.xml", b = l.xml(x);
+  const l = new Oe(r, s, o), g = l.relOfType("", "officeDocument") ?? "ppt/presentation.xml", b = l.xml(g);
   if (!b || b.localName !== "presentation") throw new Error("This file is not a PowerPoint presentation (no presentation part).");
-  const d = c(b, "sldSz"), m = d ? Math.max(1, E(C(d, "cx", 9144e3))) : 960, g = d ? Math.max(1, E(C(d, "cy", 5143500))) : 540, f = c(b, "defaultTextStyle"), h = l.rels(x), y = l.relOfType(x, "tableStyles"), u = y ? l.xml(y) : null, p = [], w = /* @__PURE__ */ new Set();
+  const d = c(b, "sldSz"), m = d ? Math.max(1, E(C(d, "cx", 9144e3))) : 960, x = d ? Math.max(1, E(C(d, "cy", 5143500))) : 540, f = c(b, "defaultTextStyle"), h = l.rels(g), y = l.relOfType(g, "tableStyles"), u = y ? l.xml(y) : null, p = [], w = /* @__PURE__ */ new Set();
   for (const T of I(c(b, "sldIdLst"), "sldId")) {
-    const A = h.get(k(T, "r:id") || "");
-    A && !w.has(A.target) && p.length < Ce && (w.add(A.target), p.push(A.target));
+    const R = h.get(k(T, "r:id") || "");
+    R && !w.has(R.target) && p.length < Ce && (w.add(R.target), p.push(R.target));
   }
   const M = /* @__PURE__ */ new Map(), S = (T) => {
-    const A = l.relOfType(T, "theme");
-    return A ? (M.has(A) || M.set(A, gt(l.xml(A))), M.get(A)) : gt(null);
+    const R = l.relOfType(T, "theme");
+    return R ? (M.has(R) || M.set(R, gt(l.xml(R))), M.get(R)) : gt(null);
   }, v = (T) => {
     if (!T) return null;
-    const A = {};
-    for (let O = 0; O < T.attributes.length; O++) A[T.attributes[O].localName ?? T.attributes[O].name] = T.attributes[O].value;
-    return A;
+    const R = {};
+    for (let O = 0; O < T.attributes.length; O++) R[T.attributes[O].localName ?? T.attributes[O].name] = T.attributes[O].value;
+    return R;
   }, N = sn(b, h), P = [];
-  p.forEach((T, A) => {
+  p.forEach((T, R) => {
     const O = l.xml(T);
     if (!O) {
-      o(`Slide ${A + 1} couldn't be read and was skipped.`);
+      o(`Slide ${R + 1} couldn't be read and was skipped.`);
       return;
     }
-    const Y = l.relOfType(T, "slideLayout"), j = Y ? l.xml(Y) : null, _ = Y ? l.relOfType(Y, "slideMaster") : null, q = _ ? l.xml(_) : null, tt = _ ? S(_) : gt(null), Z = v(R(O, "clrMapOvr", "overrideClrMapping")) ?? v(R(j, "clrMapOvr", "overrideClrMapping")) ?? v(c(q, "clrMap")) ?? Pt, Rt = { theme: tt, clrMap: Z }, pt = c(q, "txStyles"), $ = {
+    const Y = l.relOfType(T, "slideLayout"), j = Y ? l.xml(Y) : null, _ = Y ? l.relOfType(Y, "slideMaster") : null, q = _ ? l.xml(_) : null, tt = _ ? S(_) : gt(null), Z = v(A(O, "clrMapOvr", "overrideClrMapping")) ?? v(A(j, "clrMapOvr", "overrideClrMapping")) ?? v(c(q, "clrMap")) ?? Pt, At = { theme: tt, clrMap: Z }, pt = c(q, "txStyles"), $ = {
       pkg: l,
-      ctx: Rt,
-      slide: { part: T, tree: R(O, "cSld", "spTree") },
-      layout: Y ? { part: Y, tree: R(j, "cSld", "spTree") } : null,
-      master: _ ? { part: _, tree: R(q, "cSld", "spTree") } : null,
+      ctx: At,
+      slide: { part: T, tree: A(O, "cSld", "spTree") },
+      layout: Y ? { part: Y, tree: A(j, "cSld", "spTree") } : null,
+      master: _ ? { part: _, tree: A(q, "cSld", "spTree") } : null,
       masterTx: { title: c(pt, "titleStyle"), body: c(pt, "bodyStyle"), other: c(pt, "otherStyle") },
       defaultText: f,
       warnings: e,
       count: 0,
       tableStyles: u
-    }, mt = (ce) => ({ pkg: l, part: ce?.part ?? T, ctx: Rt }), At = yt(c(O, "cSld"), mt($.slide)) ?? yt(c(j, "cSld"), mt($.layout)) ?? yt(c(q, "cSld"), mt($.master)) ?? { kind: "solid", color: { hex: "#ffffff" } };
-    $.background = At;
+    }, mt = (ce) => ({ pkg: l, part: ce?.part ?? T, ctx: At }), Rt = yt(c(O, "cSld"), mt($.slide)) ?? yt(c(j, "cSld"), mt($.layout)) ?? yt(c(q, "cSld"), mt($.master)) ?? { kind: "solid", color: { hex: "#ffffff" } };
+    $.background = Rt;
     const lt = [], le = B(O, "showMasterSp") !== !1 && B(j, "showMasterSp") !== !1;
     $.master && le && lt.push(...at($.master.tree, $.master, $, bt, 0, !1)), $.layout && B(O, "showMasterSp") !== !1 && lt.push(...at($.layout.tree, $.layout, $, bt, 0, !1)), lt.push(...at($.slide.tree, $.slide, $, bt, 0, !0)), P.push({
       items: lt,
-      background: At,
+      background: Rt,
       transition: on(O),
       name: k(c(O, "cSld"), "name") || void 0,
       notes: nn(l, T),
@@ -1227,8 +1237,8 @@ function rn(t, n = {}) {
       ...N.has(T) && { section: N.get(T) }
     });
   }), P.length || o("The presentation has no slides.");
-  const L = R(l.xml("docProps/core.xml"), "title")?.textContent || void 0, X = l.relOfType(x, "presProps"), H = k(c(X ? l.xml(X) : null, "showPr"), "loop");
-  return { deck: { width: m, height: g, slides: P, title: L, ...(H === "1" || H === "true") && { loop: !0 } }, warnings: e };
+  const L = A(l.xml("docProps/core.xml"), "title")?.textContent || void 0, X = l.relOfType(g, "presProps"), H = k(c(X ? l.xml(X) : null, "showPr"), "loop");
+  return { deck: { width: m, height: x, slides: P, title: L, ...(H === "1" || H === "true") && { loop: !0 } }, warnings: e };
 }
 const an = 80, ln = "default-layer", F = (t) => {
   if (!t) return "transparent";
@@ -1402,7 +1412,7 @@ function se(t, n) {
     const y = a(h);
     y && r.set(h.align ?? "l", (r.get(h.align ?? "l") ?? 0) + y);
   }
-  const i = [...r].sort((h, y) => y[1] - h[1])[0]?.[0] ?? t.paragraphs.find((h) => h.runs.length)?.align ?? "l", l = (h) => a(h) > 0 && (h.align ?? "l") !== i ? h.align === "ctr" ? "center" : h.align === "r" ? "right" : "left" : void 0, x = e.every((h) => h.size === o?.size && h.bold === o?.bold && h.italic === o?.italic && h.underline === o?.underline && h.strike === o?.strike && h.font === o?.font && F(h.color) === F(o?.color)) && !t.paragraphs.some((h) => h.bullet) && !t.paragraphs.some((h, y) => y > 0 && kt(t, y) > 0) && !t.paragraphs.some(l), b = {
+  const i = [...r].sort((h, y) => y[1] - h[1])[0]?.[0] ?? t.paragraphs.find((h) => h.runs.length)?.align ?? "l", l = (h) => a(h) > 0 && (h.align ?? "l") !== i ? h.align === "ctr" ? "center" : h.align === "r" ? "right" : "left" : void 0, g = e.every((h) => h.size === o?.size && h.bold === o?.bold && h.italic === o?.italic && h.underline === o?.underline && h.strike === o?.strike && h.font === o?.font && F(h.color) === F(o?.color)) && !t.paragraphs.some((h) => h.bullet) && !t.paragraphs.some((h, y) => y > 0 && kt(t, y) > 0) && !t.paragraphs.some(l), b = {
     fontSize: Math.round(s * 10) / 10,
     fontFamily: Ut(o?.font),
     textAlign: i === "ctr" ? "center" : i === "r" ? "right" : "left",
@@ -1413,18 +1423,18 @@ function se(t, n) {
   const d = t.paragraphs.map((h) => h.runs.map((y) => y.br ? `
 ` : y.text).join("")).join(`
 `);
-  if (x)
+  if (g)
     return o?.bold && (b.fontWeight = 700), o?.italic && (b.fontStyle = "italic"), n ? b.containerText = d : b.text = d, { fields: b, rich: !1 };
-  const m = [], g = [], f = [];
+  const m = [], x = [], f = [];
   return t.paragraphs.forEach((h, y) => {
     const u = h.level ?? 0;
     if (h.bullet === "num") {
       const M = h.numType ?? "arabicPeriod";
-      (g[u] === void 0 || f[u] !== M) && (g[u] = (h.startAt ?? 1) - 1), g[u]++, f[u] = M, g.length = u + 1, f.length = u + 1;
+      (x[u] === void 0 || f[u] !== M) && (x[u] = (h.startAt ?? 1) - 1), x[u]++, f[u] = M, x.length = u + 1, f.length = u + 1;
     } else
-      g.length = Math.min(g.length, u), f.length = g.length;
+      x.length = Math.min(x.length, u), f.length = x.length;
     const p = h.bullet ? { listType: h.bullet === "num" ? "ordered" : "bullet", listLevel: u, ...bn(h, t) } : {};
-    h.bullet === "num" && (p.listIndex = g[u]), (h.runs.length ? h.runs : [{ text: "" }]).forEach((M, S) => {
+    h.bullet === "num" && (p.listIndex = x[u]), (h.runs.length ? h.runs : [{ text: "" }]).forEach((M, S) => {
       const v = { text: M.br ? `
 ` : M.text, ...S === 0 ? p : {} };
       S === 0 && y > 0 && kt(t, y) > 0 && (v.paragraphSpaceBefore = kt(t, y));
@@ -1456,7 +1466,7 @@ function ae(t, n, e) {
   if (s) {
     const d = Q(n, s.type, t, e);
     Object.assign(d, s.extra), Gt(d, t.fill, n), Mt(d, t.line), n.byPptId.set(t.id, { el: d, item: t }), n.stats.elements++;
-    const m = t.textRect ?? { l: 0, t: 0, r: t.w, b: t.h }, g = t.text?.insets, f = Math.abs(m.l) > 0.5 || Math.abs(m.t) > 0.5 || Math.abs(m.r - t.w) > 0.5 || Math.abs(m.b - t.h) > 0.5, h = !!g && Math.max(g.l, g.r, g.t, g.b) > 16;
+    const m = t.textRect ?? { l: 0, t: 0, r: t.w, b: t.h }, x = t.text?.insets, f = Math.abs(m.l) > 0.5 || Math.abs(m.t) > 0.5 || Math.abs(m.r - t.w) > 0.5 || Math.abs(m.b - t.h) > 0.5, h = !!x && Math.max(x.l, x.r, x.t, x.b) > 16;
     if (t.text && (f || h)) {
       const y = n.nextId("group");
       return d.groupIds = [...e, y].reverse(), n.stats.elements++, [d, wt(n, t.text, { ...t, rot: 0, x: t.x + m.l, y: t.y + m.t, w: m.r - m.l, h: m.b - m.t }, [...e, y])];
@@ -1471,18 +1481,18 @@ function ae(t, n, e) {
     const d = n.presets[o.prst];
     if (!d)
       return n.warnings.push(`Unknown shape "${o.prst}" was imported as a rectangle.`), ft(n.presets.rect, t.w, t.h);
-    const m = Object.fromEntries(Object.entries(o.adj ?? {}).map(([g, f]) => [g, `val ${f}`]));
+    const m = Object.fromEntries(Object.entries(o.adj ?? {}).map(([x, f]) => [x, `val ${f}`]));
     return ft(d, t.w, t.h, m);
-  })(), a = [], i = (t.text || r.some((d) => d.fill === !1)) && r.some((d) => d.fill !== !1) ? n.nextId("group") : null, l = i ? [...e, i] : e, x = /* @__PURE__ */ new Map();
+  })(), a = [], i = (t.text || r.some((d) => d.fill === !1)) && r.some((d) => d.fill !== !1) ? n.nextId("group") : null, l = i ? [...e, i] : e, g = /* @__PURE__ */ new Map();
   for (const d of r) {
     const m = `${d.fill === !1 ? "nofill" : "fill"}|${d.stroke === !1 ? "nostroke" : "stroke"}`;
-    x.has(m) || x.set(m, []), x.get(m).push(d);
+    g.has(m) || g.set(m, []), g.get(m).push(d);
   }
   let b = null;
-  for (const [d, m] of x) {
-    const g = m.flatMap((p) => p.cmds), f = ue(g);
+  for (const [d, m] of g) {
+    const x = m.flatMap((p) => p.cmds), f = ue(x);
     if (!f) continue;
-    const h = dn(un(g, -f.minX, -f.minY));
+    const h = dn(un(x, -f.minX, -f.minY));
     if (!h.length) continue;
     const y = Q(n, "path", { ...t, x: t.x + f.minX, y: t.y + f.minY, w: Math.max(f.maxX - f.minX, 1), h: Math.max(f.maxY - f.minY, 1) }, l);
     !(Math.abs(f.minX + f.maxX - t.w) < 0.5 && Math.abs(f.minY + f.maxY - t.h) < 0.5) && (t.rot || t.flipH || t.flipV) && yn(y, h, t, f), y.pathSubpaths = h, y.pathAnchors = h[0].anchors, y.pathClosed = h[0].closed, d.startsWith("fill") ? Gt(y, t.fill, n) : y.backgroundColor = "transparent", d.endsWith("|stroke") ? Mt(y, t.line) : (y.strokeColor = "transparent", y.strokeWidth = 0), a.push(y), b ??= y, n.stats.paths++;
@@ -1494,14 +1504,14 @@ function ae(t, n, e) {
   return n.stats.elements += a.length, a;
 }
 function yn(t, n, e, o) {
-  const s = e.w / 2, r = e.h / 2, a = (e.rot || 0) * Math.PI / 180, i = Math.cos(a), l = Math.sin(a), x = e.flipH ? -1 : 1, b = e.flipV ? -1 : 1, d = (u, p) => {
-    const w = (u + o.minX - s) * x, M = (p + o.minY - r) * b;
+  const s = e.w / 2, r = e.h / 2, a = (e.rot || 0) * Math.PI / 180, i = Math.cos(a), l = Math.sin(a), g = e.flipH ? -1 : 1, b = e.flipV ? -1 : 1, d = (u, p) => {
+    const w = (u + o.minX - s) * g, M = (p + o.minY - r) * b;
     return { x: s + w * i - M * l, y: r + w * l + M * i };
   }, m = (u, p) => {
-    const w = u * x, M = p * b;
+    const w = u * g, M = p * b;
     return { x: w * i - M * l, y: w * l + M * i };
   };
-  let g = 1 / 0, f = 1 / 0, h = -1 / 0, y = -1 / 0;
+  let x = 1 / 0, f = 1 / 0, h = -1 / 0, y = -1 / 0;
   for (const u of n) for (const p of u.anchors) {
     const w = d(p.x, p.y);
     if (p.x = w.x, p.y = w.y, p.inX !== void 0) {
@@ -1512,11 +1522,11 @@ function yn(t, n, e, o) {
       const M = m(p.outX, p.outY ?? 0);
       p.outX = M.x, p.outY = M.y;
     }
-    g = Math.min(g, p.x), f = Math.min(f, p.y), h = Math.max(h, p.x), y = Math.max(y, p.y);
+    x = Math.min(x, p.x), f = Math.min(f, p.y), h = Math.max(h, p.x), y = Math.max(y, p.y);
   }
   for (const u of n) for (const p of u.anchors)
-    p.x -= g, p.y -= f;
-  t.x = t.x - o.minX + g, t.y = t.y - o.minY + f, t.width = Math.max(h - g, 1), t.height = Math.max(y - f, 1), t.angle = 0, t.flipX = void 0, t.flipY = void 0;
+    p.x -= x, p.y -= f;
+  t.x = t.x - o.minX + x, t.y = t.y - o.minY + f, t.width = Math.max(h - x, 1), t.height = Math.max(y - f, 1), t.angle = 0, t.flipX = void 0, t.flipY = void 0;
 }
 function kn(t) {
   const n = t.geom;
@@ -1550,21 +1560,21 @@ function vt(t, n, e) {
   const r = t.w / 2, a = t.h / 2, i = (t.rot || 0) * Math.PI / 180, l = (w, M) => {
     let S = w - r, v = M - a;
     return t.flipH && (S = -S), t.flipV && (v = -v), { x: t.x + r + S * Math.cos(i) - v * Math.sin(i), y: t.y + a + S * Math.sin(i) + v * Math.cos(i) };
-  }, x = [];
+  }, g = [];
   let b = { x: 0, y: 0 };
   for (const w of s)
     if (w.op === "M" || w.op === "L")
-      b = { x: w.x, y: w.y }, x.push(l(b.x, b.y));
+      b = { x: w.x, y: w.y }, g.push(l(b.x, b.y));
     else if (w.op === "C") {
       for (let M = 1; M <= 12; M++) {
         const S = M / 12, v = 1 - S, N = v * v * v * b.x + 3 * v * v * S * w.x1 + 3 * v * S * S * w.x2 + S * S * S * w.x, P = v * v * v * b.y + 3 * v * v * S * w.y1 + 3 * v * S * S * w.y2 + S * S * S * w.y;
-        x.push(l(N, P));
+        g.push(l(N, P));
       }
       b = { x: w.x, y: w.y };
     }
-  if (x.length < 2) return [];
-  const d = Math.min(...x.map((w) => w.x)), m = Math.min(...x.map((w) => w.y)), g = Math.max(...x.map((w) => w.x)), f = Math.max(...x.map((w) => w.y)), h = t.line.head && Vt[t.line.head.type], y = t.line.tail && Vt[t.line.tail.type], u = Q(n, h || y ? "arrow" : "line", { ...t, x: d, y: m, w: Math.max(g - d, 1), h: Math.max(f - m, 1), rot: 0, flipH: !1, flipV: !1 }, e);
-  u.points = x.map((w) => ({ x: w.x - d, y: w.y - m })), u.curveType = "straight", u.startArrowhead = h ?? null, u.endArrowhead = y ?? null, Mt(u, t.line);
+  if (g.length < 2) return [];
+  const d = Math.min(...g.map((w) => w.x)), m = Math.min(...g.map((w) => w.y)), x = Math.max(...g.map((w) => w.x)), f = Math.max(...g.map((w) => w.y)), h = t.line.head && Vt[t.line.head.type], y = t.line.tail && Vt[t.line.tail.type], u = Q(n, h || y ? "arrow" : "line", { ...t, x: d, y: m, w: Math.max(x - d, 1), h: Math.max(f - m, 1), rot: 0, flipH: !1, flipV: !1 }, e);
+  u.points = g.map((w) => ({ x: w.x - d, y: w.y - m })), u.curveType = "straight", u.startArrowhead = h ?? null, u.endArrowhead = y ?? null, Mt(u, t.line);
   const p = (w, M) => {
     if (!w) return null;
     const S = n.byPptId.get(w.id);
@@ -1573,7 +1583,7 @@ function vt(t, n, e) {
     return { elementId: v.id, focus: 0, gap: 0, anchorFractionX: (M.x + n.ox - v.x) / v.width, anchorFractionY: (M.y + n.oy - v.y) / v.height };
   };
   return n.glue.push(() => {
-    u.startBinding = p(t.start, x[0]), u.endBinding = p(t.end, x[x.length - 1]);
+    u.startBinding = p(t.start, g[0]), u.endBinding = p(t.end, g[g.length - 1]);
   }), n.stats.elements++, [u];
 }
 function wn(t, n, e) {
@@ -1634,7 +1644,7 @@ function ie(t, n, e) {
   return o;
 }
 function Mn(t) {
-  return t ? { type: t.kind === "fade" ? "fade" : t.kind === "zoom" ? t.zoomIn === !1 ? "zoom-out" : "zoom-in" : t.dir === "r" ? "slide-right" : t.dir === "u" ? "slide-up" : t.dir === "d" ? "slide-down" : "slide-left", duration: Math.max(100, Math.min(5e3, t.durationMs)), easing: "easeInOutQuad" } : void 0;
+  return t ? { type: t.kind === "morph" ? "morph" : t.kind === "fade" ? "fade" : t.kind === "zoom" ? t.zoomIn === !1 ? "zoom-out" : "zoom-in" : t.dir === "r" ? "slide-right" : t.dir === "u" ? "slide-up" : t.dir === "d" ? "slide-down" : "slide-left", duration: Math.max(100, Math.min(5e3, t.durationMs)), easing: "easeInOutQuad" } : void 0;
 }
 function vn(t, n, e) {
   if (n)
@@ -1689,28 +1699,28 @@ async function Pn(t) {
 function Tn(t, n, e) {
   const o = /^(nar|sm)/.test(t) ? 4 : /^(wd|lg)/.test(t) ? 12 : 8, s = /^dk/.test(t) ? 3 : /^lt/.test(t) ? 1 : /^(wd)/.test(t) ? 3 : 1.5, r = { color: n, background: e, spacing: o, strokeWidth: s }, a = /^pct(\d+)$/.exec(t);
   if (a) {
-    const i = Math.max(1, Math.min(99, Number(a[1]))), l = i > 50, x = (l ? 100 - i : i) / 100;
-    return { type: "dots", color: l ? e : n, background: l ? n : e, spacing: 4, strokeWidth: Math.max(0.5, 4 * Math.sqrt(x / Math.PI)) };
+    const i = Math.max(1, Math.min(99, Number(a[1]))), l = i > 50, g = (l ? 100 - i : i) / 100;
+    return { type: "dots", color: l ? e : n, background: l ? n : e, spacing: 4, strokeWidth: Math.max(0.5, 4 * Math.sqrt(g / Math.PI)) };
   }
   return /Horz$|^horz|Brick$|^shingle$|^wave$|^zigZag$/.test(t) ? { type: "stripes", ...r, angle: 0 } : /Vert$|^vert$/.test(t) ? { type: "stripes", ...r, angle: 90 } : /DnDiag$|^dnDiag$/.test(t) ? { type: "stripes", ...r, angle: 45 } : /UpDiag$|^upDiag$/.test(t) ? { type: "stripes", ...r, angle: -45 } : /^(diagCross|trellis|openDmnd|weave)$/.test(t) ? { type: "crosshatch", ...r } : /Check$|^solidDmnd$/.test(t) ? { type: "checker", ...r, angle: t === "solidDmnd" ? 45 : 0 } : /^(cross|smGrid|lgGrid|dotGrid|plaid)$/.test(t) ? { type: "grid", ...r } : { type: "dots", ...r, strokeWidth: 1 };
 }
 async function In(t, n, e) {
-  const o = await ve(), s = await Pn(t), r = Math.round(t.width), a = Math.round(t.height), i = he(e ?? t.title, "slides", { width: r, height: a }), l = [], x = { slides: 0, elements: 0, pictures: 0, paths: 0 };
+  const o = await ve(), s = await Pn(t), r = Math.round(t.width), a = Math.round(t.height), i = he(e ?? t.title, "slides", { width: r, height: a }), l = [], g = { slides: 0, elements: 0, pictures: 0, paths: 0 };
   i.slides = [];
   const b = await mn(t, s), d = await Promise.all(t.slides.map((f) => {
     const h = f.background, y = h?.kind === "image" ? s.get(h.media) : void 0;
     return h?.kind === "image" && y ? gn(y.url, r, a, h.tile) : void 0;
-  })), m = t.slides.map(() => n("slide")), g = /* @__PURE__ */ new Map();
+  })), m = t.slides.map(() => n("slide")), x = /* @__PURE__ */ new Map();
   return t.slides.forEach((f, h) => {
-    f.key && g.set(f.key, m[h]);
+    f.key && x.set(f.key, m[h]);
   }), t.slides.forEach((f, h) => {
     const y = h * (r + an), u = Lt(m[h], f.name || `Slide ${h + 1}`, y, 0, { width: r, height: a });
     u.order = h;
-    const p = { ox: y, oy: 0, presets: o, nextId: n, out: [], byPptId: /* @__PURE__ */ new Map(), glue: [], warnings: l, stats: x, images: s, slideBg: d[h], gray: b, slideIds: g };
+    const p = { ox: y, oy: 0, presets: o, nextId: n, out: [], byPptId: /* @__PURE__ */ new Map(), glue: [], warnings: l, stats: g, images: s, slideBg: d[h], gray: b, slideIds: x };
     i.elements.push(...ie(f.items, p, [])), p.glue.forEach((M) => M()), vn(u, f.background, p);
     const w = Mn(f.transition);
-    w && (u.transition = w), f.notes && (u.notes = f.notes), f.hidden && (u.hidden = !0), f.advanceAfterMs && (u.advanceAfter = f.advanceAfterMs), f.section && (u.section = f.section), i.slides.push(u), x.slides++;
-  }), i.slides.length || i.slides.push(Lt(void 0, "Slide 1", 0, 0, { width: r, height: a })), t.loop && (i.globalSettings = { ...i.globalSettings || {}, slideShowLoop: !0 }), { doc: i, warnings: [...new Set(l)], stats: x };
+    w && (u.transition = w), f.notes && (u.notes = f.notes), f.hidden && (u.hidden = !0), f.advanceAfterMs && (u.advanceAfter = f.advanceAfterMs), f.section && (u.section = f.section), i.slides.push(u), g.slides++;
+  }), i.slides.length || i.slides.push(Lt(void 0, "Slide 1", 0, 0, { width: r, height: a })), t.loop && (i.globalSettings = { ...i.globalSettings || {}, slideShowLoop: !0 }), { doc: i, warnings: [...new Set(l)], stats: g };
 }
 const Nn = 512 * 1024 * 1024;
 async function Ln(t, n) {

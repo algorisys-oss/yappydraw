@@ -1348,6 +1348,9 @@ export const fr: Dictionary = {
         exit: 'Quitter l’aperçu d’impression',
         failed: 'L’aperçu d’impression n’a pas pu démarrer.',
     },
+    morph: {
+        option: 'Morphose',
+    },
     sections: {
         hide: 'Masquer la diapositive',
         show: 'Afficher la diapositive',

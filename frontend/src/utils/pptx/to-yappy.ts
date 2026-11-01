@@ -606,7 +606,7 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
 
 function transitionOf(t: Transition | undefined): SlideTransition | undefined {
     if (!t) return undefined;
-    const type = t.kind === 'fade' ? 'fade'
+    const type = t.kind === 'morph' ? 'morph' : t.kind === 'fade' ? 'fade'
         : t.kind === 'zoom' ? (t.zoomIn === false ? 'zoom-out' : 'zoom-in')
         : t.dir === 'r' ? 'slide-right' : t.dir === 'u' ? 'slide-up' : t.dir === 'd' ? 'slide-down' : 'slide-left';
     return { type, duration: Math.max(100, Math.min(5000, t.durationMs)), easing: 'easeInOutQuad' };

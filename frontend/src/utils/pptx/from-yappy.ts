@@ -957,6 +957,7 @@ export function transitionOf(t: SlideTransition | undefined): Transition | undef
         case 'slide-down': return { kind: 'push', dir: 'd', durationMs };
         case 'zoom-in': return { kind: 'zoom', zoomIn: true, durationMs };
         case 'zoom-out': return { kind: 'zoom', zoomIn: false, durationMs };
+        case 'morph': return { kind: 'morph', durationMs };
         default: return undefined;
     }
 }

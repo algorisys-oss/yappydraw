@@ -1254,6 +1254,19 @@ function notesOf(pkg: Pkg, slidePart: string): string | undefined {
 }
 
 function transitionOf(root: El): Transition | undefined {
+    // Morph lives in a p159 Choice whose Fallback is a fade. The general AlternateContent rule
+    // (UNDERSTOOD) takes that Fallback, and must keep doing so for other p159 content, so the
+    // Choice is looked at here, for this one element.
+    for (const ac of kids(root, 'AlternateContent')) {
+        for (const ch of kids(ac, 'Choice')) {
+            const tr = kid(ch, 'transition');
+            if (tr && kid(tr, 'morph')) {
+                const spd = attr(tr, 'spd');
+                const durationMs = attr(tr, 'p14:dur') !== null ? num(tr, 'p14:dur') : spd === 'fast' ? 500 : spd === 'slow' ? 1000 : 750;
+                return { kind: 'morph', durationMs };
+            }
+        }
+    }
     const t = elementKids(root).find(k => k.localName === 'transition');
     if (!t) return undefined;
     const fx = kids(t).find(k => k.localName !== 'sndAc' && k.localName !== 'extLst');
@@ -1265,6 +1278,7 @@ function transitionOf(root: El): Transition | undefined {
         case 'push': case 'cover': case 'pull': case 'wipe':
             return { kind: 'push', dir: dir === 'r' || dir === 'u' || dir === 'd' ? dir : 'l', durationMs };
         case 'zoom': return { kind: 'zoom', zoomIn: dir !== 'out', durationMs };
+        case 'morph': return { kind: 'morph', durationMs };
         case 'cut': return undefined;
         default: return { kind: 'fade', durationMs };
     }

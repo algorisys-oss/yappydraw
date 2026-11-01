@@ -8,6 +8,7 @@ import { animationEngine, generateAnimationId } from './animation-engine';
 import { lerp, getEasing } from './animation-types';
 import type { Slide, SlideTransition } from '../../types/slide-types';
 import { DEFAULT_SLIDE_TRANSITION } from '../../types/slide-types';
+import { runMorph } from './morph-transition';
 
 export interface TransitionContext {
     fromSlide: Slide;
@@ -33,6 +34,7 @@ class SlideTransitionManager {
     private activeAnimationId: string | null = null;
     private isTransitioning: boolean = false;
     private fadeOverlay: HTMLDivElement | null = null;
+    private cancelMorph: (() => void) | null = null;
 
     /**
      * Check if a transition is currently in progress
@@ -119,6 +121,9 @@ class SlideTransitionManager {
             this.activeAnimationId = null;
         }
         this.removeFadeOverlay();
+        // A click during a Morph jumps straight to the end of it.
+        this.cancelMorph?.();
+        this.cancelMorph = null;
         this.isTransitioning = false;
     }
 
@@ -140,9 +145,20 @@ class SlideTransitionManager {
             case 'zoom-in':
             case 'zoom-out':
                 return this.executeZoom(context, transition);
+            case 'morph':
+                return this.executeMorph(context, transition);
             default:
                 this.applyImmediateSwitch(context.toIndex);
         }
+    }
+
+    /**
+     * Morph: objects on both slides move into place, the rest fade (utils/animation/morph-transition.ts).
+     */
+    private async executeMorph(context: TransitionContext, transition: SlideTransition): Promise<void> {
+        const run = runMorph(context.fromIndex, context.toIndex, transition.duration, () => this.applyImmediateSwitch(context.toIndex));
+        this.cancelMorph = run.cancel;
+        try { await run.done; } finally { this.cancelMorph = null; }
     }
 
     /**

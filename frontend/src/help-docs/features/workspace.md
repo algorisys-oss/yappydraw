@@ -937,7 +937,7 @@ size.
   colours. **Groups** stay groups; the **slide master's own artwork** (logo bars, decorations) is
   placed on every slide that shows it.
 - **Backgrounds** (colour, gradient, picture — stretched or tiled, see-through ones included) and
-  **transitions** (Fade, Push/Wipe/Cover → Slide, Zoom) carry over.
+  **transitions** (Fade, Push/Wipe/Cover → Slide, Zoom, Morph) carry over.
 - **Links** on objects (a web address, a jump to another slide, next/previous/first/last slide,
   end show) come in as Yappy links that work while presenting. Other click actions (run a
   program, play a sound, a macro) and links on single words in a text box are dropped.

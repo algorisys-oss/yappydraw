@@ -13,7 +13,8 @@ export type SlideTransitionType =
     | 'slide-up'
     | 'slide-down'
     | 'zoom-in'
-    | 'zoom-out';
+    | 'zoom-out'
+    | 'morph';
 
 /**
  * Available easing functions for transitions

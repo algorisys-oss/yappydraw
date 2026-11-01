@@ -1,5 +1,5 @@
-import { a1 as et, a2 as pt, a3 as mt, a4 as xt, a5 as gt, a6 as yt, a7 as kt, a8 as bt, a9 as G, aa as Mt, ab as wt, ac as vt, ad as St, ae as At, af as $t, ag as It, ah as Ct, ai as Tt, aj as Ft, ak as Pt, al as zt } from "./index-B_V19zDs.js";
-import { d as z, g as j, t as C, h as Lt } from "./custgeom-CEAI2znd.js";
+import { a1 as et, a2 as pt, a3 as mt, a4 as xt, a5 as gt, a6 as yt, a7 as kt, a8 as bt, a9 as G, aa as Mt, ab as wt, ac as vt, ad as St, ae as At, af as $t, ag as It, ah as Ct, ai as Tt, aj as Ft, ak as Pt, al as zt } from "./index-NbpsufU1.js";
+import { d as z, g as j, t as C, h as Lt } from "./custgeom-DThQ1Qnp.js";
 function Et(t) {
   const { l: n, c: e, h: r } = t, i = r * Math.PI / 180, o = e * Math.cos(i), l = e * Math.sin(i), f = n + 0.3963377774 * o + 0.2158037573 * l, s = n - 0.1055613458 * o - 0.0638541728 * l, a = n - 0.0894841775 * o - 1.291485548 * l, c = f * f * f, u = s * s * s, p = a * a * a, d = 1.2270138511 * c - 0.5577999807 * u + 0.2812561489 * p, h = -0.0405801784 * c + 1.1122568696 * u - 0.0716766787 * p, x = -0.0763812845 * c - 0.4214819787 * u + 1.5861632204 * p, g = 2.4039459 * d - 0.9898517 * h - 0.4141151 * x, k = -0.7797967 * d + 1.5445214 * h + 0.0352745 * x, m = 0.0384795 * d - 0.1141381 * h + 1.0756786 * x, y = (b) => {
     const M = Math.abs(b), w = M > 31308e-7 ? 1.055 * Math.pow(M, 1 / 2.4) - 0.055 : 12.92 * M;
@@ -762,6 +762,8 @@ function dn(t) {
       return { kind: "zoom", zoomIn: !0, durationMs: n };
     case "zoom-out":
       return { kind: "zoom", zoomIn: !1, durationMs: n };
+    case "morph":
+      return { kind: "morph", durationMs: n };
     default:
       return;
   }

@@ -1326,6 +1326,9 @@ export const ja: Dictionary = {
         exit: '印刷プレビューを終了',
         failed: '印刷プレビューを開始できませんでした。',
     },
+    morph: {
+        option: '変形',
+    },
     sections: {
         hide: 'スライドを非表示',
         show: 'スライドを表示',

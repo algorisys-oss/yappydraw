@@ -15,6 +15,9 @@ import { EMU_PER_PX, ang, esc, fontSz, pct, NS, REL, XML_DECL, relsXml, zipPacka
 const MIN_SLIDE_EMU = 914400;
 const MAX_SLIDE_EMU = 51206400;
 
+/** PowerPoint 2015+ main namespace (Morph). */
+const P159 = 'http://schemas.microsoft.com/office/powerpoint/2015/09/main';
+
 const ROOT_NS = `xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}"`;
 
 const CT = {
@@ -269,6 +272,13 @@ function transitionXml(t: Transition | undefined, advanceAfterMs?: number): stri
     const effect = t.kind === 'push' ? `<p:push dir="${t.dir ?? 'l'}"/>`
         : t.kind === 'zoom' ? `<p:zoom dir="${t.zoomIn === false ? 'out' : 'in'}"/>`
         : '<p:fade/>';
+    // Morph is a PowerPoint 2019 / 365 transition (p159); everything older falls back to a fade.
+    if (t.kind === 'morph') {
+        return `<mc:AlternateContent xmlns:mc="${NS.mc}">`
+            + `<mc:Choice xmlns:p159="${P159}" xmlns:p14="${NS.p14}" Requires="p159"><p:transition spd="${spd}" p14:dur="${dur}"${adv}><p159:morph option="byObject"/></p:transition></mc:Choice>`
+            + `<mc:Fallback><p:transition spd="${spd}"${adv}><p:fade/></p:transition></mc:Fallback>`
+            + '</mc:AlternateContent>';
+    }
     // PowerPoint 2010+ reads the exact duration from p14:dur; older readers take the Fallback.
     return `<mc:AlternateContent xmlns:mc="${NS.mc}">`
         + `<mc:Choice xmlns:p14="${NS.p14}" Requires="p14"><p:transition spd="${spd}" p14:dur="${dur}"${adv}>${effect}</p:transition></mc:Choice>`

@@ -1326,6 +1326,9 @@ export const es: Dictionary = {
         exit: 'Salir de la vista previa de impresión',
         failed: 'No se pudo iniciar la vista previa de impresión.',
     },
+    morph: {
+        option: 'Transformación',
+    },
     sections: {
         hide: 'Ocultar diapositiva',
         show: 'Mostrar diapositiva',

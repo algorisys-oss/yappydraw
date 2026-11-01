@@ -82,6 +82,7 @@ export const SlideTransitionPicker = (props: SlideTransitionPickerProps) => {
                         <option value="slide-down">Slide Down</option>
                         <option value="zoom-in">Zoom In</option>
                         <option value="zoom-out">Zoom Out</option>
+                        <option value="morph">{t('morph.option')}</option>
                     </select>
                 </div>
 

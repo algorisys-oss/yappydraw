@@ -545,3 +545,17 @@ describe("readPptx: show settings (hidden, auto-advance, sections, loop)", () =>
         expect(strFromU8(files['ppt/slides/slide1.xml'])).not.toContain('transition');
     });
 });
+
+describe("readPptx: Morph transition", () => {
+    it("round-trips Morph through our writer, with a fade for older readers", () => {
+        const deck: Deck = { width: 960, height: 540, slides: [{ items: [] }, { items: [], transition: { kind: 'morph', durationMs: 2000 }, advanceAfterMs: 4000 }] };
+        const bytes = buildPptx(deck);
+        const { deck: back } = read(bytes);
+        expect(back.slides[1].transition).toEqual({ kind: 'morph', durationMs: 2000 });
+        expect(back.slides[1].advanceAfterMs).toBe(4000);
+        const xml = strFromU8(unzipSync(bytes)['ppt/slides/slide2.xml']);
+        parseXml(xml);
+        expect(xml).toContain('<p159:morph option="byObject"/>');
+        expect(xml).toContain('<mc:Fallback><p:transition spd="slow" advTm="4000"><p:fade/>');
+    });
+});
