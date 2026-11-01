@@ -11696,3 +11696,48 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **LibreOffice confirmed both attributes** (`svg:desc`, `loext:decorative="true"`) from the
   written file — the extension URI and namespace have to be exactly PowerPoint's.
 
+## Hardening: undo for slide settings, PowerPoint table layout (2026-11-01, bugs #467–#468)
+
+- **Probe a bug class, not a bug.** After #466 a script ran every slide operation (switch, add,
+  delete, duplicate, reorder, layout, undo/redo) with a distinct background per slide and checked
+  each kept its own. All passed but one — undo — which led to #467. A probe is cheap and finds the
+  neighbours a single regression test never will.
+- **Shallow history snapshots + path writes = undo that undoes nothing.** `setStore(path…, 'key',
+  obj)` merges into the object at that path; if the snapshot shares it, history changes with the
+  store. Third time this pattern has bitten (chart spec, transition). Write whole objects
+  (`setStore(path, { key: obj })`) and snapshot nested objects.
+- **Not every setting belongs in undo.** The show's Loop flag lives in global settings, outside
+  the snapshot; a recorded step for it would be an undo that does nothing. Leave it out rather than
+  add a confusing no-op.
+- **Read the spec's counting rule.** `gridSpan` and `hMerge` both describe one merge; a reader
+  that counts both shifts every later cell. One `a:tc` per grid column is the invariant.
+- **A three-way render (old / new / LibreOffice) separates regressions from old differences.** A
+  luminance diff per deck against LibreOffice, before and after, flagged nine improvements and
+  three small moves the wrong way; looking at those three found one estimation bug (a 32pt
+  paragraph-end size inflating an 8pt row) and two that were right (a border with alpha 0 that
+  LibreOffice draws anyway).
+- **Built-in table styles from the files that use them.** PowerPoint doesn't publish its preset
+  table styles as XML, LibreOffice generates them under MPL. The corpus's own PowerPoint-written
+  `tableStyles.xml` gave the definitions of the common families; only ids seen there are mapped.
+
+## Open items closed: shrink while editing, vertical text, PDF/HTML alt text (2026-11-01, #469–#470)
+
+- **A prebuilt bundle drifts silently.** The HTML export embeds `player-assets.ts`, rebuilt only by
+  `npm run build:player`; it was 45 releases old and drew no data charts. Nothing failed — an
+  export just looked wrong. Rebuild it on any release that touches shapes, renderers, the store or
+  `player-app.tsx`, and keep an end-to-end test that exports and opens a deck (the accessibility
+  spec now does).
+- **An editor and a renderer must agree on the box, not just the font.** The shrink-to-fit
+  renderer was right; the editor's auto-grow quietly enlarged the box, so there was nothing left
+  to shrink. The screenshot of "after commit" showed it; the font-size assertion alone wouldn't.
+- **Vertical text as a turned text box.** A Yappy text element has rotation, so PowerPoint's
+  `vert`/`vert270` map to a box turned a quarter about the shape's centre, with its margins turned
+  too; `wordArtVert` maps to the existing stacked vertical text. One rule in `shapeElements`
+  covers shapes and table cells alike.
+- **When there's no ground truth, pick the conservative reading and say so.** LibreOffice grows a
+  row of turned text to three times its stored height; PowerPoint wasn't available to check. Rows
+  grow only when the text can't fit, and the release note says LibreOffice differs.
+- **Untagged PDF accessibility: invisible text.** jsPDF can't write a structure tree, but text in
+  rendering mode 3 is read by screen readers, search and copy, and `pdftotext` proves it in a test
+  — the same layer OCR'd scans use.
+

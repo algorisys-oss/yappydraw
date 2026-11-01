@@ -187,9 +187,8 @@ it off. Text boxes that size themselves to their text always fit, so the setting
 It goes to PowerPoint as **Shrink text on overflow** and comes back from it. PowerPoint stores the
 size it last shrank to, so text it had already shrunk comes in at that size.
 
-:::note
-While you type, the editor shows the text at its full size; it is fitted again when you finish.
-:::
+While you type, the text is fitted as it grows, and the box keeps its size (without Text Fit, a
+text box grows taller to hold its text instead).
 
 ```
 Yappy.setTextFit(id, 'shrink');           // or 'none'; also an option: { textFit: 'shrink' }

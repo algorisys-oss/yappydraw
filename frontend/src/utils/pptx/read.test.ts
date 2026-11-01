@@ -6,7 +6,8 @@ import { buildPptx } from "./write";
 import { parseSvgPath } from "./custgeom";
 import type { Deck, ShapeItem, ConnectorItem, PictureItem, GroupItem } from "./deck";
 
-const parseXml = (s: string) => new DOMParser().parseFromString(s, 'application/xml') as unknown as Document;
+// Quiet: the broken-input tests feed it malformed XML on purpose, and the reader reports that itself.
+const parseXml = (s: string) => new DOMParser({ onError: () => { } } as any).parseFromString(s, 'application/xml') as unknown as Document;
 const read = (bytes: Uint8Array) => readPptx(bytes, { parseXml });
 
 const PNG_1x1 = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='), c => c.charCodeAt(0));
@@ -402,7 +403,11 @@ describe("readPptx: table styles defined in the file", () => {
     it("takes text colour, bold and rules from the style", () => {
         expect(cells[0].text!.paragraphs[0].runs[0]).toMatchObject({ bold: true, color: { hex: '#ffffff' } });
         expect(cells[2].text!.paragraphs[0].runs[0].bold).toBeUndefined();
-        expect(cells[2].line).toMatchObject({ color: { hex: '#00ff00' } });
+        // insideH is the line BETWEEN rows: drawn as horizontal rules, with no outline around the cells.
+        expect(cells[2].line).toBeNull();
+        const rules = cells.filter((c: any) => c.kind === 'connector');
+        expect(rules.length).toBeGreaterThan(0);
+        expect(rules.every((c: any) => c.line.color.hex === '#00ff00' && Math.round(c.h) === 0)).toBe(true);
     });
     it("draws the table background under unfilled cells, and theme-line borders", () => {
         const themed = style.replace('styleName="Custom">', 'styleName="Custom"><a:tblBg><a:fillRef idx="1"><a:schemeClr val="accent2"/></a:fillRef></a:tblBg>')
@@ -415,7 +420,8 @@ describe("readPptx: table styles defined in the file", () => {
         expect(bg.name).toBe('T background');
         expect(bg.fill).toEqual({ kind: 'solid', color: { hex: '#ed7d31' } }); // theme fill 1 in accent2
         expect([bg.w, bg.h]).toEqual([200, 120]);
-        expect(rest[2].line).toMatchObject({ color: { hex: '#4472c4' } });   // theme line 1 in accent1
+        const rules = rest.filter((c: any) => c.kind === 'connector');
+        expect(rules[0].line).toMatchObject({ color: { hex: '#4472c4' } });   // theme line 1 in accent1
     });
 });
 
@@ -756,5 +762,99 @@ describe("alt text and decorative on every kind of object", () => {
         const items = read(bytes).deck.slides[0].items;
         expect(items.map(i => [i.kind, i.descr, i.decorative])).toEqual([
             ['shape', 'A red "stop" box', undefined], ['chart', 'Sales doubled, Q1 to Q4', undefined], ['shape', undefined, true]]);
+    });
+});
+
+describe("table layout: merges and row heights", () => {
+    const tc = (t: string, attrs = '') => `<a:tc${attrs}><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="1800"/><a:t>${t}</a:t></a:r></a:p></a:txBody><a:tcPr marT="0" marB="0"/></a:tc>`;
+    const tbl = (rows: string, cols = [100, 100, 100]) => `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="4" name="T"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="${300 * 9525}" cy="${60 * 9525}"/></p:xfrm>`
+        + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr><a:tableStyleId>{2D5ABB26-0587-4C30-8999-92F81FD0307C}</a:tableStyleId></a:tblPr>`
+        + `<a:tblGrid>${cols.map(w => `<a:gridCol w="${w * 9525}"/>`).join('')}</a:tblGrid>${rows}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+    const tr = (h: number, cells: string) => `<a:tr h="${h * 9525}">${cells}</a:tr>`;
+    const cellsOf = (xml: string) => {
+        const it = read(handBuilt(xml)).deck.slides[0].items.find(i => i.name === 'T') as any;
+        return ((it.kind === 'table' ? it.fallback : it) as GroupItem).children as ShapeItem[];
+    };
+    const at = (c: ShapeItem) => [Math.round(c.x), Math.round(c.y), Math.round(c.w), Math.round(c.h), c.text!.paragraphs[0].runs[0].text];
+
+    it("puts the cell after a merged pair in the third column, not past the table", () => {
+        const cells = cellsOf(tbl(tr(30, tc('AB', ' gridSpan="2"') + tc('', ' hMerge="1"') + tc('C')) + tr(30, tc('1') + tc('2') + tc('3'))));
+        expect(at(cells[0])).toEqual([0, 0, 200, 30, 'AB']);
+        expect(at(cells[1])).toEqual([200, 0, 100, 30, 'C']);
+    });
+    it("copes with a writer that leaves the hMerge placeholders out", () => {
+        const cells = cellsOf(tbl(tr(30, tc('AB', ' gridSpan="2"') + tc('C'))));
+        expect(at(cells[1])).toEqual([200, 0, 100, 30, 'C']);
+    });
+    it("grows a row stored too short (even 0) to fit its text", () => {
+        const cells = cellsOf(tbl(tr(0, tc('x') + tc('y') + tc('z')) + tr(30, tc('1') + tc('2') + tc('3'))));
+        expect(cells[0].h).toBeGreaterThan(20);              // one 18pt line, no margins
+        expect(cells[3].y).toBeCloseTo(cells[0].h, 5);       // the next row starts below it
+    });
+    it("makes a cell spanning rows as tall as the rows it covers", () => {
+        const cells = cellsOf(tbl(tr(30, tc('tall', ' rowSpan="2"') + tc('b') + tc('c')) + tr(50, tc('', ' vMerge="1"') + tc('e') + tc('f'))));
+        expect(Math.round(cells[0].h)).toBe(80);
+    });
+});
+
+describe("built-in table styles the file doesn't define", () => {
+    const tc = (t: string) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${t}</a:t></a:r></a:p></a:txBody><a:tcPr/></a:tc>`;
+    const table = (styleId: string, flags = 'firstRow="1" bandRow="1"') => `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="4" name="T"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="${200 * 9525}" cy="${90 * 9525}"/></p:xfrm>`
+        + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr ${flags}><a:tableStyleId>${styleId}</a:tableStyleId></a:tblPr>`
+        + `<a:tblGrid><a:gridCol w="${100 * 9525}"/><a:gridCol w="${100 * 9525}"/></a:tblGrid>`
+        + ['h', 'a', 'b'].map(r => `<a:tr h="${30 * 9525}">${tc(r + '1')}${tc(r + '2')}</a:tr>`).join('') + `</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+    const read1 = (styleId: string) => {
+        const it = read(handBuilt(table(styleId))).deck.slides[0].items.find(i => i.name === 'T') as any;
+        return ((it.kind === 'table' ? it.fallback : it) as GroupItem).children as any[];
+    };
+    const fillHex = (c: any) => c.fill.kind === 'solid' ? c.fill.color.hex : 'none';
+
+    it("Medium Style 2 (no accent): a dark header and tinted, banded rows", () => {
+        const cells = read1('{073A0DAA-6AF3-43AB-8588-CEC1D06C72B9}').filter(c => c.kind === 'shape');
+        expect(fillHex(cells[0])).toBe('#000000');
+        expect(cells[0].text.paragraphs[0].runs[0]).toMatchObject({ bold: true, color: { hex: '#ffffff' } });
+        expect(fillHex(cells[2])).not.toBe(fillHex(cells[4]));   // banded
+        expect(cells[2].line).toMatchObject({ color: { hex: '#ffffff' } });
+    });
+    it("Light Style 1 – Accent 1: rules above, under the header and below; no fill on the header", () => {
+        const all = read1('{3B4B98B0-60AC-42C2-AFA5-B58CD77FA1E5}');
+        const cells = all.filter(c => c.kind === 'shape'), rules = all.filter(c => c.kind === 'connector');
+        expect(fillHex(cells[0])).toBe('none');
+        expect(cells[0].text.paragraphs[0].runs[0].bold).toBe(true);
+        expect(fillHex(cells[2])).toBe('#4472c4');                 // the band (accent 1 at 20 % alpha)
+        expect(cells[2].fill.color.alpha).toBeCloseTo(0.2, 2);
+        const ys = [...new Set(rules.map((r: any) => Math.round(r.y)))].sort((a, b) => a - b);
+        const bottom = Math.round(cells[cells.length - 1].y + cells[cells.length - 1].h);
+        expect(ys).toEqual([0, Math.round(cells[0].h), bottom]);   // top, under the header, bottom
+        expect(rules.every((r: any) => Math.round(r.h) === 0 && r.line.color.hex === '#4472c4')).toBe(true);
+    });
+    it("No Style, Table Grid: thin lines in the text colour", () => {
+        const cells = read1('{5940675A-B579-460E-94D1-54222C63F5DA}').filter(c => c.kind === 'shape');
+        expect(cells[0].line).toMatchObject({ color: { hex: '#000000' } });
+        expect(fillHex(cells[0])).toBe('none');
+    });
+    it("an unknown style id still comes in plain", () => {
+        const cells = read1('{00000000-0000-0000-0000-000000000000}').filter(c => c.kind === 'shape');
+        expect(fillHex(cells[0])).toBe('none');
+    });
+});
+
+describe("vertical text", () => {
+    const sp = (vert: string) => `<p:sp><p:nvSpPr><p:cNvPr id="5" name="V"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(10, 10, 100, 300)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="4472C4"/></a:solidFill></p:spPr>`
+        + `<p:txBody><a:bodyPr vert="${vert}"/><a:lstStyle/><a:p><a:r><a:t>Turned</a:t></a:r></a:p></p:txBody></p:sp>`;
+    it("reads a shape's text direction", () => {
+        const v = (x: string) => (read(handBuilt(sp(x))).deck.slides[0].items.find(i => i.name === 'V') as ShapeItem).text!.vert;
+        expect([v('vert'), v('vert270'), v('wordArtVert'), v('eaVert'), v('horz')]).toEqual(['vert', 'vert270', 'stacked', 'vert', undefined]);
+    });
+    it("reads a table cell's direction from its tcPr, and grows the row to fit stacked letters", () => {
+        const cell = (vert: string, t: string) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="1800"/><a:t>${t}</a:t></a:r></a:p></a:txBody><a:tcPr${vert ? ` vert="${vert}"` : ''}/></a:tc>`;
+        const xml = `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="4" name="T"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="${200 * 9525}" cy="${40 * 9525}"/></p:xfrm>`
+            + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr/><a:tblGrid><a:gridCol w="${100 * 9525}"/><a:gridCol w="${100 * 9525}"/></a:tblGrid>`
+            + `<a:tr h="${40 * 9525}">${cell('wordArtVert', 'Stacked')}${cell('', 'flat')}</a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+        const it = read(handBuilt(xml)).deck.slides[0].items.find(i => i.name === 'T') as any;
+        const cells = (it.kind === 'table' ? it.fallback : it).children as ShapeItem[];
+        expect(cells[0].text!.vert).toBe('stacked');
+        expect(cells[1].text!.vert).toBeUndefined();
+        expect(cells[0].h).toBeGreaterThan(7 * 24);               // seven letters, one under another
     });
 });

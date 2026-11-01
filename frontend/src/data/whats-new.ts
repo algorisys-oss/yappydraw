@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.301', date: '2026-11-01', items: [
+        'Fixed: Ctrl+Z after changing a slide’s transition or background now undoes just that change.',
+        'PowerPoint tables come in more faithfully: merged cells in the right place, rows tall enough for their text, built-in table styles even when the file leaves them out, and vertical text.',
+        'Shrink-to-fit text keeps its box while you type, and you see it at the size it will be drawn.',
+        'Alt text now goes into PDF and HTML exports too, so screen readers can describe your pictures and charts there.',
+        'Fixed: charts in exported HTML presentations now appear.',
+    ] },
     { version: '0.8.300', date: '2026-11-01', items: [
         'New slide transitions: Wipe, Cover, Uncover and Split, in every direction — and PowerPoint keeps them.',
         'Shrink text on overflow: turn on Text Fit in Properties and long text shrinks to fit its box, then grows back when it has room.',

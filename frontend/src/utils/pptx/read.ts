@@ -22,6 +22,7 @@
 import { unzipSync, strFromU8 } from 'fflate';
 import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink, DeckAnim, TableItem, TableCell } from './deck';
 import { effectOf, sideOf } from './anim-map';
+import { builtinTableStyleXml } from './builtin-table-styles';
 import type { ChartSpec, ChartSeries, ChartKind } from '../chart/chart-layout';
 import { EMU_PER_PX, EMU_PER_PT } from './ooxml';
 import { geometryPathsPx, textRectPx, type GeomDef } from './guides';
@@ -116,6 +117,16 @@ class Pkg {
         for (const [k, v] of Object.entries(files)) this.files[norm(k)] = v;
     }
     bytes(name: string): Uint8Array | undefined { return this.files[norm(name)]; }
+    /** Parse markup the importer itself supplies (built-in definitions), cached by text. */
+    parse(xml: string): El | null {
+        const key = `#inline:${xml}`;
+        if (!this.text.has(key)) {
+            let doc: Document | null = null;
+            try { doc = this.parseXml(xml); if (doc.getElementsByTagName('parsererror').length) doc = null; } catch { doc = null; }
+            this.text.set(key, doc);
+        }
+        return this.text.get(key)?.documentElement ?? null;
+    }
     xml(name: string): El | null {
         const key = norm(name);
         if (!this.text.has(key)) {
@@ -666,7 +677,16 @@ function textBodyOf(txBody: El | null, chain: TextChain, r: Res): TextBody | und
         wrap: bp.wrap !== 'none',
         lineSpacing: spacing,
         ...(shrinkOn && { shrink: 1 }),
+        ...(vertOf(bp.vert) && { vert: vertOf(bp.vert) }),
     };
+}
+
+/** DrawingML text direction → ours. East Asian and Mongolian vertical turn Latin text a quarter clockwise. */
+function vertOf(v: string | null | undefined): TextBody['vert'] {
+    if (v === 'vert' || v === 'eaVert' || v === 'mongolianVert') return 'vert';
+    if (v === 'vert270') return 'vert270';
+    if (v === 'wordArtVert' || v === 'wordArtVertRtl') return 'stacked';
+    return undefined;
 }
 
 const colorOfScheme = (name: string, r: Res): Color | null => {
@@ -980,19 +1000,18 @@ function readSp(el: El, level: Level, sc: SlideCtx, frame: Frame, id: number, na
     return { kind: 'shape', id, name, ...box, geom: g.geom, fill, line, text, textBox: isText || undefined, textRect };
 }
 
-/**
- * How a table cell looks before its own `tcPr`. A table names its style by GUID; PowerPoint writes
- * the definition of every style a deck uses into `ppt/tableStyles.xml`, so the parts there
- * (whole table, bands, first/last row and column) are read generically. A style the file doesn't
- * define falls back to the default every new table gets — Medium Style 2, Accent 1 ({5C22544A-…})
- * — reproduced from the theme; any other unknown style gives plain cells.
- */
-interface CellLook { fill?: Paint; text?: Color; bold?: boolean; border?: Line | null }
+/** A cell's lines, one per edge: a Line, null for "no line", absent for "not said here". */
+type Edges = { t?: Line | null; b?: Line | null; l?: Line | null; r?: Line | null };
+interface CellLook { fill?: Paint; text?: Color; bold?: boolean; edges: Edges }
 type CellLookFor = ((ri: number, ci: number, rows: number, cols: number) => CellLook) & { background?: Paint };
 const DEFAULT_TABLE_STYLE = '{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}';
 
-function tablePartLook(part: El | null, r: Res): CellLook {
-    const out: CellLook = {};
+/** A style part's borders as written: the region's outer edges and the lines between its cells. */
+type PartBorders = Partial<Record<'left' | 'right' | 'top' | 'bottom' | 'insideH' | 'insideV', Line | null>>;
+interface PartLook { fill?: Paint; text?: Color; bold?: boolean; bdr: PartBorders }
+
+function tablePartLook(part: El | null, r: Res): PartLook {
+    const out: PartLook = { bdr: {} };
     if (!part) return out;
     const tc = kid(part, 'tcStyle'), tx = kid(part, 'tcTxStyle');
     const fillEl = kid(tc, 'fill');
@@ -1002,63 +1021,109 @@ function tablePartLook(part: El | null, r: Res): CellLook {
     if (text) out.text = text;
     if (attr(tx, 'b') === 'on') out.bold = true;
     const bdr = kid(tc, 'tcBdr');
-    for (const side of ['insideH', 'bottom', 'top', 'left']) {
+    for (const side of ['left', 'right', 'top', 'bottom', 'insideH', 'insideV'] as const) {
         const b = kid(bdr, side);
         if (!b) continue;
         const ln = lineOf(kid(b, 'ln'), r) ?? styleLine(b, r); // an explicit line, or a theme line (lnRef)
-        if (ln !== undefined) { out.border = ln; break; }
+        if (ln !== undefined) out.bdr[side] = ln;
     }
     return out;
 }
 
+/**
+ * How a table cell looks before its own `tcPr`. A table names its style by GUID; PowerPoint writes
+ * the definition of every style a deck uses into `ppt/tableStyles.xml`, so the parts there
+ * (whole table, bands, first/last row and column) are read generically. A style the file doesn't
+ * define comes from PowerPoint's built-in definitions where we have them
+ * (builtin-table-styles.ts); any other gives plain cells.
+ *
+ * Borders are per edge. A part covers a region — the whole table, one row (header, total, a
+ * band), or one column — and its `top/bottom/left/right` lines apply on that region's outer edges,
+ * `insideH/insideV` between its cells. Parts layer as PowerPoint layers them; a later part's line
+ * (or its "no line") replaces an earlier one, and a part that says nothing about an edge leaves it.
+ */
 function tableLook(tblPr: El | null, r: Res, styles: El | null): CellLookFor | null {
     const id = ((kid(tblPr, 'tableStyleId')?.textContent || '').trim() || attr(styles, 'def') || DEFAULT_TABLE_STYLE).toUpperCase();
     const flag = (n: string) => bool(tblPr, n) ?? false;
     const f = { firstRow: flag('firstRow'), lastRow: flag('lastRow'), firstCol: flag('firstCol'), lastCol: flag('lastCol'), bandRow: flag('bandRow'), bandCol: flag('bandCol') };
-    const def = kids(styles, 'tblStyle').find(st => (attr(st, 'styleId') || '').toUpperCase() === id);
-    if (def) {
-        const part = (n: string) => tablePartLook(kid(def, n), r);
-        const tblBg = kid(def, 'tblBg');
-        const background = tblBg ? (kid(tblBg, 'fill') ? fillOf(kid(tblBg, 'fill'), r) : styleFill(tblBg, r)) : undefined;
-        const P = { whole: part('wholeTbl'), b1H: part('band1H'), b2H: part('band2H'), b1V: part('band1V'), b2V: part('band2V'),
-            firstRow: part('firstRow'), lastRow: part('lastRow'), firstCol: part('firstCol'), lastCol: part('lastCol') };
-        const lookFor: CellLookFor = (ri, ci, rows, cols) => {
-            // Lowest to highest precedence, as PowerPoint layers them.
-            const layers: CellLook[] = [P.whole];
-            const br = ri - (f.firstRow ? 1 : 0), bc = ci - (f.firstCol ? 1 : 0);
-            if (f.bandCol && bc >= 0) layers.push(bc % 2 === 0 ? P.b1V : P.b2V);
-            if (f.bandRow && br >= 0) layers.push(br % 2 === 0 ? P.b1H : P.b2H);
-            if (f.firstCol && ci === 0) layers.push(P.firstCol);
-            if (f.lastCol && ci === cols - 1) layers.push(P.lastCol);
-            if (f.firstRow && ri === 0) layers.push(P.firstRow);
-            if (f.lastRow && ri === rows - 1) layers.push(P.lastRow);
-            const out: CellLook = {};
-            for (const l of layers) {
-                if (l.fill) out.fill = l.fill;
-                if (l.text) out.text = l.text;
-                if (l.bold) out.bold = true;
-                if (l.border !== undefined) out.border = l.border;
-            }
-            return out;
-        };
-        // The table's own background (tblBg) shows through cells that have no fill.
-        if (background && background.kind !== 'none') lookFor.background = background;
-        return lookFor;
+    let def = kids(styles, 'tblStyle').find(st => (attr(st, 'styleId') || '').toUpperCase() === id);
+    if (!def) {
+        const builtin = builtinTableStyleXml(id);
+        def = builtin ? kid(r.pkg.parse(builtin), 'tblStyle') ?? undefined : undefined;
     }
-    if (id !== DEFAULT_TABLE_STYLE) return null;
-    const accent = r.ctx.theme.colors.accent1 ?? '#4472c4';
-    const tint = (k: number): Color => {
-        const [rr, gg, bb] = hexToRgb(accent);
-        return { hex: rgbToHex(fromLin(toLin(rr) * k + (1 - k)), fromLin(toLin(gg) * k + (1 - k)), fromLin(toLin(bb) * k + (1 - k))) };
+    if (!def) return null;
+    const part = (n: string) => tablePartLook(kid(def!, n), r);
+    const tblBg = kid(def, 'tblBg');
+    const background = tblBg ? (kid(tblBg, 'fill') ? fillOf(kid(tblBg, 'fill'), r) : styleFill(tblBg, r)) : undefined;
+    const P = { whole: part('wholeTbl'), b1H: part('band1H'), b2H: part('band2H'), b1V: part('band1V'), b2V: part('band2V'),
+        firstRow: part('firstRow'), lastRow: part('lastRow'), firstCol: part('firstCol'), lastCol: part('lastCol') };
+    const lookFor: CellLookFor = (ri, ci, rows, cols) => {
+        // Each layer with the region it covers: [top row, bottom row, left col, right col].
+        const all: [number, number, number, number] = [0, rows - 1, 0, cols - 1];
+        const row: [number, number, number, number] = [ri, ri, 0, cols - 1];
+        const col: [number, number, number, number] = [0, rows - 1, ci, ci];
+        const layers: [PartLook, [number, number, number, number]][] = [[P.whole, all]];
+        const br = ri - (f.firstRow ? 1 : 0), bc = ci - (f.firstCol ? 1 : 0);
+        const inBody = (!f.firstRow || ri > 0) && (!f.lastRow || ri < rows - 1);
+        const inBodyCol = (!f.firstCol || ci > 0) && (!f.lastCol || ci < cols - 1);
+        if (f.bandCol && bc >= 0 && inBodyCol) layers.push([bc % 2 === 0 ? P.b1V : P.b2V, col]);
+        if (f.bandRow && br >= 0 && inBody) layers.push([br % 2 === 0 ? P.b1H : P.b2H, row]);
+        if (f.firstCol && ci === 0) layers.push([P.firstCol, col]);
+        if (f.lastCol && ci === cols - 1) layers.push([P.lastCol, col]);
+        if (f.firstRow && ri === 0) layers.push([P.firstRow, row]);
+        if (f.lastRow && ri === rows - 1) layers.push([P.lastRow, row]);
+        const out: CellLook = { edges: {} };
+        for (const [l, [r0, r1, c0, c1]] of layers) {
+            if (l.fill) out.fill = l.fill;
+            if (l.text) out.text = l.text;
+            if (l.bold) out.bold = true;
+            const pick = (outer: keyof PartBorders, inner: keyof PartBorders, onEdge: boolean) => (onEdge ? l.bdr[outer] : l.bdr[inner]);
+            const edge = { t: pick('top', 'insideH', ri === r0), b: pick('bottom', 'insideH', ri === r1),
+                l: pick('left', 'insideV', ci === c0), r: pick('right', 'insideV', ci === c1) };
+            for (const k of ['t', 'b', 'l', 'r'] as const) if (edge[k] !== undefined) out.edges[k] = edge[k];
+        }
+        return out;
     };
-    const white: Color = { hex: r.ctx.theme.colors.lt1 ?? '#ffffff' };
-    const body = colorOfScheme('tx1', r) ?? undefined;
-    return (ri) => {
-        const header = f.firstRow && ri === 0;
-        const banded = f.bandRow && !header && (ri - (f.firstRow ? 1 : 0)) % 2 === 0;
-        return { fill: { kind: 'solid', color: header ? { hex: accent } : banded ? tint(0.4) : tint(0.2) },
-            text: header ? white : body, bold: header || undefined, border: { width: 1.33, color: white } };
-    };
+    // The table's own background (tblBg) shows through cells that have no fill.
+    if (background && background.kind !== 'none') lookFor.background = background;
+    return lookFor;
+}
+
+/**
+ * About how tall a table cell's text is, for growing rows to fit: each paragraph's lines at half
+ * an em a character, at its own size and line spacing, plus the cell's margins. An estimate (the
+ * importer has no fonts to measure with), but it keeps a row stored as 0 tall from collapsing.
+ */
+function cellTextHeight(t: TextBody | undefined, width: number): number {
+    if (!t) return 0;
+    const avail = Math.max(8, width - t.insets.l - t.insets.r);
+    if (t.vert) {
+        // Turned or stacked text runs DOWN the row: the row holds the text's length, spread over
+        // as many lines as fit across the column (stacked: a line per character).
+        const sizeOf = (p: Paragraph) => Math.max(0, ...p.runs.filter(r => !r.br && r.text).map(r => r.size ?? t.defaults?.size ?? 0)) || 18;
+        const lineH = (p: Paragraph) => sizeOf(p) * 1.2 * (t.lineSpacing ?? 1);
+        let length = 0;
+        if (t.vert === 'stacked') {
+            for (const p of t.paragraphs) length = Math.max(length, p.runs.reduce((a, r) => a + r.text.length, 0) * lineH(p));
+        } else {
+            const across = Math.max(1, Math.floor(avail / Math.max(...t.paragraphs.map(lineH), 1)));
+            const total = t.paragraphs.reduce((a, p) => a + p.runs.reduce((b, r) => b + r.text.length, 0) * sizeOf(p) * 0.5, 0);
+            length = (total / Math.max(1, across - t.paragraphs.length + 1)) * 1.15;   // a little slack for word breaks
+        }
+        return length + t.insets.t + t.insets.b;
+    }
+    let h = 0;
+    for (const p of t.paragraphs) {
+        const runs = p.runs.filter(r => !r.br);
+        // The paragraph-end size only sets the height of an empty paragraph (a 32pt end mark after
+        // 8pt text doesn't make the line 32pt: n90223 in LibreOffice's corpus).
+        const textSize = Math.max(0, ...runs.filter(r => r.text).map(r => r.size ?? t.defaults?.size ?? 0));
+        const size = (textSize || (p.endSize ?? 0)) || 18;
+        const chars = runs.reduce((a, r) => a + r.text.length, 0);
+        const lines = Math.max(1, Math.ceil((chars * size * 0.5) / avail)) + p.runs.filter(r => r.br).length;
+        h += lines * size * 1.2 * (t.lineSpacing ?? 1) + (p.spaceBefore ?? 0) + (p.spaceAfter ?? 0);
+    }
+    return h + t.insets.t + t.insets.b;
 }
 
 /** Tables become a group of cell rectangles with text; charts/diagrams/objects a labelled frame. */
@@ -1074,48 +1139,105 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
         const cells: Item[] = [];
         // The same table cell by cell, for a native Yappy table when its look fits one.
         const grid: TableItem['rows'] = [];
-        let y = box0.y;
         let cid = 1_000_000 + id * 1000;
         const rowsEl = kids(tbl, 'tr');
-        rowsEl.forEach((tr, ri) => {
-            const h = px(num(tr, 'h'));
-            const row: TableCell[] = [];
-            grid.push({ h, cells: row });
-            let x = box0.x, ci = 0;
+        // Pass 1: every cell's text, fill and lines, and so each row's real height — a stored
+        // row height is a minimum (PowerPoint grows a row to fit its text, and some files store 0).
+        type Cell = { covered?: { h?: boolean; v?: boolean }; span: number; rowSpan: number; col: number; w: number;
+            text?: TextBody; fill: Paint; border: Line | null; sides: TableCell['borders']; split?: boolean };
+        const parsed: Cell[][] = rowsEl.map((tr, ri) => {
+            const out: Cell[] = [];
+            // One a:tc per grid column: a cell spanning columns is followed by hMerge placeholders
+            // for the ones it covers. (Counting the span AND the placeholders put every later cell
+            // a column too far right.) A writer that leaves the placeholders out is caught by
+            // `spanEnd`: the next real cell starts after the span.
+            let ci = 0, spanEnd = 0;
             for (const tc of kids(tr, 'tc')) {
                 const span = Math.max(1, num(tc, 'gridSpan', 1));
-                const w = cols.slice(ci, ci + span).reduce((a, b) => a + b, 0);
-                ci += span;
+                if (!bool(tc, 'hMerge') && ci < spanEnd) ci = spanEnd;
+                const col = ci;
+                const w = cols.slice(col, col + span).reduce((a, b) => a + b, 0);
+                ci += 1;
+                if (!bool(tc, 'hMerge')) spanEnd = col + span;
                 if (bool(tc, 'hMerge') || bool(tc, 'vMerge')) {
-                    row.push({ fill: { kind: 'none' }, borders: { l: null, r: null, t: null, b: null }, hMerge: bool(tc, 'hMerge') || undefined, vMerge: bool(tc, 'vMerge') || undefined });
-                    x += w;
+                    out.push({ covered: { h: bool(tc, 'hMerge') || undefined, v: bool(tc, 'vMerge') || undefined }, span, rowSpan: 1, col, w,
+                        fill: { kind: 'none' }, border: null, sides: { l: null, r: null, t: null, b: null } });
                     continue;
                 }
-                const rowSpan = Math.max(1, num(tc, 'rowSpan', 1));
                 const tcPr = kid(tc, 'tcPr');
-                const cellH = rowSpan > 1 ? h * rowSpan : h;
-                const cl = look ? look(ri, ci - span, rowsEl.length, cols.length) : null;
+                const cl = look ? look(ri, col, rowsEl.length, cols.length) : null;
                 const styleFont: TextChain['fontRef'] = cl?.text ? { color: cl.text } : undefined;
                 const text = textBodyOf(kid(tc, 'txBody'), { levels: [sc.defaultText], bodyPr: [], fontRef: styleFont }, r);
                 if (text && cl?.bold) text.paragraphs.forEach(p => p.runs.forEach(run => { if (run.bold === undefined) run.bold = true; }));
                 if (text) {
                     text.insets = { l: px(num(tcPr, 'marL', 91440)), r: px(num(tcPr, 'marR', 91440)), t: px(num(tcPr, 'marT', 45720)), b: px(num(tcPr, 'marB', 45720)) };
                     text.anchor = attr(tcPr, 'anchor') === 'ctr' ? 'ctr' : attr(tcPr, 'anchor') === 'b' ? 'b' : 't';
+                    // A cell's text direction is on its tcPr, not its bodyPr.
+                    const vert = vertOf(attr(tcPr, 'vert'));
+                    if (vert) text.vert = vert; else delete text.vert;
                 }
-                const border = lineOf(kid(tcPr, 'lnB'), r) ?? lineOf(kid(tcPr, 'lnT'), r)
-                    ?? (cl ? cl.border ?? null : { width: 1, color: { hex: '#bfbfbf' } });
-                const styleFill: Paint | undefined = cl?.fill;
-                const fill = fillOf(tcPr, r) ?? styleFill ?? { kind: 'none' };
-                cells.push({ kind: 'shape', id: cid++, name: `${name} cell`, ...frame({ x, y, w, h: cellH, rot: 0, flipH: false, flipV: false }),
-                    geom: { kind: 'preset', prst: 'rect' }, fill, line: border, text });
-                const side = (n: string) => { const own = lineOf(kid(tcPr, n), r); return own !== undefined ? own : border; };
-                row.push({ text: text ?? undefined, fill, borders: { l: side('lnL'), r: side('lnR'), t: side('lnT'), b: side('lnB') },
-                    gridSpan: span > 1 ? span : undefined, rowSpan: rowSpan > 1 ? rowSpan : undefined });
-                x += w;
+                const fill = fillOf(tcPr, r) ?? cl?.fill ?? { kind: 'none' };
+                // Each edge: the cell's own line, else the style's, else (no style at all) a light grey.
+                const side = (n: string, k: keyof Edges): Line | null => {
+                    const own = lineOf(kid(tcPr, n), r);
+                    if (own !== undefined) return own;
+                    return cl ? cl.edges[k] ?? null : { width: 1, color: { hex: '#bfbfbf' } };
+                };
+                const sides = { l: side('lnL', 'l'), r: side('lnR', 'r'), t: side('lnT', 't'), b: side('lnB', 'b') };
+                // One outline when all four edges agree; otherwise the edges are drawn one by one.
+                const same = (a: Line | null, b: Line | null) => (!a && !b) || (!!a && !!b && a.width === b.width && a.color.hex === b.color.hex && (a.color.alpha ?? 1) === (b.color.alpha ?? 1) && a.dash === b.dash);
+                const border = [sides.r, sides.t, sides.b].every(x => same(x, sides.l)) ? sides.l : null;
+                out.push({ span, rowSpan: Math.max(1, num(tc, 'rowSpan', 1)), col, w, text, fill, border, sides,
+                    ...(border === null && Object.values(sides).some(Boolean) && { split: true }) });
             }
-            y += h;
+            return out;
+        });
+        // The estimate is rough (no fonts to measure with), so it only overrules a stored height
+        // that is clearly too short — 0, or under 70 % of it — and otherwise the file's height stands.
+        const fit = (stored: number, need: number) => (stored < need * 0.7 ? need : stored);
+        const heights = rowsEl.map((tr, ri) => fit(px(num(tr, 'h')),
+            Math.max(0, ...parsed[ri].filter(c => !c.covered && c.rowSpan === 1).map(c => cellTextHeight(c.text, c.w)))));
+        // A cell spanning rows that needs more room than they give grows the last of them.
+        parsed.forEach((row, ri) => row.forEach(c => {
+            if (c.covered || c.rowSpan < 2) return;
+            const last = Math.min(rowsEl.length, ri + c.rowSpan) - 1;
+            const have = heights.slice(ri, last + 1).reduce((a, b) => a + b, 0);
+            const need = cellTextHeight(c.text, c.w);
+            if (fit(have, need) > have) heights[last] += need - have;
+        }));
+        // Pass 2: place them. Edge lines go on top of every cell fill, as PowerPoint draws them.
+        let y = box0.y;
+        const edgeLines: Item[] = [];
+        const drawnEdges = new Set<string>();
+        parsed.forEach((row, ri) => {
+            const cellsOut: TableCell[] = [];
+            grid.push({ h: heights[ri], cells: cellsOut });
+            for (const c of row) {
+                if (c.covered) { cellsOut.push({ fill: c.fill, borders: c.sides, hMerge: c.covered.h, vMerge: c.covered.v }); continue; }
+                const x = box0.x + cols.slice(0, c.col).reduce((a, b) => a + b, 0);
+                const cellH = heights.slice(ri, ri + c.rowSpan).reduce((a, b) => a + b, 0);
+                cells.push({ kind: 'shape', id: cid++, name: `${name} cell`, ...frame({ x, y, w: c.w, h: cellH, rot: 0, flipH: false, flipV: false }),
+                    geom: { kind: 'preset', prst: 'rect' }, fill: c.fill, line: c.border, text: c.text });
+                if (c.split) {
+                    const seg = (x0: number, y0: number, x1: number, y1: number, line: Line | null) => {
+                        if (!line) return;
+                        const key = [x0, y0, x1, y1].map(v => Math.round(v * 10)).join(',');
+                        if (drawnEdges.has(key)) return;   // an edge two cells share is drawn once
+                        drawnEdges.add(key);
+                        edgeLines.push({ kind: 'connector', id: cid++, name: `${name} rule`,
+                            ...frame({ x: x0, y: y0, w: x1 - x0, h: y1 - y0, rot: 0, flipH: false, flipV: false }),
+                            geom: { kind: 'preset', prst: 'line' }, line });
+                    };
+                    seg(x, y, x + c.w, y, c.sides.t); seg(x, y + cellH, x + c.w, y + cellH, c.sides.b);
+                    seg(x, y, x, y + cellH, c.sides.l); seg(x + c.w, y, x + c.w, y + cellH, c.sides.r);
+                }
+                cellsOut.push({ text: c.text ?? undefined, fill: c.fill, borders: c.sides,
+                    gridSpan: c.span > 1 ? c.span : undefined, rowSpan: c.rowSpan > 1 ? c.rowSpan : undefined });
+            }
+            y += heights[ri];
         });
         if (!cells.length) return null;
+        cells.push(...edgeLines);
         if (look?.background) {
             const b = bounds(cells);
             cells.unshift({ kind: 'shape', id: cid++, name: `${name} background`, x: b.x, y: b.y, w: b.w, h: b.h, rot: 0, flipH: false, flipV: false,

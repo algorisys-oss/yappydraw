@@ -1,6 +1,6 @@
-import { O as ct, Q as E, R as St, S as $t, T as It, U as Tt, V as Rt, W as zt, X as Pt, Y as Ft, Z as Ot, _ as Et, $ as Lt, a0 as Xt, a1 as Ht, a2 as Bt, a3 as tt, a4 as Dt, a5 as Yt, a6 as Wt, a7 as Ut, a8 as dt, a9 as ft, aa as Nt, ab as jt, ac as Zt, ad as Vt, ae as Gt, af as _t, ag as qt, ah as Jt, ai as Kt, aj as Qt } from "./index-trzxrRhC.js";
+import { Q as ct, R as L, S as St, T as $t, U as It, V as Tt, W as Rt, X as zt, Y as Pt, Z as Ft, _ as Et, $ as Lt, a0 as Ot, a1 as Xt, a2 as Ht, a3 as Bt, a4 as tt, a5 as Dt, a6 as Yt, a7 as Wt, a8 as Ut, a9 as dt, aa as ft, ab as Nt, ac as jt, ad as Zt, ae as Vt, af as Gt, ag as _t, ah as qt, ai as Jt, aj as Kt, ak as Qt } from "./index-D4fubUK0.js";
 import { t as tn } from "./anim-map-D7T1mIAM.js";
-import { p as B, c as G, t as L, a as nn } from "./custgeom-BFpu9xFE.js";
+import { p as B, c as G, t as O, a as nn } from "./custgeom-CiffYXci.js";
 const D = (t) => "#" + t.map((n) => n.toString(16).padStart(2, "0")).join("");
 function en(t) {
   const n = t.trim().toLowerCase(), e = n.match(/^#([0-9a-f]{8})$/);
@@ -21,7 +21,7 @@ const nt = (t) => {
 };
 function S(t, n = 1) {
   if (!t) return null;
-  const e = E(t);
+  const e = L(t);
   if (!e) return null;
   const r = en(t) * n;
   return r <= 0 ? null : r < 0.999 ? { hex: D(e), alpha: r } : { hex: D(e) };
@@ -77,10 +77,10 @@ function on(t) {
   const n = { "lower-alpha": "alphaLc", "upper-alpha": "alphaUc", "lower-roman": "romanLc", "upper-roman": "romanUc" }[t.listNumberStyle ?? ""] ?? "arabic", e = { paren: "ParenR", parens: "ParenBoth", none: "Plain" }[t.listNumberSuffix ?? ""] ?? "Period";
   return n + e;
 }
-let O;
+let E;
 function sn(t, n) {
-  if (O === void 0 && (O = typeof document < "u" ? document.createElement("canvas").getContext("2d") : null), O)
-    return O.font = n, O.measureText(t).width;
+  if (E === void 0 && (E = typeof document < "u" ? document.createElement("canvas").getContext("2d") : null), E)
+    return E.font = n, E.measureText(t).width;
   const e = Number(/(\d+(?:\.\d+)?)px/.exec(n)?.[1] ?? 16);
   return t.length * e * 0.6;
 }
@@ -157,7 +157,7 @@ function gt(t, n) {
 }
 function cn(t, n, e) {
   const r = [], o = Math.abs(n) / 2, i = Math.abs(e) / 2, c = (a, s, l) => {
-    const d = L(B(a), o, i);
+    const d = O(B(a), o, i);
     if (d.length === 0) return;
     const p = s, u = { fill: p.noFill ? !1 : void 0, stroke: p.noStroke ? !1 : void 0 };
     if (l) {
@@ -345,7 +345,7 @@ function kn(t, n) {
           y: d.minY - n.oy,
           w: p,
           h: u,
-          geom: { kind: "custom", paths: [{ cmds: L(l, -d.minX, -d.minY), fill: !1 }] },
+          geom: { kind: "custom", paths: [{ cmds: O(l, -d.minX, -d.minY), fill: !1 }] },
           fill: { kind: "none" },
           line: s
         });
@@ -485,7 +485,7 @@ function Cn(t) {
 }
 const it = (t, n) => {
   if (!t || !n) return !1;
-  const e = E(t), r = E(n);
+  const e = L(t), r = L(n);
   return !!e && !!r && e[0] === r[0] && e[1] === r[1] && e[2] === r[2];
 };
 function An(t, n, e) {
@@ -504,7 +504,7 @@ function yt(t) {
     if (e <= t[0].pos) return t[0].color;
     for (let r = 1; r < t.length; r++) {
       const o = t[r - 1], i = t[r];
-      if (e <= i.pos) return On(o.color, i.color, i.pos > o.pos ? (e - o.pos) / (i.pos - o.pos) : 0);
+      if (e <= i.pos) return En(o.color, i.color, i.pos > o.pos ? (e - o.pos) / (i.pos - o.pos) : 0);
     }
     return t[t.length - 1].color;
   };
@@ -527,12 +527,12 @@ function Sn(t, n) {
     const f = Yt(t), a = f ? cn(f, t.width, t.height) : [], s = Cn(t);
     if (s === "picture") return null;
     if (s && s.length) {
-      const l = Math.min(t.x, t.x + t.width), d = Math.min(t.y, t.y + t.height), p = a.length ? a.filter((m) => m.fill !== !1).map((m) => L(m.cmds, l, d)) : null, u = !!ht(t), h = ["linear", "radial", "conic"].includes(t.fillStyle);
+      const l = Math.min(t.x, t.x + t.width), d = Math.min(t.y, t.y + t.height), p = a.length ? a.filter((m) => m.fill !== !1).map((m) => O(m.cmds, l, d)) : null, u = !!ht(t), h = ["linear", "radial", "conic"].includes(t.fillStyle);
       if (!s.every((m) => (!m.grad || h) && m.fillAlpha >= 1 && m.strokeAlpha >= 1 && (!m.fill || it(m.fill, t.backgroundColor)) && (!m.stroke || it(m.stroke, t.strokeColor) && Math.abs(m.width - t.strokeWidth) < 0.75 && m.dash === u))) {
         const m = In(t, s, r, o, n, e, p);
         return m ? [m] : null;
       }
-      const y = [], M = (m) => L(m, -l, -d);
+      const y = [], M = (m) => O(m, -l, -d);
       for (let m = 0; m < s.length; m++) {
         const w = s[m], v = s[m + 1], C = !!((w.fill || w.grad) && !w.stroke && v && v.stroke && !v.fill && !v.grad && Y(v) === Y(w)), R = !!w.stroke || C;
         if (w.fill || w.grad) {
@@ -587,7 +587,7 @@ function In(t, n, e, r, o, i, c) {
   for (let a = 0; a < n.length; a++) {
     const s = n[a], l = n[a + 1], d = !!((s.fill || s.grad) && !s.stroke && l && l.stroke && !l.fill && !l.grad && Y(l) === Y(s)), p = d ? l : s, u = G(s.cmds);
     if (!u) continue;
-    const h = Math.max(u.maxX - u.minX, 0.01), g = Math.max(u.maxY - u.minY, 0.01), y = S(s.fill, i * s.fillAlpha), M = s.grad ? An(s.grad, u, i) : y ? { kind: "solid", color: y } : { kind: "none" }, m = S(p.stroke, i * p.strokeAlpha), w = m ? { width: p.width, color: m, dash: p.dash ? "dash" : void 0, join: "round", cap: "rnd" } : null, v = !!(s.fill || s.grad), C = ($) => L($, -u.minX, -u.minY);
+    const h = Math.max(u.maxX - u.minX, 0.01), g = Math.max(u.maxY - u.minY, 0.01), y = S(s.fill, i * s.fillAlpha), M = s.grad ? An(s.grad, u, i) : y ? { kind: "solid", color: y } : { kind: "none" }, m = S(p.stroke, i * p.strokeAlpha), w = m ? { width: p.width, color: m, dash: p.dash ? "dash" : void 0, join: "round", cap: "rnd" } : null, v = !!(s.fill || s.grad), C = ($) => O($, -u.minX, -u.minY);
     let R;
     if (v) {
       const $ = kt(s, c);
@@ -625,7 +625,7 @@ function In(t, n, e, r, o, i, c) {
 const at = 6;
 function Tn(t, n) {
   if (t.angle || t.flipX || t.flipY) return null;
-  const e = (t.opacity ?? 100) / 100, r = t.tableCols ?? 3, o = t.tableRows ?? 3, i = t.tableHeaders !== !1, c = i ? o + 1 : o, f = t.tableColWidths?.length === r ? t.tableColWidths : Ot(r), a = t.tableRowHeights?.length === c ? t.tableRowHeights : Et(c), s = t.tableColOrder?.length === r ? t.tableColOrder : Array.from({ length: r }, (x, b) => b), l = t.tableData ?? Lt(c, r), d = X(t, n), p = f.reduce((x, b) => x + b, 0) || 1, u = a.reduce((x, b) => x + b, 0) || 1, h = W(t, e), g = t.fontSize ?? 14, y = J(t, e, g), M = S(t.tableHeaderTextColor, e) ?? y?.color, m = (x) => {
+  const e = (t.opacity ?? 100) / 100, r = t.tableCols ?? 3, o = t.tableRows ?? 3, i = t.tableHeaders !== !1, c = i ? o + 1 : o, f = t.tableColWidths?.length === r ? t.tableColWidths : Et(r), a = t.tableRowHeights?.length === c ? t.tableRowHeights : Lt(c), s = t.tableColOrder?.length === r ? t.tableColOrder : Array.from({ length: r }, (x, b) => b), l = t.tableData ?? Ot(c, r), d = X(t, n), p = f.reduce((x, b) => x + b, 0) || 1, u = a.reduce((x, b) => x + b, 0) || 1, h = W(t, e), g = t.fontSize ?? 14, y = J(t, e, g), M = S(t.tableHeaderTextColor, e) ?? y?.color, m = (x) => {
     const b = S(x, e);
     return b ? { kind: "solid", color: b } : { kind: "none" };
   }, w = (x) => {
@@ -708,7 +708,7 @@ function bt(t, n, e) {
     const c = i(t[o]);
     if (!c) {
       let s = Rn(t[o], e);
-      const l = En(t[o].link);
+      const l = Ln(t[o].link);
       if (l) for (const u of s) u.link = l;
       const d = t[o].altText?.trim(), p = !!t[o].decorative;
       s.length > 1 && (e.animTargets && t[o].animations?.length || d || p) && (s = [{ kind: "group", id: e.nextId++, name: I(t[o]), ...lt(s), children: s }]), s.length === 1 && (d && (s[0].descr = d), p && (s[0].decorative = !0)), e.animTargets && s.length === 1 && e.animTargets.set(t[o].id, s[0].id), r.push(...s), o++;
@@ -781,17 +781,17 @@ function Fn(t, n, e, r) {
   const f = [...t].sort((a, s) => a.pos - s.pos).map((a) => ({ pos: (-i + 2 * i * a.pos + c) / (2 * c), color: a.color }));
   return yt(f);
 }
-function On(t, n, e) {
-  const r = E(t.hex), o = E(n.hex), i = [0, 1, 2].map((s) => Math.round(r[s] + (o[s] - r[s]) * e)), c = t.alpha ?? 1, f = n.alpha ?? 1, a = c + (f - c) * e;
+function En(t, n, e) {
+  const r = L(t.hex), o = L(n.hex), i = [0, 1, 2].map((s) => Math.round(r[s] + (o[s] - r[s]) * e)), c = t.alpha ?? 1, f = n.alpha ?? 1, a = c + (f - c) * e;
   return a < 0.999 ? { hex: D(i), alpha: a } : { hex: D(i) };
 }
-function En(t) {
+function Ln(t) {
   const n = Tt(t);
   if (n.kind === "url") return { kind: "url", url: n.url };
   if (n.kind === "slide") return { kind: "slide", key: n.slideId };
   if (n.kind === "action") return { kind: "action", action: n.action };
 }
-function Ln(t) {
+function On(t) {
   return {
     ...t?.hidden && { hidden: !0 },
     ...t?.advanceAfter && t.advanceAfter > 0 && { advanceAfterMs: t.advanceAfter },
@@ -809,7 +809,7 @@ function Yn(t, n, e) {
     transition: zn(t.slide?.transition),
     notes: t.slide?.notes?.trim() ? t.slide.notes : void 0,
     key: t.slide?.id,
-    ...Ln(t.slide),
+    ...On(t.slide),
     ...i.length && { anims: i }
   };
 }
@@ -847,7 +847,7 @@ export {
   K as mediaOf,
   Yn as pageToSlide,
   Fn as remapPageStops,
-  Ln as showFields,
+  On as showFields,
   S as toColor,
   zn as transitionOf,
   ut as typefaceOf

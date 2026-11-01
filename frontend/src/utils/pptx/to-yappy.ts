@@ -374,6 +374,26 @@ function textElement(c: Conv, t: TextBody, box: { name: string; x: number; y: nu
 const STRAIGHT = new Set(['line', 'straightConnector1']);
 
 function shapeElements(it: ShapeItem, c: Conv, groups: string[]): DrawingElement[] {
+    // Vertical text: the shape as it is, with its text in a text box of its own, turned a quarter
+    // (or with its letters stacked), over the same centre; grouped so they move together.
+    if (it.text?.vert) {
+        const visible = it.fill.kind !== 'none' || !!it.line;
+        const gid = visible ? c.nextId('group') : null;
+        const inner = gid ? [...groups, gid] : groups;
+        const shape = visible ? shapeElements({ ...it, text: undefined }, c, inner) : [];
+        const t = it.text, ins = t.insets;
+        const turn = t.vert === 'vert' ? 90 : t.vert === 'vert270' ? 270 : 0;
+        const cx = it.x + it.w / 2, cy = it.y + it.h / 2;
+        // In the turned box the cell's margins turn too: clockwise, its top margin is now on the left.
+        const insets = t.vert === 'vert' ? { l: ins.t, r: ins.b, t: ins.r, b: ins.l }
+            : t.vert === 'vert270' ? { l: ins.b, r: ins.t, t: ins.l, b: ins.r } : ins;
+        const box = turn ? { name: it.name, x: cx - it.h / 2, y: cy - it.w / 2, w: it.h, h: it.w, rot: (it.rot ?? 0) + turn }
+            : { name: it.name, x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot };
+        const text = textElement(c, { ...t, insets, vert: undefined }, box, inner);
+        if (t.vert === 'stacked') text.verticalText = true;
+        c.stats.elements++;
+        return [...shape, text];
+    }
     const g = it.geom;
     // A pure text box (no fill, no line) is a text element.
     if (it.text && it.fill.kind === 'none' && !it.line && (it.textBox || g.kind === 'preset' && g.prst === 'rect')) {
@@ -651,6 +671,7 @@ function tableElementAs(it: TableItem, header: boolean, c: Conv, groups: string[
             if (cell.hMerge || cell.vMerge || !t || !text.trim()) continue;
             anchors.push(t.anchor);
             if (t.paragraphs.some(p => p.bullet)) return null;
+            if (t.vert) return null;            // a Yappy table has no vertical text
             const d = t.defaults ?? {};
             for (const p of t.paragraphs) {
                 aligns[col].push(p.align ?? 'l');

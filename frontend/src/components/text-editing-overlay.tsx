@@ -5,12 +5,13 @@
  * Extracted from canvas.tsx.
  */
 
-import { type Component, createEffect, Show } from "solid-js";
+import { type Component, createEffect, createMemo, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool, updateElement, shouldRevertToSelect, darkenElementColors } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { lineHeightPx as lineHeightOf } from "../utils/text-line-height";
-import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString, containerTextAvailableWidth, containerTextWrapWidth } from "../utils/text-utils";
+import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString, containerTextAvailableWidth, containerTextWrapWidth, getMeasurementRenderer } from "../utils/text-utils";
+import { fitScale } from "../utils/text-fit";
 import { fontShorthand } from "../utils/font-variants";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
@@ -25,6 +26,7 @@ import { getUIShapeDef } from "../config/ui-shape-defs";
 // tool had; same cure: overlay-transform owns the origin (and the rotation centre).
 import { worldToWindow } from "../utils/overlay-transform";
 import type { TableEditingCell } from "../utils/tool-handlers/text-editing-handler";
+import type { DrawingElement } from "../types";
 
 interface TextEditingOverlayProps {
     editingId: () => string | null;
@@ -102,11 +104,14 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     return;
                 }
 
-                // Fixed-width box (drag-placed): auto-grow height only.
+                // Fixed-width box (drag-placed): auto-grow height only — unless the text shrinks to
+                // fit it (textFit 'shrink'): then the box keeps its size and the text gets smaller.
                 const existingWidth = el.width || 200;
-                const measuredHeight = measureWrappedTextHeight(text, existingWidth / sx, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
+                const shrinks = el.textFit === 'shrink';
+                const k = shrinks ? fitScale(getMeasurementRenderer(), { ...el, text } as DrawingElement, 'text') : 1;
+                const measuredHeight = measureWrappedTextHeight(text, existingWidth / sx, fontSize * k, el.fontFamily, el.letterSpacing, el.lineHeight);
                 // Only grow, never shrink — preserve existing height to prevent text jumping
-                const newHeight = Math.max(measuredHeight, el.height, lineHeightOf(fontSize, el));
+                const newHeight = shrinks ? el.height : Math.max(measuredHeight, el.height, lineHeightOf(fontSize, el));
 
                 // Update element height in store (no history — commit records history)
                 if (Math.abs(newHeight - el.height) > 1) {
@@ -333,6 +338,14 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     : lineHeightOf(fontSizeVal, el) * scale;
 
                 const isStandaloneText = el.type === 'text' || el.type === 'richtext';
+                // Shrink on overflow: type at the size the canvas draws, re-fitted as the text
+                // changes (the canvas hides the text while it's being edited).
+                const fitKind = isStandaloneText ? 'text' as const : 'label' as const;
+                const fitK = createMemo(() => {
+                    if (el.textFit !== 'shrink' || isTableCell || isConnectorType || isUmlSection || (isStandaloneText && el.autoResize)) return 1;
+                    const live = isStandaloneText ? { ...el, text: props.editText() } : { ...el, containerText: props.editText() };
+                    return fitScale(getMeasurementRenderer(), live as DrawingElement, fitKind);
+                });
                 // Container shapes: editing containerText on regular shapes (not connectors)
                 const isContainerShape = !isStandaloneText && !isTableCell && !isConnectorType
                     && props.editingProperty() === 'containerText';
@@ -370,13 +383,18 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 // double-clicking doesn't move or re-wrap the label.
                 // Canvas formula: startY = cy - textHeight/2 + lineHeight/2 + startYOffset
                 let containerShiftX = 0;
+                let labelTop: ((live: string, k: number) => number) | null = null;
                 if (isContainerShape) {
                     const rawCtx = props.canvasRef ? props.canvasRef.getContext("2d") : null;
                     const renderer = rawCtx ? new CanvasRenderer(rawCtx) : null;
                     const box = { ...el, width: elW, height: elH };
                     if (renderer) {
-                        const text = props.editText() || ' ';
-                        const metrics = measureContainerText(renderer, el, text, containerTextAvailableWidth(box));
+                      // A function of the live text and the fit, so a shrink-to-fit label stays
+                      // where the canvas will draw it as you type (see labelPad below).
+                      labelTop = (live: string, k: number) => {
+                        const text = live || ' ';
+                        const sized = k < 1 ? { ...el, fontSize: (el.fontSize || 28) * k } as DrawingElement : el;
+                        const metrics = measureContainerText(renderer, sized, text, containerTextAvailableWidth(box));
 
                         // Shape-specific Y offset (matching render-pipeline.ts)
                         let startYOffset = 0;
@@ -401,7 +419,9 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         // draggable-label offset, both of which the editor used to ignore.
                         topWorld += (el.fontFamily === 'hand-drawn' ? 2 : 0) + (el.textOffsetY || 0);
 
-                        textPaddingTop = Math.max(0, topWorld * scale);
+                        return Math.max(0, topWorld * scale);
+                      };
+                      textPaddingTop = labelTop(props.editText(), 1);
                     }
                     // Horizontal: centred text wraps in the shape's INSCRIBED width (a circle
                     // can't use its full box), so pad to that or the editor re-flows the label
@@ -426,6 +446,8 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     ? 'none'
                     : isTableCell ? 'none' : 'translate(-50%, -50%)';
 
+                // A shrinking label re-centres as it shrinks; everything else keeps its padding.
+                const labelPad = createMemo(() => (labelTop && fitK() < 1 ? labelTop(props.editText(), fitK()) : textPaddingTop));
                 return (
                     <div
                         style={{
@@ -556,21 +578,21 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 'transform-origin': 'left top',
                                 height: useTopLeftAnchor ? '100%' : undefined,
                                 'box-sizing': 'border-box',
-                                font: fontSpec(fontSizeVal * scale),
-                                'letter-spacing': `${(el.letterSpacing || 0) * scale}px`,
+                                font: fontSpec(fontSizeVal * fitK() * scale),
+                                'letter-spacing': `${(el.letterSpacing || 0) * fitK() * scale}px`,
                                 color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', darkenElementColors()),
                                 background: 'transparent',
                                 border: 'none',
                                 outline: 'none',
                                 margin: 0,
                                 padding: useTopLeftAnchor
-                                    ? `${textPaddingTop}px ${textPaddingH}px 0 ${textPaddingH}px`
+                                    ? `${labelPad()}px ${textPaddingH}px 0 ${textPaddingH}px`
                                     : '4px',
                                 resize: 'none',
                                 overflow: 'hidden',
                                 'white-space': el.autoResize ? 'pre' : undefined,
                                 'text-align': textAlign as any,
-                                'line-height': `${lineHeightPx}px`,
+                                'line-height': `${lineHeightPx * fitK()}px`,
                                 filter: 'none',   // dark adjust now applied to `color` above
                             }}
                         />

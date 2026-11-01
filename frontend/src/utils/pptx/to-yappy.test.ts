@@ -79,3 +79,23 @@ describe("PowerPoint tables as native Yappy tables", () => {
         expect(tableElement(table([body(0), body(1)], { firstRow: undefined }), conv(), [])).toMatchObject({ tableHeaders: false, tableRows: 2 });
     });
 });
+
+describe("vertical text becomes a turned text box over its shape", () => {
+    it("keeps the shape, and puts the text in a box turned a quarter about the same centre", async () => {
+        const { deckToDocument } = await import("./to-yappy");
+        const deck: any = { width: 960, height: 540, slides: [{ items: [{ kind: 'shape', id: 2, name: 'Cell', x: 100, y: 50, w: 80, h: 300,
+            geom: { kind: 'preset', prst: 'rect' }, fill: { kind: 'solid', color: { hex: '#4472c4' } }, line: null,
+            text: { paragraphs: [{ runs: [{ text: 'Top to bottom', size: 24 }] }], anchor: 't', insets: { l: 10, t: 5, r: 10, b: 5 }, wrap: true, vert: 'vert' } }] }] };
+        let n = 0;
+        const res = await deckToDocument(deck, (t: string) => `${t}-${n++}`);
+        const shape = res.doc.elements.find((e: any) => e.type === 'rectangle')!;
+        const text = res.doc.elements.find((e: any) => e.type === 'text' || e.type === 'richtext')!;
+        expect(shape.containerText || '').toBe('');
+        expect(text.angle).toBeCloseTo(Math.PI / 2, 5);
+        // Same centre; the box turned (300 long, 80 across, less Yappy's text padding).
+        expect(text.x + text.width / 2).toBeCloseTo(shape.x + shape.width / 2, 0);
+        expect(text.y + text.height / 2).toBeCloseTo(shape.y + shape.height / 2, 0);
+        expect(text.width).toBeGreaterThan(text.height);
+        expect(shape.groupIds?.[0]).toBe(text.groupIds?.[0]);   // grouped, so they move together
+    });
+});

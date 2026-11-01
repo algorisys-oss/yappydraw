@@ -1918,7 +1918,7 @@ const PropertyPanel: Component = () => {
             if (key === 'theme') setTheme(value as 'light' | 'dark' | 'focus' | 'system');
             else if (key === 'canvasBackgroundColor') setCanvasBackgroundColor(value);
             else if (key === 'maxLayers') setMaxLayers(parseInt(value));
-            else if (key === 'canvasTexture') setCanvasTexture(value);
+            else if (key === 'canvasTexture') { if (history) pushToHistory(); setCanvasTexture(value); }
             else if (key === 'renderStyle') updateGlobalSettings({ renderStyle: value });
             else if (key === 'showQuickToolbar') updateGlobalSettings({ showQuickToolbar: value });
             else if (key === 'connectorJumps') { updateGlobalSettings({ connectorJumps: value }); bumpDirtyRevision(); }
@@ -1927,6 +1927,9 @@ const PropertyPanel: Component = () => {
             else if (key === 'docType') setDocType(value);
         } else if (target.type === 'slide') {
             const slideIndex = store.activeSlideIndex;
+            // A slide's background and transition are document edits: one undo step each, like an
+            // element's. (Page size records its own step in setPageSize.)
+            if (history && key !== 'pageSizePreset' && key !== 'pageWidth' && key !== 'pageHeight') pushToHistory();
             if (key === 'pageSizePreset') {
                 const preset = getPagePreset(value);
                 if (preset) setPageSize(preset.width, preset.height);
@@ -2791,7 +2794,7 @@ const PropertyPanel: Component = () => {
                                                             class="canvas-theme-chip"
                                                             classList={{ active: active() }}
                                                             title={theme.name}
-                                                            onClick={() => { setCanvasBackgroundColor(theme.background); setCanvasTexture(theme.texture); }}
+                                                            onClick={() => { pushToHistory(); setCanvasBackgroundColor(theme.background); setCanvasTexture(theme.texture); }}
                                                         >
                                                             <span class="canvas-theme-preview" style={{ background: theme.background, ...pattern() }} />
                                                             <span class="canvas-theme-name">{theme.name}</span>
@@ -2802,7 +2805,7 @@ const PropertyPanel: Component = () => {
                                         </div>
                                         <div class="control-row" style={{ "margin-top": "10px" }}>
                                             <label>Texture</label>
-                                            <select value={store.canvasTexture} onChange={(e) => setCanvasTexture(e.currentTarget.value as any)}>
+                                            <select value={store.canvasTexture} onChange={(e) => { pushToHistory(); setCanvasTexture(e.currentTarget.value as any); }}>
                                                 <option value="none">None</option>
                                                 <option value="dots">Dots</option>
                                                 <option value="grid">Grid</option>

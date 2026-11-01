@@ -1,6 +1,6 @@
 import { onMount, onCleanup, Show, For } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, updateSlideTransition, setSlideAdvanceAfter, setSlideShowLoop } from "../store/app-store";
+import { store, updateSlideTransition, setSlideAdvanceAfter, setSlideShowLoop, pushToHistory } from "../store/app-store";
 import { t } from "../i18n";
 import { slideTransitionManager } from "../utils/animation";
 import type { SlideTransitionType, SlideTransitionEasing } from "../types/slide-types";
@@ -43,6 +43,7 @@ export const SlideTransitionPicker = (props: SlideTransitionPickerProps) => {
 
     const handleTypeChange = (e: Event) => {
         const type = (e.currentTarget as HTMLSelectElement).value as SlideTransitionType;
+        pushToHistory();
         updateSlideTransition(props.index, { type });
     };
 
@@ -55,6 +56,7 @@ export const SlideTransitionPicker = (props: SlideTransitionPickerProps) => {
 
     const handleEasingChange = (e: Event) => {
         const easing = (e.currentTarget as HTMLSelectElement).value as SlideTransitionEasing;
+        pushToHistory();
         updateSlideTransition(props.index, { easing });
     };
 
@@ -101,6 +103,7 @@ export const SlideTransitionPicker = (props: SlideTransitionPickerProps) => {
                         type="number"
                         value={transition().duration}
                         onInput={handleDurationChange}
+                        onFocus={() => pushToHistory()}
                         min="100"
                         max="5000"
                         step="100"

@@ -1,5 +1,58 @@
 # Bug Fixes Log
 
+## 2026-11-01 — HTML export ran a stale player; editing undid shrink-to-fit
+
+### 469. Exported HTML presentations used a player built at v0.8.255 (no data charts)
+
+**Found** testing alt text in the HTML export. The player bundle embedded in exported HTML
+(`frontend/src/assets/player-assets.ts`) is built by `npm run build:player`, which `npm run build`
+doesn't run; it was last rebuilt in v0.8.255. Every exported HTML presentation since then drew
+with that player: data charts (v0.8.298) drew nothing, and newer transitions fell back.
+
+- **Fix.** Rebuilt. Release step: rebuild the player whenever shapes, renderers or the player
+  change (see learnings).
+- **Test.** `tests/accessibility.spec.ts` exports a deck with a chart to HTML and opens it.
+
+### 470. Editing shrink-to-fit text grew the box, so the text stopped shrinking
+
+The text editor's auto-grow (and the commit after it) made a fixed text box tall enough for its
+text at full size; the box then needed no shrinking. With Text Fit on, the box keeps its size,
+and the editor shows the text at the fitted size, re-fitted as you type (labels stay centred).
+**Test.** `tests/text-fit.spec.ts` (editing a text box and a shape label).
+
+## 2026-11-01 — Hardening: slide settings outside undo; PowerPoint table layout and styles
+
+### 467. Changing a slide's transition or background wasn't an undo step — Ctrl+Z undid the action before
+
+**Found** by probing every slide operation for state left behind (after #466). Choosing a
+transition in the ⚡ picker and pressing Ctrl+Z deleted the rectangle drawn before it, and left
+the transition in place.
+
+- **Causes (two).** The ⚡ picker, the slide part of the Properties panel, the canvas texture and
+  colour themes, and the API's `updateSlideTransition` / `updateSlideBackground` changed the
+  document without recording a step. And `updateSlideTransition` wrote at the `transition` path,
+  which *merges into* the existing object — the same object the undo snapshot held (slides were
+  copied one level deep) — so even a recorded step would have "restored" the new value.
+- **Fix.** Each of those records one step (duration typing: one step per focus, as other panel
+  inputs do); `updateSlideTransition` replaces the object; the history snapshot copies each
+  slide's nested objects too. The show's Loop setting lives in global settings, which undo doesn't
+  cover, so it deliberately records no step.
+- **Test.** `tests/slide-undo.spec.ts` (the real picker; the API).
+
+### 468. PowerPoint tables: cells after a merge in the wrong column; rows stored too short collapsed
+
+**Found** comparing LibreOffice's corpus against its own renders (tdf132472).
+
+- **Merged cells.** PowerPoint writes one `a:tc` per grid column: a cell spanning two is followed
+  by an `hMerge` placeholder. The reader advanced past the span *and* the placeholder, so every
+  later cell in the row sat one column too far right — the last one past the table, zero wide.
+- **Row heights.** A row's stored height is a minimum; PowerPoint grows rows to fit their text,
+  and some files store 0. The reader took it literally and the row collapsed under the next. Rows
+  now grow to an estimate of their text when the stored height is clearly too short (under 70 %
+  of it), and a cell spanning rows takes the sum of their heights (it took the first row's height
+  times the span).
+- **Tests.** `read.test.ts` "table layout: merges and row heights".
+
 ## 2026-11-01 — Switching slides could copy one slide's background onto another
 
 ### 466. A slide took the previous slide's background after a slide switch

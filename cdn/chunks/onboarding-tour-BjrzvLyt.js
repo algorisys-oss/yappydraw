@@ -1,4 +1,4 @@
-import { al as T, am as it, an as nt, ao as at, ap as y, s as V, aq as h, ar as A, as as S, at as g, au as v, av as st, aw as lt, ax as C } from "./index-trzxrRhC.js";
+import { am as T, an as it, ao as nt, ap as at, aq as x, s as V, ar as h, as as A, at as S, au as g, av as v, aw as st, ax as lt, ay as C } from "./index-D4fubUK0.js";
 var ct = /* @__PURE__ */ C("<svg><rect rx=10 fill=black></svg>", !1, !0, !1), ut = /* @__PURE__ */ C("<div class=tour-spotlight-ring>"), dt = /* @__PURE__ */ C('<div class=tour-overlay role=dialog aria-modal=true aria-label="Product tour"><svg class=tour-mask width=100% height=100%><defs><mask id=tour-spotlight><rect width=100% height=100% fill=white></rect></mask></defs><rect width=100% height=100% fill=rgba(0,0,0,0.6) mask=url(#tour-spotlight)></rect></svg><div class=tour-tooltip><div class=tour-tooltip-head><span class=tour-step-count> of </span><button class=tour-skip>Skip tour</button></div><h3 class=tour-title></h3><p class=tour-content></p><div class=tour-nav><button class="tour-btn tour-btn-secondary">Back</button><button class="tour-btn tour-btn-primary"></button></div><div class=tour-dots>'), ht = /* @__PURE__ */ C("<button class=tour-dot>");
 const Q = "yappy:tour:seen", L = [{
   id: "welcome",
@@ -116,15 +116,15 @@ const m = 340, b = 200, p = 16, mt = () => {
     window.addEventListener("resize", k), window.addEventListener("scroll", k, !0), document.addEventListener("keydown", W);
   }), at(() => {
     window.removeEventListener("resize", k), window.removeEventListener("scroll", k, !0), document.removeEventListener("keydown", W);
-  }), y(A, {
+  }), x(A, {
     get when() {
       return w();
     },
     get children() {
       var e = dt(), l = e.firstChild, r = l.firstChild, c = r.firstChild;
       c.firstChild;
-      var s = l.nextSibling, B = s.firstChild, x = B.firstChild, et = x.firstChild, ot = x.nextSibling, G = B.nextSibling, K = G.nextSibling, N = K.nextSibling, _ = N.firstChild, U = _.nextSibling, rt = N.nextSibling;
-      return h(c, y(A, {
+      var s = l.nextSibling, B = s.firstChild, y = B.firstChild, et = y.firstChild, ot = y.nextSibling, G = B.nextSibling, K = G.nextSibling, N = K.nextSibling, _ = N.firstChild, U = _.nextSibling, rt = N.nextSibling;
+      return h(c, x(A, {
         get when() {
           return a();
         },
@@ -140,7 +140,7 @@ const m = 340, b = 200, p = 16, mt = () => {
             o: void 0
           }), o;
         }
-      }), null), h(e, y(A, {
+      }), null), h(e, x(A, {
         get when() {
           return a();
         },
@@ -156,7 +156,7 @@ const m = 340, b = 200, p = 16, mt = () => {
             o: void 0
           }), o;
         }
-      }), s), h(x, () => f() + 1, et), h(x, D, null), ot.$$click = q, h(G, () => E()?.title), h(K, () => E()?.content), _.$$click = I, U.$$click = z, h(U, () => M() ? "Get started" : "Next"), h(rt, y(st, {
+      }), s), h(y, () => f() + 1, et), h(y, D, null), ot.$$click = q, h(G, () => E()?.title), h(K, () => E()?.content), _.$$click = I, U.$$click = z, h(U, () => M() ? "Get started" : "Next"), h(rt, x(st, {
         each: L,
         children: (o, t) => (() => {
           var n = ht();

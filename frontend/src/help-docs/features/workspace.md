@@ -703,9 +703,12 @@ A language is only offered once it is complete, so you will never get a half-tra
 what it shows and why it matters (*"Bar chart: sales doubled from Q1 to Q4"*, not *"chart"*).
 Screen readers read it aloud. For borders, backgrounds and ornaments that mean nothing, tick
 **Mark as decorative** instead, and screen readers skip them. Saving is one undo step. Alt text goes
-to **PowerPoint** (its Alt Text and "Mark as decorative", read back when you open the file) and to
+to **PowerPoint** (its Alt Text and "Mark as decorative", read back when you open the file), to
 **SVG** export (each described object becomes an image named by a `<title>`; decorative ones are
-hidden from screen readers). A selected group's alt text goes on its first part.
+hidden from screen readers), to **PDF** (as invisible text over the object, which screen readers,
+search and copy all read; the PDF isn't a tagged PDF) and to the **HTML** presentation export (a
+screen reader hears each slide as it comes up: its text and alt text, top to bottom). A selected
+group's alt text goes on its first part.
 
 **Check accessibility** (command palette, <kbd>Ctrl+K</kbd>) opens a panel listing:
 
@@ -720,8 +723,8 @@ you work, so each issue disappears once fixed. Slide Master artwork is listed on
 
 :::note
 Contrast is measured against a solid page colour or the object's own fill. Text over a picture, a
-gradient or another shape isn't checked, and see-through text colours are skipped. PDF and the
-HTML player don't carry alt text yet.
+gradient or another shape isn't checked, and see-through text colours are skipped. PDF alt text
+uses a standard font, so text outside Latin alphabets may not read correctly there.
 :::
 
 ```
@@ -979,7 +982,10 @@ size.
 - **Tables** become Yappy **tables** when their look fits one (one font, a bold header row, rows
   in one colour or alternating, the same line on every edge — every table Yappy exports does);
   any other table becomes a group of cells coloured by the deck's own **table style** (header row,
-  banded rows and columns, borders), drawn exactly. See Tables ▸ PowerPoint. **Pattern fills** become Yappy pattern fills in the same
+  banded rows and columns, borders — each edge as the style draws it), drawn exactly. A deck that
+  names one of PowerPoint's common built-in styles without including it (files from other apps
+  often don't) gets that style too: Medium Style 2 and Light Style 1 in their usual colours, and
+  Table Grid. Rows grow to fit their text, as in PowerPoint. See Tables ▸ PowerPoint. **Pattern fills** become Yappy pattern fills in the same
   colours. **Groups** stay groups; the **slide master's own artwork** (logo bars, decorations) is
   placed on every slide that shows it.
 - **Backgrounds** (colour, gradient, picture — stretched or tiled, see-through ones included) and
@@ -990,6 +996,9 @@ size.
   program, play a sound, a macro) and links on single words in a text box are dropped.
 - **Hidden slides**, **auto-advance times** ("After" in PowerPoint), **sections** and **Loop
   continuously until Esc** come in as their Yappy equivalents.
+- **Vertical text** (in shapes and table cells) comes in turned a quarter either way, as a text
+  box over its shape, grouped with it; stacked text comes in as Yappy's vertical text. Table rows
+  grow to fit it.
 - **Alt text** and **Mark as decorative** come in on every object (a group's alt text on its
   first part).
 - **Speaker notes** come in as each slide's notes (as plain text: bold, bullets and indent levels
@@ -1001,8 +1010,7 @@ size.
 
 Not imported yet: **scatter, radar, stock, bubble and the newer chart types** (waterfall,
 treemap, funnel…) and **embedded objects** come in as labelled frames;
-**EMF/WMF/TIFF pictures** (common in older decks) as placeholders; **vertical text** comes in
-horizontal and **WordArt** text warps flat; audio/video is skipped. **Animations** come in as
+**EMF/WMF/TIFF pictures** (common in older decks) as placeholders; **WordArt** text warps flat; audio/video is skipped. **Animations** come in as
 Yappy build animations (see Animation ▸ Animations in PowerPoint); motion paths, triggers and
 by-paragraph builds don't. A message tells you how many items weren't imported exactly, and the
 browser console lists them. A paragraph's own alignment shows on the canvas and in every

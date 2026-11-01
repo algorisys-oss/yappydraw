@@ -8,6 +8,7 @@ import { isPagedDocType } from '../types/slide-types';
 import { saveBlob, saveCanvas } from './save-file';
 import { getSocialTarget, shapeMatches, encodeWithinBudget, socialFileName } from './social-export';
 import { ownerSlideIndex, projectMasterPosition } from './slide-utils';
+import { altTextsOf, writeAltTexts } from './pdf-alt-text';
 import { hasFields, resolveFieldText } from './slide-fields';
 import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
@@ -1997,11 +1998,12 @@ const exportToVectorPdf = async (background: boolean, onlySelected: boolean, dow
             height: slide.dimensions.height + bleed * 2,
             keep: new Set(elements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx).map(el => el.id)),
             background: background ? (slide.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff')) : null,
+            alt: altTextsOf(elements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx)),
         }));
     } else {
         const w = Number(svg.getAttribute('width'));
         const h = Number(svg.getAttribute('height'));
-        regions = [{ x: originX - bleed, y: originY - bleed, width: w + bleed * 2, height: h + bleed * 2, background: background ? documentBackground() : null }];
+        regions = [{ x: originX - bleed, y: originY - bleed, width: w + bleed * 2, height: h + bleed * 2, background: background ? documentBackground() : null, alt: altTextsOf(elements) }];
     }
 
     const { renderSvgPagesToPdf } = await import('./pdf-vector');
@@ -2090,6 +2092,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 
             const img = pdfImage(canvas, background);
             pdf.addImage(img.data, img.format, 0, 0, sW, sH);
+            writeAltTexts(pdf, altTextsOf(slideElements), sX, sY);
         }
 
         return finishPdf(pdf, download);
@@ -2141,6 +2144,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 
         const img = pdfImage(canvas, background);
         pdf.addImage(img.data, img.format, 0, 0, width, height);
+        writeAltTexts(pdf, altTextsOf(elements), minX - padding, minY - padding);
         return finishPdf(pdf, download);
     }
 };

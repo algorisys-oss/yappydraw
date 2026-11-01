@@ -108,12 +108,16 @@ export function commitText(ctx: TextEditingContext): void {
                 updateElement(id, { text: newText, width, height: finalHeight }, true);
             } else {
                 const fontSize = el.fontSize || 28;
-                // Preserve existing width, recalculate height based on wrapped content
-                const existingWidth = el.width || 200;
-                const height = measureWrappedTextHeight(newText, existingWidth, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
-                const finalHeight = Math.max(height, lineHeightPx(fontSize, el));
-
-                updateElement(id, { text: newText, height: finalHeight }, true);
+                // Preserve existing width, recalculate height based on wrapped content — except
+                // when the text shrinks to fit (textFit 'shrink'): then the box is the fixed thing.
+                if (el.textFit === 'shrink') {
+                    updateElement(id, { text: newText }, true);
+                } else {
+                    const existingWidth = el.width || 200;
+                    const height = measureWrappedTextHeight(newText, existingWidth, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
+                    const finalHeight = Math.max(height, lineHeightPx(fontSize, el));
+                    updateElement(id, { text: newText, height: finalHeight }, true);
+                }
             }
         } else {
             deleteElements([id]);
@@ -211,6 +215,8 @@ export function commitRichText(ctx: TextEditingContext): void {
                 const lineCount = Math.max(1, plainText.split('\n').length);
                 const finalHeight = Math.max(lineCount * lineHeightPx(fontSize, el), lineHeightPx(fontSize, el));
                 updateElement(id, { richText: spans, text: plainText, width, height: finalHeight }, true);
+            } else if (el.textFit === 'shrink') {
+                updateElement(id, { richText: spans, text: plainText }, true);   // the box stays; the text shrinks
             } else {
                 const existingWidth = el.width || 200;
                 const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);

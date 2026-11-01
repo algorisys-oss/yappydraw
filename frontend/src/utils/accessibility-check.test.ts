@@ -43,3 +43,18 @@ describe("accessibility check", () => {
         expect(checkPages([page([el({})], '#fff', null)])).toEqual([]);
     });
 });
+
+import { readingOrder } from "./accessibility-check";
+describe("reading order for the HTML player", () => {
+    it("reads text and alt text top to bottom, left to right, skipping decoration", () => {
+        const order = readingOrder([
+            el({ id: 'b', type: 'text', text: 'Body', x: 10, y: 200 }),
+            el({ id: 'pic', type: 'image', altText: 'Team photo', x: 400, y: 5 }),
+            el({ id: 't', type: 'text', text: 'Title', x: 10, y: 0 }),
+            el({ id: 'border', type: 'rectangle', decorative: true, containerText: 'ignored' }),
+            el({ id: 'blank', type: 'rectangle' }),
+            el({ id: 'chart', type: 'chart', altText: 'Sales doubled', chart: { title: 'Sales' }, x: 10, y: 400 }),
+        ]);
+        expect(order).toEqual(['Title', 'Team photo', 'Body', 'Sales doubled']);
+    });
+});

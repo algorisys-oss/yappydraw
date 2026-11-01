@@ -22,6 +22,7 @@
  */
 import type { jsPDF as JsPdf } from 'jspdf';
 import { pdfFontFile } from './text-to-outlines';
+import { writeAltTexts, type PdfAltText } from './pdf-alt-text';
 import { reverseFontFamily } from './text-utils';
 import { customFonts } from './custom-fonts';
 import type { ColorEngine } from './color-management';
@@ -37,7 +38,10 @@ export interface PdfPageRegion {
     keep?: Set<string>;
     /** Fill drawn under the page, or null for none (transparent → white paper). */
     background: string | null;
+    /** Alt text of the objects on this page, in canvas coordinates (see writeAltTexts). */
+    alt?: PdfAltText[];
 }
+
 
 /** What a text node actually asks for, after inheriting from its ancestors. */
 export interface TextFace {
@@ -383,6 +387,7 @@ export const renderSvgPagesToPdf = async (
             } finally {
                 page.remove();
             }
+            writeAltTexts(pdf, r.alt, r.x, r.y);
         }
         let bytes: Uint8Array = new Uint8Array(pdf.output('arraybuffer'));
         if (cmyk) bytes = await convertShadingsToCmyk(bytes, cmyk.engine, cmyk.exact, usedSpots);

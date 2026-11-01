@@ -106,3 +106,19 @@ export function checkPages(pages: A11yPage[]): A11yIssue[] {
     }
     return out;
 }
+
+/**
+ * What a screen reader should read for a page drawn on a canvas (the HTML player): each object's
+ * text, or its alt text, top to bottom and then left to right. Decorative objects and objects
+ * with neither are skipped. Alt text describes the object; text inside a described object (a
+ * chart's title) is not repeated.
+ */
+export function readingOrder(elements: DrawingElement[]): string[] {
+    const rows = elements
+        .filter(el => !el.decorative && !el.isClipMask)
+        .map(el => ({ el, text: el.altText?.trim() || textOf(el) }))
+        .filter(x => x.text);
+    // Things on roughly the same line (within half a line) read left to right.
+    rows.sort((a, b) => (Math.abs(a.el.y - b.el.y) < 12 ? a.el.x - b.el.x : a.el.y - b.el.y));
+    return rows.map(x => x.text);
+}

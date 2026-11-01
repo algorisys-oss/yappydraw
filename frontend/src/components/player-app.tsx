@@ -1,4 +1,4 @@
-import { createSignal, onMount, onCleanup, Show } from "solid-js";
+import { createSignal, createMemo, onMount, onCleanup, Show, For } from "solid-js";
 import { isPagedDocType } from '../types/slide-types';
 import type { Component } from "solid-js";
 import Canvas from "./canvas";
@@ -8,6 +8,8 @@ import { registerShapes } from "../shapes/register-shapes";
 import { PresentationControls } from "./presentation-controls";
 import type { SlideDocument } from "../types/slide-types";
 import { showToast } from "./toast";
+import { ownerSlideIndex } from "../utils/slide-utils";
+import { readingOrder } from "../utils/accessibility-check";
 import { slideBuildManager } from "../utils/animation/slide-build-manager";
 import { playAnimation, pauseAnimation, stopAnimation } from "../utils/animation/anim-playback";
 import { startGame } from "../game/game-runtime";
@@ -129,6 +131,18 @@ const PlayerApp: Component = () => {
         onCleanup(() => window.removeEventListener('keydown', onKey));
     });
 
+    const hiddenLayers = createMemo(() => new Set(store.layers.filter(l => !l.visible).map(l => l.id)));
+    const slideReading = createMemo(() => {
+        if (!isReady()) return [];
+        const paged = isPagedDocType(store.docType) && store.slides.length > 0;
+        const pages = paged ? [...store.slides].sort((a, b) => a.order - b.order) : [];
+        const at = paged ? pages.indexOf(store.slides[store.activeSlideIndex]) : -1;
+        const els = store.elements.filter(el => !hiddenLayers().has(el.layerId) && (!paged || ownerSlideIndex(el, pages) === at));
+        return readingOrder(els);
+    });
+    const slideLabel = () => (isPagedDocType(store.docType) && store.slides.length
+        ? `Slide ${store.activeSlideIndex + 1} of ${store.slides.length}` : 'Drawing');
+
     return (
         <div class="player-app">
             <Show when={isReady()}>
@@ -163,6 +177,12 @@ const PlayerApp: Component = () => {
             </Show>
 
             <Toast />
+
+            {/* The slides are drawn on a canvas, which a screen reader can't read: this reads each
+                slide as it comes up — its text and its objects' alt text, top to bottom. */}
+            <div class="player-sr-only" role="region" aria-live="polite" aria-label={slideLabel()}>
+                <For each={slideReading()}>{(line) => <p>{line}</p>}</For>
+            </div>
         </div>
     );
 };

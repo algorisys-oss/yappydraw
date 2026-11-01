@@ -3818,7 +3818,11 @@ export const YappyAPI = {
     duplicateSlide(index: number) { duplicateSlide(index); },
     setActiveSlide(index: number) { setActiveSlide(index); },
     reorderSlides(fromIndex: number, toIndex: number) { reorderSlides(fromIndex, toIndex); },
-    updateSlideTransition(slideIndex: number, transition: Partial<SlideTransition>) { updateSlideTransition(slideIndex, transition); },
+    /** Change a slide's transition (merged over what it has). One undo step. */
+    updateSlideTransition(slideIndex: number, transition: Partial<SlideTransition>) {
+        if (slideIndex < 0 || slideIndex >= store.slides.length) return;
+        pushToHistory(); updateSlideTransition(slideIndex, transition);
+    },
     /**
      * Shrink text on overflow for text boxes and shape labels: 'shrink' draws the text smaller
      * (down to 25%) when it doesn't fit its box, 'none' turns it off. The font size stays as set,
@@ -3858,7 +3862,11 @@ export const YappyAPI = {
         pushToHistory();
         for (const id of list) updateElement(id, { textFit: fit === 'shrink' ? 'shrink' : undefined }, false);
     },
-    updateSlideBackground(slideIndex: number, updates: Partial<Slide> | string) { updateSlideBackground(slideIndex, updates); },
+    /** Change a slide's background: a colour, or `{ backgroundColor, fillStyle, gradientStops, … }`. One undo step. */
+    updateSlideBackground(slideIndex: number, updates: Partial<Slide> | string) {
+        if (slideIndex < 0 || slideIndex >= store.slides.length) return;
+        pushToHistory(); updateSlideBackground(slideIndex, updates);
+    },
     /**
      * Speaker notes of a slide (default: the active one) as plain text, one paragraph per
      * line; `''` when it has none or the index is out of range. Notes never draw on the
@@ -5836,7 +5844,7 @@ export const YappyAPI = {
 
     // Canvas
     setCanvasBackgroundColor(color: string) { setCanvasBackgroundColor(color); },
-    setCanvasTexture(texture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook') { setCanvasTexture(texture); },
+    setCanvasTexture(texture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook') { pushToHistory(); setCanvasTexture(texture); },
     /** Apply a named canvas background theme (see CANVAS_THEMES): sets background + texture in one go. */
     setCanvasTheme(themeId: string) {
         const t = CANVAS_THEMES.find(x => x.id === themeId);

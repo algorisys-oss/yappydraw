@@ -37,8 +37,8 @@ improves the PowerPoint round trip.
 | Slide size presets and custom size | Has | **Has**: `setPageSize(w,h, applyAll)` and `getPageSizePresets()` (`api.ts:3810`). `todo.md` Phase 73 still lists "Aspect Ratio Options" as open; that line is stale | — | — |
 | Slide backgrounds (colour, gradient, picture) | Has, plus pattern | **Has**: `Slide.fillStyle`, `gradientStops`, `backgroundImage`, `canvasTexture` (`slide-types.ts:53`); `updateSlideBackground` | — | — |
 | Header and footer: slide number, date, footer text | Has, as fields (`text/src/datetime.rs`, `engine/src/cmd/insert/text_fields.rs`) | **Partial**: `=Page ${slideNumber} of ${totalSlides}` formula text (`canvas-renderer.ts:1086`, `docs/slides.md` §3). No date field, no Insert → Header & Footer dialog, no "don't show on title slide". The `=` prefix is undiscoverable, and no help-docs page explains it (only `docs/slides.md`) | Medium. Every deck that gets printed or shared needs numbers. RT if written as `a:fld` | S |
-| Sections (named groups of slides, collapse in the navigator) | Has | **Missing**: `Slide` has no section field; navigator is a flat list | Medium for decks over ~20 slides. RT (`p14:sectionLst`) | S–M |
-| Hide slide (skip in the show, keep in the file) | Has | **Missing**: no hidden flag on `Slide` | Medium. Cheap and commonly expected. RT (`show="0"`) | S |
+| Sections (named groups of slides, collapse in the navigator) | Has | **Has** (v0.8.295): named sections in the slides panel; PPTX `p14:sectionLst` both ways | Medium for decks over ~20 slides. RT (`p14:sectionLst`) | S–M |
+| Hide slide (skip in the show, keep in the file) | Has | **Has** (v0.8.295): Hide slide, skipped in the show; PPTX `show="0"` both ways | Medium. Cheap and commonly expected. RT (`show="0"`) | S |
 
 ### Authoring views and slide management
 
@@ -47,7 +47,7 @@ improves the PowerPoint round trip.
 | Thumbnail navigator: add, duplicate, delete, reorder | Has | **Has**: `components/slide-navigator.tsx` (drag reorder, context menu insert above/below, duplicate) | — | — |
 | Slide sorter / grid view | Has, with each slide's transition shown | **Missing**: `todo.md` "Slide Overview / Grid View" open; navigator has no grid mode. (Slides sit on one spatial canvas, so zooming out is a rough stand-in) | Medium. Reordering a long deck in a vertical strip is slow | S–M |
 | Outline view (edit all slide titles/bullets as text) | Has; also slides from outline, outline export (RTF/TXT) | **Partial**: Markdown → slides import exists (`utils/markdown-to-slides.ts`, `importMarkdownSlides`). No outline view or outline export. (`store.outlineView` is a wireframe draw mode, unrelated) | Medium; good for writers who draft in text | M |
-| Notes page / reading view | Has | **Missing** (no notes, see below) | Low on its own | S after notes |
+| Notes page / reading view | Has | **Partial**: speaker notes exist (v0.8.294) and the presenter view shows them; no printable notes page | Low on its own | S after notes |
 | Find and replace across slides | Has (`engine/src/cmd/find.rs`) | **Missing** for text. Element Search (Alt+E) searches the asset library, not the deck | Medium | S–M |
 | Reuse slides from another file / paste slides between decks | Has (`engine/src/cmd/reuse.rs`) | **Missing**: opening a `.pptx` replaces the document | Medium | M |
 | Design Ideas (offline layout suggestions for the current slide) | Has (`engine/src/cmd/ideas.rs`: picture full-bleed, half, framed, text-only) | **Partial in spirit**: AI deck generation (`ai/slide-generator.ts`) and Magic Resize for design pages; nothing that rearranges one existing slide | Medium; nice "make it look better" button with no AI dependency | M |
@@ -65,7 +65,7 @@ improves the PowerPoint round trip.
 | Laser, ink, highlighter, eraser during the show | Has (pen, laser; highlighter partial) | **Has**: laser (Shift+P), ink, highlighter, eraser (`docs/slides.md` §1; `minor-handlers.ts`). Plus Spotlight, which DeckCraft lacks | — | — |
 | Black / white screen (B / W keys) | Has | **Missing**: B and W are not bound in the show | Low; cheap | S |
 | Go to slide by number, see-all-slides grid in the show | Has | **Missing** (Home/End and arrows only, per whats-new 0.8.105 for HTML export) | Low–medium | S |
-| Auto-advance after N seconds, loop until Esc (kiosk) | Has (Set Up Slide Show) | **Missing**: no per-slide advance time; `todo.md` lists "Auto-advance Timer". (The API has a kiosk note at `api.ts:3756` for embedding, not a looping show) | Medium for unattended screens and recorded decks. RT (`advTm`) | S |
+| Auto-advance after N seconds, loop until Esc (kiosk) | Has (Set Up Slide Show) | **Has** (v0.8.295): per-slide Advance after and Loop until Esc; PPTX `advTm` / `showPr loop` both ways. Was: no per-slide advance time; `todo.md` listed "Auto-advance Timer". (The API has a kiosk note at `api.ts:3756` for embedding, not a looping show) | Medium for unattended screens and recorded decks. RT (`advTm`) | S |
 | Rehearse timings | Has | **Missing** | Low | S after auto-advance |
 | Custom shows (subset/order of slides) | Has | **Missing** | Low | S–M |
 | Hyperlinks and actions: link to URL, jump to slide, end show | Has (`engine/src/cmd/insert/links.rs`; safe URL schemes only in the show) | **Has** (feat/speaker-notes, 2026-11-01): `link` holds a URL, `#slide:<id>` or `#next/#previous/#first/#last/#end` (`utils/slide-links.ts`); clicking in the show follows it; Link ▸ menu; PPTX `hlinkClick` written and read. Safe schemes only. No run-level (single word) links | Done. RT | — |

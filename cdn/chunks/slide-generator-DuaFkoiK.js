@@ -1,5 +1,5 @@
-import { h as I, b as C, c as k } from "./ai-providers-CycU8sO1.js";
-import { aT as A, J as N, P as v, K as x, q } from "./index-trzxrRhC.js";
+import { h as T, b as C, c as k } from "./ai-providers-CycU8sO1.js";
+import { aQ as A, J as N, P as v, K as x, q } from "./index-D4fubUK0.js";
 const L = `You are a presentation design assistant. Given a topic or description, generate a structured JSON slide deck.
 
 ## Output Format
@@ -261,7 +261,7 @@ async function z(t, e = {}, i) {
 }
 async function M(t, e, i) {
   const a = performance.now();
-  if (!I())
+  if (!T())
     return { success: !1, error: "No API key configured. Open AI Settings to add one." };
   const { provider: o, model: n, apiKey: u } = C(), d = R(t, {
     style: e.style,
@@ -284,7 +284,7 @@ async function M(t, e, i) {
 }
 async function D(t, e, i) {
   const a = performance.now();
-  if (!I())
+  if (!T())
     return { success: !1, error: "No API key configured. Open AI Settings to add one." };
   const { provider: o, model: n, apiKey: u } = C();
   i?.("Researching and writing content...");
@@ -329,14 +329,14 @@ async function D(t, e, i) {
   });
   if (!f.success) {
     i?.("Visual agent failed, applying heuristic layout...");
-    const h = T(m, e.style);
+    const h = I(m, e.style);
     return g(h, a, c);
   }
   c.promptTokens += f.usage?.promptTokens || 0, c.completionTokens += f.usage?.completionTokens || 0;
   const w = P(f.content);
   if (!w.success) {
     i?.("Applying heuristic layout...");
-    const h = T(m, e.style);
+    const h = I(m, e.style);
     return g(h, a, c);
   }
   return g(w.data, a, c);
@@ -480,7 +480,7 @@ function B(t) {
   }
   return e.startsWith("rect-") && (t.height <= 6 || t.width <= 6) ? "accent" : e.startsWith("rect-") ? "decorative" : "unknown";
 }
-function T(t, e) {
+function I(t, e) {
   const i = {
     title: "title",
     stats: "metrics",

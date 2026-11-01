@@ -1044,10 +1044,21 @@ export const cloneAnimTimeline = (tl: AnimTimeline): AnimTimeline => ({
     ...(tl.audio && { audio: tl.audio.map(a => ({ ...a })) }),
 });
 
+const cloneSlideForHistory = (s: Slide): Slide => {
+    const out: any = { ...s };
+    for (const [k, v] of Object.entries(out)) {
+        if (Array.isArray(v)) out[k] = v.map(x => (x && typeof x === 'object' ? { ...x } : x));
+        else if (v && typeof v === 'object') out[k] = { ...v };
+    }
+    return out;
+};
+
 const captureSnapshot = (): HistorySnapshot => ({
     elements: store.elements.map(e => ({ ...e })),
     layers: store.layers.map(l => ({ ...l })),
-    slides: store.slides.map(s => ({ ...s })),
+    // One level deeper than the slide itself: its transition, size and position are objects,
+    // and a snapshot that shares them with the live store changes along with it.
+    slides: store.slides.map(cloneSlideForHistory),
     states: store.states.map(s => ({ ...s })),
     symbols: store.symbols.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e })), ...(s.timeline && { timeline: cloneAnimTimeline(s.timeline) }) })),
     artboards: store.artboards.map(a => ({ ...a })),
@@ -3363,10 +3374,9 @@ export const updateSlideTransition = (slideIndex: number, transition: Partial<Sl
 
     const currentTransition = store.slides[slideIndex]?.transition || { ...DEFAULT_SLIDE_TRANSITION };
 
-    setStore("slides", slideIndex, "transition", {
-        ...currentTransition,
-        ...transition
-    });
+    // Replace the object, never write into it: a store write at the `transition` path merges
+    // into the existing object, which the undo snapshot shares — undo then "restored" the edit.
+    setStore("slides", slideIndex, { transition: { ...currentTransition, ...transition } });
     bumpDirtyRevision();
 };
 

@@ -107,6 +107,9 @@ export interface TextBody {
     /** Shrink text on overflow (`a:normAutofit`) is on; the value is the scale it is drawn at
      *  (export: sizes are written full and PowerPoint applies it; import: already in the sizes). */
     shrink?: number;
+    /** Vertical text (import): turned a quarter clockwise (`vert`), anticlockwise (`vert270`), or
+     *  letters stacked upright (`stacked`, PowerPoint's wordArtVert). */
+    vert?: 'vert' | 'vert270' | 'stacked';
 }
 
 /**
