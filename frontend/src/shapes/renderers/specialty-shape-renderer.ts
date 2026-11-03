@@ -266,6 +266,12 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
             // Second pass: stroke with RoughJS (no fill)
             const strokeOnlyOptions = { ...options, fill: 'none' };
             this.renderSketchGeometry(rc, geometry, strokeOnlyOptions, lidColor, lidStrokeColor, backfaceStrokeColor);
+        } else if (el.type === 'dfdDataStore' && options.fill && options.fill !== 'none') {
+            // The data store is drawn from OPEN polylines (its right side is open), and
+            // RoughJS linearPath never fills — so a solid fill silently vanished in sketch
+            // mode. Fill the body as a stroke-less rectangle, then draw the open outline.
+            rc.rectangle(-el.width / 2, -el.height / 2, el.width, el.height, { ...options, stroke: 'none', strokeWidth: 0 });
+            this.renderSketchGeometry(rc, geometry, { ...options, fill: 'none' }, lidColor, lidStrokeColor, backfaceStrokeColor);
         } else {
             // Standard sketch rendering
             this.renderSketchGeometry(rc, geometry, options, lidColor, lidStrokeColor, backfaceStrokeColor);
@@ -320,7 +326,17 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
         }
 
         if (geo.type === 'rect') {
-            rc.rectangle(geo.x, geo.y, geo.w, geo.h, localOptions);
+            // rc.rectangle has no corner radius, so a rounded face (DFD Process) came out
+            // square in sketch mode. Draw rounded faces as a path, like architectural does.
+            const radii = Array.isArray(geo.r) ? geo.r : [geo.r || 0, geo.r || 0, geo.r || 0, geo.r || 0];
+            const cap = Math.min(Math.abs(geo.w), Math.abs(geo.h)) / 2;
+            const [tl, tr, br, bl] = radii.map((v: number) => Math.max(0, Math.min(v || 0, cap)));
+            if (tl || tr || br || bl) {
+                const { x, y, w, h } = geo;
+                rc.path(`M ${x + tl} ${y} L ${x + w - tr} ${y} A ${tr} ${tr} 0 0 1 ${x + w} ${y + tr} L ${x + w} ${y + h - br} A ${br} ${br} 0 0 1 ${x + w - br} ${y + h} L ${x + bl} ${y + h} A ${bl} ${bl} 0 0 1 ${x} ${y + h - bl} L ${x} ${y + tl} A ${tl} ${tl} 0 0 1 ${x + tl} ${y} Z`, localOptions);
+            } else {
+                rc.rectangle(geo.x, geo.y, geo.w, geo.h, localOptions);
+            }
         } else if (geo.type === 'ellipse') {
             rc.ellipse(geo.cx, geo.cy, geo.rx * 2, geo.ry * 2, localOptions);
         } else if (geo.type === 'points') {

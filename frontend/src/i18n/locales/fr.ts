@@ -447,6 +447,7 @@ export const fr: Dictionary = {
         'file-newSketch': 'Nouveau croquis',
         // Tools
         'tools-selection': 'Sélection',
+        'tools-putToolDown': 'Poser l’outil de dessin (retour à Sélection)',
         'tools-rectangle': 'Rectangle',
         'tools-diamond': 'Losange',
         'tools-ellipse': 'Ellipse',

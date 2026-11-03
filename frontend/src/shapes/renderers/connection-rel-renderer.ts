@@ -439,12 +439,12 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const lpx = x + w * 0.08;
                 rc.line(lpx, beamY, lpx - panR * 0.3, panY, { ...options, fill: 'none' });
                 rc.line(lpx, beamY, lpx + panR * 0.3, panY, { ...options, fill: 'none' });
-                rc.arc(lpx, panY + panR * 0.15, panR * 2, panR * 2, Math.PI, 0, false, { ...options, fill: 'none' });
+                rc.arc(lpx, panY + panR * 0.15, panR * 2, panR * 2, Math.PI, Math.PI * 2, false, { ...options, fill: 'none' });
                 // Right pan strings + arc
                 const rpx = x + w * 0.92;
                 rc.line(rpx, beamY, rpx - panR * 0.3, panY, { ...options, fill: 'none' });
                 rc.line(rpx, beamY, rpx + panR * 0.3, panY, { ...options, fill: 'none' });
-                rc.arc(rpx, panY + panR * 0.15, panR * 2, panR * 2, Math.PI, 0, false, { ...options, fill: 'none' });
+                rc.arc(rpx, panY + panR * 0.15, panR * 2, panR * 2, Math.PI, Math.PI * 2, false, { ...options, fill: 'none' });
                 break;
             }
             case 'seedling': {
@@ -459,7 +459,9 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 // Right leaf
                 rc.path(`M ${stemX} ${stemTop} Q ${stemX + leafW} ${stemTop - leafH} ${stemX + leafW * 0.4} ${stemTop - leafH * 0.8} Q ${stemX + leafW * 0.1} ${stemTop - leafH * 0.3} ${stemX} ${stemTop}`, options);
                 // Ground arc
-                rc.arc(stemX, stemBot, w * 0.5, w * 0.5, Math.PI, 0, false, { ...options, fill: 'none' });
+                // RoughJS needs stop > start — (π, 0) drew nothing; π → 2π is the upper half the
+                // architectural canvas arc(π, 0) draws. Same fix on the scale pans above.
+                rc.arc(stemX, stemBot, w * 0.5, w * 0.5, Math.PI, Math.PI * 2, false, { ...options, fill: 'none' });
                 break;
             }
             case 'tree': {

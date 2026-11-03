@@ -432,6 +432,7 @@ export const es: Dictionary = {
         'file-newSketch': 'Nuevo boceto',
         // Tools
         'tools-selection': 'Selección',
+        'tools-putToolDown': 'Soltar la herramienta de dibujo (volver a Selección)',
         'tools-rectangle': 'Rectángulo',
         'tools-diamond': 'Rombo',
         'tools-ellipse': 'Elipse',

@@ -137,26 +137,28 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 break;
             }
             case 'storageBlob': {
-                // Bucket/cylinder shape
-                const ellipseH = h * 0.15;
-                const bodyTop = y + ellipseH / 2;
-                const bodyBot = y + h - ellipseH / 2;
+                // Bucket/cylinder shape. `ry` is the cap ellipses' vertical radius and the
+                // caps are centred `ry` in from the edges, so the shape fits its box (the caps
+                // used to have radius 0.15h centred only 0.075h in, overshooting both edges).
+                const ry = h * 0.12;
+                const bodyTop = y + ry;
+                const bodyBot = y + h - ry;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
                     renderer.fillStyle = options.fill;
                     renderer.beginPath();
-                    renderer.ellipse(x + w / 2, bodyTop, w / 2, ellipseH, 0, 0, Math.PI * 2);
+                    renderer.ellipse(x + w / 2, bodyTop, w / 2, ry, 0, 0, Math.PI * 2);
                     renderer.fill();
                     renderer.beginPath();
                     renderer.moveTo(x, bodyTop);
                     renderer.lineTo(x, bodyBot);
-                    renderer.ellipse(x + w / 2, bodyBot, w / 2, ellipseH, 0, Math.PI, 0, true);
+                    renderer.ellipse(x + w / 2, bodyBot, w / 2, ry, 0, Math.PI, 0, true);
                     renderer.lineTo(x + w, bodyTop);
                     renderer.fill();
                 }
                 RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Top ellipse
                 renderer.beginPath();
-                renderer.ellipse(x + w / 2, bodyTop, w / 2, ellipseH, 0, 0, Math.PI * 2);
+                renderer.ellipse(x + w / 2, bodyTop, w / 2, ry, 0, 0, Math.PI * 2);
                 renderer.stroke();
                 // Side walls
                 renderer.beginPath();
@@ -169,7 +171,7 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 renderer.stroke();
                 // Bottom ellipse (half)
                 renderer.beginPath();
-                renderer.ellipse(x + w / 2, bodyBot, w / 2, ellipseH, 0, 0, Math.PI);
+                renderer.ellipse(x + w / 2, bodyBot, w / 2, ry, 0, 0, Math.PI);
                 renderer.stroke();
                 break;
             }
@@ -303,7 +305,8 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 break;
             }
             case 'container': {
-                rc.rectangle(x, y, w, h, options);
+                // Rounded like architectural (rc.rectangle has no radius).
+                rc.path(this.roundRectPath(x, y, w, h, Math.min(w, h) * 0.06), options);
                 const rows = 3;
                 for (let i = 1; i <= rows; i++) {
                     const ly = y + (h * i) / (rows + 1);
@@ -312,7 +315,7 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 break;
             }
             case 'apiGateway': {
-                rc.rectangle(x, y, w, h, options);
+                rc.path(this.roundRectPath(x, y, w, h, Math.min(w, h) * 0.08), options);
                 const gPadding = Math.min(h * 0.25, 20);
                 const arrowY = el.arrowAnchorAlign === 'top' ? y + gPadding + h * 0.12
                     : el.arrowAnchorAlign === 'bottom' ? y + h - gPadding - h * 0.12
@@ -325,7 +328,7 @@ export class CloudInfraRenderer extends ShapeRenderer {
                     [arrowR, arrowY],
                     [arrowR - w * 0.1, arrowY - arrowH],
                     [arrowR - w * 0.1, arrowY + arrowH]
-                ], { ...options });
+                ], { ...options, fill: options.stroke, fillStyle: 'solid' }); // solid head, as architectural
                 break;
             }
             case 'cdn': {
@@ -334,17 +337,25 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 rc.ellipse(ccx, ccy, rx * 2, ry * 2, options);
                 rc.ellipse(ccx, ccy, rx * 0.8, ry * 2, { ...options, fill: 'none' });
                 rc.line(x, ccy, x + w, ccy, { ...options, fill: 'none' });
+                // Latitude lines (architectural draws these too)
+                rc.ellipse(ccx, ccy - ry * 0.45, rx * 1.76, ry * 0.3, { ...options, fill: 'none' });
+                rc.ellipse(ccx, ccy + ry * 0.45, rx * 1.76, ry * 0.3, { ...options, fill: 'none' });
                 break;
             }
             case 'storageBlob': {
-                // Sketch cylinder using path
-                const ellipseH = h * 0.15;
-                const bodyTop = y + ellipseH / 2;
-                const bodyBot = y + h - ellipseH / 2;
-                rc.ellipse(x + w / 2, bodyTop, w, ellipseH * 2, options);
+                // Sketch cylinder — same geometry as architectural (see there for `ry`).
+                const ry = h * 0.12;
+                const bodyTop = y + ry;
+                const bodyBot = y + h - ry;
+                // Body fill: the walls are lines and the bottom an open arc, none of which
+                // RoughJS fills, so the body stayed empty in sketch mode.
+                if (options.fill && options.fill !== 'none') {
+                    rc.path(`M ${x} ${bodyTop} L ${x} ${bodyBot} A ${w / 2} ${ry} 0 0 0 ${x + w} ${bodyBot} L ${x + w} ${bodyTop} Z`, { ...options, stroke: 'none', strokeWidth: 0 });
+                }
+                rc.ellipse(x + w / 2, bodyTop, w, ry * 2, options);
                 rc.line(x, bodyTop, x, bodyBot, { ...options, fill: 'none' });
                 rc.line(x + w, bodyTop, x + w, bodyBot, { ...options, fill: 'none' });
-                rc.arc(x + w / 2, bodyBot, w, ellipseH * 2, 0, Math.PI, false, { ...options, fill: 'none' });
+                rc.arc(x + w / 2, bodyBot, w, ry * 2, 0, Math.PI, false, { ...options, fill: 'none' });
                 break;
             }
             case 'eventBus': {
@@ -414,6 +425,11 @@ export class CloudInfraRenderer extends ShapeRenderer {
         renderer.lineTo(x, y + r);
         renderer.quadraticCurveTo(x, y, x + r, y);
         renderer.closePath();
+    }
+
+    /** SVG path of `roundRect` (same quadratic corners) for RoughJS. */
+    private roundRectPath(x: number, y: number, w: number, h: number, r: number): string {
+        return `M ${x + r} ${y} L ${x + w - r} ${y} Q ${x + w} ${y} ${x + w} ${y + r} L ${x + w} ${y + h - r} Q ${x + w} ${y + h} ${x + w - r} ${y + h} L ${x + r} ${y + h} Q ${x} ${y + h} ${x} ${y + h - r} L ${x} ${y + r} Q ${x} ${y} ${x + r} ${y} Z`;
     }
 
     // ─── SVG Path Generators ─────────────────────────────────────

@@ -339,7 +339,7 @@ export class PeopleRenderer extends ShapeRenderer {
         if (mood === 'happy') {
             rc.arc(fcx, mouthY - r * 0.05, mouthW * 2, mouthW * 2, 0.1, Math.PI - 0.1, false, { ...options, fill: 'none' });
         } else if (mood === 'sad') {
-            rc.arc(fcx, mouthY + r * 0.2, mouthW * 2, mouthW * 2, Math.PI + 0.1, -0.1, false, { ...options, fill: 'none' });
+            rc.arc(fcx, mouthY + r * 0.2, mouthW * 2, mouthW * 2, Math.PI + 0.1, Math.PI * 2 - 0.1, false, { ...options, fill: 'none' });
         } else {
             // Confused wavy mouth
             const mPath = `M ${fcx - mouthW} ${mouthY} Q ${fcx - mouthW * 0.3} ${mouthY - r * 0.1} ${fcx} ${mouthY} Q ${fcx + mouthW * 0.3} ${mouthY + r * 0.1} ${fcx + mouthW} ${mouthY}`;

@@ -432,6 +432,7 @@ export const ja: Dictionary = {
         'file-newSketch': '新規スケッチ',
         // Tools
         'tools-selection': '選択',
+        'tools-putToolDown': '描画ツールを解除（選択に戻る）',
         'tools-rectangle': '長方形',
         'tools-diamond': 'ひし形',
         'tools-ellipse': '楕円',

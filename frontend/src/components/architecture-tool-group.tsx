@@ -5,7 +5,7 @@ import { store, setSelectedTool, setToolLocked, showPropertiesPanel } from "../s
 import type { ElementType } from "../types";
 import {
     Server, Shield, User, Zap, Router, Globe, Shuffle, Rows, ChevronDown, Database,
-    Binary, HardDrive, Package, Box, Cuboid, PackageOpen, Circle, CircleDot, Minus,
+    Binary, Package, Box, Cuboid, PackageOpen, Circle, CircleDot, Minus,
     GripVertical, Layers, Code, Network,
     Layout, Disc, List, FileText, Folder, Component as ComponentIcon,
     RectangleHorizontal, ArrowDown, Frame, ChevronRight, ChevronLeft, CircleDashed,
@@ -17,6 +17,18 @@ import {
 } from "./cloud-infra-tool-group";
 import "./pen-tool-group.css";
 import "./architecture-tool-group.css";
+
+/**
+ * Gane & Sarson data store, as the shape draws it: an open-ended box (no right side)
+ * with a narrow ID compartment on the left. Replaces lucide's HardDrive, which reads
+ * as a disk/server rather than the DFD notation the tool creates.
+ */
+export const DfdDataStoreIcon: Component<{ size?: number; color?: string }> = (props) => (
+    <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 6H2v12h20" />
+        <line x1="7" y1="6" x2="7" y2="18" />
+    </svg>
+);
 
 type Tool = { type: ElementType; icon: Component<{ size?: number; color?: string }>; label: string };
 type Section = { title: string; tools: Tool[] };
@@ -68,7 +80,7 @@ const sections: Section[] = [
         title: 'Data Flow',
         tools: [
             { type: 'dfdProcess', icon: Binary, label: 'DFD Process' },
-            { type: 'dfdDataStore', icon: HardDrive, label: 'DFD Data Store' },
+            { type: 'dfdDataStore', icon: DfdDataStoreIcon, label: 'DFD Data Store' },
             { type: 'externalEntity', icon: Layers, label: 'External Entity' },
             { type: 'codeBlock', icon: Code, label: 'Code Block' },
         ],

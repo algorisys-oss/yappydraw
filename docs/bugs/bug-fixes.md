@@ -1,5 +1,61 @@
 # Bug Fixes Log
 
+## 2026-11-03 — Diagram shapes reviewed in both render styles; Escape back to Select
+
+**Found** by drawing every Architecture, UML and Data shape with the real tools (mouse drags, so
+the toolbar's defaults apply) in **sketch** and **architectural** style and reading the
+screenshots side by side (`temp/diagram-shapes-review.mjs`). None of these had a test.
+
+### 471. DFD Data Store lost its solid fill in sketch style; its ID compartment grew with the width; its icon was a hard drive
+
+- **Causes.** The store is drawn from open polylines (its right side is open) and RoughJS
+  `linearPath` never fills. The ID compartment was `w * 0.2`, so a 500px store had a 100px empty
+  block. The toolbar used lucide's `HardDrive`.
+- **Fix.** Sketch fills the body as a stroke-less rectangle, then draws the open outline. The
+  compartment is `min(w * 0.2, max(20, h * 0.45))`. A custom icon draws the actual notation.
+
+### 472. UML Fragment: operator centred in the body, guard never drawn
+
+The operator ("alt") was rendered through the shape-centred label path and the pentagon tab
+stayed empty; `attributesText` (the guard, default `[condition]`) was never drawn. Now the
+operator goes in the tab (which widens to fit it) and the guard under it. The tab size lives in
+`utils/uml-fragment-layout.ts`, shared with the double-click handler that decides whether you
+clicked the operator or the guard.
+
+### 473. UML Actor's name was written across its torso
+
+Now the bottom band of the box is reserved for the name and the figure is drawn above it.
+
+### 474. Sketch shapes that drew outside their box or not at all
+
+- **Activity Action** bulged ~37px past each side: the two-arc stadium path spanned the full
+  height with a radius capped at 18, and SVG silently enlarges an arc radius that can't reach its
+  end point. Now four corner arcs.
+- **Storage Blob** (both styles) overshot top and bottom by ~9px: its caps had radius `0.15h`
+  centred only `0.075h` in. Its sketch body was also unfilled.
+- **Gauge**, the **Scale**'s pans, the **Seedling**'s ground and **Sad face**'s frown drew
+  nothing in sketch: `rc.arc(…, π, 0)` — the canvas form — is an empty sweep to RoughJS, which
+  needs stop > start (π → 2π).
+
+### 475. Architectural/sketch mismatches
+
+Package had no body edge under its tab (architectural); Firewall's joints straddled the mortar
+lines (architectural — a header band offset the courses but not the joints); Router was a plain ✕
+(architectural) where sketch had outward arrows; CDN lacked latitude lines (sketch); DFD Process,
+Container and API Gateway lost their rounded corners in sketch (`rc.rectangle` has no radius);
+API Gateway's arrowhead was hollow in sketch; User's shoulders were open in architectural.
+
+### 476. Escape didn't put a drawing tool down
+
+Since the drawing tool stays armed after a draw (Settings > Keep tool active, default on since
+v0.8.236), Escape was documented in code as the way back to Select — but nothing implemented it,
+so double-clicking the shape you had just drawn did nothing. `tests/uml-tools.spec.ts` had been
+red since then for exactly this. Escape now returns shape and connector tools to Select (not the
+pens, text or Pen tool, where Escape finishes what you're doing).
+
+**Tests.** `tests/diagram-shape-rendering.spec.ts` (10 pixel checks, each failing on the old
+renderers), `frontend/src/utils/dfd-data-store-geometry.test.ts`, `tests/uml-tools.spec.ts`.
+
 ## 2026-11-01 — HTML export ran a stale player; editing undid shrink-to-fit
 
 ### 469. Exported HTML presentations used a player built at v0.8.255 (no data charts)

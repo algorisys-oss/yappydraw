@@ -455,8 +455,14 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 const ccx = x + w / 2, ccy = y + h * 0.85;
                 const r = Math.min(w / 2, h * 0.8);
                 const innerR = r * 0.75;
-                rc.arc(ccx, ccy, r * 2, r * 2, Math.PI, 0, false, options);
-                rc.arc(ccx, ccy, innerR * 2, innerR * 2, Math.PI, 0, false, { ...options, fill: 'none' });
+                // RoughJS arcs need stop > start: (π, 0) — the canvas form architectural uses —
+                // draws NOTHING in RoughJS, so the sketch gauge had ticks and a needle but no
+                // dial. The upper half is π → 2π.
+                if (options.fill && options.fill !== 'none') {
+                    rc.arc(ccx, ccy, r * 2, r * 2, Math.PI, Math.PI * 2, true, { ...options, stroke: 'none', strokeWidth: 0 });
+                }
+                rc.arc(ccx, ccy, r * 2, r * 2, Math.PI, Math.PI * 2, false, { ...options, fill: 'none' });
+                rc.arc(ccx, ccy, innerR * 2, innerR * 2, Math.PI, Math.PI * 2, false, { ...options, fill: 'none' });
                 // Tick marks
                 for (let i = 0; i <= 5; i++) {
                     const angle = Math.PI + (Math.PI * i) / 5;

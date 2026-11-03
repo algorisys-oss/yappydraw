@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.303', date: '2026-11-03', items: [
+        'Diagram shapes now look right in both sketch and clean style: UML fragments show their operator in the tab and their [condition], actors have their name under them, and storage, gauge, firewall, router and more draw properly.',
+        'DFD Data Store keeps its fill in sketch style, has a narrow ID compartment, and a toolbar icon that looks like it.',
+        'Press Esc to put a drawing tool down and go back to Selection — then double-click what you drew to label it.',
+    ] },
     { version: '0.8.301', date: '2026-11-01', items: [
         'Fixed: Ctrl+Z after changing a slide’s transition or background now undoes just that change.',
         'PowerPoint tables come in more faithfully: merged cells in the right place, rows tall enough for their text, built-in table styles even when the file leaves them out, and vertical text.',

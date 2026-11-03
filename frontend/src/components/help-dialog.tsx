@@ -43,6 +43,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         titleKey: 'tools',
         shortcuts: [
             { key: 'tools-selection', keys: 'V or 1' },
+            { key: 'tools-putToolDown', keys: 'Esc' },
             { key: 'tools-rectangle', keys: 'R or 2' },
             { key: 'tools-diamond', keys: 'D or 3' },
             { key: 'tools-ellipse', keys: 'O or 4' },

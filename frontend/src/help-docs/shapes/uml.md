@@ -94,7 +94,7 @@ Show system functionality from a user's perspective. Identify actors and the use
 
 ### Elements
 
-- **Actor (stick figure)** - External entity (user, system)
+- **Actor (stick figure)** - External entity (user, system). Its name is drawn under the figure, inside the shape's box
 - **Use Case (ellipse)** - System function
 - **System boundary (rectangle)** - Scope of the system
 
@@ -117,7 +117,7 @@ Show how objects interact over time through message passing.
 | **Activation Bar** | Rectangle on lifeline showing active processing |
 | **Message (solid arrow)** | Synchronous method call |
 | **Response (dashed arrow)** | Return value |
-| **Fragment** | Groups messages (loop, alt, opt) |
+| **Fragment** | Groups messages (loop, alt, opt). The operator (`alt`, `loop`, `opt`, `par` …) goes in the corner tab and the guard (`[x > 0]`) just under it — double-click the tab to edit the operator, the body to edit the guard (or **Properties → Attributes**). The tab widens to fit a long operator |
 
 :::tip Reading Sequence Diagrams
 Time flows from top to bottom. Messages between lifelines show the order of interactions between objects.

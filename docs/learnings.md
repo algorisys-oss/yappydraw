@@ -11748,3 +11748,21 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   Rebuild it as the last code step of a release, after every source change, not when the feature
   that needed it was written.
 
+
+## Reviewing shapes by drawing them (2026-11-03, v0.8.303, #471–#476)
+
+- **Draw with the real tool, not the API.** `createElement` skips the draw handler's defaults
+  (UML labels, guard text, data-structure values), so an API-built review shows shapes users
+  never see. Drive `setSelectedTool` + a mouse drag. And check `renderStyle` on the result: the
+  draw handler doesn't read `defaultElementStyles.renderStyle`, so my first "sketch" pass was
+  architectural twice over — identical screenshots are a red flag, not a pass.
+- **RoughJS is not the canvas API.** Three classes of silent loss, all invisible in architectural
+  style: `rc.arc(start, stop)` draws nothing when stop < start (the canvas `arc(π, 0)` idiom);
+  `linearPath` never fills; `rectangle` has no corner radius. And an SVG arc whose radius can't
+  reach its end point is scaled UP, so a "capped" radius silently isn't. `grep -n "rc.arc(" …` for
+  a reversed sweep found three more shapes with the same bug.
+- **A shape must fit its box.** Pixels outside the bounds are where selection, hit-testing and
+  connectors aren't. "Nothing outside a band around the box" is a cheap, style-independent test.
+- **A stale spec can be hiding a real bug.** `uml-tools` failed because Escape didn't return to
+  Select; the obvious fix (select the tool in the test) would have kept the bug. Ask what a user
+  would do at that step, then check the app does it.

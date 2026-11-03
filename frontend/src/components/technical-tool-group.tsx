@@ -4,13 +4,14 @@ import { createFlyoutPlacement } from "../utils/tool-flyout";
 import { store, setSelectedTool, setSelectedTechnicalType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
-    Box, Database, ChevronDown, Binary, HardDrive, Circle, CircleDot, Minus, GripVertical, Layers, Cuboid, Package, PackageOpen, Code
+    Box, Database, ChevronDown, Binary, Circle, CircleDot, Minus, GripVertical, Layers, Cuboid, Package, PackageOpen, Code
 } from "lucide-solid";
+import { DfdDataStoreIcon } from "./architecture-tool-group";
 import "./pen-tool-group.css"; // Reuse the same CSS
 
 const technicalTools: { type: ElementType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
     { type: 'dfdProcess', icon: Binary, label: 'DFD Process' },
-    { type: 'dfdDataStore', icon: HardDrive, label: 'DFD Data Store' },
+    { type: 'dfdDataStore', icon: DfdDataStoreIcon, label: 'DFD Data Store' },
     { type: 'isometricCube', icon: Package, label: 'Isometric Cube' },
     { type: 'solidBlock', icon: Box, label: 'Solid Block' },
     { type: 'perspectiveBlock', icon: Cuboid, label: 'Perspective Block' },

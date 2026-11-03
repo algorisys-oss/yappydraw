@@ -432,6 +432,7 @@ export const de: Dictionary = {
         'file-newSketch': 'Neue Skizze',
         // Tools
         'tools-selection': 'Auswahl',
+        'tools-putToolDown': 'Zeichenwerkzeug ablegen (zurück zu Auswahl)',
         'tools-rectangle': 'Rechteck',
         'tools-diamond': 'Raute',
         'tools-ellipse': 'Ellipse',

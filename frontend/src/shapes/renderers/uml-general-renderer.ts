@@ -3,6 +3,7 @@ import type { RenderContext } from "../base/types";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { getFontString, getMeasurementContext } from "../../utils/text-utils";
+import { umlFragmentLayout } from "../../utils/uml-fragment-layout";
 
 export class UmlGeneralRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
@@ -15,7 +16,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
 
         renderer.beginPath();
         if (el.type === 'umlActor') {
-            this.drawActorPath(renderer, x, y, w, h);
+            this.drawActorPath(renderer, x, y, w, this.actorFigureH(el));
         } else if (el.type === 'umlUseCase') {
             renderer.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
         } else if (el.type === 'umlPackage') {
@@ -49,6 +50,15 @@ export class UmlGeneralRenderer extends ShapeRenderer {
         renderer.lineWidth = el.strokeWidth;
         renderer.strokeStyle = options.stroke || '#000000';
         renderer.stroke();
+
+        // Package: the body's top edge runs under the tab too (sketch draws it).
+        if (el.type === 'umlPackage') {
+            const tabH = h * 0.15;
+            renderer.beginPath();
+            renderer.moveTo(x, y + tabH);
+            renderer.lineTo(x + w * 0.4, y + tabH);
+            renderer.stroke();
+        }
 
         // Inner details (Note dog-ear fold)
         if (el.type === 'umlNote') {
@@ -93,8 +103,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
 
         // Fragment: operator label tab in top-left corner
         if (el.type === 'umlFragment') {
-            const tabW = Math.min(w * 0.3, 60);
-            const tabH = Math.min(h * 0.12, 22);
+            const { tabW, tabH } = umlFragmentLayout(el);
             renderer.fillStyle = options.fill || 'transparent';
             renderer.strokeStyle = options.stroke || '#000000';
             renderer.beginPath();
@@ -168,6 +177,10 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             RenderPipeline.renderText(context, el.x + (w - d) / 2, el.y + d + (h - d) / 2);
         } else if (el.type === 'umlPort' || el.type === 'umlHistory') {
             // Port is a marker (no label); History draws its own "H".
+        } else if (el.type === 'umlActor') {
+            this.renderActorLabel(context);
+        } else if (el.type === 'umlFragment') {
+            this.renderFragmentText(context);
         } else {
             RenderPipeline.renderText(context, cx, cy);
         }
@@ -182,13 +195,14 @@ export class UmlGeneralRenderer extends ShapeRenderer {
         const y = el.y;
 
         if (el.type === 'umlActor') {
-            // Stick figure
-            const headR = w * 0.15;
+            // Stick figure (above the label band — see actorFigureH)
+            const fh = this.actorFigureH(el);
+            const headR = this.actorHeadR(w, fh);
             rc.circle(x + w / 2, y + headR, headR * 2, options);
-            rc.line(x + w / 2, y + headR * 2, x + w / 2, y + h * 0.6, options);
-            rc.line(x, y + h * 0.3, x + w, y + h * 0.3, options);
-            rc.line(x + w / 2, y + h * 0.6, x, y + h, options);
-            rc.line(x + w / 2, y + h * 0.6, x + w, y + h, options);
+            rc.line(x + w / 2, y + headR * 2, x + w / 2, y + fh * 0.6, options);
+            rc.line(x, y + fh * 0.3, x + w, y + fh * 0.3, options);
+            rc.line(x + w / 2, y + fh * 0.6, x, y + fh, options);
+            rc.line(x + w / 2, y + fh * 0.6, x + w, y + fh, options);
         } else if (el.type === 'umlUseCase') {
             rc.ellipse(x + w / 2, y + h / 2, w, h, options);
         } else if (el.type === 'umlPackage') {
@@ -219,8 +233,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
         } else if (el.type === 'umlFragment') {
             rc.rectangle(x, y, w, h, options);
             // Operator tab
-            const tabW = Math.min(w * 0.3, 60);
-            const tabH = Math.min(h * 0.12, 22);
+            const { tabW, tabH } = umlFragmentLayout(el);
             const tabPath = `M ${x} ${y} L ${x + tabW} ${y} L ${x + tabW} ${y + tabH} L ${x + tabW - 5} ${y + tabH + 5} L ${x} ${y + tabH + 5} Z`;
             rc.path(tabPath, options);
         } else if (el.type === 'umlNode') {
@@ -244,8 +257,11 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             rc.ellipse(x + w / 2, y + h / 2, w, h, options);
         } else if (el.type === 'umlAction') {
             // Activity action: rounded "stadium" rect via an arc path.
+            // Four corner arcs. The old two-arc "stadium" path spanned the full height with
+            // a radius capped at 18, which SVG silently enlarges to h/2 — so the ends
+            // bulged up to h/2 outside the box. Same shape as architectural roundRect.
             const r = Math.min(h / 2, w / 2, 18);
-            rc.path(`M ${x + r} ${y} L ${x + w - r} ${y} A ${r} ${r} 0 0 1 ${x + w - r} ${y + h} L ${x + r} ${y + h} A ${r} ${r} 0 0 1 ${x + r} ${y} Z`, options);
+            rc.path(`M ${x + r} ${y} L ${x + w - r} ${y} A ${r} ${r} 0 0 1 ${x + w} ${y + r} L ${x + w} ${y + h - r} A ${r} ${r} 0 0 1 ${x + w - r} ${y + h} L ${x + r} ${y + h} A ${r} ${r} 0 0 1 ${x} ${y + h - r} L ${x} ${y + r} A ${r} ${r} 0 0 1 ${x + r} ${y} Z`, options);
         }
 
         // Object/instance: underline the label (sketch).
@@ -266,6 +282,10 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             RenderPipeline.renderText(context, el.x + (w - d) / 2, el.y + d + (h - d) / 2);
         } else if (el.type === 'umlPort') {
             // marker — no label
+        } else if (el.type === 'umlActor') {
+            this.renderActorLabel(context);
+        } else if (el.type === 'umlFragment') {
+            this.renderFragmentText(context);
         } else if (el.type === 'umlHistory') {
             // "H" glyph (matches architectural)
             const tr = context.renderer;
@@ -281,7 +301,8 @@ export class UmlGeneralRenderer extends ShapeRenderer {
 
     protected definePath(renderer: IRenderer, el: any): void {
         if (el.type === 'umlActor') {
-            this.drawActorPath(renderer, el.x, el.y, el.width, el.height);
+            // Hit path covers the label band too, so clicking the name selects the actor.
+            renderer.rect(el.x, el.y, el.width, el.height);
         } else if (el.type === 'umlUseCase') {
             renderer.ellipse(el.x + el.width / 2, el.y + el.height / 2, el.width / 2, el.height / 2, 0, 0, Math.PI * 2);
         } else if (el.type === 'umlPackage') {
@@ -298,6 +319,28 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             // Hit/selection path: the front face of the 3D box.
             const d = this.nodeDepth(el.width, el.height);
             renderer.rect(el.x, el.y + d, el.width - d, el.height - d);
+        }
+    }
+
+    /**
+     * Fragment text: the operator in the tab and the guard ("[condition]", from
+     * attributesText) just below it — UML's layout. Both used to be ignored: the
+     * operator was centred in the body and the guard never drawn.
+     */
+    private renderFragmentText(context: RenderContext) {
+        const el = context.element;
+        const { tabW, tabH, fontSize } = umlFragmentLayout(el);
+        if (el.containerText || el.richContainerText?.length) {
+            RenderPipeline.renderText({ ...context, element: { ...el, fontSize, width: tabW - 5, height: tabH + 5, textAlign: 'center', verticalAlign: 'middle' } }, el.x + (tabW - 5) / 2, el.y + (tabH + 5) / 2);
+        }
+        const guard = el.attributesText;
+        if (guard) {
+            const guardH = fontSize * 1.6 + 4;
+            // Top of the first operand, just under the tab.
+            const gx = el.x + 6, gw = Math.max(20, el.width - 12), gy = el.y + tabH + 7;
+            RenderPipeline.renderText({ ...context, element: { ...el, containerText: guard, richContainerText: undefined, charTransforms: undefined, curvedText: undefined, fontSize, width: gw, height: guardH, textAlign: 'left', verticalAlign: 'middle' } },
+                // renderText left-aligns at cx - width/2 + 10, so this starts the guard at gx.
+                gx + gw / 2 - 10, gy + guardH / 2);
         }
     }
 
@@ -328,8 +371,38 @@ export class UmlGeneralRenderer extends ShapeRenderer {
         renderer.stroke();
     }
 
+    /**
+     * Height of the actor's stick figure. UML puts the actor's name UNDER the figure;
+     * with a label the bottom band of the box is reserved for it (it used to be centred
+     * on the shape, i.e. written across the torso).
+     */
+    private actorFigureH(el: any): number {
+        const h = el.height;
+        const text = el.containerText || el.text;
+        if (!text) return h;
+        const lines = String(text).split('\n').length;
+        const band = lines * (el.fontSize || 16) * (el.lineHeight || 1.25) + 6;
+        return Math.max(h * 0.5, h - band);
+    }
+
+    /** Head radius — from the width, but never taller than a fifth of the figure. */
+    private actorHeadR(w: number, figH: number): number {
+        return Math.min(w * 0.15, figH * 0.1);
+    }
+
+    /** Draw the label of an actor centred in the band below its figure. */
+    private renderActorLabel(context: RenderContext) {
+        const el = context.element;
+        const fh = this.actorFigureH(el);
+        const bandH = el.height - fh;
+        if (bandH <= 0) return;
+        // Names are often wider than the figure; let them run past its sides.
+        const labelW = Math.max(el.width, 160);
+        RenderPipeline.renderText({ ...context, element: { ...el, width: labelW, height: bandH, verticalAlign: 'middle' } }, el.x + el.width / 2, el.y + fh + bandH / 2);
+    }
+
     private drawActorPath(renderer: IRenderer, x: number, y: number, w: number, h: number) {
-        const headR = w * 0.15;
+        const headR = this.actorHeadR(w, h);
         renderer.moveTo(x + w / 2 + headR, y + headR);
         renderer.arc(x + w / 2, y + headR, headR, 0, Math.PI * 2);
         renderer.moveTo(x + w / 2, y + headR * 2);

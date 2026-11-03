@@ -439,6 +439,7 @@ export const en = {
         'file-newSketch': 'New Sketch',
         // Tools
         'tools-selection': 'Selection',
+        'tools-putToolDown': 'Put the drawing tool down (back to Selection)',
         'tools-rectangle': 'Rectangle',
         'tools-diamond': 'Diamond',
         'tools-ellipse': 'Ellipse',

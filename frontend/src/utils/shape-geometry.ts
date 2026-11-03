@@ -934,7 +934,9 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'dfdDataStore': {
-            const labelW = w * 0.2;
+            // Gane & Sarson ID compartment ("D1"): a narrow strip sized from the height,
+            // not 20% of the width — a wide store grew a 100px empty block.
+            const labelW = Math.min(w * 0.2, Math.max(20, h * 0.45));
             return {
                 type: 'multi', shapes: [
                     {

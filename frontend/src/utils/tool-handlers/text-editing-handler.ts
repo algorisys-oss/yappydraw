@@ -1,4 +1,5 @@
 import { openChartData } from '../../components/chart-data-dialog';
+import { umlFragmentLayout } from "../uml-fragment-layout";
 import { lineHeightPx } from '../text-line-height';
 /**
  * Text Editing Handler
@@ -429,8 +430,9 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
                 } else if (el.type === 'umlFragment') {
                     const clickYRelativeToShape = y - el.y;
                     const clickXRelativeToShape = x - el.x;
-                    const tabW = Math.min(el.width * 0.3, 60);
-                    const tabH = Math.min(el.height * 0.12, 22) + 5;
+                    // Same tab the renderer draws (it grows to fit the operator).
+                    const { tabW, tabH: tabBodyH } = umlFragmentLayout(el);
+                    const tabH = tabBodyH + 5;
 
                     if (clickXRelativeToShape < tabW && clickYRelativeToShape < tabH) {
                         prop = 'containerText';

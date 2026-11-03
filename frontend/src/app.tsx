@@ -105,6 +105,7 @@ import AboutDialog from './components/about-dialog';
 import { initAPI } from './api';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
+import { shapeRegistry } from './shapes/shape-registry';
 import { ChartDataDialog } from './components/chart-data-dialog';
 import { AltTextDialog, AccessibilityPanel } from './components/accessibility-dialogs';
 import { openPresenterView, isPresenterViewOpen } from './components/presenter-view';
@@ -306,6 +307,19 @@ const App: Component = () => {
         e.preventDefault();
         setFocusBranch(null);
         return;
+      }
+      // Escape puts a shape tool down. Since a drawing tool stays armed after a draw (Settings >
+      // Keep tool active, on by default), Escape is the way back to Select — the draw handler
+      // promised as much, but nothing implemented it, so a double-click on the shape just drawn
+      // couldn't open its label. Only shape and connector tools: the pens, text, polyline and
+      // Pen tool give Escape their own meaning (finish the path / stroke), handled in canvas.tsx.
+      if (e.key === 'Escape' && !typing && !store.cropModeElementId
+        && !(window as any).__canvasPointerBusy?.()
+        && store.selectedTool !== 'selection'
+        && (shapeRegistry.getRenderer(store.selectedTool as any) !== undefined)
+        && !['fineliner', 'inkbrush', 'marker', 'ink', 'text', 'richtext', 'path'].includes(store.selectedTool)) {
+        setSelectedTool('selection');
+        // no return: Escape still clears the selection etc. further down, as before
       }
 
       const code = e.code;

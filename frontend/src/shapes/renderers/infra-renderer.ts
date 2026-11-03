@@ -49,15 +49,15 @@ export class InfraRenderer extends ShapeRenderer {
                 }
                 RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 renderer.strokeRect(x, y, w, h);
+                // Brick wall: 4 even courses with staggered joints (same layout as sketch).
+                // There used to be a header band offsetting the mortar lines but not the
+                // joints, so every joint straddled a mortar line instead of sitting in a course.
                 const rows = 4, cols = 3;
-                const headerH = h * 0.15;
-                renderer.beginPath(); renderer.moveTo(x, y + headerH); renderer.lineTo(x + w, y + headerH);
-                renderer.stroke();
-                const rowH = (h - headerH) / rows;
+                const rowH = h / rows;
                 const colW = w / cols;
                 renderer.beginPath();
                 for (let i = 1; i < rows; i++) {
-                    renderer.moveTo(x, y + headerH + i * rowH); renderer.lineTo(x + w, y + headerH + i * rowH);
+                    renderer.moveTo(x, y + i * rowH); renderer.lineTo(x + w, y + i * rowH);
                 }
                 for (let i = 0; i < rows; i++) {
                     const shift = (i % 2 === 0) ? 0 : colW / 2;
@@ -81,9 +81,12 @@ export class InfraRenderer extends ShapeRenderer {
                 RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 renderer.beginPath(); renderer.arc(center_x, y + headR, headR, 0, Math.PI * 2); renderer.stroke();
                 const shoulderW = w * 0.8;
+                // Closed shoulders, matching sketch (whose path ends in Z) and filled with it.
                 renderer.beginPath();
                 renderer.moveTo(center_x - shoulderW / 2, y + h);
                 renderer.quadraticCurveTo(center_x, y + headR * 1.5, center_x + shoulderW / 2, y + h);
+                renderer.closePath();
+                if (backgroundColor) { renderer.fillStyle = backgroundColor; renderer.fill(); }
                 renderer.stroke();
                 break;
             }
@@ -133,6 +136,12 @@ export class InfraRenderer extends ShapeRenderer {
                     renderer.moveTo(center_x, center_y); renderer.lineTo(center_x + r * Math.cos(angle), center_y + r * Math.sin(angle));
                 }
                 renderer.stroke();
+                // Outward arrowheads — the router symbol (sketch has them; without them the
+                // plain ✕ read as "blocked").
+                for (let a = 0; a < 4; a++) {
+                    const angle = (Math.PI / 2) * a + Math.PI / 4;
+                    this.drawArchArrowhead(renderer, center_x + r * Math.cos(angle), center_y + r * Math.sin(angle), angle, 9);
+                }
                 break;
             }
         }
@@ -228,11 +237,11 @@ export class InfraRenderer extends ShapeRenderer {
         RenderPipeline.renderText(context, cx, cy);
     }
 
-    private drawArchArrowhead(renderer: IRenderer, x: number, y: number, angle: number) {
+    private drawArchArrowhead(renderer: IRenderer, x: number, y: number, angle: number, len = 5) {
         renderer.beginPath();
-        renderer.moveTo(x - 5 * Math.cos(angle - Math.PI / 6), y - 5 * Math.sin(angle - Math.PI / 6));
+        renderer.moveTo(x - len * Math.cos(angle - Math.PI / 6), y - len * Math.sin(angle - Math.PI / 6));
         renderer.lineTo(x, y);
-        renderer.lineTo(x - 5 * Math.cos(angle + Math.PI / 6), y - 5 * Math.sin(angle + Math.PI / 6));
+        renderer.lineTo(x - len * Math.cos(angle + Math.PI / 6), y - len * Math.sin(angle + Math.PI / 6));
         renderer.stroke();
     }
 

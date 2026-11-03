@@ -43,6 +43,18 @@ Create cloud architecture diagrams, network topologies, and system infrastructur
 | **Message Queue** | Message broker (RabbitMQ, SQS) |
 | **Event Bus** | Event streaming (Kafka, EventBridge) |
 
+### Data Flow Diagrams (DFD)
+
+Under **Architecture → Data Flow** — Gane & Sarson notation:
+
+| Shape | Description |
+| --- | --- |
+| **DFD Process** | A process that transforms data — rounded box with a header band for its number (e.g. *1.0*) |
+| **DFD Data Store** | Where data rests — an open-ended box (no right side) with a narrow ID compartment on the left. Give it its ID and name as the label (e.g. *D1  Customers*). The compartment stays narrow however wide you make the store |
+| **External Entity** | A source or sink outside the system — a box with a doubled edge |
+
+Connect them with arrows labelled with the data that flows. All three draw the same in **sketch** and **architectural** style, including solid fills.
+
 ### Users & Clients
 
 | Shape | Description |
@@ -65,7 +77,7 @@ Infrastructure and cloud shapes live in the **Architecture** group on the toolba
 1. Open the **Architecture** shape group in the toolbar (or press <kbd>/</kbd> to open the command palette and search for a shape by name, e.g. "Load Balancer").
 2. Pick a shape such as **Server**, **Database**, or **Kubernetes**.
 3. Click once on the canvas to drop it at a default size, or click-drag to size it as you place it.
-4. Double-click the shape to add a label, and use the **Properties** panel to set stroke, fill, and drawing style.
+4. The tool stays armed so you can place several in a row — press <kbd>Esc</kbd> to put it down (back to **Selection**). Then double-click the shape to add a label, and use the **Properties** panel to set stroke, fill, and drawing style.
 5. Connect shapes with the **Arrow** or **Line** tool — connectors bind to a shape's edge and follow it when you move it.
 
 :::tip Tip: Search instead of hunting
@@ -156,6 +168,7 @@ Every infrastructure shape can be created and updated from code through the glob
 | Infrastructure | `'server'`, `'loadBalancer'`, `'firewall'`, `'router'`, `'messageQueue'`, `'lambda'`, `'user'`, `'browser'` |
 | Cloud-Native | `'kubernetes'`, `'container'`, `'apiGateway'`, `'cdn'`, `'storageBlob'`, `'eventBus'`, `'microservice'`, `'shield'` |
 | Data | `'database'`, `'document'`, `'internalStorage'`, `'mobilePhone'` |
+| Data Flow (DFD) | `'dfdProcess'`, `'dfdDataStore'`, `'externalEntity'` |
 
 ### Build a Mini Architecture
 
