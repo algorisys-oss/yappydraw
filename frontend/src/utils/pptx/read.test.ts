@@ -1181,3 +1181,48 @@ describe("video and audio clips", () => {
         expect(rels).toMatch(/relationships\/video" Target="https:\/\/example\.com\/v\.webm" TargetMode="External"/);
     });
 });
+
+describe("Office 2016 charts (chartEx) are drawn from their cached data", () => {
+    /** A deck whose chart is a chartEx part, inside mc:AlternateContent with a fallback shape, as PowerPoint saves it. */
+    const deckWith = (chartEx: string) => {
+        const files = unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [{ kind: 'chart', id: 2, name: 'Sales', x: 100, y: 50, w: 600, h: 400,
+            chart: { kind: 'column', categories: ['a'], series: [{ name: 's', values: [1] }] } } as any] }] }));
+        const slide = strFromU8(files['ppt/slides/slide1.xml']).replace(/<p:graphicFrame>.*<\/p:graphicFrame>/s, frame => {
+            const cx = frame.replace(/<a:graphicData uri="[^"]*">.*<\/a:graphicData>/s,
+                '<a:graphicData uri="http://schemas.microsoft.com/office/drawing/2014/chartex"><cx:chart xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" r:id="rId2"/></a:graphicData>');
+            return '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">'
+                + `<mc:Choice xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" Requires="cx1">${cx}</mc:Choice>`
+                + '<mc:Fallback><p:sp><p:nvSpPr><p:cNvPr id="2" name="Fallback picture"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="952500" y="476250"/><a:ext cx="5715000" cy="3810000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="CCCCCC"/></a:solidFill></p:spPr></p:sp></mc:Fallback>'
+                + '</mc:AlternateContent>';
+        });
+        files['ppt/slides/slide1.xml'] = strToU8(slide);
+        const rels = strFromU8(files['ppt/slides/_rels/slide1.xml.rels']);
+        const rid = /Id="(rId\d+)"[^>]*charts\/chart1\.xml/.exec(rels)?.[1] ?? /charts\/chart1\.xml"[^>]*Id="(rId\d+)"/.exec(rels)?.[1];
+        files['ppt/slides/slide1.xml'] = strToU8(slide.replace('r:id="rId2"', `r:id="${rid}"`));
+        files['ppt/charts/chart1.xml'] = strToU8(chartEx);
+        const { deck, warnings } = read(zipSync(files));
+        return { it: deck.slides[0].items[0] as any, warnings };
+    };
+    const cx = (layout: string, data: string, layoutPr = '') => '<?xml version="1.0" encoding="UTF-8"?><cx:chartSpace xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex">'
+        + `<cx:chartData><cx:data id="0">${data}</cx:data></cx:chartData><cx:chart><cx:title><cx:tx><cx:txData><cx:v>Cash</cx:v></cx:txData></cx:tx><cx:txPr><a:p><a:r><a:t>Cash</a:t></a:r></a:p></cx:txPr></cx:title>`
+        + `<cx:plotArea><cx:plotAreaRegion><cx:series layoutId="${layout}"><cx:dataLabels pos="outEnd"><cx:visibility value="1"/></cx:dataLabels><cx:dataId val="0"/><cx:layoutPr>${layoutPr}</cx:layoutPr></cx:series></cx:plotAreaRegion></cx:plotArea><cx:legend pos="t"/></cx:chart></cx:chartSpace>`;
+    const cats = '<cx:strDim type="cat"><cx:f>S!A1:A3</cx:f><cx:lvl ptCount="3"><cx:pt idx="0">Start</cx:pt><cx:pt idx="1">Spend</cx:pt><cx:pt idx="2">End</cx:pt></cx:lvl></cx:strDim>';
+    const vals = '<cx:numDim type="val"><cx:f>S!B1:B3</cx:f><cx:lvl ptCount="3" formatCode="General"><cx:pt idx="0">100</cx:pt><cx:pt idx="1">-30</cx:pt><cx:pt idx="2">70</cx:pt></cx:lvl></cx:numDim>';
+
+    it("a waterfall comes in as a group of shapes where the frame was, its data in the alt text", () => {
+        const { it, warnings } = deckWith(cx('waterfall', cats + vals, '<cx:subtotals><cx:idx val="0"/><cx:idx val="2"/></cx:subtotals>'));
+        expect(warnings).toEqual([]);
+        expect(it.kind).toBe('group');
+        expect([it.x, it.y, it.w, it.h]).toEqual([100, 50, 600, 400]);
+        expect(it.descr).toBe('Waterfall chart: Cash. Start 100, Spend -30, End 70');
+        const texts = it.children.filter((c: any) => c.text).map((c: any) => c.text.paragraphs[0].runs[0].text);
+        expect(texts).toEqual(expect.arrayContaining(['Cash', 'Start', 'Spend', 'End', 'Increase']));
+        expect(texts.filter((t: string) => t === 'Cash').length).toBe(1);   // the title once
+        for (const c of it.children) { expect(c.x).toBeGreaterThanOrEqual(100 - 1); expect(c.x + c.w).toBeLessThanOrEqual(700 + 1); }
+    });
+    it("a region map, or a chart saved without its values (Excel keeps them in the sheet), keeps PowerPoint's picture", () => {
+        expect(deckWith(cx('regionMap', cats + vals)).it.name).toBe('Fallback picture');
+        const noCache = '<cx:numDim type="val"><cx:f>_xlchart.v1.0</cx:f></cx:numDim>';
+        expect(deckWith(cx('funnel', noCache)).it.name).toBe('Fallback picture');
+    });
+});

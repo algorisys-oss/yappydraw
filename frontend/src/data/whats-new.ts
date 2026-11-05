@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.306', date: '2026-11-05', items: [
+        'Waterfall, funnel, histogram, Pareto, box & whisker, treemap and sunburst charts in PowerPoint files now open sharp — drawn from their data in your deck’s colours, instead of as a blurry picture. Their values are in the chart’s alt text.',
+    ] },
     { version: '0.8.305', date: '2026-11-05', items: [
         'New chart types: Scatter, Bubble, Radar, Filled radar and Stock. Pick one under Type in the Chart data window — scatter and bubble charts take their X values from the first column, and a bubble chart has a Size column for each series.',
         'Combination charts: show sales as columns and the margin as a line on its own scale on the right. Each series has a type and a Right axis box under its name. Plus 100% stacked charts.',

@@ -1,4 +1,4 @@
-import { b as So } from "./browser-BNJ-qm4Y.js";
+import { a as So } from "./browser-D4hpQp_u.js";
 function xe(n) {
   "@babel/helpers - typeof";
   return xe = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
@@ -8760,7 +8760,7 @@ endobj\r
   var d = c.getContext("2d");
   d.fillStyle = "#fff", d.fillRect(0, 0, c.width, c.height);
   var m = { ignoreMouse: !0, ignoreAnimation: !0, ignoreDimensions: !0 }, A = this;
-  return ($t.canvg ? Promise.resolve($t.canvg) : import("./index.es-C59H_gZZ.js")).catch(function(P) {
+  return ($t.canvg ? Promise.resolve($t.canvg) : import("./index.es-BxoGQxYF.js")).catch(function(P) {
     return Promise.reject(new Error("Could not load canvg: " + P));
   }).then(function(P) {
     return P.default ? P.default : P;

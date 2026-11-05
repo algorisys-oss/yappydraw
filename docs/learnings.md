@@ -11874,3 +11874,24 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   drawn on a category axis they don't have.
 - **100 % stacking keeps the values for labels.** The layout divides by each category's total of
   magnitudes for positions only; labels show the data, as Excel's do.
+
+
+## Office 2016 charts drawn from their data (2026-11-05, PPTX parity P4b)
+
+- **They hide behind `mc:AlternateContent`.** The chart's graphic frame sits in an `mc:Choice
+  Requires="cx1"` (or cx2…) and PowerPoint saves a PNG of it as the `mc:Fallback`. Taking the
+  Choice means losing that picture for the cases we can't draw, so the reader keeps the Fallback
+  beside the Choice's elements (a `WeakMap`) and reads it only when drawing fails.
+- **Excel doesn't cache chartEx data; PowerPoint does.** In an .xlsx each dimension is a formula
+  (`_xlchart.v1.0`, a hidden defined name) with no `cx:lvl` points, so LibreOffice's chartex
+  corpus looked like empty charts. A chart without cached values must fall back to the picture,
+  never come in as a title over nothing. `temp/cx-fill.ts` fills the caches from the workbook to
+  turn those files into realistic test input.
+- **An outer category level names a group only on its first row**; the rest are blank and repeat
+  it. Building the treemap/sunburst tree means filling blanks downward per level.
+- **Values without category names need numbering.** A waterfall whose categories were missing
+  laid every bar in one band — off the plot but the first.
+- **Imported shapes have roughness 0**, so switching them to sketch style looks unchanged. To
+  check the sketch path, set `roughness` too.
+- **Test the fallback with a visible shape**: the reader drops shapes with no fill, line or text,
+  so an empty fallback `p:sp` silently fell through to the chart placeholder.

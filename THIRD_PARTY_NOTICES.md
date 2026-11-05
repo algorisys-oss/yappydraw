@@ -59,7 +59,11 @@ in implementations of the standard.
 part list and notes-master layout (`frontend/src/utils/pptx/write.ts`) follow DeckCraft's
 `crates/pptx/src/write.rs`. The EMF/WMF/EMF+ reader in `frontend/src/utils/metafile/` is a
 TypeScript port of DeckCraft's `crates/metafile` (record handling, mapping, clipping, limits and
-its tests), with the additions noted in its files. DeckCraft is dual-licensed MIT OR Apache-2.0; Yappy uses it under
+its tests), with the additions noted in its files. The radar and stock chart layouts
+(`frontend/src/utils/chart/chart-layout.ts`) and the Office 2016 chart reader, squarified treemap,
+sunburst and funnel (`frontend/src/utils/chart/chartex-layout.ts`, `chartexOf` in
+`frontend/src/utils/pptx/read.ts`) follow DeckCraft's `crates/render/src/radar.rs`,
+`crates/render/src/chartex.rs` and `crates/pptx/src/read/chartex.rs`. DeckCraft is dual-licensed MIT OR Apache-2.0; Yappy uses it under
 the MIT licence below. No DeckCraft names, logos or brand assets are used.
 
 - Source: DeckCraft (Rust presentation app), read-only clone.

@@ -171,7 +171,7 @@ Favours solo-user value and work that also closes a PowerPoint round-trip gap.
    (2026-11-01): `chart` elements (`utils/chart/chart-layout.ts` → `chart-renderer.ts`), the
    Chart data window (grid + spreadsheet paste), `c:chartSpace` + embedded xlsx written
    (`utils/pptx/chart-xml.ts`) and read from the cached values, theme override honoured. Not yet:
-   `cx:` charts, trendlines, per-point colours, number formats.
+   trendlines, per-point colours, number formats. (`cx:` charts import as a drawing, not as data charts.)
 
 Close behind: ~~native PPTX tables (M)~~ — done on `feat/pptx-tables` (2026-11-01); ~~alt text UI +
 accessibility checker (S–M)~~ — done on `feat/accessibility` (2026-11-01), ~~more transitions (wipe/cover/uncover/split, S–M)~~ — done on

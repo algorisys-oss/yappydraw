@@ -1,6 +1,6 @@
 # PPTX import parity plan
 
-Status: **P1–P3 shipped (v0.8.304); P4a + 100 % stacking + combination charts shipped in v0.8.305** (2026-11-05). Next: P4b (2016 chart types). Branch to use: `feat/pptx-parity`.
+Status: **P1–P3 shipped (v0.8.304); P4a + 100 % stacking + combination charts (v0.8.305); P4b (v0.8.306)** (2026-11-05). Next: P5 (animations). Branch to use: `feat/pptx-parity`.
 
 ## Goal
 
@@ -157,6 +157,18 @@ each type).
 - P4b: **2016 types** (`cx:` / chartex): waterfall, funnel, histogram, pareto, box & whisker,
   treemap, sunburst. These need new layouts each. Decided: read the cached values and draw them once
   as a **static vector group**, data kept in alt text. Native editable charts later, per demand.
+
+  **As built (2026-11-05).** `utils/chart/chartex-layout.ts` lays each out as chart ops (waterfall
+  with subtotals and connectors; funnel; histogram bins — width, count or Scott's rule, `[a, b]` then
+  `(a, b]` — or category sums; Pareto sorted with a cumulative line on a 0–100 % axis; box & whisker
+  with exclusive/inclusive quartiles, 1.5 IQR whiskers, mean, outliers; squarified treemap with
+  group banners; sunburst rings), `utils/pptx/chartex-items.ts` turns ops into a group of shapes,
+  `read.ts` `chartexOf` reads `cx:chartData` (levels, values), `layoutPr` (subtotals, binning,
+  quartile method), title, legend and the theme accents. `resolveMc` takes a `cx*` Choice and keeps
+  its Fallback (`MC_FALLBACK`) for region maps and parts without cached values (Excel's own files
+  keep chart data in the sheet: `_xlchart.v1.0` defined names). Checked on LibreOffice's 18 chartEx
+  test files (caches filled from their workbooks with `temp/cx-fill.ts`) and two PowerPoint decks,
+  both styles, and a PPTX round trip opened in LibreOffice.
 - Also fix while here: combination charts (today first type only) and true 100 % stacking.
 
 **P4a as built (2026-11-05).** `ChartKind` gains `scatter`, `bubble`, `radar`, `filledRadar`,

@@ -1,4 +1,4 @@
-import { L as S, M as C, N as $, O as E } from "./index-DRPGudNX.js";
+import { L as S, M as C, N as $, O as E } from "./index-DEKxp5SH.js";
 import { p as P, i as D, a as T, c as B } from "./pdf-cmyk-CqVZV2FF.js";
 const b = (t, i) => {
   for (let n = t; n; n = n.parentElement) {
@@ -135,7 +135,7 @@ const b = (t, i) => {
   const [e, s, h, f = "1"] = r[1].split(",").map((a) => a.trim());
   return parseFloat(f) === 0 ? null : "#" + [e, s, h].map((a) => (+a).toString(16).padStart(2, "0")).join("");
 }, K = async (t, i, n, r, e) => {
-  const [{ jsPDF: s }, { svg2pdf: h }] = await Promise.all([import("./jspdf.es.min-DGn0wGDv.js").then((c) => c.j), import("./svg2pdf.es.min-BGldafAV.js")]), f = r[0], a = new s({
+  const [{ jsPDF: s }, { svg2pdf: h }] = await Promise.all([import("./jspdf.es.min-Ljo-BPNe.js").then((c) => c.j), import("./svg2pdf.es.min-DLQYtnf3.js")]), f = r[0], a = new s({
     orientation: f.width >= f.height ? "landscape" : "portrait",
     unit: "px",
     format: [f.width, f.height],

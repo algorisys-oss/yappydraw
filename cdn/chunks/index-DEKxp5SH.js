@@ -28520,7 +28520,7 @@ const Yk = (e, t) => {
     const w = Number(l.getAttribute("width")), v = Number(l.getAttribute("height"));
     u = [{ x: c - s, y: d - s, width: w + s * 2, height: v + s * 2, background: e ? rc() : null, alt: Mu(h) }];
   }
-  const { renderSvgPagesToPdf: f } = await import("./pdf-vector-BepaBc07.js");
+  const { renderSvgPagesToPdf: f } = await import("./pdf-vector-Cj_39skc.js");
   let p;
   if (o.colorMode === "cmyk" || a) {
     const [{ loadColorEngine: w }, { exactCmykFromSwatches: v, spotsFromSwatches: k }] = await Promise.all([import("./__vite-browser-external-BsdCVVos.js").then((x) => x.c), import("./pdf-cmyk-CqVZV2FF.js").then((x) => x.e)]);
@@ -28540,7 +28540,7 @@ const Yk = (e, t) => {
   const s = xa().filter(xo);
   if (s.length === 0) return;
   if (r) return wK(t, n, a, o);
-  const { jsPDF: i } = await import("./jspdf.es.min-DGn0wGDv.js").then((c) => c.j);
+  const { jsPDF: i } = await import("./jspdf.es.min-Ljo-BPNe.js").then((c) => c.j);
   if (et(m.docType) && m.slides.length > 0 && !n) {
     const c = [...m.slides].sort((g, y) => g.order - y.order), d = c[0], { width: h, height: u } = d.dimensions, f = h >= u ? "landscape" : "portrait", p = new i({
       orientation: f,
@@ -28595,7 +28595,7 @@ const Yk = (e, t) => {
   await Ti();
   const a = xa().filter(xo);
   if (a.length === 0) return;
-  const [{ buildPptx: s }, { pageToSlide: i, fitInto: l, transitionOf: c, showFields: d, mediaOf: h }] = await Promise.all([import("./write-lCwlOSCP.js"), import("./from-yappy-DX9o7qNJ.js")]), u = et(m.docType) && m.slides.length > 0 && !n, f = [];
+  const [{ buildPptx: s }, { pageToSlide: i, fitInto: l, transitionOf: c, showFields: d, mediaOf: h }] = await Promise.all([import("./write-Bnq8rh_K.js"), import("./from-yappy-CUZo5xTu.js")]), u = et(m.docType) && m.slides.length > 0 && !n, f = [];
   if (u) {
     const x = [...m.slides].sort((M, C) => M.order - C.order);
     x.forEach((M, C) => {
@@ -33650,7 +33650,18 @@ function Il(e) {
     ...e?.smooth && { smooth: !0 }
   };
 }
-const o2 = (e) => typeof e == "number" && Number.isFinite(e) ? e : null, C0e = (e, t) => e.series[t]?.color || t2[t % t2.length], mI = ["next", "previous", "first", "last", "end"], KQ = /^(https?:|mailto:|tel:)/i, QQ = (e) => `#slide:${e}`, ZQ = (e) => `#${e}`;
+const o2 = (e) => typeof e == "number" && Number.isFinite(e) ? e : null, C0e = (e, t) => e.series[t]?.color || t2[t % t2.length];
+function T0e(e, t, n = 5) {
+  if (!Number.isFinite(e) || !Number.isFinite(t)) return { min: 0, max: 1, step: 0.2 };
+  t < e && ([e, t] = [t, e]), t === e && (t = e === 0 ? 1 : e + Math.abs(e) * 0.5, e > 0 && (e = 0));
+  const o = (t - e) / Math.max(1, n), r = Math.pow(10, Math.floor(Math.log10(o))), a = [1, 2, 2.5, 5, 10].map((l) => l * r).find((l) => l >= o - 1e-12) ?? 10 * r, s = Math.floor(e / a + 1e-9) * a, i = Math.ceil(t / a - 1e-9) * a;
+  return { min: s, max: i === s ? s + a : i, step: a };
+}
+function A0e(e) {
+  const t = Math.abs(e), n = (o) => String(Math.round(o * 100) / 100);
+  return t >= 1e9 ? n(e / 1e9) + "B" : t >= 1e6 ? n(e / 1e6) + "M" : t >= 1e4 ? n(e / 1e3) + "k" : n(e);
+}
+const P0e = { text: "#1f2937", muted: "#4b5563", grid: "#e5e7eb", axis: "#9ca3af" }, mI = ["next", "previous", "first", "last", "end"], KQ = /^(https?:|mailto:|tel:)/i, QQ = (e) => `#slide:${e}`, ZQ = (e) => `#${e}`;
 function yI(e) {
   const t = typeof e == "string" ? e.trim() : "";
   if (!t) return { kind: "none" };
@@ -35874,7 +35885,7 @@ const hi = () => {
   const n = m.states.find((o) => o.id === e);
   if (n)
     if (S("activeStateId", e), t) {
-      const { MorphAnimator: o } = await import("./morph-animator-DFKeTi8n.js");
+      const { MorphAnimator: o } = await import("./morph-animator-BkGKfBPS.js");
       o.morphTo(n);
     } else
       Re(() => {
@@ -36805,7 +36816,7 @@ const i4 = () => Rl, l4 = (e) => {
   if (o.length >= m.layers.length)
     return O("Cannot delete every layer.", "error"), !1;
   if (t === void 0 && (s.length > 0 || a.length > 0)) {
-    const { askChoice: i } = await import("./choice-dialog-state-1ZzMDW2N.js"), { t: l } = await Promise.resolve().then(() => jN), c = await i(
+    const { askChoice: i } = await import("./choice-dialog-state-DTyylk2n.js"), { t: l } = await Promise.resolve().then(() => jN), c = await i(
       l("layerDelete.title", { name: n.name }),
       a.length > 0 ? l("layerDelete.bodyGroup", { layers: a.length, objects: s.length }) : l("layerDelete.bodyLayer", { objects: s.length }),
       [
@@ -40504,7 +40515,7 @@ function qJ(e = {}) {
   }
   return { moved: C.length, containers: r.length, direction: t };
 }
-const [W3, fg] = he(!1), [T0e, KJ] = he("fogra39"), [A0e, w2] = he("");
+const [W3, fg] = he(!1), [E0e, KJ] = he("fogra39"), [I0e, w2] = he("");
 let u0 = null;
 async function QJ(e, t) {
   if (w2(""), t && KJ(t), !e)
@@ -40521,7 +40532,7 @@ async function ZJ() {
 function JJ(e) {
   u0 = e, W3();
 }
-const [P0e, eee] = he(null), tee = (e) => {
+const [L0e, eee] = he(null), tee = (e) => {
   const t = m.elements.find((n) => n.id === e);
   !t || t.type !== "chart" || (B(), eee(e));
 };
@@ -40660,7 +40671,7 @@ function hee(e) {
   }
   return t;
 }
-const [E0e, uee] = he(null), [I0e, fee] = he(!1), pee = (e) => {
+const [R0e, uee] = he(null), [$0e, fee] = he(!1), pee = (e) => {
   m.elements.some((t) => t.id === e) && uee(e);
 }, gee = () => fee(!0);
 function mee() {
@@ -40933,7 +40944,7 @@ function A2(e, t) {
   const n = j3();
   return Pee(e - n.x, t - n.y, Iee());
 }
-const [L0e, Lee] = he(!1), [R0e, Ree] = he(null), $ee = () => {
+const [O0e, Lee] = he(!1), [B0e, Ree] = he(null), $ee = () => {
   const e = j3(), t = Eee(), n = A2(e.x, e.y), o = A2(e.x + t.w, e.y + t.h);
   return {
     kind: "page",
@@ -55579,7 +55590,7 @@ function T1() {
 function Rhe(e) {
   M1 = e, e && T1(), os && (os.gain.value = e ? 0 : 0.28);
 }
-const $he = () => M1, $0e = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const $he = () => M1, F0e = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   SFX: Ehe,
   isMuted: $he,
@@ -56099,11 +56110,11 @@ const uue = { mp4: "video/mp4", m4v: "video/mp4", mov: "video/mp4", webm: "video
   weba: "audio/webm",
   webm: "audio/webm"
 };
-function O0e(e, t) {
+function D0e(e, t) {
   const n = e.toLowerCase();
   return (t ? fue[n] : uue[n]) ?? null;
 }
-function B0e(e) {
+function N0e(e) {
   const t = e.toLowerCase().split(";")[0];
   return {
     "video/mp4": "mp4",
@@ -56122,7 +56133,7 @@ function B0e(e) {
     "audio/webm": "weba"
   }[t] ?? null;
 }
-function F0e(e) {
+function _0e(e) {
   return e ? /^data:audio\//i.test(e) ? !0 : !/^data:/i.test(e) && /\.(mp3|m4a|aac|wav|oga|opus|flac|weba)(\?.*)?$/i.test(e) : !1;
 }
 const pue = (e = "truchet") => ({
@@ -56169,7 +56180,7 @@ function bue(e) {
 function wue(e) {
   return K8(N0, "readonly", (t) => t.get(e));
 }
-const [D0e, _0] = he(null), xue = () => _0({ action: "toggle" }), [N0e, NS] = he(!1), _S = (e) => new Promise((t) => setTimeout(t, e));
+const [G0e, _0] = he(null), xue = () => _0({ action: "toggle" }), [U0e, NS] = he(!1), _S = (e) => new Promise((t) => setTimeout(t, e));
 async function vue(e = "webm", t) {
   const n = m.activeTimelapseId;
   if (!n) return !1;
@@ -58773,6 +58784,9 @@ const Gue = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty(
   isSupportOpen: Due,
   openSupport: Nue
 }, Symbol.toStringTag, { value: "Module" })), Uue = [
+  { version: "0.8.306", date: "2026-11-05", items: [
+    "Waterfall, funnel, histogram, Pareto, box & whisker, treemap and sunburst charts in PowerPoint files now open sharp — drawn from their data in your deck’s colours, instead of as a blurry picture. Their values are in the chart’s alt text."
+  ] },
   { version: "0.8.305", date: "2026-11-05", items: [
     "New chart types: Scatter, Bubble, Radar, Filled radar and Stock. Pick one under Type in the Chart data window — scatter and bubble charts take their X values from the first column, and a bubble chart has a Size column for each series.",
     "Combination charts: show sales as columns and the margin as a line on its own scale on the right. Each series has a type and a Right axis box under its name. Plus 100% stacked charts.",
@@ -59878,7 +59892,7 @@ async function zue() {
     window.location.reload();
   }
 }
-const tB = "0.8.305", nB = {
+const tB = "0.8.306", nB = {
   version: tB
 };
 var Wue = /* @__PURE__ */ Ge(`<div class=whatsnew-overlay><div class=whatsnew-modal role=dialog aria-modal=true aria-label="What's new"><div class=whatsnew-head><div class=whatsnew-title><span>What's new</span><span class=whatsnew-ver>v</span></div><button class=whatsnew-close aria-label=Close></button></div><div class=whatsnew-body></div><div class=whatsnew-foot><span class=whatsnew-foot-note>On the latest build? Reload to be sure.</span><button class=whatsnew-refresh title="Clear cache and reload the latest version"> Reload latest`), Hue = /* @__PURE__ */ Ge("<div class=whatsnew-entry><div class=whatsnew-entry-head><span class=whatsnew-badge>v</span><span class=whatsnew-date></span></div><ul class=whatsnew-list>"), Yue = /* @__PURE__ */ Ge("<li>");
@@ -67129,7 +67143,7 @@ const fe = {
   },
   /** Execute a CRUD operation on a DS element with animation */
   async dsOperation(e, t, n) {
-    const { executeDsOperation: o } = await import("./ds-operations-wyvzI84g.js");
+    const { executeDsOperation: o } = await import("./ds-operations-CYmNO1iK.js");
     return o(e, t, n || {});
   },
   // --- Actions & Helpers ---
@@ -67454,14 +67468,17 @@ const fe = {
    * links to local files keep their poster picture, with a warning. Charts (column, bar, line,
    * area, pie, doughnut, scatter, bubble, radar, stock) become data charts with their data;
    * date categories show as dates; 100% stacking and combination charts (column/line/area
-   * series, secondary axis) are kept. Charts PowerPoint draws but Yappy can't, objects with no
+   * series, secondary axis) are kept. Office 2016 charts (waterfall, funnel, histogram, Pareto,
+   * box & whisker, treemap, sunburst) become a group of shapes drawn from their cached values,
+   * the data in the group's alt text; region maps and charts without cached values keep their
+   * fallback picture. Charts PowerPoint draws but Yappy can't, objects with no
    * preview and TIFFs the decoder can't read (JPEG-in-TIFF) become labelled frames or
    * placeholders — listed in `warnings`.
    *
    *   const { stats, warnings } = await Yappy.importPPTX(file);   // a File, Blob or ArrayBuffer
    */
   async importPPTX(e, t) {
-    const { importPptx: n } = await import("./import-4Wkq8l-R.js");
+    const { importPptx: n } = await import("./import-CIefVCQl.js");
     return n(e, t);
   },
   /**
@@ -67626,7 +67643,7 @@ const fe = {
   async reconstructTurntableAI(e, t) {
     const n = t ?? m.selection[0];
     if (!n) return { success: !1, error: "No element selected" };
-    const o = await import("./turntable-ai-BSRKXSb3.js"), r = { yaw: e?.yaw, pitch: e?.pitch };
+    const o = await import("./turntable-ai-B69WfLV-.js"), r = { yaw: e?.yaw, pitch: e?.pitch };
     return e?.mode === "image" ? o.reconstructTurntableAIImage(n, r) : o.reconstructTurntableAI(n, r);
   },
   /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
@@ -69081,7 +69098,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   },
   /** Start (or replay) the first-visit onboarding tour. */
   startTour() {
-    import("./onboarding-tour-CAyWzTPA.js").then((e) => e.startTour());
+    import("./onboarding-tour-DiRn8CrR.js").then((e) => e.startTour());
   },
   /** Open the "What's new" popup (recent user-facing changes). */
   showWhatsNew() {
@@ -69440,11 +69457,11 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   /** Start the game (uses the stored script unless one is passed). The document
    *  is snapshotted and fully restored on stop. Returns false on script errors. */
   async startGame(e) {
-    return (await import("./game-runtime-Cm568j9R.js")).startGame(e);
+    return (await import("./game-runtime-C1R3Kv33.js")).startGame(e);
   },
   /** Stop a running game and restore the document. */
   async stopGame() {
-    (await import("./game-runtime-Cm568j9R.js")).stopGame();
+    (await import("./game-runtime-C1R3Kv33.js")).stopGame();
   },
   /** True while a game is running. */
   isGameRunning() {
@@ -69514,7 +69531,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   },
   /** Compile the blocks and play the resulting game (Play button). */
   async playBehaviorGame() {
-    const [e, t] = await Promise.all([Promise.resolve().then(() => K2), import("./game-runtime-Cm568j9R.js")]), n = e.effectiveGameScript(m.elements, m.sceneBehaviors ?? [], m.gameScript, m.gameVars ?? [], m.blueprints, m.gameAuthoringMode);
+    const [e, t] = await Promise.all([Promise.resolve().then(() => K2), import("./game-runtime-C1R3Kv33.js")]), n = e.effectiveGameScript(m.elements, m.sceneBehaviors ?? [], m.gameScript, m.gameVars ?? [], m.blueprints, m.gameAuthoringMode);
     return n ? t.startGame(n) : !1;
   },
   // Version history (local IndexedDB snapshots)
@@ -69543,31 +69560,31 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   // "My drawings" gallery — local multi-document library (IndexedDB, offline-first).
   /** Save the LIVE editor into the gallery (updates the open entry, or creates one). */
   async saveToGallery(e) {
-    return (await import("./drawings-store-qj1bNZ7s.js")).saveCurrentToGallery(e ? { name: e } : {});
+    return (await import("./drawings-store-BxLGjVPR.js")).saveCurrentToGallery(e ? { name: e } : {});
   },
   /** Save the live editor as a NEW gallery drawing (never overwrites the open one). */
   async saveToGalleryAsNew(e) {
-    return (await import("./drawings-store-qj1bNZ7s.js")).saveCurrentToGallery({ name: e, forceNew: !0 });
+    return (await import("./drawings-store-BxLGjVPR.js")).saveCurrentToGallery({ name: e, forceNew: !0 });
   },
   /** List saved-drawing metadata (newest first, no bodies loaded). */
   async listDrawings() {
-    return (await import("./drawings-store-qj1bNZ7s.js")).listDrawings();
+    return (await import("./drawings-store-BxLGjVPR.js")).listDrawings();
   },
   /** Open a saved drawing into the editor by id. */
   async openDrawing(e) {
-    return (await import("./drawings-store-qj1bNZ7s.js")).openDrawing(e);
+    return (await import("./drawings-store-BxLGjVPR.js")).openDrawing(e);
   },
   /** Rename a saved drawing. */
   async renameDrawing(e, t) {
-    return (await import("./drawings-store-qj1bNZ7s.js")).renameDrawing(e, t);
+    return (await import("./drawings-store-BxLGjVPR.js")).renameDrawing(e, t);
   },
   /** Duplicate a saved drawing; returns the new entry's metadata. */
   async duplicateDrawing(e) {
-    return (await import("./drawings-store-qj1bNZ7s.js")).duplicateDrawing(e);
+    return (await import("./drawings-store-BxLGjVPR.js")).duplicateDrawing(e);
   },
   /** Delete a saved drawing by id. */
   async deleteDrawing(e) {
-    return (await import("./drawings-store-qj1bNZ7s.js")).deleteDrawing(e);
+    return (await import("./drawings-store-BxLGjVPR.js")).deleteDrawing(e);
   },
   /** Ask the browser to make local storage durable (dodges best-effort/ITP eviction). */
   async requestPersistentStorage() {
@@ -69652,7 +69669,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * skipped when 'photo' is out of scope or `includePhotos:false`.
    */
   searchElements(e, t) {
-    return import("./search-WvHgr_vm.js").then((n) => n.searchElements(e, t));
+    return import("./search-Cn4skvdQ.js").then((n) => n.searchElements(e, t));
   },
   /**
    * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to drop it
@@ -70799,45 +70816,45 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
   },
   /** Export the current scene as a self-contained HTML file (animated figures play in it). */
   async exportHtml(e = "animation") {
-    return (await import("./export-game-Deqn3LRH.js")).exportSceneAsHtml(e);
+    return (await import("./export-game-B9wTL0jp.js")).exportSceneAsHtml(e);
   },
   // AI assists (Canva-style; keys from AI Settings)
   /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */
   async magicWrite(e = "rewrite", t, n) {
-    return (await import("./canva-ai-BtgSQN-Y.js")).magicWrite(n ?? [...m.selection], e, t);
+    return (await import("./canva-ai-DmepCoyV.js")).magicWrite(n ?? [...m.selection], e, t);
   },
   /** Generate an image from a prompt (OpenAI) and insert it on the active page. Returns the element id. */
   async generateImage(e, t) {
-    return (await import("./canva-ai-BtgSQN-Y.js")).generateImage(e, t);
+    return (await import("./canva-ai-DmepCoyV.js")).generateImage(e, t);
   },
   /** Remove the background of the selected (or given) image element via OpenAI image editing.
    *  Original pixels are preserved by default (AI output used only as an alpha mask);
    *  pass {preserveOriginal: false} to take the AI's regenerated image as-is. */
   async removeBackground(e, t) {
-    return (await import("./canva-ai-BtgSQN-Y.js")).removeBackground(e, t);
+    return (await import("./canva-ai-DmepCoyV.js")).removeBackground(e, t);
   },
   /** Generate a full design document from a text brief (any LLM provider):
    *  headline, subhead, bullets, CTA and palette laid out proportionally.
    *  Pass a preset id or {width, height} (default 1080×1080). */
   async generateDesign(e, t) {
-    const n = await import("./design-generator-33I5E0Cf.js"), o = typeof t == "string" ? rg(t) : t;
+    const n = await import("./design-generator-fvL8wBZP.js"), o = typeof t == "string" ? rg(t) : t;
     return n.generateDesign(e, o ? { width: o.width, height: o.height } : void 0);
   },
   /** Magic Edit: repaint the selected (or given) image per an instruction, e.g.
    *  "remove the person on the left" (OpenAI image edits). */
   async magicEditImage(e, t) {
-    return (await import("./canva-ai-BtgSQN-Y.js")).magicEditImage(t, e);
+    return (await import("./canva-ai-DmepCoyV.js")).magicEditImage(t, e);
   },
   /** Replace Background: swap the background behind the subject of the selected
    *  (or given) image for a described scene, keeping the foreground untouched
    *  (OpenAI image edits). */
   async replaceBackground(e, t) {
-    return (await import("./canva-ai-BtgSQN-Y.js")).replaceBackground(t, e);
+    return (await import("./canva-ai-DmepCoyV.js")).replaceBackground(t, e);
   },
   /** Magic Expand: outpaint the selected (or given) image — margins are fractions
    *  of the source size (default 0.25 each side). The element grows to match. */
   async expandImage(e, t) {
-    return (await import("./canva-ai-BtgSQN-Y.js")).expandImage(t, e);
+    return (await import("./canva-ai-DmepCoyV.js")).expandImage(t, e);
   },
   // Font pairings
   /** List curated heading/body font pairings. */
@@ -71810,7 +71827,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param options.style3D - Render in the 3D concept-diagram style (pastel palette, solidBlock/perspectiveBlock containers, isometric cubes). Ignored when rocketMode is true.
    */
   async generateDiagram(e, t) {
-    const { generateDiagram: n } = await import("./drawing-engine-DOLf2QVN.js");
+    const { generateDiagram: n } = await import("./drawing-engine-HgiANRiZ.js");
     return n(e, t);
   },
   /**
@@ -71822,7 +71839,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param options.style3D - Render in the 3D concept-diagram style.
    */
   async generateDiagramFromSketch(e, t) {
-    const { generateDiagramFromSketch: n } = await import("./drawing-engine-DOLf2QVN.js");
+    const { generateDiagramFromSketch: n } = await import("./drawing-engine-HgiANRiZ.js");
     return n(e, t);
   },
   /**
@@ -71839,7 +71856,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param options.mode - 'quick' (single LLM call, fast) or 'deep' (2-stage agentic, richer content)
    */
   async generatePresentation(e, t) {
-    const { generatePresentation: n } = await import("./slide-generator-6SLUNg9c.js");
+    const { generatePresentation: n } = await import("./slide-generator-B6J5PCe_.js");
     return n(e, { ...t, clearCanvas: !0 });
   },
   /**
@@ -71850,7 +71867,7 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
    * @param palette - Optional color palette name
    */
   async importMarkdownSlides(e, t) {
-    const { parseMarkdownToSlides: n } = await import("./markdown-to-slides-BrBnt5A0.js"), { loadDocument: o } = await Promise.resolve().then(() => zJ), r = n(e, t);
+    const { parseMarkdownToSlides: n } = await import("./markdown-to-slides-e6EmYKQP.js"), { loadDocument: o } = await Promise.resolve().then(() => zJ), r = n(e, t);
     return o(r), { success: !0, slideCount: r.slides?.length || 0 };
   },
   // ─── Deploy to Rocket ──────────────────────────────────
@@ -71875,12 +71892,12 @@ ${d.color.toUpperCase()}  ·  R${g} G${y} B${b}`, v = this.createText(u, f + s +
       throw new Error(`Import failed: ${c.error}`);
     return { success: !0, appName: s.appName };
   }
-}, _0e = fe, G0e = tB;
+}, z0e = fe, W0e = tB;
 function Jme(e = {}) {
   const { onlySelected: t = !1, ...n } = e;
   return oP(t, { elementIds: !0, ...n }) ?? "";
 }
-function U0e(e, t = {}) {
+function H0e(e, t = {}) {
   const n = typeof e == "string" ? document.querySelector(e) : e;
   if (!n) throw new Error(`Yappy.mount: no element matches ${String(e)}`);
   const o = Jme(t);
@@ -71889,7 +71906,7 @@ function U0e(e, t = {}) {
   return n.appendChild(a), a;
 }
 const fM = pM;
-async function z0e() {
+async function Y0e() {
   if (!document.querySelector(`link[href="${fM}"]`)) {
     const e = document.createElement("link");
     e.rel = "stylesheet", e.href = fM;
@@ -71900,7 +71917,7 @@ async function z0e() {
   }
   await fe.fontsReady();
 }
-function W0e() {
+function X0e() {
   fe.loadDocument({ elements: [] });
 }
 export {
@@ -71927,13 +71944,13 @@ export {
   _K as T,
   Il as U,
   yI as V,
-  B0e as W,
+  N0e as W,
   Ly as X,
   AA as Y,
   hu as Z,
   mD as _,
   Q as a,
-  lue as a$,
+  gc as a$,
   Ws as a0,
   f0e as a1,
   g0e as a2,
@@ -71942,17 +71959,17 @@ export {
   rk as a5,
   iD as a6,
   Kt as a7,
-  F0e as a8,
+  _0e as a8,
   ou as a9,
   Ge as aA,
   x0e as aB,
   M0e as aC,
   C0e as aD,
   k0e as aE,
-  Zs as aF,
-  S0e as aG,
-  v0e as aH,
-  t2 as aI,
+  t2 as aF,
+  Zs as aG,
+  S0e as aH,
+  v0e as aI,
   St as aJ,
   pM as aK,
   ka as aL,
@@ -71968,9 +71985,9 @@ export {
   JS as aV,
   Wg as aW,
   GQ as aX,
-  gc as aY,
-  pf as aZ,
-  O0e as a_,
+  P0e as aY,
+  A0e as aZ,
+  T0e as a_,
   Yl as aa,
   FH as ab,
   Bn as ac,
@@ -71998,25 +72015,28 @@ export {
   Yh as ay,
   Tt as az,
   O as b,
-  due as b0,
-  ZQ as b1,
-  QQ as b2,
-  ia as b3,
-  xi as b4,
-  tC as b5,
-  nC as b6,
-  LN as b7,
-  ON as b8,
-  DN as b9,
-  ly as ba,
-  _0e as bb,
-  W0e as bc,
-  z0e as bd,
-  U0e as be,
-  Jme as bf,
-  G0e as bg,
-  b0e as bh,
-  $0e as bi,
+  pf as b0,
+  D0e as b1,
+  lue as b2,
+  due as b3,
+  ZQ as b4,
+  QQ as b5,
+  ia as b6,
+  xi as b7,
+  tC as b8,
+  nC as b9,
+  LN as ba,
+  ON as bb,
+  DN as bc,
+  ly as bd,
+  z0e as be,
+  X0e as bf,
+  Y0e as bg,
+  H0e as bh,
+  Jme as bi,
+  W0e as bj,
+  b0e as bk,
+  F0e as bl,
   td as c,
   Re as d,
   cK as e,

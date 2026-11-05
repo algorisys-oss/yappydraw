@@ -25,6 +25,8 @@ import { effectOf, sideOf } from './anim-map';
 import { builtinTableStyleXml } from './builtin-table-styles';
 import type { ChartSpec, ChartSeries, ChartKind } from '../chart/chart-layout';
 import { canCombine } from '../chart/chart-layout';
+import { layoutChartex, chartexSummary, type ChartexSpec, type ChartexKind } from '../chart/chartex-layout';
+import { chartOpsGroup } from './chartex-items';
 import { EMU_PER_PX, EMU_PER_PT } from './ooxml';
 import { geometryPathsPx, textRectPx, type GeomDef } from './guides';
 
@@ -98,9 +100,18 @@ function resolveMc(el: El): El[] {
     for (const ch of kids(el, 'Choice')) {
         const req = (attr(ch, 'Requires') || '').split(/\s+/).filter(Boolean);
         if (req.every(r => UNDERSTOOD.has(r))) return kids(ch);
+        // An Office 2016 chart (cx1, cx2…): try drawing it from its data, keeping the Fallback's
+        // picture for when that can't be done (a region map, a part that doesn't parse).
+        if (req.length && req.every(r => UNDERSTOOD.has(r) || /^cx\d*$/.test(r))) {
+            const out = kids(ch);
+            for (const k of out) MC_FALLBACK.set(k, kids(fb));
+            return out;
+        }
     }
     return kids(fb);
 }
+/** A Choice's elements → its Fallback's (see resolveMc). */
+const MC_FALLBACK = new WeakMap<El, El[]>();
 const elementKids = (el: El | null | undefined): El[] => kids(el).flatMap(resolveMc);
 
 // ── Package ─────────────────────────────────────────────────────────────────────────────────
@@ -1297,6 +1308,23 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
         const chart = chartOf(gd, level, sc);
         if (chart) return { kind: 'chart', id, name, ...frame(box0), chart };
     }
+    if (/chartex$/i.test(uri)) {
+        // An Office 2016 chart: drawn from its data as a group of shapes, the data in its alt text;
+        // else the picture PowerPoint saved in the Fallback.
+        const spec = chartexOf(gd, level, sc);
+        const b = frame(box0);
+        let next = 3_000_000 + id * 2000;
+        const drawn = spec ? chartOpsGroup(layoutChartex(spec, b.x, b.y, b.w, b.h), id, name, { x: b.x, y: b.y, w: b.w, h: b.h }, () => next++) : null;
+        if (drawn && spec) {
+            drawn.descr = chartexSummary(spec);
+            return drawn;
+        }
+        for (const fb of MC_FALLBACK.get(el) ?? []) {
+            const got = readOne(fb, level, sc, frame, depth, false);
+            const one = Array.isArray(got) ? got[0] : got;
+            if (one) return one;
+        }
+    }
     const preview = previewOf(gd, r, sc);
     if (preview) return preview(id, name, frame(box0));
     const what = /chart/.test(uri) ? 'Chart' : /diagram/.test(uri) ? 'SmartArt diagram' : 'Embedded object';
@@ -1563,6 +1591,98 @@ function chartOf(gd: El | null, level: Level, sc: SlideCtx): ChartSpec | null {
         ...(lines && { lines: true }),
         ...(smooth && { smooth: true }),
     };
+}
+
+/** Office 2016 chart layouts we draw (`cx:series layoutId`); `regionMap` keeps PowerPoint's picture. */
+const CHARTEX_KINDS: Record<string, ChartexKind> = {
+    waterfall: 'waterfall', funnel: 'funnel', clusteredColumn: 'histogram', boxWhisker: 'boxWhisker', treemap: 'treemap', sunburst: 'sunburst',
+};
+
+/**
+ * An Office 2016 chart (`cx:chartSpace` in a `chartEx` part): its layout, the cached data each
+ * series names (`cx:chartData` levels of points: categories, outer category levels, values) and
+ * the layout's options (waterfall totals, histogram binning, quartile method). A histogram with a
+ * `paretoLine` series is a Pareto chart. null for layouts we don't draw and unreadable parts.
+ * Follows DeckCraft `crates/pptx/src/read/chartex.rs` (MIT/Apache).
+ */
+function chartexOf(gd: El | null, level: Level, sc: SlideCtx): ChartexSpec | null {
+    const ref = findDeep(gd, 'chart', 2);
+    const rel = ref ? sc.pkg.rels(level.part).get(attr(ref, 'r:id') || '') : undefined;
+    const root = rel && !rel.external ? sc.pkg.xml(rel.target) : null;
+    if (!root || root.localName !== 'chartSpace') return null;
+    const MAX = 100_000;
+    const lvlPoints = (lvl: El | null): string[] => {
+        if (!lvl) return [];
+        const pts = kids(lvl, 'pt').slice(0, MAX);
+        const n = Math.min(MAX, Math.max(num(lvl, 'ptCount'), ...pts.map(p => num(p, 'idx') + 1), 0));
+        const out = new Array<string>(n).fill('');
+        for (const p of pts) { const i = num(p, 'idx'); if (i >= 0 && i < n) out[i] = p.textContent ?? ''; }
+        return out;
+    };
+    type Data = { categories: string[]; levels: string[][]; values: (number | null)[] };
+    const datas = new Map<string, Data>();
+    for (const d of kids(kid(root, 'chartData'), 'data').slice(0, 64)) {
+        const out: Data = { categories: [], levels: [], values: [] };
+        for (const dim of kids(d)) {
+            const lvls = kids(dim, 'lvl');
+            const type = attr(dim, 'type') || '';
+            if (dim.localName === 'strDim' || (dim.localName === 'numDim' && type === 'cat')) {
+                out.categories = lvlPoints(lvls[0] ?? null);
+                out.levels = lvls.slice(1, 8).map(lvlPoints);
+            } else if (dim.localName === 'numDim' && (type === 'val' || type === 'size' || !out.values.length)) {
+                out.values = lvlPoints(lvls[0] ?? null).map(v => (v.trim() && Number.isFinite(Number(v)) ? Number(v) : null));
+            }
+        }
+        datas.set(attr(d, 'id') || '0', out);
+    }
+    const chart = kid(root, 'chart');
+    const region = path(chart, 'plotArea', 'plotAreaRegion');
+    if (!region) return null;
+    let kind: ChartexKind | null = null;
+    let pareto = false;
+    const spec: ChartexSpec = { kind: 'funnel', categories: [], series: [] };
+    for (const s of kids(region, 'series').slice(0, 256)) {
+        const layout = attr(s, 'layoutId') || '';
+        if (layout === 'paretoLine') { pareto = true; continue; }
+        const k = CHARTEX_KINDS[layout];
+        if (!k) return null;
+        if (bool(s, 'hidden')) continue;
+        kind ??= k;
+        const d = datas.get(attr(kid(s, 'dataId'), 'val') || '0');
+        if (!d) continue;
+        const name = findDeep(kid(s, 'tx'), 'v', 3)?.textContent ?? '';
+        if (!spec.categories.length && (d.categories.length || d.levels.length)) {
+            spec.categories = d.categories;
+            spec.levels = d.levels;
+        }
+        spec.series.push({ name, values: d.values, ...(k === 'boxWhisker' && { categories: d.categories }) });
+        const lp = kid(s, 'layoutPr');
+        const subtotals = kids(kid(lp, 'subtotals'), 'idx').map(i => num(i, 'val')).filter(i => i >= 0);
+        if (subtotals.length) spec.subtotals = subtotals;
+        const bin = kid(lp, 'binning');
+        if (bin) {
+            const count = num(kid(bin, 'binCount'), 'val'), size = Number(attr(kid(bin, 'binSize'), 'val'));
+            spec.binning = { ...(count > 0 && { count }), ...(size > 0 && Number.isFinite(size) && { size }) };
+        }
+        if (attr(kid(lp, 'statistics'), 'quartileMethod') === 'inclusive') spec.inclusive = true;
+        const labels = kid(s, 'dataLabels');
+        if (labels && !bool(labels, 'hidden') && attr(kid(labels, 'visibility'), 'value') !== '0') spec.dataLabels = true;
+    }
+    // No cached values (Excel keeps a chart's data in the sheet): nothing to draw from.
+    if (!kind || !spec.series.some(x => x.values.some(v => v !== null))) return null;
+    spec.kind = kind === 'histogram' && pareto ? 'pareto' : kind;
+    // A title element without text is PowerPoint's automatic "Chart Title".
+    const title = kid(chart, 'title');
+    // Its text is cached once (`cx:txData/cx:v`) and again as rich text (`a:t`): take one of them.
+    if (title) {
+        const cached = findAll(title, 'v', 8).map(t => t.textContent ?? '').join('').trim();
+        spec.title = cached || findAll(title, 't', 8).map(t => t.textContent ?? '').join('').trim() || 'Chart Title';
+    }
+    const legend = kid(chart, 'legend');
+    spec.legend = !legend ? 'none' : attr(legend, 'pos') === 'b' ? 'bottom' : 'top';
+    const accents = ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'].map(a => sc.ctx.theme.colors[a]).filter((c): c is string => !!c);
+    if (accents.length === 6) spec.colors = accents;
+    return spec;
 }
 
 /**

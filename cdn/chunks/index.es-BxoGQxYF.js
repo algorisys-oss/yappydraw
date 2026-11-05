@@ -1,5 +1,5 @@
 import { c as Da, g as il } from "./_commonjsHelpers-DaMA6jEr.js";
-import { _ as Va } from "./jspdf.es.min-DGn0wGDv.js";
+import { _ as Va } from "./jspdf.es.min-Ljo-BPNe.js";
 var fn = {}, cn = {}, cr, vn;
 function Q() {
   if (vn) return cr;

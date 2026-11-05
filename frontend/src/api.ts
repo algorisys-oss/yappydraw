@@ -2544,7 +2544,10 @@ export const YappyAPI = {
      * links to local files keep their poster picture, with a warning. Charts (column, bar, line,
      * area, pie, doughnut, scatter, bubble, radar, stock) become data charts with their data;
      * date categories show as dates; 100% stacking and combination charts (column/line/area
-     * series, secondary axis) are kept. Charts PowerPoint draws but Yappy can't, objects with no
+     * series, secondary axis) are kept. Office 2016 charts (waterfall, funnel, histogram, Pareto,
+     * box & whisker, treemap, sunburst) become a group of shapes drawn from their cached values,
+     * the data in the group's alt text; region maps and charts without cached values keep their
+     * fallback picture. Charts PowerPoint draws but Yappy can't, objects with no
      * preview and TIFFs the decoder can't read (JPEG-in-TIFF) become labelled frames or
      * placeholders — listed in `warnings`.
      *
