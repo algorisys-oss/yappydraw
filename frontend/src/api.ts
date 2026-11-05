@@ -2541,7 +2541,10 @@ export const YappyAPI = {
      * with a warning naming the object. Video/audio clips become video elements (embedded files
      * as data URLs, links kept; Start Automatically, Loop until Stopped and mute carried over);
      * formats browsers can't play (WMV, AVI…), clips over 25 MB or past 50 MB per deck, and
-     * links to local files keep their poster picture, with a warning. Charts PowerPoint draws but Yappy can't, objects with no
+     * links to local files keep their poster picture, with a warning. Charts (column, bar, line,
+     * area, pie, doughnut, scatter, bubble, radar, stock) become data charts with their data;
+     * date categories show as dates; 100% stacking and combination charts (column/line/area
+     * series, secondary axis) are kept. Charts PowerPoint draws but Yappy can't, objects with no
      * preview and TIFFs the decoder can't read (JPEG-in-TIFF) become labelled frames or
      * placeholders — listed in `warnings`.
      *
@@ -3945,11 +3948,18 @@ export const YappyAPI = {
     /** Loop the show until Esc: after the last slide it starts again from the first. Saved with the document. */
     setSlideShowLoop(loop: boolean) { setSlideShowLoop(loop); },
     /**
-     * Insert a data chart (column, bar, line, area, pie or doughnut). `spec` is merged over a
-     * sample: `{ kind, categories, series: [{ name, values, color? }], title?, stacked?,
-     * legend?: 'bottom'|'right'|'top'|'none', dataLabels?, gridlines?, yMin?, yMax? }`. Placed on the
-     * current slide (or the middle of the view) unless `box` says where. Returns the element id.
-     * Double-click the chart, or `openChartData(id)`, to edit its data in a grid.
+     * Insert a data chart: column, bar, line, area, pie, doughnut, scatter, bubble, radar,
+     * filledRadar or stock. `spec` is merged over that kind's sample: `{ kind, categories,
+     * series: [{ name, values, sizes?, color?, kind?, secondary? }], title?, stacked?, percent?,
+     * legend?: 'bottom'|'right'|'top'|'none', dataLabels?, gridlines?, yMin?, yMax?, lines?, smooth? }`.
+     * `percent` (with `stacked`) is 100% stacking. On a column, line or area chart a series' `kind`
+     * ('column'|'line'|'area') draws it as that type, and `secondary` measures it on a right-hand
+     * axis: a combination chart. Scatter/bubble read `categories` as
+     * X values (numbered 1, 2, 3… when not numbers); `sizes` are bubble sizes (area); `lines` /
+     * `smooth` join a scatter's points. Stock series are Open, High, Low, Close (or High, Low,
+     * Close); stacking applies to column, bar, line and area only. Placed on the current slide (or
+     * the middle of the view) unless `box` says where. Returns the element id. Double-click the
+     * chart, or `openChartData(id)`, to edit its data in a grid.
      *
      *   Y.insertChart({ kind: 'line', categories: ['Jan', 'Feb', 'Mar'],
      *                   series: [{ name: 'Visitors', values: [120, 180, 240] }] });

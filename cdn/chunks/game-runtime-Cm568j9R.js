@@ -1,4 +1,4 @@
-import { s as o, b as m, d as M, z as W, h as z, g as a, i as U, j as B } from "./index-CcU7GLMU.js";
+import { s as o, b as m, d as M, z as W, h as z, g as a, i as U, j as B } from "./index-DRPGudNX.js";
 const h = /* @__PURE__ */ new Set(), x = [], G = {
   ArrowLeft: "left",
   a: "left",
@@ -240,17 +240,17 @@ function Y() {
       t && B(t.id);
     },
     playAnim: (n, t) => {
-      n?.alive && import("./index-CcU7GLMU.js").then((r) => r.bc).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
+      n?.alive && import("./index-DRPGudNX.js").then((r) => r.bh).then((r) => r.sequenceAnimator.playAnimation(n.id, { id: `bhv-${Date.now()}`, type: "preset", name: t, trigger: "programmatic" }, () => {
       }));
     },
     goToPage: (n) => {
       n >= 0 && n < o.slides.length && U(n);
     },
     sound: (n) => {
-      import("./index-CcU7GLMU.js").then((t) => t.bd).then((t) => t.playSfx(n));
+      import("./index-DRPGudNX.js").then((t) => t.bi).then((t) => t.playSfx(n));
     },
     music: (n) => {
-      import("./index-CcU7GLMU.js").then((t) => t.bd).then((t) => n ? t.startMusic() : t.stopMusic());
+      import("./index-DRPGudNX.js").then((t) => t.bi).then((t) => n ? t.startMusic() : t.stopMusic());
     },
     end: (n) => {
       if (P(!0), n) {
@@ -316,7 +316,7 @@ ${i}`);
   return y = requestAnimationFrame(n), !0;
 }
 function p() {
-  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-CcU7GLMU.js").then((e) => e.bd).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
+  if (y !== null && (cancelAnimationFrame(y), y = null), window.removeEventListener("keydown", K, !0), window.removeEventListener("keyup", O, !0), import("./index-DRPGudNX.js").then((e) => e.bi).then((e) => e.stopMusic()), h.clear(), w = [], x.length = 0, v.length = 0, g) {
     const e = g;
     g = null, M(() => {
       a("elements", JSON.parse(e.elements)), a("selection", e.selection), a("activeSlideIndex", e.activeSlideIndex), a("appMode", e.appMode), a("gameActive", !1);

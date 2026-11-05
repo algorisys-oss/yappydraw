@@ -1673,7 +1673,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 6505 | Theme:4 PaintChannel:20 ShowAction:42 SvgExportOptions:48 MandalaRing:55 DoodleKind:59 DoodleLayer:59 DoodleParams:59 DoodleRole:59 DoodleSpec:59 FrameRegion:83 FrameRegionInfo:83 as:83 HarmonyType:95 PlayOptions:100 PlaySpec:100 PlayTargets:100 TexPart:102 AxesOptions:109 AxesSpec:109 PlotFn:109 VectorFieldOptions:109 VectorFn:109 DrawOp:111 TinyflyShape:115 DimensionMeasure:123 ElementOptions:204 normalizeElementType:465 plotRuns:496 addTinyflyClip:512 createTinyflyShape:535 DoodleOptions:562 normalizeDoodleSubpaths:573 doodleLayers:588 doodleRoleStyle:601 doodleKeyOf:622 doodleMembers:628 ElementType:879 Window:6494
+frontend/src/api.ts | typescript | 6515 | Theme:4 PaintChannel:20 ShowAction:42 SvgExportOptions:48 MandalaRing:55 DoodleKind:59 DoodleLayer:59 DoodleParams:59 DoodleRole:59 DoodleSpec:59 FrameRegion:83 FrameRegionInfo:83 as:83 HarmonyType:95 PlayOptions:100 PlaySpec:100 PlayTargets:100 TexPart:102 AxesOptions:109 AxesSpec:109 PlotFn:109 VectorFieldOptions:109 VectorFn:109 DrawOp:111 TinyflyShape:115 DimensionMeasure:123 ElementOptions:204 normalizeElementType:465 plotRuns:496 addTinyflyClip:512 createTinyflyShape:535 DoodleOptions:562 normalizeDoodleSubpaths:573 doodleLayers:588 doodleRoleStyle:601 doodleKeyOf:622 doodleMembers:628 ElementType:879 Window:6504
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1765 | Component:1 App:119 moves:161 onPenMove:162 hidePen:166 handleKeyUp:205 handleKeyDown:215 along:677 as:944 the:995 handleFullscreenChange:1119 handleBeforeUnload:1128 handlePaste:1132 of:1246 isInternalPanelDrag:1249 handleGlobalDragEnter:1252 handleGlobalDragOver:1266 showDropFallbackPrompt:1284 cleanup:1314 outsideClick:1342 isImageFile:1354 first:1355 must:1368 extractDropData:1370 processExtractedDrop:1425 handleGlobalDrop:1555 handleDocumentDrop:1601
 frontend/src/assets/solid.svg | - | 1 |
@@ -1721,8 +1721,8 @@ frontend/src/components/brand-kit-panel.css | - | 88 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
 frontend/src/components/canvas-toolbar.tsx | typescript | 135 | Component:1 CanvasToolbar:7 resetHideTimeout:11 toolBtnStyle:33
 frontend/src/components/canvas.tsx | typescript | 3083 | Component:1 TextEditingContext:71 CanvasEventContext:73 MeasureSegment:78 CropHandle:79 Canvas:99 setEditingId:222 flushPenPoints:269 handleResize:298 canvasCursor:362 buildAnchorMenu:392 eyedropperHitAt:430 samplePixelHex:450 scheduleDraw:472 draw:478 and:799 Box:866 stringSet:869 pad:911 viewportTransform:919 getWorldCoordinates:928 getWheelCtx:936 onWheel:942 normalizePencil:945 applyMasterProjection:981 canInteractWithElement:991 checkBinding:1018 refreshLinePoints:1021 refreshBoundLine:1024 commitText:1043 commitRichText:1051 isPenDrawingTool:1093 pickStylusTouch:1102 findTouchById:1110 finalizeTouchStroke:1118 smartShapeEnabled:1148 cancelShapeHold:1152 resetActiveStroke:1160 fireShapeHold:1171 armShapeHold:1229 noteShapeMove:1237 beginTouchPenStroke:1253 handleTouchStart:1273 handleTouchMove:1304 handleTouchEnd:1357 isTouchBlockedByGesture:1400 cancelLongPress:1421 clearUndoRepeat:1468 fitView:1473 armUndoRepeat:1477 cancelInflightForGesture:1498 beginGesture:1525 updateGesture:1556 endGesture:1607 fireTap:1614 handleTouchStartGesture:1620 handleTouchMoveGesture:1655 handleTouchEndGesture:1740 handlePointerDown:1787 move:1812 up:1822 selectionRect:2020 artboardForRect:2031 updateMeasureHover:2046 handlePointerMove:2062 handlePointerUp:2228 handleDoubleClick:2313 onPenSpace:2460 onFontsLoaded:2486 clearMeasureOnAltUp:2495 handleCropKeys:2525 handlePolylineKeys:2556 handlePenKeys:2574 handleDragLabelKeys:2606 releasePointer:2638 releaseAllPointers:2643 dropHandler:2648 for:2712
-frontend/src/components/chart-data-dialog.css | - | 156 |
-frontend/src/components/chart-data-dialog.tsx | typescript | 169 | Component:1 ChartSpec:5 openChartData:17 closeChartData:23 chartDataOpen:24 parseCell:27 parseBlock:35 ChartDataDialog:38 onKey:43 write:49 setCategory:54 setSeriesName:55 setValue:56 addRow:58 addSeries:59 removeRow:60 removeSeries:64 pasteAt:70 kindLabel:92 legendLabel:93
+frontend/src/components/chart-data-dialog.css | - | 183 |
+frontend/src/components/chart-data-dialog.tsx | typescript | 226 | Component:1 ChartSpec:5 openChartData:18 closeChartData:24 chartDataOpen:25 parseCell:28 parseBlock:36 ChartDataDialog:39 onKey:44 write:50 setCategory:55 setSeriesName:56 setValue:57 clears:59 setSeriesKind:60 setSecondary:62 setSize:64 bubble:67 newRowLabel:68 addRow:69 addSeries:70 removeRow:71 removeSeries:75 pasteAt:82 setKind:112 kindLabel:115 legendLabel:116
 frontend/src/components/choice-dialog-state.ts | typescript | 38 | Choice:13 PendingChoice:19 askChoice:29 answerChoice:34
 frontend/src/components/choice-dialog.css | - | 34 |
 frontend/src/components/choice-dialog.tsx | typescript | 41 | isOpen:8 cancel:9 ChoiceDialog:12
@@ -1976,7 +1976,7 @@ frontend/src/config/support.ts | typescript | 184 | SupportLink:42 isSafeSupport
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
 frontend/src/data/founders.ts | typescript | 148 | Tier:46 ContributionData:67
-frontend/src/data/whats-new.ts | typescript | 1093 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 1098 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -2051,7 +2051,7 @@ frontend/src/help-docs/features/animation.md | - | 835 |
 frontend/src/help-docs/features/arcade.md | - | 149 |
 frontend/src/help-docs/features/artboards.md | - | 146 |
 frontend/src/help-docs/features/bulk-editing.md | - | 103 |
-frontend/src/help-docs/features/design-studio.md | - | 365 |
+frontend/src/help-docs/features/design-studio.md | - | 392 |
 frontend/src/help-docs/features/doodles.md | - | 98 |
 frontend/src/help-docs/features/draw-api.md | - | 102 |
 frontend/src/help-docs/features/effects.md | - | 241 |
@@ -2065,7 +2065,7 @@ frontend/src/help-docs/features/qr-code.md | - | 124 |
 frontend/src/help-docs/features/stick-animation.md | - | 184 |
 frontend/src/help-docs/features/stick-library.md | - | 242 |
 frontend/src/help-docs/features/symbols.md | - | 159 |
-frontend/src/help-docs/features/workspace.md | - | 1194 |
+frontend/src/help-docs/features/workspace.md | - | 1200 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 581 |
 frontend/src/help-docs/help-md.d.ts | typescript | 28 |
 frontend/src/help-docs/help-page.css | - | 587 |
@@ -2097,11 +2097,11 @@ frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 1656 |
-frontend/src/i18n/locales/en.ts | typescript | 1688 | Dictionary:1688
-frontend/src/i18n/locales/es.ts | typescript | 1655 |
-frontend/src/i18n/locales/fr.ts | typescript | 1677 | de:120
-frontend/src/i18n/locales/ja.ts | typescript | 1655 |
+frontend/src/i18n/locales/de.ts | typescript | 1671 |
+frontend/src/i18n/locales/en.ts | typescript | 1703 | Dictionary:1703
+frontend/src/i18n/locales/es.ts | typescript | 1670 |
+frontend/src/i18n/locales/fr.ts | typescript | 1692 | de:120
+frontend/src/i18n/locales/ja.ts | typescript | 1670 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 619 |
@@ -2162,7 +2162,7 @@ frontend/src/shapes/base/sketch-corners.test.ts | typescript | 101 | element:21 
 frontend/src/shapes/base/types.ts | typescript | 17 | RenderContext:5 RenderStyle:17
 frontend/src/shapes/register-shapes.ts | typescript | 155 | registerShapes:38
 frontend/src/shapes/renderers/bpmn-renderer.ts | typescript | 1344 | BpmnRenderer:9{renderArchitectural:10 renderSketch:226 definePath:337 applyNonInterruptingDash:345 getIconColor:352 renderEventIcon:357 renderGatewayMarker:521 renderTaskMarker:583 renderLoopMarker:706 renderSubProcessMarker:785 getPoolLabelWidth:813 getLaneLabelWidth:816 getPoolLabelHeight:819 getLaneLabelHeight:822 computeLaneSizes:829 renderPoolArchitectural:852 renderPoolHorizontalArch:886 renderPoolVerticalArch:992 renderPoolSketch:1094 renderPoolHorizontalSketch:1119 renderPoolVerticalSketch:1213 drawGear:1304 roundRect:1326 getRoundRectPath:1341}
-frontend/src/shapes/renderers/chart-renderer.ts | typescript | 129 | ChartColors:10 ChartOp:10 wedgePath:16 ChartRenderer:29{ops:30 background:35 text:44 renderArchitectural:54 renderSketch:92 definePath:126}
+frontend/src/shapes/renderers/chart-renderer.ts | typescript | 137 | ChartColors:10 ChartOp:10 wedgePath:17 ChartRenderer:30{ops:31 background:36 text:45 renderArchitectural:55 renderSketch:98 definePath:134}
 frontend/src/shapes/renderers/circle-renderer.ts | typescript | 74 | CircleRenderer:6{renderArchitectural:7 renderSketch:23 drawCircleArch:40 definePath:59 estimatePathLength:67}
 frontend/src/shapes/renderers/cloud-infra-renderer.ts | typescript | 472 | CloudInfraRenderer:7{renderArchitectural:8 renderSketch:270 roundRect:416 roundRectPath:431 getHexPath:437 getShieldPath:451 definePath:466}
 frontend/src/shapes/renderers/code-block-renderer.ts | typescript | 179 | CodeBlockRenderer:7{renderArchitectural:8 renderSketch:12 renderCommon:16 definePath:176}
@@ -2225,7 +2225,7 @@ frontend/src/store/anim-pegs.test.ts | typescript | 134 | stubNode:16 kfs:46 set
 frontend/src/store/anim-timing.test.ts | typescript | 172 | stubNode:17 row:46 setup:48 select:70
 frontend/src/store/anim-tween-split.test.ts | typescript | 200 | stubNode:21 setupTween:52 form:57
 frontend/src/store/app-store.test.ts | typescript | 104 | seed:71
-frontend/src/store/app-store.ts | typescript | 12169 | LayoutDirection:26 OutlineNode:26 BooleanOp:30 Poly:30 ShapeFace:30 DistortKind:31 DistortParams:31 AssetMeta:53 WarpPreset:61 LayoutGridSpec:66 LayoutText:67 SlideLayoutId:67 ChartSpec:69 SymmetryMode:74 SymmetryOp:74 StrokeTextOptions:78 PathPoint:82 Theme:84 ResolvedTheme:85 loadPerspectiveGrid:137 DefaultToolChoice:167 PointerStyle:275 PaintChannel:292 AppState:294 HistorySnapshot:982 HistoryEntry:1011 withCommandHistory:1194 BP:2669 LayoutGuideTarget:6425 AlignmentType:6737 DistributionType:6737 TextPathOpts:7594 CharPatch:7894 CharPatchArg:7897 SelBBox:9187 LastTransform:9675 RegionPathfinderOp:10240 SelectSimilarMatch:10381 buildPathFromPoly:11403 polysOriginMin:11445 syncCompoundOperands:11452 buildCompoundPath:11463 WorldSub:11689 rdpAnchors:11692 normalizeWorldSubs:11720 makePathFromWorldSubs:11735 elementToWorldSubs:11756 startInkCleanupIfNeeded:12108
+frontend/src/store/app-store.ts | typescript | 12170 | LayoutDirection:26 OutlineNode:26 BooleanOp:30 Poly:30 ShapeFace:30 DistortKind:31 DistortParams:31 AssetMeta:53 WarpPreset:61 LayoutGridSpec:66 LayoutText:67 SlideLayoutId:67 ChartSpec:69 SymmetryMode:74 SymmetryOp:74 StrokeTextOptions:78 PathPoint:82 Theme:84 ResolvedTheme:85 loadPerspectiveGrid:137 DefaultToolChoice:167 PointerStyle:275 PaintChannel:292 AppState:294 HistorySnapshot:982 HistoryEntry:1011 withCommandHistory:1194 BP:2669 LayoutGuideTarget:6426 AlignmentType:6738 DistributionType:6738 TextPathOpts:7595 CharPatch:7895 CharPatchArg:7898 SelBBox:9188 LastTransform:9676 RegionPathfinderOp:10241 SelectSimilarMatch:10382 buildPathFromPoly:11404 polysOriginMin:11446 syncCompoundOperands:11453 buildCompoundPath:11464 WorldSub:11690 rdpAnchors:11693 normalizeWorldSubs:11721 makePathFromWorldSubs:11736 elementToWorldSubs:11757 startInkCleanupIfNeeded:12109
 frontend/src/store/artboard-variations.test.ts | typescript | 267 | stubNode:15 base:41 circle:120 carrier:121 measure:163 glyphs:164
 frontend/src/store/dev-mode.test.ts | typescript | 100 | docWith:85
 frontend/src/store/dock-layout.ts | typescript | 211 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
@@ -2329,8 +2329,8 @@ frontend/src/utils/binding-logic.ts | typescript | 531 | checkBinding:17 Cand:65
 frontend/src/utils/build-order.test.ts | typescript | 17 | el:4 a:5
 frontend/src/utils/build-order.ts | typescript | 26 | BuildStepRef:9 buildOrder:11
 frontend/src/utils/canvas-renderer.ts | typescript | 1534 | omScratch:37 adjScratch:48 renderAdjustmentLayer:62 ensureLumFilter:99 renderOpacityMasked:112 elementWorldAABB:147 ViewportBounds:166 RenderElementsParams:175 SelectionOverlayParams:198 ConnectionAnchorParams:224 computeViewportBounds:236 cullElementsForAnimation:251 decayLaserTrail:304 renderWorkspaceBackground:321 renderSlideBackground:339 renderSlideBoundaries:460 isColorDark:545 renderCanvasTexture:560 renderGrid:658 toOutlineElement:805 drawBleedAndCropMarks:828 renderLayersAndElements:859 renderSelectionOverlays:1241 renderTableColumnDropIndicator:1345 renderTableCellSelection:1389 renderConnectionAnchors:1434 renderLaserTrail:1493
-frontend/src/utils/chart/chart-layout.test.ts | typescript | 72 |
-frontend/src/utils/chart/chart-layout.ts | typescript | 313 | ChartKind:8 LegendPos:9 ChartSeries:11 ChartSpec:18 defaultChartSpec:42 normalizeChart:55 niceScale:81 formatValue:94 ChartOp:103 ChartColors:110 layoutChart:114 layoutRound:176
+frontend/src/utils/chart/chart-layout.test.ts | typescript | 204 | dots:76 h:168
+frontend/src/utils/chart/chart-layout.ts | typescript | 627 | ChartKind:8 LegendPos:9 ChartSeries:11 ChartSpec:24 xValue:65 defaultChartSpec:73 normalizeChart:103 autoRange:141 ticksOf:149 smoothPoints:159 niceScale:177 formatValue:190 ChartOp:199 ChartColors:208 layoutChart:212 layoutRound:282 layoutStock:505 layoutXY:530 layoutRadar:588
 frontend/src/utils/click-outside.ts | typescript | 23 | clickOutside:3 JSX:18 Directives:19
 frontend/src/utils/clip-mask.ts | typescript | 58 | ShapeGeometry:11 geometryToPath2D:14 buildClipPath2D:40 maskFillRule:55
 frontend/src/utils/color-adjust.ts | typescript | 69 | hexToHsl:12 hslToHex:29 shiftHexHue:51 adjustHexLightness:58 adjustHexSaturation:65
@@ -2526,7 +2526,7 @@ frontend/src/utils/popover-placement.ts | typescript | 114 | Box:11 Placement:18
 frontend/src/utils/pptx/anim-map.test.ts | typescript | 51 | preset:4
 frontend/src/utils/pptx/anim-map.ts | typescript | 138 | Dir:14 Cls:15 presetEffect:38 toDeckAnim:57 startOf:78 presetName:88 fromDeckAnim:117
 frontend/src/utils/pptx/builtin-table-styles.ts | typescript | 72 | builtinTableStyleXml:69
-frontend/src/utils/pptx/chart-xml.ts | typescript | 137 | ChartSpec:11 colName:19 strRef:30 numRef:35 chartXml:44 chartWorkbook:115
+frontend/src/utils/pptx/chart-xml.ts | typescript | 236 | ChartKind:11 ChartSpec:11 colName:19 strRef:30 numRef:35 writable:47 chartXml:60 chartWorkbook:209
 frontend/src/utils/pptx/custgeom.ts | typescript | 178 | parseSvgPath:21 transformCmds:111 affineCmds:118 cmdsBounds:127 custGeomXml:146
 frontend/src/utils/pptx/deck.ts | typescript | 307 | Color:12 GradientStop:14 Paint:16 ArrowEndType:29 ArrowEnd:30 Line:32 PathCmd:43 CustomPath:48 Geometry:55 TextRun:59 Paragraph:72 TextBody:98 DeckLink:119 Placed:124 ShapeItem:138 ConnectorEnd:150 ConnectorItem:153 Media:162 PictureItem:164 GroupItem:176 ChartItem:182 TableCell:188 TableItem:203 ClipFile:214 MediaItem:221 Item:238 TransitionKind:241 Transition:242 DeckEffect:255 DeckAnim:259 Slide:279 Deck:300
 frontend/src/utils/pptx/from-yappy.ts | typescript | 1263 | ShapeGeometry:29 RasterResult:46 ConvertHooks:48{rasterize:50 rasterizeBackground:52} PageInput:55 ConvertReport:65 alphaOf:77 toColor:98 fillOf:120 dashOf:134 lineOf:144 arrowEnd:156 plainParagraphs:175 PrevNum:179 numScheme:182 measureText:191 TextDefaults:198 listParagraph:200 richParagraphs:221 textDefaults:258 textElementBody:271 containerBody:284 geometryPaths:300 presetFor:346 needsRaster:367 dataUrlBytes:391 mediaOf:403 Conv:422 placed:436 pictureFrom:442 imageItem:450 labelBox:468 siteAt:483 isStraight:503 lineItems:512 freehandItem:556 textItem:572 RecordedGrad:584 RecordedOp:587 Mat:599 recordingRough:615 recordOps:649 gradPaint:722 clipStops:738 closeForFill:757 shapeItem:770 itemsBounds:1104 transitionOf:1115 backgroundOf:1137 remapPageStops:1166 mixColor:1175 deckLinkOf:1183 showFields:1192 pageToSlide:1201 deckAnims:1225 fitInto:1260
@@ -2535,8 +2535,8 @@ frontend/src/utils/pptx/guides.ts | typescript | 187 | GeomPathOp:14 GeomDef:15 
 frontend/src/utils/pptx/import.ts | typescript | 44 | ToYappyResult:7 PptxImportResult:13 importPptx:17 openPptxFile:32
 frontend/src/utils/pptx/ooxml.ts | typescript | 101 | Zippable:11 Rel:78 zipPackage:90
 frontend/src/utils/pptx/presets.json | - | 1 |
-frontend/src/utils/pptx/read.test.ts | typescript | 1007 | handBuilt:100
-frontend/src/utils/pptx/read.ts | typescript | 1897 | GeomDef:28 ReadOptions:38 ReadResult:41 El:44 resolveMc:94 Pkg:107 resolveTarget:172 Theme:184 Ctx:189 schemeColors:198 readTheme:209 rgbToHsl:239 hslToRgb:247 colorIn:256 colorOf:261 Res:312 fillOf:315 paintOf:323 blipMedia:358 clipOf:372 mediaAt:389 lineOf:398 styleFill:430 styleLine:441 Box:454 boxOf:456 Frame:467 groupFrame:470 Spacing:499 spacingOf:500 LevelProps:508 levelFrom:518 pPrProps:524 rPrProps:556 bulletGlyph:583 themeFont:602 TextChain:609 textBodyOf:616 vertOf:710 PhInfo:725 findPh:739 shapesWithPh:749 Level:761 SlideCtx:765 custDef:786 geometryOf:815 readShapes:830 linkOf:854 readOne:868 readOneInner:883 bounds:943 inheritedBox:949 firstSaid:958 readSp:963 Edges:1035 CellLook:1036 CellLookFor:1037 PartBorders:1041 PartLook:1042 tablePartLook:1044 tableLook:1076 cellTextHeight:1128 readGraphicFrame:1161 previewOf:1316 vmlPreview:1346 chartOf:1378 smartArtDrawing:1462 smartArtText:1495 findDeep:1537 backgroundOf:1549 notesOf:1573 transitionOf:1601 animsOf:1642 onlyMediaCalls:1699 applyMediaTiming:1710 descendants:1740 findAll:1750 advanceAfterOf:1761 sectionsOf:1773 readPptx:1793
+frontend/src/utils/pptx/read.test.ts | typescript | 1183 | handBuilt:100
+frontend/src/utils/pptx/read.ts | typescript | 2010 | GeomDef:29 ReadOptions:39 ReadResult:42 El:45 resolveMc:95 Pkg:108 resolveTarget:173 Theme:185 Ctx:190 schemeColors:199 readTheme:210 rgbToHsl:240 hslToRgb:248 colorIn:257 colorOf:262 Res:313 fillOf:316 paintOf:324 blipMedia:359 clipOf:373 mediaAt:390 lineOf:399 styleFill:431 styleLine:442 Box:455 boxOf:457 Frame:468 groupFrame:471 Spacing:500 spacingOf:501 LevelProps:509 levelFrom:519 pPrProps:525 rPrProps:557 bulletGlyph:584 themeFont:603 TextChain:610 textBodyOf:617 vertOf:711 PhInfo:726 findPh:740 shapesWithPh:750 Level:762 SlideCtx:766 custDef:787 geometryOf:816 readShapes:831 linkOf:855 readOne:869 readOneInner:884 bounds:944 inheritedBox:950 firstSaid:959 readSp:964 Edges:1036 CellLook:1037 CellLookFor:1038 PartBorders:1042 PartLook:1043 tablePartLook:1045 tableLook:1077 cellTextHeight:1129 readGraphicFrame:1162 previewOf:1317 vmlPreview:1347 isDateFormat:1374 formatExcelDate:1385 chartOf:1417 smartArtDrawing:1575 smartArtText:1608 findDeep:1650 backgroundOf:1662 notesOf:1686 transitionOf:1714 animsOf:1755 onlyMediaCalls:1812 applyMediaTiming:1823 descendants:1853 findAll:1863 advanceAfterOf:1874 +2 more
 frontend/src/utils/pptx/to-yappy.test.ts | typescript | 190 | conv:24 solid:27 cell:28 head:33 table:34 body:38 ok:56 pic:106 clip:129 convert:130
 frontend/src/utils/pptx/to-yappy.ts | typescript | 1025 | GeomDef:20 ToYappyResult:27 fontKey:48 cmdsToSubpaths:60 Conv:96 applyAnims:124 linkOf:139 grayscaleCopy:148 grayCopies:165 slideBackground:187 base:212 applyPaint:226 applyLine:251 numberLook:262 listLook:274 textFields:291 textElement:366 shapeElements:381 bakeTransform:499 nativeType:523 connectorElements:539 croppedPoster:613 mediaElements:628 pictureElement:673 tableElement:728 tableElementAs:736 convertItems:839 transitionOf:883 applyBackground:894 toBase64:916 decodeImages:924 patternFillOf:963 deckToDocument:985
 frontend/src/utils/pptx/write.test.ts | typescript | 222 | sampleDeck:13 unzip:38 parseStrict:44 deck:185
@@ -2825,7 +2825,7 @@ tests/builtin-panel-drag.spec.ts | typescript | 47 | drag:17
 tests/bundle-lazy-load.spec.ts | typescript | 155 | boot:21
 tests/canva-ai.spec.ts | typescript | 159 | Window:6
 tests/canva-next.spec.ts | typescript | 273 | Window:6
-tests/charts.spec.ts | typescript | 96 | Window:9
+tests/charts.spec.ts | typescript | 188 | Window:9
 tests/clipping-mask.spec.ts | typescript | 70 |
 tests/code-block.spec.ts | typescript | 164 | hello:36 App:129
 tests/color-batch.spec.ts | typescript | 62 | hexToRgb:6 lum:22

@@ -10,7 +10,8 @@ import type { IRenderer } from "../../rendering/IRenderer";
 import { layoutChart, LIGHT, type ChartColors, type ChartOp } from "../../utils/chart/chart-layout";
 import { resolveFontFamily } from "../../utils/text-utils";
 
-const DARK: ChartColors = { text: '#e5e7eb', muted: '#d1d5db', grid: '#374151', axis: '#6b7280' };
+// `background`: the paper a hollow mark (a stock chart's rising bar) is filled with.
+const DARK: ChartColors = { text: '#e5e7eb', muted: '#d1d5db', grid: '#374151', axis: '#6b7280', background: '#1f2937' };
 
 /** SVG path of a pie or doughnut wedge, for RoughJS. */
 function wedgePath(o: Extract<ChartOp, { op: 'wedge' }>): string {
@@ -59,6 +60,7 @@ export class ChartRenderer extends ShapeRenderer {
             switch (o.op) {
                 case 'rect':
                     if (o.fill) { renderer.fillStyle = o.fill; renderer.fillRect(o.x, o.y, o.w, o.h); }
+                    if (o.stroke) { renderer.strokeStyle = o.stroke; renderer.lineWidth = 1; renderer.strokeRect(o.x, o.y, o.w, o.h); }
                     break;
                 case 'line':
                     renderer.beginPath();
@@ -80,7 +82,11 @@ export class ChartRenderer extends ShapeRenderer {
                     break;
                 case 'dot':
                     renderer.beginPath(); renderer.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+                    renderer.save();
+                    if (o.opacity !== undefined) renderer.globalAlpha *= o.opacity;
                     renderer.fillStyle = o.fill; renderer.fill();
+                    renderer.restore();
+                    if (o.stroke) { renderer.strokeStyle = o.stroke; renderer.lineWidth = 1; renderer.stroke(); }
                     break;
                 case 'text':
                     this.text(renderer, o, family);
@@ -102,8 +108,9 @@ export class ChartRenderer extends ShapeRenderer {
         for (const o of this.ops(context)) {
             switch (o.op) {
                 case 'rect':
-                    if (!o.fill) break;
-                    rc.rectangle(o.x, o.y, o.w, o.h, { ...rough, fill: o.fill, fillStyle: 'hachure', hachureGap: 6, stroke: o.fill, strokeWidth: 1.2 });
+                    // An outlined box (a stock chart's open-close bar) is solid, so a hollow one stays hollow.
+                    if (o.stroke) rc.rectangle(o.x, o.y, o.w, o.h, { ...rough, ...(o.fill && { fill: o.fill, fillStyle: 'solid' }), stroke: o.stroke, strokeWidth: 1.2 });
+                    else if (o.fill) rc.rectangle(o.x, o.y, o.w, o.h, { ...rough, fill: o.fill, fillStyle: 'hachure', hachureGap: 6, stroke: o.fill, strokeWidth: 1.2 });
                     break;
                 case 'line':
                     if (o.closed) rc.polygon(o.points, { ...rough, fill: o.fill, fillStyle: 'hachure', hachureGap: 8, stroke: o.stroke, strokeWidth: o.width });
@@ -113,7 +120,8 @@ export class ChartRenderer extends ShapeRenderer {
                     rc.path(wedgePath(o), { ...rough, fill: o.fill, fillStyle: 'hachure', hachureGap: 6, stroke: o.fill, strokeWidth: 1.2 });
                     break;
                 case 'dot':
-                    rc.circle(o.x, o.y, o.r * 2, { ...rough, fill: o.fill, fillStyle: 'solid', stroke: o.fill, strokeWidth: 1 });
+                    // Bubbles overlap, so they're hatched (their neighbours show through); markers are solid.
+                    rc.circle(o.x, o.y, o.r * 2, { ...rough, fill: o.fill, fillStyle: o.opacity !== undefined ? 'hachure' : 'solid', hachureGap: 6, stroke: o.stroke ?? o.fill, strokeWidth: 1 });
                     break;
                 case 'text':
                     // Labels laid out white sit on a solid fill; on hachure they need the text colour.

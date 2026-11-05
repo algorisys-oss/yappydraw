@@ -643,13 +643,189 @@ describe("readPptx: data charts (c:chartSpace)", () => {
         expect(sheet).not.toContain('r="B3"');                    // the gap stays empty
     });
 
-    it("leaves charts it can't draw (scatter) as the labelled frame", () => {
+    it("leaves charts it can't draw (surface) as the labelled frame", () => {
         const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ ...sample, kind: 'column' })] }] });
         const files = unzipSync(bytes);
-        files['ppt/charts/chart1.xml'] = strToU8(strFromU8(files['ppt/charts/chart1.xml']).replace(/<c:barChart>.*<\/c:barChart>/s, '<c:scatterChart><c:scatterStyle val="lineMarker"/></c:scatterChart>'));
+        files['ppt/charts/chart1.xml'] = strToU8(strFromU8(files['ppt/charts/chart1.xml']).replace(/<c:barChart>.*<\/c:barChart>/s, '<c:surfaceChart><c:wireframe val="0"/></c:surfaceChart>'));
         const { deck, warnings } = read(zipSync(files));
         expect(deck.slides[0].items[0].kind).toBe('shape');
         expect(warnings.join(' ')).toContain('placeholder');
+    });
+
+    /** Write a spec, read it back: the chart, and the warnings. */
+    const roundTrip = (spec: any) => {
+        const { deck, warnings } = read(buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem(spec)] }] }));
+        return { c: (deck.slides[0].items[0] as any).chart, warnings, kind: deck.slides[0].items[0].kind };
+    };
+
+    it("round-trips scatter (X values, lines, smooth), bubble (sizes), radar, filled radar and stock", () => {
+        const sc = roundTrip({ kind: 'scatter', lines: true, smooth: true, categories: ['0.5', '2', '7.25'], series: [{ name: 'a', values: [1, null, 3], color: '#ff0000' }, { name: 'b', values: [4, 5, 6] }], legend: 'right', yMin: -2, yMax: 9, gridlines: false });
+        expect(sc.warnings).toEqual([]);
+        // The Y range and gridlines come from the vertical value axis, not the X axis.
+        expect([sc.c.yMin, sc.c.yMax, sc.c.gridlines]).toEqual([-2, 9, false]);
+        expect(sc.c).toEqual(expect.objectContaining({ kind: 'scatter', lines: true, smooth: true, categories: ['0.5', '2', '7.25'] }));
+        expect(sc.c.series.map((s: any) => s.values)).toEqual([[1, null, 3], [4, 5, 6]]);
+        expect(sc.c.series[0].color).toBe('#ff0000');
+        expect(roundTrip({ kind: 'scatter', categories: ['1', '2'], series: [{ name: 'a', values: [1, 2] }] }).c.lines).toBeUndefined();
+
+        const bu = roundTrip({ kind: 'bubble', categories: ['1', '2', '3'], series: [{ name: 'a', values: [1, 2, 3], sizes: [10, null, 30] }, { name: 'b', values: [3, 2, 1], sizes: [5, 5, 5] }] });
+        expect(bu.warnings).toEqual([]);
+        expect(bu.c.kind).toBe('bubble');
+        expect(bu.c.series.map((s: any) => s.sizes)).toEqual([[10, null, 30], [5, 5, 5]]);
+        expect(bu.c.series[1].values).toEqual([3, 2, 1]);
+
+        for (const kind of ['radar', 'filledRadar'] as const) {
+            const r = roundTrip({ kind, categories: ['a', 'b', 'c'], series: [{ name: 's', values: [1, 2, 3] }], gridlines: true });
+            expect([r.warnings, r.c.kind, r.c.categories, r.c.series[0].values]).toEqual([[], kind, ['a', 'b', 'c'], [1, 2, 3]]);
+        }
+
+        const ohlc = [{ name: 'Open', values: [10, 14] }, { name: 'High', values: [15, 16] }, { name: 'Low', values: [8, 9] }, { name: 'Close', values: [14, 10] }];
+        const st = roundTrip({ kind: 'stock', categories: ['Mon', 'Tue'], series: ohlc });
+        expect([st.warnings, st.c.kind, st.c.series.map((s: any) => s.name)]).toEqual([[], 'stock', ['Open', 'High', 'Low', 'Close']]);
+        expect(st.c.series[3].values).toEqual([14, 10]);
+    });
+
+    it("writes the plot each kind needs, valid for PowerPoint", () => {
+        const xml = (spec: any) => strFromU8(unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem(spec)] }] }))['ppt/charts/chart1.xml']);
+        const sc = xml({ kind: 'scatter', categories: ['1', '2'], series: [{ name: 'a', values: [1, 2] }] });
+        parseXml(sc);
+        expect(sc).toMatch(/<c:scatterChart><c:scatterStyle val="lineMarker"\/>/);
+        expect(sc).toContain('<c:xVal><c:numRef>');
+        expect(sc).toContain('<c:yVal><c:numRef>');
+        expect((sc.match(/<c:valAx>/g) ?? []).length).toBe(2);          // X and Y are both value axes
+        expect(sc).toContain('<a:ln><a:noFill/></a:ln>');                // markers only: no line
+        // Text in the X column: PowerPoint numbers the points, so it's written as text.
+        expect(xml({ kind: 'scatter', categories: ['a', 'b'], series: [{ name: 's', values: [1, 2] }] })).toContain('<c:xVal><c:strRef>');
+        const bu = xml({ kind: 'bubble', categories: ['1', '2'], series: [{ name: 'a', values: [1, 2], sizes: [3, 4] }] });
+        parseXml(bu);
+        expect(bu).toContain('<c:bubbleSize><c:numRef><c:f>Sheet1!$C$2:$C$3</c:f>');
+        const ra = xml({ kind: 'filledRadar', categories: ['a', 'b', 'c'], series: [{ name: 's', values: [1, 2, 3] }] });
+        parseXml(ra);
+        expect(ra).toContain('<c:radarChart><c:radarStyle val="filled"/>');
+        const st = xml({ kind: 'stock', categories: ['a', 'b'], series: ['O', 'H', 'L', 'C'].map(name => ({ name, values: [1, 2] })) });
+        parseXml(st);
+        expect(st).toContain('<c:hiLowLines>');
+        expect(st).toContain('<c:upDownBars>');
+        // A stock chart PowerPoint can't open (it needs 3 or 4 series) goes as a line chart.
+        expect(xml({ kind: 'stock', categories: ['a'], series: [{ name: 'x', values: [1] }, { name: 'y', values: [2] }] })).toContain('<c:lineChart>');
+    });
+
+    it("bubble workbook: X down column A, then each series' Y and size", () => {
+        const files = unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ kind: 'bubble', categories: ['1.5', '2'], series: [{ name: 'a', values: [7, 8], sizes: [3, 4] }] })] }] }));
+        const sheet = strFromU8(unzipSync(files['ppt/embeddings/Microsoft_Excel_Worksheet1.xlsx'])['xl/worksheets/sheet1.xml']);
+        expect(sheet).toContain('<c r="A2"><v>1.5</v></c>');          // a number, not text
+        expect(sheet).toContain('<c r="B2"><v>7</v></c>');
+        expect(sheet).toContain('<c r="C3"><v>4</v></c>');
+    });
+
+    /** A chart part as PowerPoint writes it, with this plot area. */
+    const authored = (plot: string) => {
+        const bytes = buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ ...sample, kind: 'column' })] }] });
+        const files = unzipSync(bytes);
+        files['ppt/charts/chart1.xml'] = strToU8(strFromU8(files['ppt/charts/chart1.xml']).replace(/<c:barChart>.*<\/c:barChart>/s, plot));
+        const { deck, warnings } = read(zipSync(files));
+        return { c: (deck.slides[0].items[0] as any).chart, warnings };
+    };
+    const nums = (vals: (number | string)[], fmt = 'General') => `<c:numRef><c:f>x</c:f><c:numCache><c:formatCode>${fmt}</c:formatCode><c:ptCount val="${vals.length}"/>`
+        + vals.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join('') + '</c:numCache></c:numRef>';
+    const ser = (i: number, inner: string, extra = '') => `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>S${i}</c:v></c:tx>${extra}${inner}</c:ser>`;
+
+    it("reads PowerPoint's own scatter: markers-only series have no line, a marker colour", () => {
+        const { c, warnings } = authored('<c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>'
+            + ser(0, `<c:xVal>${nums([1, 2, 3])}</c:xVal><c:yVal>${nums([4, 5, 6])}</c:yVal><c:smooth val="0"/>`,
+                '<c:spPr><a:ln w="19050"><a:noFill/></a:ln></c:spPr><c:marker><c:symbol val="circle"/><c:spPr><a:solidFill><a:srgbClr val="00AA00"/></a:solidFill></c:spPr></c:marker>')
+            + '</c:scatterChart>');
+        expect(warnings).toEqual([]);
+        expect(c).toEqual(expect.objectContaining({ kind: 'scatter', categories: ['1', '2', '3'] }));
+        expect(c.lines).toBeUndefined();
+        expect(c.series[0].color).toBe('#00aa00');
+    });
+
+    it("stacks scatter series with their own X values into one X column, losing no point, and says so", () => {
+        const { c, warnings } = authored('<c:scatterChart><c:scatterStyle val="lineMarker"/>'
+            + ser(0, `<c:xVal>${nums([1, 1, 2])}</c:xVal><c:yVal>${nums([10, 15, 20])}</c:yVal>`)
+            + ser(1, `<c:xVal>${nums([3, 2])}</c:xVal><c:yVal>${nums([30, 40])}</c:yVal>`) + '</c:scatterChart>');
+        // Two points at x = 1 both survive; series 2 keeps its own order (3 before 2).
+        expect(c.categories).toEqual(['1', '1', '2', '3', '2']);
+        expect(c.series.map((s: any) => s.values)).toEqual([[10, 15, 20, null, null], [null, null, null, 30, 40]]);
+        expect(warnings.join(' ')).toContain('X values');
+    });
+
+    it("dates on the category axis read as dates, not day numbers", () => {
+        const { c } = authored('<c:stockChart>'
+            + ['O', 'H', 'L', 'C'].map((_, i) => ser(i, `<c:cat>${nums([45658, 45659], 'm/d/yyyy')}</c:cat><c:val>${nums([1 + i, 2 + i])}</c:val>`)).join('')
+            + '<c:hiLowLines/><c:upDownBars><c:gapWidth val="150"/><c:upBars/><c:downBars/></c:upDownBars></c:stockChart>');
+        expect(c.kind).toBe('stock');
+        expect(c.categories).toEqual(['1/1/2025', '1/2/2025']);
+        const d = authored('<c:barChart><c:barDir val="col"/>' + ser(0, `<c:cat>${nums([45658], 'd-mmm-yy')}</c:cat><c:val>${nums([1])}</c:val>`) + '</c:barChart>');
+        expect(d.c.categories).toEqual(['1-Jan-25']);
+    });
+
+    it("round-trips 100% stacking and combination charts (series type, secondary axis)", () => {
+        const pct = roundTrip({ kind: 'column', stacked: true, percent: true, categories: ['a', 'b'], series: [{ name: 's', values: [1, 2] }, { name: 't', values: [3, 4] }] });
+        expect([pct.warnings, pct.c.stacked, pct.c.percent]).toEqual([[], true, true]);
+        const combo = roundTrip({ kind: 'column', stacked: true, categories: ['a', 'b'], series: [
+            { name: 'units', values: [10, 20] }, { name: 'more', values: [1, 2] },
+            { name: 'rate', values: [0.1, 0.2], kind: 'line', secondary: true }, { name: 'area', values: [5, 6], kind: 'area' }] });
+        expect(combo.warnings).toEqual([]);
+        expect(combo.c.kind).toBe('column');
+        expect(combo.c.stacked).toBe(true);
+        // Series come back in their order, each with its type and axis.
+        expect(combo.c.series.map((s: any) => [s.name, s.kind ?? '-', !!s.secondary])).toEqual([
+            ['units', '-', false], ['more', '-', false], ['rate', 'line', true], ['area', 'area', false]]);
+        expect(combo.c.series[2].values).toEqual([0.1, 0.2]);
+    });
+
+    it("writes one plot group per type and axis, with a secondary axis pair", () => {
+        const files = unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ kind: 'column', categories: ['a'], series: [
+            { name: 'u', values: [1] }, { name: 'r', values: [2], kind: 'line', secondary: true }] })] }] }));
+        const xml = strFromU8(files['ppt/charts/chart1.xml']);
+        parseXml(xml);
+        expect(xml).toContain('<c:barChart>');
+        expect(xml).toContain('<c:lineChart>');
+        expect((xml.match(/<c:valAx>/g) ?? []).length).toBe(2);
+        expect((xml.match(/<c:catAx>/g) ?? []).length).toBe(2);
+        expect(xml).toMatch(/<c:valAx><c:axId val="500000004"\/>.*?<c:axPos val="r"\/>.*?<c:crosses val="max"\/>/s);
+        // Series indices stay unique across the groups (PowerPoint repairs the file otherwise).
+        expect([...xml.matchAll(/<c:idx val="(\d+)"\/><c:order/g)].map(m => m[1])).toEqual(['0', '1']);
+        const pct = strFromU8(unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ kind: 'bar', stacked: true, percent: true, categories: ['a'], series: [{ name: 'u', values: [1] }] })] }] }))['ppt/charts/chart1.xml']);
+        expect(pct).toContain('<c:grouping val="percentStacked"/>');
+        expect(pct).toContain('<c:numFmt formatCode="0%" sourceLinked="0"/>');
+    });
+
+    it("reads PowerPoint's combination chart: a line on its own axis over columns; drops a type it can't combine", () => {
+        const plotArea = (groups: string) => {
+            const files = unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ ...sample, kind: 'column' })] }] }));
+            files['ppt/charts/chart1.xml'] = strToU8(strFromU8(files['ppt/charts/chart1.xml']).replace(/<c:plotArea>.*<\/c:plotArea>/s, `<c:plotArea><c:layout/>${groups}`
+                + '<c:catAx><c:axId val="1"/><c:axPos val="b"/><c:crossAx val="2"/></c:catAx><c:valAx><c:axId val="2"/><c:axPos val="l"/><c:crossAx val="1"/></c:valAx>'
+                + '<c:catAx><c:axId val="3"/><c:delete val="1"/><c:axPos val="b"/><c:crossAx val="4"/></c:catAx><c:valAx><c:axId val="4"/><c:axPos val="r"/><c:crossAx val="3"/><c:crosses val="max"/></c:valAx></c:plotArea>'));
+            const { deck, warnings } = read(zipSync(files));
+            return { c: (deck.slides[0].items[0] as any).chart, warnings };
+        };
+        const cat = `<c:cat><c:strRef><c:f>x</c:f><c:strCache><c:ptCount val="2"/><c:pt idx="0"><c:v>a</c:v></c:pt><c:pt idx="1"><c:v>b</c:v></c:pt></c:strCache></c:strRef></c:cat>`;
+        const { c, warnings } = plotArea(
+            `<c:barChart><c:barDir val="col"/><c:grouping val="percentStacked"/>${ser(0, `${cat}<c:val>${nums([1, 2])}</c:val>`)}<c:axId val="1"/><c:axId val="2"/></c:barChart>`
+            + `<c:lineChart><c:grouping val="standard"/>${ser(1, `${cat}<c:val>${nums([7, 8])}</c:val>`)}<c:axId val="3"/><c:axId val="4"/></c:lineChart>`);
+        expect(warnings).toEqual([]);
+        expect([c.kind, c.stacked, c.percent]).toEqual(['column', true, true]);
+        expect(c.series.map((s: any) => [s.kind ?? '-', !!s.secondary, s.values])).toEqual([['-', false, [1, 2]], ['line', true, [7, 8]]]);
+
+        const dropped = plotArea(`<c:areaChart>${ser(0, `${cat}<c:val>${nums([1, 2])}</c:val>`)}<c:axId val="1"/><c:axId val="2"/></c:areaChart>`
+            + `<c:scatterChart><c:scatterStyle val="lineMarker"/>${ser(1, `<c:xVal>${nums([1, 2])}</c:xVal><c:yVal>${nums([3, 4])}</c:yVal>`)}<c:axId val="1"/><c:axId val="2"/></c:scatterChart>`);
+        // The range is the primary axis's, even when the secondary axis comes first in the file.
+        const files = unzipSync(buildPptx({ width: 960, height: 540, slides: [{ items: [chartItem({ ...sample, kind: 'column' })] }] }));
+        files['ppt/charts/chart1.xml'] = strToU8(strFromU8(files['ppt/charts/chart1.xml']).replace(/<c:plotArea>.*<\/c:plotArea>/s, '<c:plotArea><c:layout/>'
+            + `<c:barChart><c:barDir val="col"/>${ser(0, `${cat}<c:val>${nums([1, 2])}</c:val>`)}<c:axId val="1"/><c:axId val="2"/></c:barChart>`
+            + `<c:lineChart>${ser(1, `${cat}<c:val>${nums([50, 90])}</c:val>`)}<c:axId val="3"/><c:axId val="4"/></c:lineChart>`
+            + '<c:valAx><c:axId val="4"/><c:scaling><c:max val="99"/></c:scaling><c:axPos val="r"/><c:crossAx val="3"/></c:valAx>'
+            + '<c:catAx><c:axId val="1"/><c:crossAx val="2"/></c:catAx><c:valAx><c:axId val="2"/><c:scaling><c:max val="10"/></c:scaling><c:axPos val="l"/><c:crossAx val="1"/></c:valAx>'
+            + '<c:catAx><c:axId val="3"/><c:delete val="1"/><c:crossAx val="4"/></c:catAx></c:plotArea>'));
+        const ordered = (read(zipSync(files)).deck.slides[0].items[0] as any).chart;
+        expect([ordered.yMax, ordered.series[1].secondary]).toEqual([10, true]);
+
+        expect(dropped.c.kind).toBe('area');
+        expect(dropped.c.series.length).toBe(1);
+        expect(dropped.warnings.join(' ')).toContain('scatter');
     });
 });
 

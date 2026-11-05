@@ -11834,3 +11834,43 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   while `.video-overlay-container` has `min-width: 320px`, so it ran flush to the screen edge.
 - **"Find the first X" in a store with one element list is a cross-slide bug.** Anything per-slide
   must go through `getElementsOnSlide`.
+
+
+## Scatter, bubble, radar and stock charts (2026-11-05, PPTX parity P4a, #480–#481)
+
+- **One X column, not one per series.** PowerPoint gives every scatter series its own `xVal`; the
+  data grid has one category column. Series that share X (the usual case) map straight across.
+  Series that don't are *stacked* — each series' rows one block after another, empty outside its
+  block — not merged by distinct X: the first merge dropped points, because a series can have
+  several points at one X (LibreOffice's `tdf98690` has five at x = 0), and reordered lines.
+- **A scatter chart has two value axes.** Reading "the" `valAx` took the X axis, so the Y range
+  and gridlines came from the wrong one. Pick the axis whose `axPos` is `l`/`r`.
+- **Cached numbers carry float noise** (`0.70000000000000007`). Excel shows 15 significant
+  digits; `toPrecision(15)` before display.
+- **`insertChart({ kind })` merged over the column sample**, so a new bubble chart had no sizes
+  and drew nothing, and a stock chart got three unrelated series. A kind needs its own sample —
+  and switching a chart to Bubble in the dialog needs sizes too (equal ones).
+- **`scatterStyle` alone doesn't say whether lines show.** PowerPoint writes `lineMarker` for
+  markers-only charts and hides the line per series (`a:ln/a:noFill`); the marker then carries
+  the series colour.
+- **The chart XML is the same in .docx and .xlsx.** LibreOffice's PowerPoint corpus has one
+  scatter chart; its Word and Excel chart tests have 27 of these kinds. Wrapping each chart part
+  into a one-slide deck (`temp/xy-corpus.ts`) turned them into PowerPoint test input.
+- **`sed -i` under a running Vite dev server can crash it** (the watcher trips on sed's temp
+  file), and other dev servers on the machine can exhaust inotify (`ENOSPC`).
+  `temp/vite-poll.config.ts` runs Vite with polling for the temp/ scripts.
+
+### 100 % stacking and combination charts (same day, P4 continued)
+
+- **"The" value axis again.** A combination chart's secondary axis can come first in the file
+  (LibreOffice's `tdf140489`), so reading the first `valAx` gave the chart the other series' range
+  and drew it as a solid block. The primary axis is the one the *first plot group* names in its
+  `axId`s; a group whose value axis is a different one is on the secondary axis.
+- **Series indices must stay unique across plot groups.** Writing a group per type and axis, each
+  series keeps its own `idx`/`order` from the whole chart; restarting at 0 per group is a file
+  PowerPoint "repairs".
+- **Combine only what Office combines.** Column, line and area mix (per series, either axis);
+  scatter and stock parts of a combination are dropped with a warning naming them, rather than
+  drawn on a category axis they don't have.
+- **100 % stacking keeps the values for labels.** The layout divides by each category's total of
+  magnitudes for positions only; labels show the data, as Excel's do.

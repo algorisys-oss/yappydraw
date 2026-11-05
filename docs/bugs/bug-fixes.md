@@ -11729,3 +11729,21 @@ Found while bringing PowerPoint clips in (PPTX parity P3):
   element's name now. (`shapes/renderers/video-renderer.ts`)
 - Covered by `temp/media-e2e.mjs`-style checks in the browser (autoplay on present, click to play,
   audio bar on screen) and `frontend/src/utils/video-utils.test.ts`.
+
+### PowerPoint charts: dates as day numbers, a second plot group dropped (2026-11-05, #480–#481)
+
+Found while adding scatter, bubble, radar and stock charts (PPTX parity P4a):
+
+- **#480 Dates on a chart's category axis came in as day numbers** (`45658` for 1 Jan 2025), on
+  every chart kind: the cached categories of a date axis are spreadsheet serials, formatted by the
+  cache's `formatCode`, which the reader ignored. Category caches in a date format are now formatted
+  with it (`isDateFormat` / `formatExcelDate` in `utils/pptx/read.ts`; `date1904` honoured).
+- **#481 A chart with two plot groups of the same type** (two bar groups on the primary and
+  secondary axes, two scatter groups) kept the first group's series only and warned that a
+  "combination chart came in as its first chart type". Groups of the same type are now read as one
+  chart; the warning is for groups of different types.
+- Covered by `frontend/src/utils/pptx/read.test.ts` ("dates on the category axis read as dates")
+  and checked on LibreOffice's chart test files (`temp/xy-corpus.ts`).
+- **#482 Data labels on stacked bar charts** sat past the end of each segment, over the next
+  segment's colour. They are centred inside the segment now, as on stacked columns.
+  (`utils/chart/chart-layout.ts`)

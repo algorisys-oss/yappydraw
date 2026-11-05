@@ -4,7 +4,7 @@ name: Design Studio
 icon: "🎨"
 category: Design
 description: "Canva-style design documents: pages & size presets, slides & presentations (slide master, data charts, slide numbers, transitions, presenting), templates, Magic Resize, brand kit, unified elements search (icons/shapes/photos), text effects, AI assists, version history, offline PWA"
-keywords: "wipe cover uncover split transition push pull barn door data chart chart data column chart bar chart line chart area chart pie chart doughnut chart insert chart paste from excel google sheets stacked data labels legend gridlines insertChart updateChart getChart openChartData powerpoint chart slides presentation new presentation slide deck slides panel add slide insert slide above below duplicate slide reorder slides slide transition fade zoom easing duration morph magic move morph transition smart animation duplicate slide move objects slide master use as slide master crown master layer logo footer watermark every slide slide number page number slideNumber totalSlides date field ${date} footer formula hide slide hidden slide skip slide section sections auto-advance advance after timing self-running kiosk loop until esc setSlideHidden setSlideSection setSlideAdvanceAfter setSlideShowLoop new slide layout layouts title and content two columns section header comparison key numbers timeline cards closing insertSlideWithLayout getSlideLayouts equals present F5 Shift+F5 present from current slide presentation mode laser pointer ink highlighter ink brush eraser exit presentation importMarkdownSlides markdown slides addSlide updateSlideTransition updateSlideBackground togglePresentationMode speaker notes notes pane presenter notes setSlideNotes getSlideNotes toggleSpeakerNotes markdown notes presenter view link hyperlink jump to slide button menu agenda quiz interactive presentation non-linear setLink getLink end show alt+f5 openPresenterView presenter window timer next slide second screen projector dual monitor canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
+keywords: "wipe cover uncover split transition push pull barn door data chart chart data column chart bar chart line chart area chart pie chart doughnut chart scatter chart xy chart scatter plot bubble chart radar chart spider chart web chart filled radar stock chart candlestick ohlc high low close 100% stacked percent stacked combination chart combo chart column and line secondary axis right axis dual axis insert chart paste from excel google sheets stacked data labels legend gridlines insertChart updateChart getChart openChartData powerpoint chart slides presentation new presentation slide deck slides panel add slide insert slide above below duplicate slide reorder slides slide transition fade zoom easing duration morph magic move morph transition smart animation duplicate slide move objects slide master use as slide master crown master layer logo footer watermark every slide slide number page number slideNumber totalSlides date field ${date} footer formula hide slide hidden slide skip slide section sections auto-advance advance after timing self-running kiosk loop until esc setSlideHidden setSlideSection setSlideAdvanceAfter setSlideShowLoop new slide layout layouts title and content two columns section header comparison key numbers timeline cards closing insertSlideWithLayout getSlideLayouts equals present F5 Shift+F5 present from current slide presentation mode laser pointer ink highlighter ink brush eraser exit presentation importMarkdownSlides markdown slides addSlide updateSlideTransition updateSlideBackground togglePresentationMode speaker notes notes pane presenter notes setSlideNotes getSlideNotes toggleSpeakerNotes markdown notes presenter view link hyperlink jump to slide button menu agenda quiz interactive presentation non-linear setLink getLink end show alt+f5 openPresenterView presenter window timer next slide second screen projector dual monitor canva design document page size preset instagram post story poster flyer business card template search fits badge blank page empty page start blank pasteboard off page objects outside page spare artwork overhang faded trimmed part my templates brand kit font pairing elements panel unified element search blended search icons shapes photos one box type a word alias love heart chat speech box rectangle frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only ready for social one click download for instagram story linkedin facebook cover x twitter youtube thumbnail exact size upload limit 2 mb exportForPlatform getSocialTargets magic write ai image generate remove background replace background swap backdrop thumbnail indexeddb magic resize repurpose format magic edit inpaint magic expand outpaint extend photo ai design generate brief version history snapshot restore recents grid open drawing bullet numbered list rich text pwa install offline service worker app"
 ---
 
 # Design Studio
@@ -175,7 +175,7 @@ Y.togglePresentationMode(true);            // present
 ## Charts
 
 A **data chart** draws numbers you type or paste: **Column**, **Bar**, **Line**, **Area**,
-**Pie** or **Doughnut**. Insert one from the **Data/Metrics** tools in the toolbar (the
+**Pie**, **Doughnut**, **Scatter**, **Bubble**, **Radar**, **Filled radar** or **Stock**. Insert one from the **Data/Metrics** tools in the toolbar (the
 **Data chart** button at the end of the list), or run **Insert data chart** from the command
 palette (<kbd>Ctrl+K</kbd>). It lands on the current slide (or the middle of the view) with sample
 data, and the **Chart data** window opens.
@@ -190,10 +190,29 @@ chart updates as you go.
 - Numbers can be typed as `1,250` or `12%`. A blank cell (or text that isn't a number) is a gap:
   no bar, a break in the line.
 - Above the grid: **Type**, **Title**, **Legend** (Bottom, Right, Top, None), **Stacked**,
-  **Data labels** and **Gridlines**. Negative values go below the zero line; stacked charts stack
+  **100%**, **Data labels** and **Gridlines**. **100%** (with Stacked) makes every stack the same
+  height, each series its share of the category's total; the axis reads 0–100%, and data labels
+  still show the values. Negative values go below the zero line; stacked charts stack
   positives up and negatives down.
 - A **Pie** or **Doughnut** shows the first series only (the window says so), and leaves out
   negative values.
+- **Scatter** and **Bubble** plot numbers against numbers: the first column (headed **X**) holds
+  the X values, and each series column its Y values. If the X column isn't numbers, the points
+  are numbered 1, 2, 3… as in PowerPoint. A scatter chart shows markers; tick **Lines** to join
+  them in row order, and **Smooth** to curve those lines. A **Bubble** series has two columns, **Y**
+  and **Size**: a bubble's *area* follows its size (twice the size, twice the area), the largest a
+  quarter of the plot across. Switching a chart to Bubble gives every point a size of 1 to start.
+- **Radar** puts each category on a spoke from 12 o'clock, clockwise, and draws each series as an
+  outline around the centre (**Filled radar** fills it). It needs at least 3 categories.
+- **Stock** takes its series in order **Open, High, Low, Close** (or **High, Low, Close**), one
+  row per day: a line from high to low, and a box from open to close — hollow when the price
+  rose, filled when it fell. With three series, a tick marks the close. Its value axis covers the
+  prices rather than starting at zero.
+- **Stacked** applies to Column, Bar, Line and Area.
+- **Combination charts.** On a Column, Line or Area chart, each series has a type under its name
+  (**Column**, **Line** or **Area**) and a **Right axis** box: draw sales as columns and the
+  margin as a line, measured on its own scale on the right. Areas are drawn behind, then columns,
+  then lines. Only the series of the chart's own type stack.
 - Close with **✕**, <kbd>Esc</kbd> or a click outside. Everything you changed while it was open is
   **one undo step**.
 
@@ -213,13 +232,21 @@ const id = Y.insertChart({ kind: 'line', title: 'Visitors',
   categories: ['Jan', 'Feb', 'Mar'],
   series: [{ name: '2025', values: [120, 180, 240] }, { name: '2026', values: [150, null, 300], color: '#ed7d31' }] });
 Y.updateChart(id, { kind: 'column', stacked: true, legend: 'right', dataLabels: true }); // one undo step
+Y.insertChart({ kind: 'bubble', categories: ['1', '2.5', '4'],          // X values
+  series: [{ name: 'Teams', values: [3, 7, 5], sizes: [10, 40, 20] }] }); // Y, and bubble sizes
+Y.insertChart({ kind: 'scatter', lines: true, smooth: true });          // the sample, joined and smoothed
+Y.insertChart({ kind: 'column', stacked: true, categories: ['Q1', 'Q2'], series: [
+  { name: 'Units', values: [120, 150] },
+  { name: 'Margin', values: [0.12, 0.18], kind: 'line', secondary: true }] });  // a line on the right axis
+Y.insertChart({ kind: 'bar', stacked: true, percent: true });           // 100% stacked bars
 Y.getChart(id);              // → { kind, categories, series, title, stacked, legend, … }
 Y.openChartData(id);         // open the Chart data window
 ```
 
 :::note
-Scatter, radar, stock and combination charts, secondary axes, trendlines and per-point colours
-aren't supported yet: pie slices always take the standard palette, in PowerPoint too. A 100% stacked chart from PowerPoint comes in as an ordinary stacked chart.
+Axis titles, trendlines, error bars and per-point colours aren't supported yet: pie slices always
+take the standard palette, in PowerPoint too. A combination chart combines Column, Line and Area
+only (a scatter or stock part of a PowerPoint combination chart is left out, and a message says so).
 :::
 
 ## Design templates & My Templates

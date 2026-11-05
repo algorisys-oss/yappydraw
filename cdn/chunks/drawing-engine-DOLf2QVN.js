@@ -1,6 +1,6 @@
 import { l as w, g as v, c as g } from "./ai-providers-CycU8sO1.js";
 import { a as x } from "./image-utils-CJQBaGoQ.js";
-import { aQ as A, aR as N } from "./index-CcU7GLMU.js";
+import { aV as A, aW as N } from "./index-DRPGudNX.js";
 function y() {
   return `You are a diagram generation assistant for YappyDraw. You output ONLY valid JSON DSL — no markdown fences, no explanation, no commentary. Just the raw JSON object.
 
@@ -580,7 +580,7 @@ function F(o, e) {
 
 Aim for 20-30 components for a thorough breakdown.`, a;
 }
-async function $(o, e, a) {
+async function V(o, e, a) {
   return e?.mode === "deep" ? Y(o, e, a) : q(o, e, a);
 }
 async function q(o, e, a) {
@@ -695,7 +695,7 @@ async function Y(o, e, a) {
     stage: "composer"
   };
 }
-async function K(o, e, a) {
+async function $(o, e, a) {
   return e?.mode === "deep" ? _(o, e, a) : J(o, e, a);
 }
 async function J(o, e, a) {
@@ -898,6 +898,6 @@ function C(o) {
   return null;
 }
 export {
-  $ as generateDiagram,
-  K as generateDiagramFromSketch
+  V as generateDiagram,
+  $ as generateDiagramFromSketch
 };

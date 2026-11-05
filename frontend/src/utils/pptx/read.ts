@@ -24,6 +24,7 @@ import type { Deck, Slide, Item, MediaItem, Paint, Color, Line, TextBody, Paragr
 import { effectOf, sideOf } from './anim-map';
 import { builtinTableStyleXml } from './builtin-table-styles';
 import type { ChartSpec, ChartSeries, ChartKind } from '../chart/chart-layout';
+import { canCombine } from '../chart/chart-layout';
 import { EMU_PER_PX, EMU_PER_PT } from './ooxml';
 import { geometryPathsPx, textRectPx, type GeomDef } from './guides';
 
@@ -1366,7 +1367,45 @@ function vmlPreview(r: Res, spid: string | null): Media | null {
 const PLOTS: Record<string, ChartKind> = {
     barChart: 'column', bar3DChart: 'column', lineChart: 'line', line3DChart: 'line',
     areaChart: 'area', area3DChart: 'area', pieChart: 'pie', pie3DChart: 'pie', ofPieChart: 'pie', doughnutChart: 'doughnut',
+    scatterChart: 'scatter', bubbleChart: 'bubble', radarChart: 'radar', stockChart: 'stock',
 };
+
+/** A number format that shows a date (`m/d/yyyy`, `d-mmm-yy`, `[$-409]mmmm yyyy`…): d, m or y outside quotes and brackets. */
+export function isDateFormat(code: string): boolean {
+    const bare = code.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '').replace(/\\./g, '');
+    return !/^general$/i.test(bare.trim()) && /[dmy]/i.test(bare) && !/[#0?]/.test(bare);
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/**
+ * A spreadsheet date serial as `code` shows it: days since 30 Dec 1899 (1 Jan 1904 in a 1904
+ * workbook), formatted with the code's day, month and year parts (time parts are left out).
+ */
+export function formatExcelDate(serial: number, code: string, date1904 = false): string {
+    const ms = Date.UTC(1899, 11, 30) + (Math.floor(serial) + (date1904 ? 1462 : 0)) * 86400000;
+    const d = new Date(ms);
+    if (!Number.isFinite(d.getTime())) return String(serial);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+    const bare = code.replace(/\[[^\]]*\]/g, '').replace(/;.*$/, '');
+    return bare.replace(/"([^"]*)"|\\(.)|yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|[hs]+|AM\/PM|[:.]?[hs]/gi, (tok, quoted, escaped) => {
+        if (quoted !== undefined) return quoted;
+        if (escaped !== undefined) return escaped;
+        switch (tok.toLowerCase()) {
+            case 'yyyy': return String(y);
+            case 'yy': return String(y % 100).padStart(2, '0');
+            case 'mmmm': return MONTHS[m];
+            case 'mmm': return MONTHS[m].slice(0, 3);
+            case 'mm': return String(m + 1).padStart(2, '0');
+            case 'm': return String(m + 1);
+            case 'dddd': return d.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+            case 'ddd': return d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+            case 'dd': return String(day).padStart(2, '0');
+            case 'd': return String(day);
+            default: return '';   // hours, minutes, seconds, AM/PM: dates only
+        }
+    }).replace(/\s+$/, '').replace(/[:.\s]+$/, '');
+}
 
 /**
  * A PowerPoint chart (`c:chartSpace`) as a data chart: its first plot we can draw (column/bar,
@@ -1385,11 +1424,27 @@ function chartOf(gd: El | null, level: Level, sc: SlideCtx): ChartSpec | null {
     const plot = elementKids(plotArea).find(k => PLOTS[k.localName]);
     if (!plot) return null;
     const plots = elementKids(plotArea).filter(k => /Chart$/.test(k.localName));
-    if (plots.length > 1) sc.warnings.push('A combination chart came in as its first chart type only.');
-    let kind = PLOTS[plot.localName];
-    if (kind === 'column' && attr(kid(plot, 'barDir'), 'val') === 'bar') kind = 'bar';
+    const kindOfGroup = (g: El): ChartKind | undefined => {
+        let k = PLOTS[g.localName];
+        if (k === 'column' && attr(kid(g, 'barDir'), 'val') === 'bar') k = 'bar';
+        if (k === 'radar' && attr(kid(g, 'radarStyle'), 'val') === 'filled') k = 'filledRadar';
+        return k;
+    };
+    const kind = kindOfGroup(plot)!;
+    // A column, line or area chart combines with groups of those types, each series keeping its
+    // type and value axis (a group on another value axis than the first is on the secondary one).
+    // Any other chart takes groups of its own type (two scatter groups on their own axes are one
+    // chart). Groups that don't fit are left out, and said so.
+    const combo = canCombine(kind);
+    const groups = plots.filter(g => (combo ? canCombine(kindOfGroup(g)) : g.localName === plot.localName));
+    const left = plots.filter(g => !groups.includes(g)).map(g => g.localName.replace(/(3D)?Chart$/, ''));
+    if (left.length) sc.warnings.push(`A combination chart came in without its ${[...new Set(left)].join(' and ')} part.`);
+    const valIds = new Set(kids(plotArea, 'valAx').map(a => attr(kid(a, 'axId'), 'val')));
+    const valAxisOf = (g: El) => kids(g, 'axId').map(a => attr(a, 'val')).find(id => valIds.has(id)) ?? null;
+    const primaryAxis = valAxisOf(groups[0]);
+    const xy = kind === 'scatter' || kind === 'bubble';
+    const date1904 = attr(kid(root, 'date1904'), 'val') === '1';
     const grouping = attr(kid(plot, 'grouping'), 'val') || '';
-    if (grouping === 'percentStacked') sc.warnings.push('A 100% stacked chart came in as a stacked chart.');
     // A chart resolves scheme colours against its own theme override (a colour scheme copied in
     // from the workbook it was made in), when it has one, and its own colour-map override.
     let ctx = sc.ctx;
@@ -1405,38 +1460,93 @@ function chartOf(gd: El | null, level: Level, sc: SlideCtx): ChartSpec | null {
         for (let i = 0; i < clrOvr.attributes.length; i++) m[clrOvr.attributes[i].localName ?? clrOvr.attributes[i].name] = clrOvr.attributes[i].value;
         ctx = { ...ctx, clrMap: m };
     }
-    // Cached points: `c:pt idx` with `c:v`, in a str/num cache, a literal, or a multi-level cache's first level.
-    const points = (holder: El | null, n?: number): string[] => {
+    // Cached points: `c:pt idx` with `c:v`, in a str/num cache, a literal, or a multi-level cache's
+    // first level. `labels`: category labels, where a number cache in a date format holds day
+    // numbers to show as dates (a stock chart's trading days).
+    const points = (holder: El | null, labels = false): string[] => {
         const cache = findDeep(holder, 'strCache', 3) ?? findDeep(holder, 'numCache', 3) ?? findDeep(holder, 'strLit', 2) ?? findDeep(holder, 'numLit', 2)
             ?? kid(findDeep(holder, 'multiLvlStrCache', 3), 'lvl');
         if (!cache) return [];
-        const count = Math.min(10000, n ?? num(kid(cache, 'ptCount'), 'val'));
+        const count = Math.min(10000, num(kid(cache, 'ptCount'), 'val'));
         const out: string[] = new Array(Math.max(0, count)).fill('');
+        const code = /num/.test(cache.localName) ? kid(cache, 'formatCode')?.textContent ?? '' : '';
+        const dates = labels && !!code && isDateFormat(code);
         for (const pt of kids(cache, 'pt')) {
             const i = num(pt, 'idx');
-            if (i >= 0 && i < 10000) out[i] = kid(pt, 'v')?.textContent ?? '';
+            if (!(i >= 0 && i < 10000)) continue;
+            const v = kid(pt, 'v')?.textContent ?? '';
+            out[i] = dates && v.trim() && Number.isFinite(Number(v)) ? formatExcelDate(Number(v), attr(pt, 'formatCode') || code, date1904) : v;
         }
         return out;
     };
-    const sers = kids(plot, 'ser').slice(0, 64);
+    const entries = groups.flatMap(g => kids(g, 'ser').map(el => ({ el, kind: kindOfGroup(g), secondary: combo && valAxisOf(g) !== primaryAxis })))
+        .slice(0, 64);
+    const sers = entries.map(e => e.el);
     if (!sers.length) return null;
-    const categories = points(kid(sers[0], 'cat'));
-    const series: ChartSeries[] = sers.map((s, i) => {
-        const raw = points(kid(s, 'val'));
-        const values = raw.map(v => (v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null));
+    const numbers = (holder: El | null) => points(holder).map(v => (v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null));
+    // Scatter and bubble series name their X values (`c:xVal`) and Y values (`c:yVal`); a series
+    // without X values is numbered 1, 2, 3…
+    const xsOf = (s: El) => points(kid(s, xy ? 'xVal' : 'cat') ?? kid(s, 'cat'), true);
+    let categories = xsOf(sers[0]);
+    let series: ChartSeries[] = sers.map((s, i) => {
+        const values = numbers(kid(s, xy ? 'yVal' : 'val') ?? kid(s, 'val'));
+        const sizes = kind === 'bubble' ? numbers(kid(s, 'bubbleSize')) : null;
         const name = points(kid(s, 'tx'))[0] || kid(s, 'tx')?.textContent?.trim() || `Series ${i + 1}`;
         const spPr = kid(s, 'spPr');
-        const color = colorIn(kid(spPr, 'solidFill'), ctx) ?? colorIn(kid(kid(spPr, 'ln'), 'solidFill'), ctx);
-        return { name, values, ...(color && { color: color.hex }) };
+        // A markers-only series (scatter) has no line: its colour is its marker's.
+        const color = colorIn(kid(spPr, 'solidFill'), ctx) ?? colorIn(kid(kid(spPr, 'ln'), 'solidFill'), ctx)
+            ?? colorIn(kid(path(s, 'marker', 'spPr'), 'solidFill'), ctx);
+        const own = entries[i].kind;
+        return { name, values, ...(sizes && { sizes }), ...(color && { color: color.hex }),
+            ...(combo && canCombine(own) && own !== kind && { kind: own }), ...(entries[i].secondary && { secondary: true }) };
     });
-    const n = Math.max(categories.length, ...series.map(s => s.values.length));
+    if (xy && sers.length > 1) {
+        // One X column holds every series' points. Series that share their X values (the usual
+        // case) keep it as it is. Series with their own are stacked into one column, each series'
+        // rows one block after another and the series empty outside its block: no point is lost
+        // (a series can have several points at one X) and each line keeps its own order.
+        const own = sers.map(xsOf);
+        const shared = own.every(xs => !xs.length || (xs.length === categories.length && xs.every((x, k) => x === categories[k])));
+        if (!shared) {
+            const blocks = series.map((s, j) => {
+                const xs = own[j].length ? own[j] : categories;
+                return Math.max(xs.length, s.values.length);
+            });
+            const total = blocks.reduce((a, b) => a + b, 0);
+            const merged: string[] = [];
+            series = series.map((s, j) => {
+                const xs = own[j].length ? own[j] : categories;
+                const start = merged.length;
+                for (let k = 0; k < blocks[j]; k++) merged.push(xs[k] ?? '');
+                const values: (number | null)[] = new Array(total).fill(null);
+                const sizes = s.sizes ? new Array<number | null>(total).fill(null) : undefined;
+                for (let k = 0; k < blocks[j]; k++) { values[start + k] = s.values[k] ?? null; if (sizes) sizes[start + k] = s.sizes?.[k] ?? null; }
+                return { ...s, values, ...(sizes && { sizes }) };
+            });
+            categories = merged;
+            sc.warnings.push('A scatter chart\'s series had their own X values; they were merged into one X column.');
+        }
+    }
+    // X values as numbers read ("0.70000000000000007" is 0.7).
+    // (Excel shows 15 significant digits.)
+    if (xy) categories = categories.map(c => (c.trim() && Number.isFinite(Number(c)) ? String(Number(Number(c).toPrecision(15))) : c));
+    const n = Math.max(categories.length, ...series.map(s => Math.max(s.values.length, s.sizes?.length ?? 0)));
     while (categories.length < n) categories.push(String(categories.length + 1));
+    // Scatter lines: a style that draws them, on a series that has a line.
+    const style = attr(kid(plot, 'scatterStyle'), 'val') || 'marker';
+    const lines = kind === 'scatter' && /line|smooth/i.test(style)
+        && sers.some(s => !kid(kid(kid(s, 'spPr'), 'ln'), 'noFill'));
+    const smooth = lines && (/smooth/i.test(style) || sers.some(s => ['1', 'true'].includes(attr(kid(s, 'smooth'), 'val') || '')));
     const titleEl = kid(chart, 'title');
     const title = titleEl
         ? (findAll(titleEl, 't', 8).map(t => t.textContent ?? '').join('').trim() || (series.length === 1 ? series[0].name : ''))
         : '';
     const legendPos = attr(path(chart, 'legend', 'legendPos'), 'val');
-    const valAx = kid(plotArea, 'valAx');
+    // The range and gridlines are the primary value axis's: the one the chart's first group is
+    // measured on (a combination chart's other axis can come first in the file). Scatter and
+    // bubble charts have two value axes; theirs is the vertical one (Y).
+    const valAx = (xy && kids(plotArea, 'valAx').find(a => /^[lr]$/.test(attr(kid(a, 'axPos'), 'val') || '')))
+        || (primaryAxis !== null && kids(plotArea, 'valAx').find(a => attr(kid(a, 'axId'), 'val') === primaryAxis)) || kid(plotArea, 'valAx');
     const scaling = kid(valAx, 'scaling');
     const lbl = (holder: El | null) => { const d = kid(holder, 'dLbls'); return !!d && (attr(kid(d, 'showVal'), 'val') === '1' || attr(kid(d, 'showPercent'), 'val') === '1'); };
     const max = attr(kid(scaling, 'max'), 'val'), min = attr(kid(scaling, 'min'), 'val');
@@ -1444,11 +1554,14 @@ function chartOf(gd: El | null, level: Level, sc: SlideCtx): ChartSpec | null {
         kind, categories, series,
         ...(title && { title }),
         ...((grouping === 'stacked' || grouping === 'percentStacked') && { stacked: true }),
+        ...(grouping === 'percentStacked' && { percent: true }),
         legend: !kid(chart, 'legend') ? 'none' : legendPos === 'b' ? 'bottom' : legendPos === 't' ? 'top' : 'right',
         ...((lbl(plot) || sers.some(lbl)) && { dataLabels: true }),
         gridlines: !!kid(valAx, 'majorGridlines'),
         ...(max !== null && Number.isFinite(Number(max)) && { yMax: Number(max) }),
         ...(min !== null && Number.isFinite(Number(min)) && { yMin: Number(min) }),
+        ...(lines && { lines: true }),
+        ...(smooth && { smooth: true }),
     };
 }
 

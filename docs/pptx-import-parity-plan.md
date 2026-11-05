@@ -1,6 +1,6 @@
 # PPTX import parity plan
 
-Status: **P1, P2 and P3 done, not yet shipped** (P1 2026-11-04, P2 and P3 2026-11-05). P4 next. Branch to use: `feat/pptx-parity`.
+Status: **P1–P3 shipped (v0.8.304); P4a + 100 % stacking + combination charts shipped in v0.8.305** (2026-11-05). Next: P4b (2016 chart types). Branch to use: `feat/pptx-parity`.
 
 ## Goal
 
@@ -158,6 +158,33 @@ each type).
   treemap, sunburst. These need new layouts each. Decided: read the cached values and draw them once
   as a **static vector group**, data kept in alt text. Native editable charts later, per demand.
 - Also fix while here: combination charts (today first type only) and true 100 % stacking.
+
+**P4a as built (2026-11-05).** `ChartKind` gains `scatter`, `bubble`, `radar`, `filledRadar`,
+`stock`; `ChartSeries.sizes` (bubble area) and `ChartSpec.lines`/`smooth` (scatter). Scatter and
+bubble read the category column as X values (`xValue`; none numeric → 1, 2, 3…). Layout:
+`layoutXY` (value X axis, 1/6 auto-range rule so years don't start at 0, Catmull-Rom `smoothPoints`,
+bubbles ∝ √size, largest ¼ of the plot), `layoutRadar` (after DeckCraft `radar.rs`), `layoutStock`
+(high-low line; 4 series → up/down box, 3 → close tick). Renderer: outlined rects and translucent
+outlined dots, both styles. Read: `xVal`/`yVal`/`bubbleSize`, `scatterStyle` + per-series
+`ln/noFill`, `radarStyle`, same-type plot groups merged (#481), Y from the vertical `valAx`, series
+with their own X stacked into one column, date category caches formatted (#480). Write: native
+`scatterChart` (two `valAx`), `bubbleChart`, `radarChart`, `stockChart` (`hiLowLines`,
+`upDownBars`; not 3–4 series → line chart), workbook with numeric X and bubble size columns. Dialog:
+the new kinds, X column, Y/Size per bubble series, Lines/Smooth, notes; all five locales. Checked on
+27 LibreOffice chart test files (pptx/xlsx/docx, `temp/xy-corpus.ts`) against LibreOffice's own
+rendering, and exports opened in LibreOffice. Not done: secondary axes, trendlines, error bars,
+marker shapes, axis titles.
+
+**100 % stacking and combination charts (2026-11-05).** `ChartSpec.percent`; `ChartSeries.kind`
+('column' | 'line' | 'area') and `secondary`, honoured on column, line and area charts
+(`canCombine`, `seriesKind`, `onSecondary`). `layoutAxes` rewritten around per-series type and
+axis: a range per axis, a right-hand tick column, areas → columns → lines, stacks only for the
+chart's own type, 100 % by each category's total of magnitudes. Read: column/line/area groups
+combine, the primary axis is the first group's (also the range source), other types dropped with
+a warning. Write: a plot group per type and axis, unique series indices, a hidden second `catAx`
+and a right `valAx` (`crosses max`), `percentStacked` + `0%` axis format. Dialog: 100 %, per-series
+type and Right axis. Known gap: LibreOffice's `tdf140489` (area + line + scatter on dates) comes in
+with the scatter part dropped and values that don't match LibreOffice's axis.
 
 ### P5 — Animations: motion paths, by-paragraph, triggers
 

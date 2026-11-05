@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.305', date: '2026-11-05', items: [
+        'New chart types: Scatter, Bubble, Radar, Filled radar and Stock. Pick one under Type in the Chart data window — scatter and bubble charts take their X values from the first column, and a bubble chart has a Size column for each series.',
+        'Combination charts: show sales as columns and the margin as a line on its own scale on the right. Each series has a type and a Right axis box under its name. Plus 100% stacked charts.',
+        'PowerPoint files with scatter, bubble, radar, stock, 100% stacked or combination charts now open with those charts editable, and they go back to PowerPoint as real charts. Dates on a chart’s axis show as dates.',
+    ] },
     { version: '0.8.304', date: '2026-11-05', items: [
         'Videos and sound in PowerPoint files now come in and play: clips set to start automatically play when their slide appears, and looping and mute are kept. Export to PowerPoint keeps your videos as real clips too.',
         'Logos and diagrams pasted into PowerPoint from Office or Visio (EMF/WMF) now open as sharp vector pictures instead of placeholders, and TIFF pictures and embedded Excel, Word and equation objects come in as pictures.',

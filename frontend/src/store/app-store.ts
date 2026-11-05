@@ -3057,7 +3057,8 @@ export const insertChart = (spec?: Partial<ChartSpec>, box?: { x: number; y: num
     const layer = store.layers.find(l => l.id === store.activeLayerId && !l.isMaster) ?? store.layers.find(l => !l.isMaster) ?? store.layers[0];
     const el = {
         id: generateId('chart'), type: 'chart', ...b,
-        chart: normalizeChart({ ...defaultChartSpec(), ...(spec || {}) }),
+        // Over the sample for the kind asked for: a bubble chart needs sizes, a stock chart its four series.
+        chart: normalizeChart({ ...defaultChartSpec(spec?.kind), ...(spec || {}) }),
         strokeColor: '#1f2937', backgroundColor: 'transparent', fillStyle: 'solid', strokeWidth: 1, strokeStyle: 'solid',
         opacity: 100, roughness: 1, angle: 0, renderStyle: store.defaultElementStyles.renderStyle ?? 'architectural',
         seed: Math.floor(Math.random() * 2 ** 31), roundness: null, locked: false, link: null,

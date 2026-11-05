@@ -1030,12 +1030,18 @@ size.
   on someone's own computer come in as their **poster picture**, and a message names them. Clips
   are stored inside the Yappy document, which is why large ones are left as pictures: every
   autosave writes them again.
-- **Charts** (column, bar, line, area, pie, doughnut, and their 3-D versions drawn flat) come in
+- **Charts** (column, bar, line, area, pie, doughnut, scatter, bubble, radar, filled radar,
+  stock, and the 3-D versions drawn flat) come in
   as Yappy **data charts** with their data, series colours, title, legend, data labels,
-  gridlines and axis range: double-click one to edit its data. A combination chart keeps its
-  first chart type, and a 100% stacked chart comes in as stacked.
+  gridlines and axis range: double-click one to edit its data.
 
-Not imported yet: **scatter, radar, stock, bubble and the newer chart types** (waterfall,
+**100% stacked** charts stay 100% stacked, and **combination charts** (columns, lines and areas
+together) keep each series' type and whether it is on the secondary (right) axis; a scatter or
+stock part of a combination chart is left out, with a message. Scatter and bubble charts keep their X values and bubble sizes (when a chart's series each have
+their own X values, they are stacked into one X column, and a message says so). Dates on a
+chart's category axis, as stock charts use, show as dates.
+
+Not imported yet: **surface charts and the newer chart types** (waterfall,
 treemap, funnel…) come in as labelled frames; **WordArt** text warps flat; a **trim** or **fade** set on a clip in PowerPoint is not kept. **Animations** come in as
 Yappy build animations (see Animation ▸ Animations in PowerPoint); motion paths, triggers and
 by-paragraph builds don't. A message tells you how many items weren't imported exactly, and the
