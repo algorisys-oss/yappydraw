@@ -90,9 +90,9 @@ improves the PowerPoint round trip.
 | SmartArt | Partial (insert basics, layout, text pane; `pptx/src/dgm.rs`, `engine/src/cmd/smartart/`) | **Partial**: imported as its drawn shapes (v0.8.292). Yappy's mindmap, flowchart and layered auto-layout already cover the use case natively | Low; Yappy's diagrams are stronger | — |
 | Pictures: crop, transparency, corrections, alt text | Has | **Has** crop, filters, opacity. Alt text: **Partial**, see Accessibility | — | — |
 | SVG pictures | Missing | **Has** (Yappy is vector-native) | Ahead | — |
-| EMF/WMF pictures | Partial: drawn as vectors (`crates/metafile`) | **Missing**: placeholders on import (`workspace.md`) | Medium for older corporate decks. RT | L |
-| Video on a slide | Has, decoded in-app, play in click sequence, trim, fade, loop | **Partial**: `video` element with URL/YouTube/Vimeo, poster, autoplay on slide entry (`app-store.ts:2824`). Exported to PPTX as a poster picture (`from-yappy.ts:346` `RASTER_TYPES`); no click-sequence play, no trim | Medium. RT | M |
-| Audio on a slide (narration, background music, play across slides) | Has | **Missing** for slides. Audio clips exist only on the Animation-mode timeline (`api.ts:5138`) | Low–medium | M |
+| EMF/WMF pictures | Partial: drawn as vectors (`crates/metafile`) | **Has (import)**: drawn as SVG vector pictures, `utils/metafile/` (port of `crates/metafile`) | Medium for older corporate decks. RT | L |
+| Video on a slide | Has, decoded in-app, play in click sequence, trim, fade, loop | **Partial**: `video` element with URL/YouTube/Vimeo, poster, autoplay on slide entry (`app-store.ts:2824`). Click to play in the show; imported from and exported to PPTX as a real clip (autoplay, loop, mute; YouTube/Vimeo export as a linked picture); no trim or fade | Medium. RT | M |
+| Audio on a slide (narration, background music, play across slides) | Has | **Partial**: an audio file plays through a `video` element (speaker icon, player bar); PowerPoint audio clips import and export. No play across slides. Animation-mode timeline audio is separate (`api.ts:5138`) | Low–medium | M |
 | Equations | Missing | **Has** (MathJax/LaTeX) | Ahead | — |
 | Icons / stock content | Has (Lucide) | **Has** and broader (Element Search: icons, illustrations, photos) | Ahead | — |
 
@@ -128,7 +128,7 @@ improves the PowerPoint round trip.
 | Animated GIF / video of the deck | GIF yes (one frame per slide), no video | **Has**, ahead: page MP4/GIF with animations; whole-deck recording from the show (`animation.md` §602) | — | — |
 | HTML presentation export | Missing (web build is the app) | **Has**: self-contained HTML player with keyboard navigation (`whats-new.ts` 0.8.105) | Ahead | — |
 | PPTX export (editable) | Has | **Has** (v0.8.292): native shapes, text, lists, connectors, backgrounds, transitions; rasterizes what PowerPoint can't draw. Since then: notes, animations, charts, hidden slides, sections, links (v0.8.293–feat/charts). Since then: native tables (feat/pptx-tables) | RT items above | — |
-| PPTX import | Has, broad; unknown XML kept and written back (`ShapeKind::Opaque`) | **Partial, Dev Mode**: shapes, text, bullets, SmartArt-as-shapes, connectors, pictures, tables-as-groups, master artwork, backgrounds, transitions. Since then: charts, animations, notes. Skipped: EMF/WMF/TIFF, audio/video, fonts | High; see the recommended order | — |
+| PPTX import | Has, broad; unknown XML kept and written back (`ShapeKind::Opaque`) | **Partial, Dev Mode**: shapes, text, bullets, SmartArt-as-shapes, connectors, pictures, tables-as-groups, master artwork, backgrounds, transitions. Since then: charts, animations, notes, EMF/WMF pictures (as SVG), TIFF pictures (as PNG), embedded objects (as their preview picture), video/audio clips. Skipped: fonts | High; see the recommended order | — |
 | Keep unknown PPTX parts for round trip | Has (`Opaque` shapes, kept chart parts) | **Missing**: import → edit → export loses anything Yappy didn't model | Medium; matters only once import leaves Dev Mode | L |
 | `.potx` templates / `.ppsx` shows | Has | **Partial**: import accepts `.potx`/`.ppsx`; export writes `.pptx` only | Low | S |
 | PDF import (pages as slide backgrounds) | Missing | Missing (`todo.md` Phase 73) | Low–medium | M |

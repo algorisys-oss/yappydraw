@@ -69,6 +69,10 @@ export const REL = {
     hyperlink: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
     chart: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
     package: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package',
+    video: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/video',
+    audio: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio',
+    /** PowerPoint 2010's embedded-media relationship (`p14:media r:embed`). */
+    media: 'http://schemas.microsoft.com/office/2007/relationships/media',
 } as const;
 
 export interface Rel { id: string; type: string; target: string; external?: boolean }

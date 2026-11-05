@@ -13,13 +13,16 @@
 import type { DrawingElement, PathSubpath, PathAnchor, RichTextSpan, TextAlign, PatternFill } from '../../types';
 import type { SlideDocument, Slide as YappySlide, SlideTransition } from '../../types/slide-types';
 import { createSlideDocument, createDefaultSlide } from '../../types/slide-types';
-import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink, DeckAnim, TableItem } from './deck';
+import type { Deck, Item, Paint, Color, Line, TextBody, Paragraph, ShapeItem, ConnectorItem, PictureItem, MediaItem, Media, CustomPath, PathCmd, Slide, Transition, DeckLink, DeckAnim, TableItem } from './deck';
 import { slideLink, actionLink } from '../slide-links';
 import { fromDeckAnim } from './anim-map';
 import { normalizeChart } from '../chart/chart-layout';
 import { geometryPathsPx, textRectPx, loadPresets, type GeomDef } from './guides';
 import { cmdsBounds } from './custgeom';
 import { reverseFontFamily } from '../text-utils';
+import { metafileToSvgImage } from '../metafile';
+import { tiffToPngImage } from '../tiff';
+import { clipMime, detectVideoProvider, getEmbedURL } from '../video-utils';
 
 export interface ToYappyResult {
     doc: SlideDocument;
@@ -108,6 +111,8 @@ interface Conv {
     slideIds?: Map<string, string>;
     /** Item id → the elements it became, for build animations. */
     itemEls?: Map<number, DrawingElement[]>;
+    /** Bytes of audio/video embedded so far in this import (see MEDIA_DECK_BYTES). */
+    mediaBytes?: { used: number };
 }
 
 /**
@@ -592,10 +597,87 @@ function connectorElements(it: ConnectorItem, c: Conv, groups: string[]): Drawin
     return [el];
 }
 
+/**
+ * Clips are stored inside the document as data URLs, like pictures, so every autosave writes them
+ * again (and version history keeps copies). Measured: ~66 ms of serialising per save for a 20 MB
+ * clip, ~175 ms for 50 MB. Above these, the clip keeps its poster picture and a warning.
+ */
+export const MEDIA_FILE_BYTES = 25 * 1024 * 1024;
+export const MEDIA_DECK_BYTES = 50 * 1024 * 1024;
+
+/** PowerPoint's speaker icon stand-in, for an audio clip saved without a picture. */
+const SPEAKER_ICON = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96">'
+    + '<path d="M3 9h4l5-4v14l-5-4H3z" fill="#4472c4"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#4472c4" stroke-width="1.8" stroke-linecap="round"/></svg>');
+
+/** A poster with a crop, as an SVG that shows just the cropped part (the video renderer draws the whole image). */
+export function croppedPoster(url: string, w: number, h: number, crop: MediaItem['crop']): string {
+    if (!crop || !w || !h || (!crop.l && !crop.t && !crop.r && !crop.b)) return url;
+    const x = crop.l * w, y = crop.t * h;
+    const cw = Math.max(1, (1 - crop.l - crop.r) * w), ch = Math.max(1, (1 - crop.t - crop.b) * h);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${x} ${y} ${cw} ${ch}" width="${Math.round(cw)}" height="${Math.round(ch)}" preserveAspectRatio="none">`
+        + `<image width="${w}" height="${h}" preserveAspectRatio="none" xlink:href="${url}" href="${url}"/></svg>`;
+    return `data:image/svg+xml;base64,${toBase64(new TextEncoder().encode(svg))}`;
+}
+
+/**
+ * A PowerPoint video or audio clip as a Yappy video element (audio plays through the same
+ * element, showing its speaker icon). Embedded files the browser can play become a data URL;
+ * a web link stays a link. Formats browsers can't play (WMV, AVI…), clips over the size limits
+ * and links to someone's local disk keep the poster as a picture, with a warning.
+ */
+function mediaElements(it: MediaItem, c: Conv, groups: string[]): DrawingElement[] {
+    const what = it.audio ? 'Audio' : 'Video';
+    const asPicture = (why: string): DrawingElement[] => {
+        c.warnings.push(`${what} "${it.name}" ${why}; only its picture was imported.`);
+        if (!it.poster) return [];
+        const pic: PictureItem = { kind: 'picture', id: it.id, name: it.name, x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot, flipH: it.flipH, flipV: it.flipV, media: it.poster, crop: it.crop };
+        return pictureElement(pic, c, groups);
+    };
+    let src: string | undefined;
+    if (it.file) {
+        const mime = clipMime(it.file.ext, it.audio);
+        const size = it.file.bytes.length;
+        const budget = (c.mediaBytes ??= { used: 0 });
+        const fmt = it.file.ext.toUpperCase() || 'media';
+        // Read letter by letter: "an AVI", "an MPG", "a WMV".
+        if (!mime) return asPicture(`is ${/^[AEFHILMNORSX]/.test(fmt) ? 'an' : 'a'} ${fmt} file, which browsers can't play`);
+        if (size > MEDIA_FILE_BYTES) return asPicture(`is ${(size / 1048576).toFixed(0)} MB, over the ${MEDIA_FILE_BYTES / 1048576} MB a clip can be`);
+        if (budget.used + size > MEDIA_DECK_BYTES) return asPicture(`would take the presentation's clips over ${MEDIA_DECK_BYTES / 1048576} MB in all`);
+        budget.used += size;
+        src = `data:${mime};base64,${toBase64(it.file.bytes)}`;
+    } else if (it.url) {
+        src = it.url;
+    } else {
+        // Linked to a file on someone's disk: the reader has already said so; keep the poster.
+        if (!it.poster) return [];
+        return pictureElement({ kind: 'picture', id: it.id, name: it.name, x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot, flipH: it.flipH, flipV: it.flipV, media: it.poster, crop: it.crop }, c, groups);
+    }
+    const el = base(c, 'video', it, groups);
+    const provider = it.file ? 'direct' : detectVideoProvider(src);
+    const poster = it.poster ? c.images.get(it.poster) : null;
+    Object.assign(el, {
+        backgroundColor: it.audio ? 'transparent' : '#1a1a2e',
+        videoURL: src,
+        videoProvider: provider,
+        videoEmbedURL: getEmbedURL(src, provider) || undefined,
+        videoPosterDataURL: poster ? croppedPoster(poster.url, poster.w, poster.h, it.crop) : it.audio ? SPEAKER_ICON : undefined,
+        videoAutoplay: !!it.autoplay,
+        videoLoop: !!it.loop,
+        videoMuted: !!it.muted,
+        videoLocked: false,
+    });
+    c.stats.elements++;
+    return [el];
+}
+
 function pictureElement(it: PictureItem, c: Conv, groups: string[]): DrawingElement[] {
     const img = c.images.get(it.media);
     if (!img) {
-        c.warnings.push(`Picture "${it.name}" is a ${it.media.ext.toUpperCase()} image, which browsers can't show; it was imported as a placeholder.`);
+        c.warnings.push(it.media.ext === 'emf' || it.media.ext === 'wmf'
+            ? `Picture "${it.name}" is a ${it.media.ext.toUpperCase()} image Yappy couldn't read (or that draws nothing); it was imported as a placeholder.`
+            : it.media.ext === 'tiff'
+                ? `Picture "${it.name}" is a TIFF image in a form Yappy can't decode (such as JPEG-compressed TIFF); it was imported as a placeholder.`
+                : `Picture "${it.name}" is a ${it.media.ext.toUpperCase()} image, which browsers can't show; it was imported as a placeholder.`);
         const el = base(c, 'rectangle', it, groups);
         Object.assign(el, { backgroundColor: '#f1f3f5', strokeColor: '#adb5bd', strokeWidth: 1, strokeStyle: 'dashed', containerText: `${it.media.ext.toUpperCase()} picture`, fontSize: 14, textColor: '#495057' });
         c.stats.elements++;
@@ -604,7 +686,8 @@ function pictureElement(it: PictureItem, c: Conv, groups: string[]): DrawingElem
     const el = base(c, 'image', it, groups);
     el.dataURL = (it.grayscale && c.gray.get(img.url)) || img.url;
     el.status = 'loaded';
-    el.mimeType = MIME[it.media.ext];
+    // What the data URL holds, not what the deck stored: EMF/WMF become SVG and TIFF becomes PNG.
+    el.mimeType = /^data:([^;,]+)/.exec(img.url)?.[1] ?? MIME[it.media.ext];
     if (it.crop && (it.crop.l || it.crop.t || it.crop.r || it.crop.b)) {
         // Yappy's crop is the source rectangle in image pixels.
         el.crop = { x: it.crop.l * img.w, y: it.crop.t * img.h, width: Math.max(1, (1 - it.crop.l - it.crop.r) * img.w), height: Math.max(1, (1 - it.crop.t - it.crop.b) * img.h) };
@@ -762,6 +845,7 @@ function convertItems(items: Item[], c: Conv, groups: string[]): DrawingElement[
                 case 'shape': made.push(...shapeElements(it, c, groups)); break;
                 case 'connector': made.push(...connectorElements(it, c, groups)); break;
                 case 'picture': made.push(...pictureElement(it, c, groups)); break;
+                case 'media': made.push(...mediaElements(it, c, groups)); break;
                 case 'group': made.push(...convertItems(it.children, c, [...groups, c.nextId('group')])); break;
                 case 'table': {
                     const el = tableElement(it, c, groups);
@@ -842,6 +926,7 @@ async function decodeImages(deck: Deck): Promise<Map<Media, { url: string; w: nu
     const walk = (items: Item[]) => {
         for (const it of items) {
             if (it.kind === 'picture') all.add(it.media);
+            else if (it.kind === 'media' && it.poster) all.add(it.poster);
             else if (it.kind === 'group') walk(it.children);
             else if (it.kind === 'shape' && it.fill.kind === 'image') all.add(it.fill.media);
         }
@@ -849,6 +934,12 @@ async function decodeImages(deck: Deck): Promise<Map<Media, { url: string; w: nu
     for (const s of deck.slides) { walk(s.items); if (s.background?.kind === 'image') all.add(s.background.media); }
     const out = new Map<Media, { url: string; w: number; h: number } | null>();
     await Promise.all([...all].map(async (m) => {
+        // EMF/WMF (logos and diagrams pasted from Office, Visio, older decks): drawn as SVG, so they
+        // stay vector in both render styles and every export. Size from the metafile's own frame.
+        if (m.ext === 'emf' || m.ext === 'wmf') { out.set(m, metafileToSvgImage(m.bytes)); return; }
+        // TIFF (scans, older Office and Mac decks): decoded here to a PNG, since no browser but
+        // Safari shows TIFF. Null for the variants the decoder doesn't cover (JPEG-in-TIFF, YCbCr).
+        if (m.ext === 'tiff') { out.set(m, tiffToPngImage(m.bytes)); return; }
         if (!SHOWABLE.has(m.ext)) { out.set(m, null); return; }
         const url = `data:${MIME[m.ext]};base64,${toBase64(m.bytes)}`;
         let w = 0, h = 0;

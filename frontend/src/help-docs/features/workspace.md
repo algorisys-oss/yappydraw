@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "accessibility alt text alternative text screen reader decorative mark as decorative contrast wcag check accessibility setAltText checkAccessibility layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint speaker notes pptx notes pptx charts powerpoint chart import chart open pptx open powerpoint file drop pptx importPPTX table style pattern fill crop to shape potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
+keywords: "accessibility alt text alternative text screen reader decorative mark as decorative contrast wcag check accessibility setAltText checkAccessibility layer blend mode multiply overlay texture layer fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position dock right dock bottom flyout submenu off screen cut off cannot see expanded tools move panel drag panel movable panel layers panel fixed stuck P3 wide gamut picker does not update properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf pptx powerpoint editable powerpoint slides google slides keynote export to powerpoint exportPPTX editable shapes pictures import powerpoint speaker notes pptx notes pptx charts powerpoint chart import chart emf wmf emf+ metafile windows metafile vector picture tiff tif picture ole embedded object excel object word object equation object visio object preview picture open pptx open powerpoint file drop pptx importPPTX powerpoint video powerpoint audio sound clip media autoplay start automatically loop until stopped mute poster wmv avi table style pattern fill crop to shape potx ppsx smartart bullets numbering wingdings paragraph spacing paragraph alignment mixed alignment centred heading excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles grid rotation rotate grid grid angle grid origin grid axes axis lines axial line major lines subdivisions grid units mm cm inches grid above objects grid on top grid over artwork layout grid rows and columns gutter margins margins and guides layout guides hide guides show guides Ctrl+; guide snapping snap to guides setGridSpacing setGridRotation setGridOrigin snapPointToGrid addLayoutGuides toggleGuidesVisible support donate donation contribute sponsor razorpay upi github sponsors pay payment tip buy me a coffee showSupport command palette ctrl+k cmd+k quick actions search commands run command command id namespaced id alias disabled greyed why unavailable reason cannot run requires selection Yappy.commands list run aliases historyEntries undoLabel redoLabel scripting api automate agent"
 ---
 
 # Workspace & Productivity
@@ -914,6 +914,10 @@ Pick **PPTX** in the Export dialog and choose a **PowerPoint type**:
   - **Tables** become real PowerPoint tables (text, header and row colours, widths, alignment,
     merged cells, lines), so you can type into them there (see Tables ▸ PowerPoint). A rotated
     table goes as a picture.
+  - **Videos and audio** become PowerPoint clips that play in the slide show, with their poster
+    picture, autoplay, loop and mute settings. A video stored in the document goes inside the
+    file; a direct link to a video file stays a link. **YouTube and Vimeo** videos can't be
+    PowerPoint clips: they go as a picture of the video, linked to it.
   - **Data charts** become real PowerPoint charts with their data in an embedded workbook, so
     **Edit Data** works in PowerPoint and the chart stays a chart (see Design Studio ▸ Charts).
   - **Slide backgrounds** (colour or gradient) and **transitions** carry over: *Fade* → Fade,
@@ -979,6 +983,20 @@ size.
 - **Connectors** become lines and arrows **bound** to the shapes they were glued to.
 - **Pictures** keep their crop, transparency and grayscale; a picture **cropped to a shape** (an
   oval photo) comes in clipped to that shape, as a clipping mask you can still edit.
+- **EMF and WMF pictures** (logos and diagrams pasted from Office or Visio, common in older
+  decks) come in as sharp **vector pictures** (SVG): lines, fills, text and embedded bitmaps
+  are kept, and they stay crisp at any zoom and in PDF export. Text inside them uses the
+  fonts your computer has. A metafile Yappy can't read still comes in as a labelled
+  placeholder.
+- **TIFF pictures** (scans, and pictures from older Office and Mac decks) come in as ordinary
+  pictures: Yappy converts them to PNG as it opens the file, since browsers can't show TIFF.
+  Uncompressed, LZW, Deflate and PackBits TIFFs in grey, colour, palette, CMYK, with or without
+  transparency, are covered; the rare JPEG-compressed TIFF still comes in as a placeholder.
+- **Embedded objects** (an Excel sheet or chart, a Word document, an equation, a Visio drawing
+  placed in the slide) come in as the **picture PowerPoint shows for them**, at the same place
+  and size, with the box and outline drawn around it if it had one. It's a picture from then
+  on: the sheet or equation itself can't be edited in Yappy (the browser console lists which
+  objects came in this way). An object saved without a picture is a labelled frame.
 - **Tables** become Yappy **tables** when their look fits one (one font, a bold header row, rows
   in one colour or alternating, the same line on every edge — every table Yappy exports does);
   any other table becomes a group of cells coloured by the deck's own **table style** (header row,
@@ -1003,14 +1021,22 @@ size.
   first part).
 - **Speaker notes** come in as each slide's notes (as plain text: bold, bullets and indent levels
   are not kept), and the notes pane opens so you can see them.
+- **Video and audio clips** come in as Yappy video elements that play when you click them, showing
+  their poster frame (an audio clip shows its speaker icon and plays in a small player bar).
+  PowerPoint's **Start: Automatically**, **Loop until Stopped** and mute carry over: a clip set
+  to start automatically plays by itself when its slide appears while presenting. A clip linked
+  to a web address stays a link. Formats browsers can't play (**WMV, AVI, MPEG, WMA, MIDI**), a
+  clip over **25 MB**, clips past **50 MB in all** in one presentation, and clips linked to a file
+  on someone's own computer come in as their **poster picture**, and a message names them. Clips
+  are stored inside the Yappy document, which is why large ones are left as pictures: every
+  autosave writes them again.
 - **Charts** (column, bar, line, area, pie, doughnut, and their 3-D versions drawn flat) come in
   as Yappy **data charts** with their data, series colours, title, legend, data labels,
   gridlines and axis range: double-click one to edit its data. A combination chart keeps its
   first chart type, and a 100% stacked chart comes in as stacked.
 
 Not imported yet: **scatter, radar, stock, bubble and the newer chart types** (waterfall,
-treemap, funnel…) and **embedded objects** come in as labelled frames;
-**EMF/WMF/TIFF pictures** (common in older decks) as placeholders; **WordArt** text warps flat; audio/video is skipped. **Animations** come in as
+treemap, funnel…) come in as labelled frames; **WordArt** text warps flat; a **trim** or **fade** set on a clip in PowerPoint is not kept. **Animations** come in as
 Yappy build animations (see Animation ▸ Animations in PowerPoint); motion paths, triggers and
 by-paragraph builds don't. A message tells you how many items weren't imported exactly, and the
 browser console lists them. A paragraph's own alignment shows on the canvas and in every

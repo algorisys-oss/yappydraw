@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.304', date: '2026-11-05', items: [
+        'Videos and sound in PowerPoint files now come in and play: clips set to start automatically play when their slide appears, and looping and mute are kept. Export to PowerPoint keeps your videos as real clips too.',
+        'Logos and diagrams pasted into PowerPoint from Office or Visio (EMF/WMF) now open as sharp vector pictures instead of placeholders, and TIFF pictures and embedded Excel, Word and equation objects come in as pictures.',
+        'Fixed: in a presentation, clicking a video plays it instead of jumping to the next slide, and videos set to play automatically start on their own slide.',
+    ] },
     { version: '0.8.303', date: '2026-11-03', items: [
         'Diagram shapes now look right in both sketch and clean style: UML fragments show their operator in the tab and their [condition], actors have their name under them, and storage, gauge, firewall, router and more draw properly.',
         'DFD Data Store keeps its fill in sketch style, has a narrow ID compartment, and a toolbar icon that looks like it.',

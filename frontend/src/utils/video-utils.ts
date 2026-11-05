@@ -146,3 +146,38 @@ export async function fetchPoster(url: string, provider: VideoProvider): Promise
     }
     return null;
 }
+
+/**
+ * Clip files a browser can play, by extension → MIME type for a data URL. MOV is labelled MP4:
+ * PowerPoint's MOV clips are H.264, which browsers play once they are called that. WMV, AVI,
+ * WMA, MPEG-1/2 and MIDI are missing on purpose — no browser plays them.
+ */
+const VIDEO_MIME: Record<string, string> = { mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', ogg: 'video/ogg' };
+const AUDIO_MIME: Record<string, string> = {
+    mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', oga: 'audio/ogg', ogg: 'audio/ogg',
+    opus: 'audio/ogg', flac: 'audio/flac', weba: 'audio/webm', webm: 'audio/webm',
+};
+
+/** The MIME type to play a clip file with, or null when browsers can't play that format. */
+export function clipMime(ext: string, audio: boolean): string | null {
+    const e = ext.toLowerCase();
+    return (audio ? AUDIO_MIME[e] : VIDEO_MIME[e]) ?? null;
+}
+
+/** File extension for a clip's MIME type (the reverse of {@link clipMime}), for writing it out. */
+export function clipExt(mime: string): string | null {
+    const m = mime.toLowerCase().split(';')[0];
+    const map: Record<string, string> = {
+        'video/mp4': 'mp4', 'video/webm': 'webm', 'video/ogg': 'ogv', 'video/quicktime': 'mov',
+        'audio/mpeg': 'mp3', 'audio/mp3': 'mp3', 'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a', 'audio/aac': 'aac', 'audio/wav': 'wav', 'audio/x-wav': 'wav',
+        'audio/ogg': 'ogg', 'audio/flac': 'flac', 'audio/webm': 'weba',
+    };
+    return map[m] ?? null;
+}
+
+/** True when a video element's source is sound only (an embedded audio file or a link to one). */
+export function isAudioSource(url: string | undefined): boolean {
+    if (!url) return false;
+    if (/^data:audio\//i.test(url)) return true;
+    return !/^data:/i.test(url) && /\.(mp3|m4a|aac|wav|oga|opus|flac|weba)(\?.*)?$/i.test(url);
+}

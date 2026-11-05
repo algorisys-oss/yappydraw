@@ -2,6 +2,52 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## TIFF pictures and embedded-object previews (Nov 5 2026)
+
+- **A decoder test needs an encoder you didn't write.** The TIFF decoder was checked against
+  Pillow: a matrix of every mode (1-bit, grey, 16-bit grey, palette, RGB, RGBA, CMYK) × every
+  compression (none, LZW, Deflate, PackBits), plus the horizontal predictor, many strips, and a
+  900×700 noise image to push LZW through its table resets (`temp/tiff-compare.ts`). All
+  matched to the byte. Layouts Pillow can't write (tiles, big-endian, associated alpha) are
+  hand-built in the unit tests instead.
+- **Label data by what it holds, not where it came from.** Imported pictures set `mimeType` from
+  the deck's file extension, so after P1 an EMF picture was an SVG labelled `image/x-emf`, and a
+  TIFF became a PNG labelled `image/tiff`. Take it from the data URL.
+- **An OLE object's preview is in one of two places.** PowerPoint 2010+ writes it as a `p:pic`
+  inside the `oleObj` in the `mc:Fallback` branch (the Choice requires VML, which we don't read,
+  so the existing AlternateContent rule already lands there). PowerPoint 2007 writes no `p:pic`:
+  the preview is the `v:imagedata` of the VML shape whose `id` is the object's `spid`, and the
+  slide links that VML drawing as `vmlDrawing` or, in some files, Microsoft's `legacyDrawing`.
+  That second relationship name is not in DeckCraft; a real deck (tdf169781) used it.
+- **The fallback picture has its own fill and outline.** Old equation objects sit on coloured
+  boxes (tdf169088: yellow with an orange border) drawn from the `p:pic`'s `spPr`, not from the
+  preview image. Import them as a shape behind the picture, grouped.
+
+## EMF/WMF pictures: porting a reader, and checking it against a second one (Nov 4 2026)
+
+- **Port the tests along with the code.** DeckCraft's 70-odd hand-built-record tests came across
+  with `crates/metafile`. They are the parity check for the port: 80 of 84 passed first time,
+  and the four that failed were float-noise or test mistakes, not port bugs.
+- **A port inherits its reference's blind spots.** Those tests all use an identity mapping, so
+  neither DeckCraft nor the port noticed that EXTSELECTCLIPRGN rectangles are device units. The
+  bug showed up only on real files rendered against an independent implementation
+  (LibreOffice's `emfio` test files, `temp/metafile-corpus.ts` + `temp/mf-compare.mjs`).
+- **Compare renderers on content, not on canvas.** LibreOffice's PNG export puts the picture on
+  a page with margins; scoring whole images flagged ~40 false differences. Trim both to their
+  non-white box first. Even then, text scores are noise: read the contact sheet.
+- **The second opinion is not the truth either.** LibreOffice draws a diagonal-cross hatch as
+  solid red and a transparent text background as black. Where the spec and the reference
+  disagree with it, the spec wins. One hypothesis of mine (font size fixed at selection time,
+  for tdf88163) looked right in theory and was wrong in pixels; the picture settled it, and the
+  change came out again.
+- **"Dual" EMF+ files can be EMF+ only.** The header's dual flag says "the EMF records also
+  draw this"; some files set it and have no EMF drawing at all. Play the EMF+ records when the
+  EMF records drew nothing.
+- **SVG is the right target for a metafile in Yappy.** One SVG data URL gets both render styles,
+  crops, grayscale, PNG and *vector* PDF export, with no new element type. Encoded EMF+ images
+  (PNG/JPEG) go into the SVG as they are; a browser can't decode them synchronously, and doesn't
+  need to.
+
 ## Cursor, culling and stale bindings: three reports, one shape (Oct 29 2026)
 
 - **State a handler sets belongs to the tool that set it.** The canvas cursor signal let any
@@ -11766,3 +11812,25 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **A stale spec can be hiding a real bug.** `uml-tools` failed because Escape didn't return to
   Select; the obvious fix (select the tool in the test) would have kept the bug. Ask what a user
   would do at that step, then check the app does it.
+
+
+## PowerPoint clips: video and audio in, video and audio out (2026-11-05, PPTX parity P3, #477–#479)
+
+- **Playback options aren't on the picture.** A clip's `p:pic` says only *which* file; autoplay,
+  loop and mute live in the slide's timing tree (`p:video`/`p:audio` › `p:cMediaNode`, and a
+  `playFrom` command in the main sequence with no click before it = Start ▸ Automatically).
+  PowerPoint also writes an interactive sequence that just plays/pauses the clip on click; that's
+  not a user animation and must not be reported as an unsupported trigger.
+- **Write `p14:media` *and* `a:videoFile`.** PowerPoint 2010+ plays from `p14:media r:embed`
+  (Microsoft's relationship namespace, not ECMA's); the `a:videoFile r:link` is for older readers.
+  Both point at the same part.
+- **A data URL in the document costs on every save.** Clips are stored like pictures, so autosave
+  serialises them each time: ~66 ms per save for 20 MB, ~175 ms for 50 MB, measured. Hence the
+  25 MB per clip / 50 MB per deck caps, above which the poster comes in instead, with a warning.
+- **Test the stubs.** LibreOffice's corpus has a 10-byte "audio.mp3" and "video.avi"; they must
+  import without crashing. And a "paused" result isn't a failure until you check the clip's
+  length: `narration.pptx` is 1.68 s, so autoplay had already played it to the end.
+- **A clamp must use the width the element really gets.** The audio bar was clamped for 300 px
+  while `.video-overlay-container` has `min-width: 320px`, so it ran flush to the screen edge.
+- **"Find the first X" in a store with one element list is a cross-slide bug.** Anything per-slide
+  must go through `getElementsOnSlide`.

@@ -99,3 +99,92 @@ describe("vertical text becomes a turned text box over its shape", () => {
         expect(shape.groupIds?.[0]).toBe(text.groupIds?.[0]);   // grouped, so they move together
     });
 });
+
+describe("pictures browsers can't show are converted at import", () => {
+    // 6×3 RGB, Deflate-compressed, written by Pillow (the same fixture as tiff.test.ts).
+    const TIFF = Uint8Array.from(atob('SUkqADAAAAB4nPvPwMDwH4T//4cQ/7lE5ODoRIoRUI6RiZmFlY2dgxPOAADJ6AugCgAAAQMAAQAAAAYAAAABAQMAAQAAAAMAAAACAQMAAwAAAK4AAAADAQMAAQAAAAgAAAAGAQMAAQAAAAIAAAARAQQAAQAAAAgAAAAVAQMAAQAAAAMAAAAWAQMAAQAAAAMAAAAXAQQAAQAAACgAAAAcAQMAAQAAAAEAAAAAAAAACAAIAAgA'), c => c.charCodeAt(0));
+    const pic = (bytes: Uint8Array, crop?: object): any => ({ width: 960, height: 540, slides: [{ items: [{ kind: 'picture', id: 2, name: 'Scan', x: 10, y: 10, w: 120, h: 60, media: { bytes, ext: 'tiff' }, crop }] }] });
+
+    it("TIFF becomes a PNG image element, labelled as PNG, with crops in its own pixels", async () => {
+        const { deckToDocument } = await import("./to-yappy");
+        let n = 0;
+        const res = await deckToDocument(pic(TIFF, { l: 0.5, t: 0, r: 0, b: 0 }), (t: string) => `${t}-${n++}`);
+        const img = res.doc.elements.find((e: any) => e.type === 'image') as any;
+        expect(img.dataURL.startsWith('data:image/png;base64,')).toBe(true);
+        expect(img.mimeType).toBe('image/png');
+        expect(img.crop).toMatchObject({ x: 3, y: 0, width: 3, height: 3 });
+        expect(res.warnings).toEqual([]);
+    });
+    it("an undecodable TIFF stays a placeholder with a TIFF-specific warning", async () => {
+        const { deckToDocument } = await import("./to-yappy");
+        let n = 0;
+        const res = await deckToDocument(pic(TIFF.slice(0, 20)), (t: string) => `${t}-${n++}`);
+        expect(res.doc.elements.some((e: any) => e.type === 'image')).toBe(false);
+        expect(res.warnings.some(w => w.includes('TIFF image in a form Yappy can'))).toBe(true);
+    });
+});
+
+describe("PowerPoint clips become video elements", () => {
+    const PNG = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='), c => c.charCodeAt(0));
+    const clip = (extra: object): any => ({ kind: 'media', id: 2, name: 'Clip', x: 10, y: 20, w: 320, h: 180, audio: false, file: null, poster: { bytes: PNG, ext: 'png' }, ...extra });
+    const convert = async (...items: any[]) => {
+        const { deckToDocument } = await import("./to-yappy");
+        let n = 0;
+        return deckToDocument({ width: 960, height: 540, slides: [{ items }] } as any, (t: string) => `${t}-${n++}`);
+    };
+
+    it("an embedded MP4 plays from a data URL, with its options and its poster", async () => {
+        const res = await convert(clip({ file: { bytes: new Uint8Array([1, 2, 3]), ext: 'mp4' }, autoplay: true, loop: true, muted: true }));
+        const v = res.doc.elements.find((e: any) => e.type === 'video') as any;
+        expect(v.videoURL).toBe('data:video/mp4;base64,AQID');
+        expect(v).toMatchObject({ videoProvider: 'direct', videoAutoplay: true, videoLoop: true, videoMuted: true, x: 10, y: 20, width: 320, height: 180 });
+        expect(v.videoPosterDataURL.startsWith('data:image/png;base64,')).toBe(true);
+        expect(res.warnings).toEqual([]);
+    });
+    it("a cropped poster becomes an SVG showing just the cropped part", async () => {
+        const res = await convert(clip({ file: { bytes: new Uint8Array(4), ext: 'mov' }, crop: { l: 0.25, t: 0, r: 0.25, b: 0 } }));
+        const v = res.doc.elements.find((e: any) => e.type === 'video') as any;
+        expect(v.videoURL.startsWith('data:video/mp4;base64,')).toBe(true); // MOV plays as MP4
+        expect(v.videoPosterDataURL.startsWith('data:image/')).toBe(true);
+        // (No bitmap decoder under bun, so the poster's size is unknown here: croppedPoster is checked directly.)
+        const { croppedPoster } = await import("./to-yappy");
+        const svg = atob(croppedPoster('data:image/png;base64,QQ==', 400, 200, { l: 0.25, t: 0, r: 0.25, b: 0.5 }).split(',')[1]);
+        expect(svg).toContain('viewBox="100 0 200 100"');
+        expect(svg).toContain('<image width="400" height="200"');
+        expect(croppedPoster('u', 400, 200, { l: 0, t: 0, r: 0, b: 0 })).toBe('u');
+        expect(croppedPoster('u', 0, 0, { l: 0.1, t: 0, r: 0, b: 0 })).toBe('u');
+    });
+    it("audio plays through the same element, showing its icon; with no icon it gets a speaker", async () => {
+        const res = await convert(clip({ audio: true, poster: undefined, file: { bytes: new Uint8Array(4), ext: 'm4a' } }));
+        const v = res.doc.elements.find((e: any) => e.type === 'video') as any;
+        expect(v.videoURL.startsWith('data:audio/mp4;base64,')).toBe(true);
+        expect(v.videoPosterDataURL.startsWith('data:image/svg+xml;base64,')).toBe(true);
+        expect(v.backgroundColor).toBe('transparent');
+    });
+    it("a format browsers can't play keeps its poster as a picture, with a warning", async () => {
+        const res = await convert(clip({ file: { bytes: new Uint8Array(4), ext: 'wmv' } }));
+        expect(res.doc.elements.some((e: any) => e.type === 'video')).toBe(false);
+        expect(res.doc.elements.some((e: any) => e.type === 'image')).toBe(true);
+        expect(res.warnings).toEqual(['Video "Clip" is a WMV file, which browsers can\'t play; only its picture was imported.']);
+        const avi = await convert(clip({ file: { bytes: new Uint8Array(4), ext: 'avi' } }));
+        expect(avi.warnings[0]).toContain('is an AVI file');
+    });
+    it("clips over the per-file or per-deck size limit keep their poster", async () => {
+        const { MEDIA_FILE_BYTES, MEDIA_DECK_BYTES } = await import("./to-yappy");
+        const big = await convert(clip({ file: { bytes: new Uint8Array(MEDIA_FILE_BYTES + 1), ext: 'mp4' } }));
+        expect(big.warnings[0]).toContain('over the 25 MB a clip can be');
+        // Two clips that fit one by one but not together: the second keeps its poster.
+        const half = Math.floor(MEDIA_DECK_BYTES / 2) + 1;
+        const two = await convert(clip({ id: 2, file: { bytes: new Uint8Array(Math.min(half, MEDIA_FILE_BYTES)), ext: 'mp4' } }),
+            clip({ id: 3, name: 'Second', file: { bytes: new Uint8Array(Math.min(half, MEDIA_FILE_BYTES)), ext: 'mp4' } }),
+            clip({ id: 4, name: 'Third', file: { bytes: new Uint8Array(Math.min(half, MEDIA_FILE_BYTES)), ext: 'mp4' } }));
+        expect(two.doc.elements.filter((e: any) => e.type === 'video').length).toBe(2);
+        expect(two.warnings).toEqual(['Video "Third" would take the presentation\'s clips over 50 MB in all; only its picture was imported.']);
+    });
+    it("a web link stays a link; YouTube gets its embed URL", async () => {
+        const res = await convert(clip({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }));
+        const v = res.doc.elements.find((e: any) => e.type === 'video') as any;
+        expect(v).toMatchObject({ videoURL: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', videoProvider: 'youtube' });
+        expect(v.videoEmbedURL).toContain('youtube.com/embed/dQw4w9WgXcQ');
+    });
+});

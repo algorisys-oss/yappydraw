@@ -46,9 +46,10 @@ export class VideoRenderer extends ShapeRenderer {
         renderer.font = "11px sans-serif";
         renderer.textAlign = "center";
         renderer.textBaseline = "middle";
-        const label = el.videoURL
-            ? (el.videoURL.length > 50 ? el.videoURL.slice(0, 47) + '...' : el.videoURL)
-            : "No video URL";
+        // An embedded clip's URL is the whole file as base64: name it instead of printing that.
+        const label = !el.videoURL ? "No video URL"
+            : /^data:/i.test(el.videoURL) ? (el.name || (/^data:audio\//i.test(el.videoURL) ? 'Embedded audio' : 'Embedded video'))
+            : (el.videoURL.length > 50 ? el.videoURL.slice(0, 47) + '...' : el.videoURL);
         renderer.fillText(label, el.x + el.width / 2, el.y + el.height - 16);
         renderer.restore();
     }

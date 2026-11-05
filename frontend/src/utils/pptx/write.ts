@@ -7,7 +7,7 @@
  * on the blank layout, so nothing inherits placeholder text or positions: what the deck model
  * says is what PowerPoint shows.
  */
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink, DeckAnim, ChartItem, TableItem, TableCell } from './deck';
+import type { Deck, Slide, Item, Paint, Color, Line, TextBody, TextRun, Paragraph, Geometry, Media, Transition, ShapeItem, ConnectorItem, PictureItem, GroupItem, DeckLink, DeckAnim, ChartItem, TableItem, TableCell, MediaItem, ClipFile } from './deck';
 import { chartXml, chartWorkbook, NS_C } from './chart-xml';
 import { custGeomXml, presetGeomXml } from './custgeom';
 import { EMU_PER_PX, ang, esc, fontSz, pct, NS, REL, XML_DECL, relsXml, zipPackage, type Rel } from './ooxml';
@@ -40,6 +40,12 @@ const CT = {
 const MEDIA_CT: Record<Media['ext'], string> = {
     png: 'image/png', jpeg: 'image/jpeg', gif: 'image/gif', svg: 'image/svg+xml', bmp: 'image/bmp',
     tiff: 'image/tiff', webp: 'image/webp', emf: 'image/x-emf', wmf: 'image/x-wmf',
+};
+
+/** Content types PowerPoint uses for the clip files it embeds. */
+const CLIP_CT: Record<string, string> = {
+    mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', ogv: 'video/ogg', wmv: 'video/x-ms-wmv', avi: 'video/x-msvideo',
+    mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg', oga: 'audio/ogg', weba: 'audio/webm', flac: 'audio/flac', wma: 'audio/x-ms-wma',
 };
 
 // ── Paint / line / text ─────────────────────────────────────────────────────────────────────
@@ -189,6 +195,10 @@ interface Ctx {
     slideNumber?: (key: string) => number | null;
     /** Add a chart part (and its workbook) for this slide; returns the slide's rel id to it. */
     chart?: (spec: ChartItem['chart']) => string;
+    /** Add a clip file for this slide; returns the `a:videoFile`/`a:audioFile` and `p14:media` rel ids. */
+    clip?: (f: ClipFile, audio: boolean) => { link: string; embed: string };
+    /** Relationship to a linked (web) clip. */
+    clipLink?: (url: string, audio: boolean) => string;
 }
 
 const JUMP: Record<string, string> = { next: 'nextslide', previous: 'previousslide', first: 'firstslide', last: 'lastslide', end: 'endshow' };
@@ -259,6 +269,36 @@ function pictureXml(it: PictureItem, c: Ctx): string {
     return `<p:pic>${nv}${blip}<p:spPr>${xfrmXml(it, c)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
 }
 
+/** A black 1×1 PNG: PowerPoint needs a picture on every clip, and one saved without a poster has none. */
+const BLANK_POSTER: Media = { ext: 'png', bytes: Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), ch => ch.charCodeAt(0)) };
+
+/**
+ * A clip as PowerPoint 2010+ writes it: a picture (the poster) whose `nvPr` names the file twice —
+ * `a:videoFile`/`a:audioFile r:link` for older readers and `p14:media r:embed` for the embedded
+ * part. A web link has only the first, external. Click-to-play and playback options are in the
+ * slide's timing tree (timingXml).
+ */
+function mediaXml(it: MediaItem, c: Ctx): string {
+    const tag = it.audio ? 'a:audioFile' : 'a:videoFile';
+    let nvPr = '';
+    if (it.file && c.clip) {
+        const r = c.clip(it.file, it.audio);
+        nvPr = `<${tag} r:link="${r.link}"/><p:extLst><p:ext uri="{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}">`
+            + `<p14:media xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" r:embed="${r.embed}"/></p:ext></p:extLst>`;
+    } else if (it.url && c.clipLink) {
+        nvPr = `<${tag} r:link="${c.clipLink(it.url, it.audio)}"/>`;
+    } else {
+        return pictureXml({ ...it, kind: 'picture', media: it.poster ?? BLANK_POSTER }, c);
+    }
+    const descr = it.descr?.trim();
+    const nv = `<p:nvPicPr><p:cNvPr id="${it.id}" name="${esc(it.name)}"${descr ? ` descr="${esc(descr)}"` : ''}><a:hlinkClick r:id="" action="ppaction://media"/></p:cNvPr>`
+        + `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr>${nvPr}</p:nvPr></p:nvPicPr>`;
+    const cr = it.crop;
+    const src = cr ? `<a:srcRect l="${pct(cr.l)}" t="${pct(cr.t)}" r="${pct(cr.r)}" b="${pct(cr.b)}"/>` : '';
+    const blip = `<p:blipFill><a:blip r:embed="${c.media(it.poster ?? BLANK_POSTER)}"/>${src}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
+    return `<p:pic>${nv}${blip}<p:spPr>${xfrmXml(it, c)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+}
+
 function groupXml(it: GroupItem, c: Ctx): string {
     const nv = `<p:nvGrpSpPr>${cNvPr(it, c)}<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`;
     return `<p:grpSp>${nv}<p:grpSpPr>${xfrmXml(it, c, 'a:xfrm', true)}</p:grpSpPr>${it.children.map(ch => itemXml(ch, c)).join('')}</p:grpSp>`;
@@ -323,6 +363,7 @@ function itemXml(it: Item, c: Ctx): string {
         case 'shape': return shapeXml(it, c);
         case 'connector': return connectorXml(it, c);
         case 'picture': return pictureXml(it, c);
+        case 'media': return mediaXml(it, c);
         case 'group': return it.children.length ? groupXml(it, c) : '';
     }
 }
@@ -367,8 +408,19 @@ function transitionXml(t: Transition | undefined, advanceAfterMs?: number): stri
 const JUMP_SIDE = { l: ['0-#ppt_w/2', '#ppt_y'], r: ['1+#ppt_w/2', '#ppt_y'], t: ['#ppt_x', '0-#ppt_h/2'], b: ['#ppt_x', '1+#ppt_h/2'] } as const;
 const WIPE_FILTER = { l: 'wipe(right)', r: 'wipe(left)', t: 'wipe(down)', b: 'wipe(up)' } as const;
 
+/** A clip that starts by itself, as a main-sequence entry beside the build animations. */
+interface PlayEntry { play: MediaItem; start: 'with' | 'after'; delayMs: 0 }
+type Entry = DeckAnim | PlayEntry;
+const isPlay = (e: Entry): e is PlayEntry => 'play' in e;
+
 function timingXml(anims: DeckAnim[], items: Item[]): string {
-    if (!anims.length) return '';
+    const clips: MediaItem[] = [];
+    const walkClips = (list: Item[]) => list.forEach(it => {
+        if (it.kind === 'media' && (it.file || it.url)) clips.push(it);
+        else if (it.kind === 'group') walkClips(it.children);
+    });
+    walkClips(items);
+    if (!anims.length && !clips.length) return '';
     let id = 0;
     const next = () => ++id;
     const tgt = (spid: number) => `<p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl>`;
@@ -430,19 +482,27 @@ function timingXml(anims: DeckAnim[], items: Item[]): string {
     const grpOf = new Map<DeckAnim, number>();
     for (const a of anims) { const g = grpCount.get(a.target) ?? 0; grpOf.set(a, g); grpCount.set(a.target, g + 1); }
 
-    const effectPar = (a: DeckAnim) => {
+    const effectPar = (e: Entry) => {
+        if (isPlay(e)) {
+            return `<p:par><p:cTn id="${next()}" presetID="1" presetClass="mediacall" presetSubtype="0" fill="hold" nodeType="${e.start === 'with' ? 'withEffect' : 'afterEffect'}">`
+                + `<p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:cmd type="call" cmd="playFrom(0.0)"><p:cBhvr><p:cTn id="${next()}" dur="1" fill="hold"/>${tgt(e.play.id)}</p:cBhvr></p:cmd></p:childTnLst></p:cTn></p:par>`;
+        }
+        const a = e;
         const node = a.start === 'click' ? 'clickEffect' : a.start === 'with' ? 'withEffect' : 'afterEffect';
         const repeat = a.repeat === -1 ? ' repeatCount="indefinite"' : a.repeat && a.repeat > 1 ? ` repeatCount="${Math.min(10000, a.repeat) * 1000}"` : '';
         const autoRev = a.cls === 'emph' && (a.effect === 'pulse' || a.effect === 'growShrink') ? ' autoRev="1"' : '';
         return `<p:par><p:cTn id="${next()}" presetID="${a.presetId}" presetClass="${a.cls}" presetSubtype="${a.subtype}"${repeat}${autoRev} fill="hold" grpId="${grpOf.get(a)}" nodeType="${node}">`
             + `<p:stCondLst><p:cond delay="${Math.min(3_600_000, a.delayMs)}"/></p:stCondLst><p:childTnLst>${behaviours(a)}</p:childTnLst></p:cTn></p:par>`;
     };
-    const endOf = (a: DeckAnim) => a.delayMs + a.durationMs * (a.repeat && a.repeat > 1 ? Math.min(100, a.repeat) : 1);
+    const endOf = (a: Entry) => isPlay(a) ? 0 : a.delayMs + a.durationMs * (a.repeat && a.repeat > 1 ? Math.min(100, a.repeat) : 1);
 
     // Click steps → groups that start in turn → effects that start together. Leading effects that
-    // aren't on a click form an automatic first step (they play as the slide appears).
-    const steps: { auto: boolean; groups: DeckAnim[][] }[] = [];
-    for (const a of anims) {
+    // aren't on a click form an automatic first step (they play as the slide appears); clips that
+    // start by themselves go first in it, as PowerPoint puts them.
+    const plays: PlayEntry[] = clips.filter(m => m.autoplay).map((m, i) => ({ play: m, start: i === 0 ? 'after' : 'with', delayMs: 0 }));
+    const entries: Entry[] = [...plays, ...anims];
+    const steps: { auto: boolean; groups: Entry[][] }[] = [];
+    for (const a of entries) {
         const step = steps[steps.length - 1];
         if (a.start === 'click' || !step) steps.push({ auto: a.start !== 'click', groups: [[a]] });
         else if (a.start === 'with') step.groups[step.groups.length - 1].push(a);
@@ -470,10 +530,31 @@ function timingXml(anims: DeckAnim[], items: Item[]): string {
     const bld = [...new Set(anims.map(a => a.target))].filter(spid => shapeIds.has(spid))
         .flatMap(spid => Array.from({ length: grpCount.get(spid) ?? 1 }, (_, g) => `<p:bldP spid="${spid}" grpId="${g}" animBg="1"/>`)).join('');
 
+    // Each clip: its playback options (p:video / p:audio), then PowerPoint's own click-to-play:
+    // an interactive sequence that a click on the clip triggers, toggling pause.
+    const clipXml = clips.map(m => {
+        const tag = m.audio ? 'p:audio' : 'p:video';
+        const settings = `<${tag}><p:cMediaNode vol="80000"${m.muted ? ' mute="1"' : ''}><p:cTn id="${next()}"${m.loop ? ' repeatCount="indefinite"' : ''} fill="hold" display="0">`
+            + `<p:stCondLst><p:cond delay="indefinite"/></p:stCondLst></p:cTn>${tgt(m.id)}</p:cMediaNode></${tag}>`;
+        const seqId = next(), outer = next(), inner = next(), eff = next(), bh = next();
+        const click = `<p:seq concurrent="1" nextAc="seek"><p:cTn id="${seqId}" restart="whenNotActive" fill="hold" evtFilter="cancelBubble" nodeType="interactiveSeq">`
+            + `<p:stCondLst><p:cond evt="onClick" delay="0">${tgt(m.id)}</p:cond></p:stCondLst><p:endSync evt="end" delay="0"><p:rtn val="all"/></p:endSync><p:childTnLst>`
+            + `<p:par><p:cTn id="${outer}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`
+            + `<p:par><p:cTn id="${inner}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`
+            + `<p:par><p:cTn id="${eff}" presetID="2" presetClass="mediacall" presetSubtype="0" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`
+            + `<p:cmd type="call" cmd="togglePause"><p:cBhvr><p:cTn id="${bh}" dur="1" fill="hold"/>${tgt(m.id)}</p:cBhvr></p:cmd>`
+            + '</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>'
+            + `</p:childTnLst></p:cTn><p:nextCondLst><p:cond evt="onClick" delay="0">${tgt(m.id)}</p:cond></p:nextCondLst></p:seq>`;
+        return settings + click;
+    }).join('');
+
+    const mainSeq = body
+        ? `<p:seq concurrent="1" nextAc="seek"><p:cTn id="${main}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${body}</p:childTnLst></p:cTn>`
+          + '<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>'
+          + '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>'
+        : '';
     return `<p:timing><p:tnLst><p:par><p:cTn id="${root}" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>`
-        + `<p:seq concurrent="1" nextAc="seek"><p:cTn id="${main}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${body}</p:childTnLst></p:cTn>`
-        + '<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>'
-        + '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>'
+        + mainSeq + clipXml
         + `</p:childTnLst></p:cTn></p:par></p:tnLst>${bld ? `<p:bldLst>${bld}</p:bldLst>` : ''}</p:timing>`;
 }
 
@@ -628,6 +709,10 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
     const overrides: [string, string][] = [];
     const mediaExts = new Set<Media['ext']>();
     let mediaN = 0;
+    // Clip files, one part each however many slides show them.
+    const clipExts = new Set<string>();
+    const clipName = new Map<ClipFile, string>();
+    let clipN = 0;
     let chartN = 0;
     const slides = deck.slides.length ? deck.slides : [{ items: [] } as Slide];
     const slideNumberOf = new Map<string, number>();
@@ -655,6 +740,27 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
                 hasCharts = true;
                 const id = `rId${rels.length + 1}`;
                 rels.push({ id, type: REL.chart, target: `../charts/chart${chartN}.xml` });
+                return id;
+            },
+            clip: (f, audio) => {
+                let name = clipName.get(f);
+                if (!name) {
+                    clipN++;
+                    const ext = /^[a-z0-9]{1,5}$/.test(f.ext) ? f.ext : 'bin';
+                    name = `media${clipN}.${ext}`;
+                    parts.set(`ppt/media/${name}`, f.bytes);
+                    clipExts.add(ext);
+                    clipName.set(f, name);
+                }
+                const link = `rId${rels.length + 1}`;
+                rels.push({ id: link, type: audio ? REL.audio : REL.video, target: `../media/${name}` });
+                const embed = `rId${rels.length + 1}`;
+                rels.push({ id: embed, type: REL.media, target: `../media/${name}` });
+                return { link, embed };
+            },
+            clipLink: (url, audio) => {
+                const id = `rId${rels.length + 1}`;
+                rels.push({ id, type: audio ? REL.audio : REL.video, target: url, external: true });
                 return id;
             },
             media: (m) => {
@@ -750,6 +856,7 @@ export function buildPptx(deck: Deck, opts: WriteOptions = {}): Uint8Array {
         + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
         + '<Default Extension="xml" ContentType="application/xml"/>'
         + [...mediaExts].map(e => `<Default Extension="${e}" ContentType="${MEDIA_CT[e]}"/>`).join('')
+        + [...clipExts].filter(e => !mediaExts.has(e as Media['ext'])).map(e => `<Default Extension="${e}" ContentType="${CLIP_CT[e] ?? 'application/octet-stream'}"/>`).join('')
         + (hasCharts ? '<Default Extension="xlsx" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>' : '')
         + overrides.map(([p, t]) => `<Override PartName="${p}" ContentType="${t}"/>`).join('')
         + '</Types>';

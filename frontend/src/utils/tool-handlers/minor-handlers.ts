@@ -10,7 +10,7 @@ import { isPagedDocType } from '../../types/slide-types';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement, startInkCleanupIfNeeded, followLink } from '../../store/app-store';
+import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement, startInkCleanupIfNeeded, followLink, toggleVideoPlayback } from '../../store/app-store';
 import { parseLink } from '../slide-links';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
@@ -182,6 +182,11 @@ export function presentationOnDown(
             if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
                 // A linked object is a button in the show: follow the link instead of advancing.
                 if (e.button === 0 && followLink(el.link)) return true;
+                // A video or audio clip plays (or pauses) on a click, as in PowerPoint's show.
+                if (el.type === 'video' && el.videoURL) {
+                    toggleVideoPlayback(el.id);
+                    return true;
+                }
                 // Check for openBox with click-to-open enabled
                 if (el.type === 'openBox' && el.enableClickToOpen) {
                     triggerOpenBoxReveal(el);

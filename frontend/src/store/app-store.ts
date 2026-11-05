@@ -1,5 +1,6 @@
 import { batch, createSignal } from "solid-js";
 import { createStore, reconcile, unwrap } from "solid-js/store";
+import { getElementsOnSlide } from "../utils/slide-utils";
 // Store-free module (types + pure helpers only), so this edge introduces no cycle.
 import { assertReadableVersion, setDocumentExtras } from "../utils/migration";
 // Dockable-panel system (Phase D): migrated panels are toggled through the dock store so the
@@ -2710,6 +2711,16 @@ export const setGameAuthoringMode = (mode: 'visual' | 'code') => {
 };
 
 // --- Video Playback Actions ---
+/**
+ * Start every video/audio clip on this slide that plays by itself (videoAutoplay). Only this
+ * slide's: every slide's elements share one list, and the old lookup could start a clip from
+ * another slide (or only the first of several).
+ */
+export const autoplaySlideVideos = (index: number) => {
+    const els = store.docType === 'infinite' ? store.elements : getElementsOnSlide(index, store.elements, store.slides);
+    for (const el of els) if (el.type === 'video' && el.videoAutoplay && el.videoURL) startVideoPlayback(el.id);
+};
+
 export const startVideoPlayback = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
     if (!el || el.type !== 'video' || !el.videoURL) return;
@@ -2871,13 +2882,7 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean, bui
             if (buildFully) slideBuildManager.buildAll();
             else slideBuildManager.playInitial();
 
-            // Auto-play videos with videoAutoplay enabled
-            const autoPlayVideo = store.elements.find(
-                el => el.type === 'video' && el.videoAutoplay && el.videoURL
-            );
-            if (autoPlayVideo) {
-                startVideoPlayback(autoPlayVideo.id);
-            }
+            autoplaySlideVideos(index);
             scheduleAutoAdvance();
         }
     }
@@ -6646,8 +6651,12 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             // Initialize animations
             slideBuildManager.init(store.activeSlideIndex);
             slideBuildManager.playInitial();
+            // Clips set to start automatically, on the slide the show starts from (slide changes
+            // start them in setActiveSlide).
+            autoplaySlideVideos(store.activeSlideIndex);
         } else {
             // Exiting presentation mode - stop all animations and restore state
+            stopVideoPlayback();
             // Use reset() instead of restoreAll() to stop running animations first
             slideBuildManager.reset();
             resetOpenBoxElements();

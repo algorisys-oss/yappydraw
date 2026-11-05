@@ -11711,3 +11711,21 @@ Each one was either an app bug or a spec that had fallen behind a deliberate cha
 - **Infra: boot timeouts.** A `globalSetup` (`tests/_global-warmup.ts`) loads the app once before
   the specs, so the first spec per worker no longer pays for Vite's cold compile inside a 30 s wait.
 
+
+### Video playback in the slide show (2026-11-05, #477–#479)
+
+Found while bringing PowerPoint clips in (PPTX parity P3):
+
+- **#477 Autoplay started the wrong clip.** `setActiveSlide` took the *first* `videoAutoplay`
+  element in the whole document — every slide's elements share one list — so a clip on another
+  slide could start, and only one of several on a slide did. Nothing started on the slide the show
+  opened on, and clips kept playing after the show ended. `autoplaySlideVideos(index)` starts every
+  autoplay clip on that slide (`getElementsOnSlide`), presentation start calls it too, and leaving
+  the show stops playback. (`store/app-store.ts`)
+- **#478 Clicking a video in the show advanced the slide** instead of playing it. A click on a
+  video element now plays or pauses it, as in PowerPoint. (`tool-handlers/minor-handlers.ts`)
+- **#479 An embedded clip's label was its base64.** The video placeholder printed the first 47
+  characters of the URL, which for a data URL is `data:video/mp4;base64,AAAA…`. It shows the
+  element's name now. (`shapes/renderers/video-renderer.ts`)
+- Covered by `temp/media-e2e.mjs`-style checks in the browser (autoplay on present, click to play,
+  audio bar on screen) and `frontend/src/utils/video-utils.test.ts`.

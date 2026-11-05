@@ -2497,6 +2497,8 @@ export const YappyAPI = {
      * groups stay groups; slide backgrounds and transitions (fade, slide → Push, zoom, Morph) carry over.
      * Build animations go as the closest PowerPoint effects, in playing order (motion paths and
      * keyframe/property tweens are left out and counted). `importPPTX` reads them back.
+     * Video/audio elements become PowerPoint clips (embedded file or direct link, with poster,
+     * autoplay, loop and mute); YouTube/Vimeo videos become a picture linked to the video.
      * Hand-drawn (sketch) strokes come out clean, and hatched fills become pattern fills. Objects
      * PowerPoint can't draw — shadows, glows, masks, mesh/pattern/image fills, 3-D, warps, image
      * filters, text on a path, UML class boxes — are placed as pictures of just that object.
@@ -2533,9 +2535,15 @@ export const YappyAPI = {
      * bound to the shapes they were glued to; pictures keep crop, transparency and grayscale, and
      * one cropped to a shape is clipped to it (a clipping mask); tables become groups of cells in
      * the deck's own table style; pattern fills become pattern fills; groups stay groups;
-     * backgrounds (stretched or tiled pictures included) and transitions carry over. Charts and
-     * embedded objects become labelled frames, and EMF/WMF/TIFF pictures placeholders — listed
-     * in `warnings`.
+     * backgrounds (stretched or tiled pictures included) and transitions carry over. EMF/WMF
+     * pictures become SVG image elements (vector, sized from the metafile's frame); TIFF
+     * pictures become PNG image elements; embedded (OLE) objects become their preview picture,
+     * with a warning naming the object. Video/audio clips become video elements (embedded files
+     * as data URLs, links kept; Start Automatically, Loop until Stopped and mute carried over);
+     * formats browsers can't play (WMV, AVI…), clips over 25 MB or past 50 MB per deck, and
+     * links to local files keep their poster picture, with a warning. Charts PowerPoint draws but Yappy can't, objects with no
+     * preview and TIFFs the decoder can't read (JPEG-in-TIFF) become labelled frames or
+     * placeholders — listed in `warnings`.
      *
      *   const { stats, warnings } = await Yappy.importPPTX(file);   // a File, Blob or ArrayBuffer
      */

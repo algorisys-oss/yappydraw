@@ -20,7 +20,7 @@
  * `readPptx`'s own "not a presentation" error.
  */
 import { unzipSync, strFromU8 } from 'fflate';
-import type { Deck, Slide, Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink, DeckAnim, TableItem, TableCell } from './deck';
+import type { Deck, Slide, Item, MediaItem, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, Media, Transition, ArrowEnd, ShapeItem, GroupItem, DeckLink, DeckAnim, TableItem, TableCell } from './deck';
 import { effectOf, sideOf } from './anim-map';
 import { builtinTableStyleXml } from './builtin-table-styles';
 import type { ChartSpec, ChartSeries, ChartKind } from '../chart/chart-layout';
@@ -362,8 +362,33 @@ function blipMedia(blipFill: El, r: Res): Media | null {
     if (!rid) return null;
     const rel = r.pkg.rels(r.part).get(rid);
     if (!rel || rel.external) return null;
-    const bytes = r.pkg.bytes(rel.target);
-    const ext = MEDIA_EXT[(rel.target.split('.').pop() || '').toLowerCase()];
+    return mediaAt(r.pkg, rel.target);
+}
+/**
+ * The clip a picture plays: `p14:media r:embed` (PowerPoint 2010+, always embedded) first, then
+ * `a:videoFile` / `a:audioFile` / `a:quickTimeFile` `r:link` (embedded or linked), then
+ * `a:wavAudioFile r:embed`. null for a plain picture. Follows DeckCraft `read/shapes.rs` `pic`.
+ */
+function clipOf(nvPr: El | null, r: Res): Pick<MediaItem, 'audio' | 'file' | 'url'> | null {
+    const vf = kid(nvPr, 'videoFile') ?? kid(nvPr, 'quickTimeFile');
+    const af = kid(nvPr, 'audioFile') ?? kid(nvPr, 'wavAudioFile');
+    const p14 = findDeep(kid(nvPr, 'extLst'), 'media', 2);
+    if (!vf && !af && !p14) return null;
+    const audio = !vf && !!af;
+    let url: string | undefined;
+    for (const ref of [attr(p14, 'r:embed'), attr(vf ?? af, 'r:link'), attr(vf ?? af, 'r:embed')]) {
+        const rel = ref ? r.pkg.rels(r.part).get(ref) : undefined;
+        if (!rel) continue;
+        if (rel.external) { if (!url && /^https?:\/\//i.test(rel.target)) url = rel.target; continue; }
+        const bytes = r.pkg.bytes(rel.target);
+        if (bytes) return { audio, file: { bytes, ext: (rel.target.split('.').pop() || '').toLowerCase() } };
+    }
+    return { audio, file: null, ...(url ? { url } : {}) };
+}
+
+function mediaAt(pkg: Pkg, target: string): Media | null {
+    const bytes = pkg.bytes(target);
+    const ext = MEDIA_EXT[(target.split('.').pop() || '').toLowerCase()];
     return bytes && ext ? { bytes, ext } : null;
 }
 
@@ -885,9 +910,15 @@ function readOneInner(el: El, level: Level, sc: SlideCtx, frame: Frame, depth: n
             if (!box) return null;
             const bf = kid(el, 'blipFill');
             const media = bf ? blipMedia(bf, r) : null;
-            if (!media) { sc.warnings.push(`Picture "${name}" has no image the importer can read.`); return null; }
             const src = kid(bf, 'srcRect');
             const crop = src ? { l: num(src, 'l') / 100000, t: num(src, 't') / 100000, r: num(src, 'r') / 100000, b: num(src, 'b') / 100000 } : undefined;
+            const clip = clipOf(kid(nv ?? null, 'nvPr'), r);
+            if (clip) {
+                if (!clip.file && !clip.url) sc.warnings.push(`${clip.audio ? 'Audio' : 'Video'} "${name}" is linked to a file on another computer; only its picture was imported.`);
+                if (!clip.file && !clip.url && !media) return null;
+                return { kind: 'media', id, name, ...frame(box), ...clip, ...(media ? { poster: media } : {}), crop };
+            }
+            if (!media) { sc.warnings.push(`Picture "${name}" has no image the importer can read.`); return null; }
             const amt = attr(path(bf, 'blip', 'alphaModFix'), 'amt');
             const b = frame(box);
             const g = geometryOf(spPr, b)?.geom;
@@ -1265,6 +1296,8 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
         const chart = chartOf(gd, level, sc);
         if (chart) return { kind: 'chart', id, name, ...frame(box0), chart };
     }
+    const preview = previewOf(gd, r, sc);
+    if (preview) return preview(id, name, frame(box0));
     const what = /chart/.test(uri) ? 'Chart' : /diagram/.test(uri) ? 'SmartArt diagram' : 'Embedded object';
     sc.warnings.push(`${what} "${name}" was imported as a placeholder frame.`);
     return { kind: 'shape', id, name, ...frame(box0), geom: { kind: 'preset', prst: 'rect' },
@@ -1272,6 +1305,62 @@ function readGraphicFrame(el: El, level: Level, sc: SlideCtx, frame: Frame, id: 
         text: { paragraphs: [{ runs: [{ text: `${what}: ${name}`, size: 16, color: { hex: '#495057' } }], align: 'ctr' }], anchor: 'ctr', insets: { l: 8, t: 8, r: 8, b: 8 }, wrap: true } };
 }
 
+
+/**
+ * The picture an object we can't model shows instead of itself: an embedded or linked OLE object's
+ * fallback `p:pic` (PowerPoint 2010+, inside `mc:Fallback`), or, for PowerPoint 2007 files, the
+ * `v:imagedata` of the legacy VML shape whose id is the object's `spid`. Other graphic frames get
+ * the first picture they carry. Returns a builder for the item, or null with no readable picture.
+ * Follows DeckCraft `crates/pptx/src/read/shapes.rs` (`frame`, `vml_preview`; MIT/Apache).
+ */
+function previewOf(gd: El | null, r: Res, sc: SlideCtx): ((id: number, name: string, b: Box) => Item) | null {
+    const ole = findDeep(gd, 'oleObj', 3);
+    const uri = attr(gd, 'uri') || '';
+    if (!ole && /chart|diagram/.test(uri)) return null; // those have their own placeholder wording
+    const pic = ole ? kid(ole, 'pic') : null;
+    const bf = pic ? kid(pic, 'blipFill') : (findDeep(gd, 'blip', 8)?.parentElement ?? null);
+    let media = bf ? blipMedia(bf, r) : null;
+    if (!media && ole) media = vmlPreview(r, attr(ole, 'spid'));
+    if (!media) return null;
+    const label = ole ? (attr(ole, 'progId') || attr(ole, 'name') || 'Object') : (uri.split('/').pop() || 'Object');
+    sc.warnings.push(`Embedded object "${label}" was imported as its preview picture; the object itself can't be edited in Yappy.`);
+    // The fallback picture's own fill and outline: PowerPoint draws them behind and around the
+    // preview (old equation objects on coloured boxes).
+    const spPr = pic ? kid(pic, 'spPr') : null;
+    const fill = spPr ? fillOf(spPr, r) : undefined;
+    const line = spPr ? lineOf(kid(spPr, 'ln'), r) : undefined;
+    const src = bf ? kid(bf, 'srcRect') : null;
+    const crop = src ? { l: num(src, 'l') / 100000, t: num(src, 't') / 100000, r: num(src, 'r') / 100000, b: num(src, 'b') / 100000 } : undefined;
+    return (id, name, b) => {
+        const picture: Item = { kind: 'picture', id, name, ...b, media: media!, crop };
+        if ((!fill || fill.kind === 'none') && !line) return picture;
+        const box = { x: b.x, y: b.y, w: b.w, h: b.h };
+        const back: Item = { kind: 'shape', id: 2_000_000 + id, name: `${name} frame`, ...box, geom: { kind: 'preset', prst: 'rect' },
+            fill: fill ?? { kind: 'none' }, line: line ?? null };
+        const g: GroupItem = { kind: 'group', id, name, ...b, children: [back, { ...picture, id: 2_100_000 + id, ...box }] };
+        return g;
+    };
+}
+
+/** An old-style OLE object's preview: the `v:imagedata` picture of the VML shape with id `spid`. */
+function vmlPreview(r: Res, spid: string | null): Media | null {
+    if (!spid) return null;
+    for (const rel of r.pkg.rels(r.part).values()) {
+        // ECMA names it vmlDrawing; some writers use Microsoft's legacyDrawing relationship.
+        if ((rel.type !== 'vmlDrawing' && rel.type !== 'legacyDrawing') || rel.external) continue;
+        const root = r.pkg.xml(rel.target);
+        if (!root) continue;
+        for (const s of Array.from(root.getElementsByTagName('*'))) {
+            if (s.localName !== 'shape' || attr(s, 'id') !== spid) continue;
+            const img = Array.from(s.getElementsByTagName('*')).find(e => e.localName === 'imagedata');
+            const rid = attr(img, 'o:relid') || attr(img, 'r:id');
+            const target = rid ? r.pkg.rels(rel.target).get(rid) : undefined;
+            if (!target || target.external) return null;
+            return mediaAt(r.pkg, target.target);
+        }
+    }
+    return null;
+}
 
 /** Plot elements we can draw, with what they become; 3-D charts come in flat. */
 const PLOTS: Record<string, ChartKind> = {
@@ -1562,8 +1651,14 @@ function animsOf(root: El, warn: (s: string) => void): DeckAnim[] {
             if (k.localName === 'seq') {
                 const tn = kid(k, 'cTn');
                 const type = attr(tn, 'nodeType');
-                if (type && type !== 'mainSeq') { skipped++; continue; } // interactive (triggered) sequence
+                if (type && type !== 'mainSeq') {
+                    // Interactive (triggered) sequence. One that only plays/pauses a clip is
+                    // PowerPoint's click-the-video control, which a clip in Yappy does anyway.
+                    if (!onlyMediaCalls(tn)) skipped++;
+                    continue;
+                }
             }
+            if (k.localName === 'cTn' && attr(k, 'presetClass') === 'mediacall') continue; // see applyMediaTiming
             if (k.localName === 'cTn' && attr(k, 'presetClass')) { effects.push(k); continue; }
             visit(k, depth + 1);
         }
@@ -1597,6 +1692,58 @@ function animsOf(root: El, warn: (s: string) => void): DeckAnim[] {
         });
     }
     if (skipped) warn(`${skipped} animation(s) couldn't be imported (motion paths, triggered or by-paragraph effects).`);
+    return out;
+}
+
+/** True when every effect under `tn` is a media call (play, pause, stop a clip). */
+function onlyMediaCalls(tn: El | null): boolean {
+    const effects = descendants(tn, 'cTn', 12).filter(c => attr(c, 'presetClass'));
+    return effects.length > 0 && effects.every(c => attr(c, 'presetClass') === 'mediacall');
+}
+
+/**
+ * A clip's playback options live in the slide's timing tree: `p:video` / `p:audio` >
+ * `p:cMediaNode` holds mute, volume and Loop until Stopped (`repeatCount="indefinite"`), and a
+ * `playFrom` media call in the main sequence that no click comes before is Start ▸ Automatically.
+ * Copied onto the slide's media items (DeckCraft `read/timing.rs` `media_settings`).
+ */
+function applyMediaTiming(root: El, items: Item[]): void {
+    const tnLst = path(root, 'timing', 'tnLst');
+    if (!tnLst) return;
+    const clips = new Map<number, MediaItem>();
+    const walk = (list: Item[]) => list.forEach(it => { if (it.kind === 'media') clips.set(it.id, it); else if (it.kind === 'group') walk(it.children); });
+    walk(items);
+    if (!clips.size) return;
+    const spidOf = (el: El | null) => { const t = findDeep(el, 'spTgt', 6); return t ? num(t, 'spid', NaN) : NaN; };
+    for (const node of [...descendants(tnLst, 'video', 12), ...descendants(tnLst, 'audio', 12)]) {
+        const cm = kid(node, 'cMediaNode');
+        const clip = clips.get(spidOf(kid(cm, 'tgtEl')));
+        if (!cm || !clip) continue;
+        const vol = attr(cm, 'vol');
+        if (bool(cm, 'mute') || (vol !== null && Number(vol) === 0)) clip.muted = true;
+        if (attr(kid(cm, 'cTn'), 'repeatCount') === 'indefinite') clip.loop = true;
+    }
+    // The main sequence in document order: a playFrom before any click effect starts on its own.
+    const main = descendants(tnLst, 'cTn', 8).find(c => attr(c, 'nodeType') === 'mainSeq');
+    if (!main) return;
+    for (const c of descendants(main, 'cTn', 40).filter(c => attr(c, 'presetClass'))) {
+        if (attr(c, 'nodeType') === 'clickEffect') break;
+        if (attr(c, 'presetClass') !== 'mediacall') continue;
+        const cmd = descendants(c, 'cmd', 3)[0];
+        if (!/^playFrom/.test(attr(cmd, 'cmd') || '')) continue;
+        const clip = clips.get(spidOf(cmd));
+        if (clip) clip.autoplay = true;
+    }
+}
+
+/** Every descendant with this local name, nested ones included, in document order. */
+function descendants(el: El | null, local: string, depth: number): El[] {
+    if (!el || depth < 0) return [];
+    const out: El[] = [];
+    for (const k of elementKids(el)) {
+        if (k.localName === local) out.push(k);
+        out.push(...descendants(k, local, depth - 1));
+    }
     return out;
 }
 
@@ -1732,7 +1879,9 @@ export function readPptx(bytes: Uint8Array, opts: ReadOptions = {}): ReadResult 
         const showMaster = bool(root, 'showMasterSp') !== false && bool(layoutRoot, 'showMasterSp') !== false;
         if (sc.master && showMaster) items.push(...readShapes(sc.master.tree, sc.master, sc, IDENTITY, 0, false));
         if (sc.layout && bool(root, 'showMasterSp') !== false) items.push(...readShapes(sc.layout.tree, sc.layout, sc, IDENTITY, 0, false));
-        items.push(...readShapes(sc.slide.tree, sc.slide, sc, IDENTITY, 0, true));
+        const own = readShapes(sc.slide.tree, sc.slide, sc, IDENTITY, 0, true);
+        applyMediaTiming(root, own);
+        items.push(...own);
         slides.push({ items, background, transition: transitionOf(root), name: attr(kid(root, 'cSld'), 'name') || undefined, notes: notesOf(pkg, part), key: part,
             ...(attr(root, 'show') === '0' && { hidden: true }),
             ...(advanceAfterOf(root) && { advanceAfterMs: advanceAfterOf(root) }),

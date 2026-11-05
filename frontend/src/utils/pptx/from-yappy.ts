@@ -16,7 +16,7 @@
  */
 import type { DrawingElement, RichTextSpan } from '../../types';
 import type { Slide as YappySlide, SlideTransition } from '../../types/slide-types';
-import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink, DeckAnim, TableItem, TableCell } from './deck';
+import type { Item, Paint, Color, Line, TextBody, Paragraph, TextRun, Geometry, CustomPath, Media, Slide, Transition, ArrowEnd, ShapeItem, ConnectorItem, GroupItem, PathCmd, DeckLink, DeckAnim, TableItem, TableCell, MediaItem } from './deck';
 import { buildOrder } from '../build-order';
 import { normalizeChart } from '../chart/chart-layout';
 import { defaultColWidths, defaultRowHeights, defaultTableData, getCellFormat, formatCellValue, getCellBorders, getBorderWidth } from '../table-utils';
@@ -37,6 +37,7 @@ import { normalizeFontWeight, normalizeFontStyle } from '../font-variants';
 import { lineHeightFactorOf, DEFAULT_LINE_HEIGHT } from '../text-line-height';
 import { cornerRadiiPx } from '../corner-radius';
 import { getImage } from '../image-cache';
+import { clipExt, isAudioSource } from '../video-utils';
 import { hasExtrude } from '../extrude';
 import { hasRevolve } from '../revolve';
 import { hasInflate } from '../inflate';
@@ -988,7 +989,45 @@ function tableItem(el: DrawingElement, c: Conv): TableItem | null {
     };
 }
 
+/**
+ * A video element as a PowerPoint clip: an embedded file (a data URL in a format PowerPoint knows)
+ * goes into the package, a direct web link stays a link. The poster is the element's own, or a
+ * picture of the element. YouTube and Vimeo videos can't be PowerPoint clips: they stay a picture,
+ * with a link to the video. null leaves the element to the picture path.
+ */
+function mediaItem(el: DrawingElement, c: Conv): Item[] | null {
+    const url = el.videoURL;
+    if (!url) return null;
+    const audio = isAudioSource(url);
+    let clip: Pick<MediaItem, 'file' | 'url'>;
+    if (/^data:/i.test(url)) {
+        const d = dataUrlBytes(url);
+        const ext = d ? clipExt(d.mime) : null;
+        if (!d || !ext) return null;
+        clip = { file: { bytes: d.bytes, ext } };
+    } else if (el.videoProvider === 'direct' && /^https?:\/\//i.test(url)) {
+        clip = { file: null, url };
+    } else {
+        if (!/^https?:\/\//i.test(url)) return null;
+        const pic = pictureFrom([el], c, nameOf(el));
+        if (pic[0] && !pic[0].link) pic[0].link = { kind: 'url', url };
+        return pic;
+    }
+    let poster = mediaOf(el.videoPosterDataURL || el.videoPosterURL) ?? undefined;
+    if (!poster) {
+        const r = c.hooks.rasterize([el]);
+        poster = (r && mediaOf(r.dataURL)) || undefined;
+    }
+    c.report.native++;
+    return [{ kind: 'media', id: c.nextId++, name: nameOf(el), ...placed(el, c), audio, ...clip, poster,
+        autoplay: el.videoAutoplay || undefined, loop: el.videoLoop || undefined, muted: el.videoMuted || undefined }];
+}
+
 function convertOne(el: DrawingElement, c: Conv): Item[] {
+    if (el.type === 'video') {
+        const m = mediaItem(el, c);
+        if (m) return m;
+    }
     if (needsRaster(el)) return pictureFrom([el], c, nameOf(el));
     try {
         // A real PowerPoint chart, its data editable there (Edit Data opens the embedded workbook).

@@ -210,7 +210,32 @@ export interface TableItem extends Placed {
     fallback?: GroupItem;
 }
 
-export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem | ChartItem | TableItem;
+/** An audio or video file: its bytes, and its extension in lower case (`mp4`, `m4a`, `wav`…). */
+export interface ClipFile { bytes: Uint8Array; ext: string }
+
+/**
+ * A video or audio clip (`p:pic` with `a:videoFile` / `a:audioFile` / `p14:media`). PowerPoint
+ * shows its poster picture (for audio, a speaker icon) until it plays. Playback options live in
+ * the slide's timing tree, not on the picture.
+ */
+export interface MediaItem extends Placed {
+    kind: 'media';
+    audio: boolean;
+    /** The embedded file; null when the clip is only linked (see `url`) or can't be read. */
+    file: ClipFile | null;
+    /** A linked clip's web address (http/https). Links to files on someone's disk are dropped. */
+    url?: string;
+    poster?: Media;
+    /** Poster crop, as `PictureItem.crop`. */
+    crop?: { l: number; t: number; r: number; b: number };
+    /** Plays by itself when the slide appears (PowerPoint: Start ▸ Automatically). */
+    autoplay?: boolean;
+    /** Loop until stopped. */
+    loop?: boolean;
+    muted?: boolean;
+}
+
+export type Item = ShapeItem | ConnectorItem | PictureItem | GroupItem | ChartItem | TableItem | MediaItem;
 
 /** `pull` is PowerPoint's name for Uncover. */
 export type TransitionKind = 'fade' | 'push' | 'zoom' | 'morph' | 'wipe' | 'cover' | 'pull' | 'split';

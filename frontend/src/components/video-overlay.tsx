@@ -2,6 +2,7 @@ import { type Component, Show, For, createMemo, createSignal, onCleanup, createE
 import { store, stopVideoPlayback, updateElement, pushToHistory, currentViewport } from "../store/app-store";
 import { X, Lock, LockOpen, GripHorizontal } from "lucide-solid";
 import { worldToScreen } from "../utils/viewport-transforms";
+import { isAudioSource } from "../utils/video-utils";
 import "./video-overlay.css";
 
 /** Single video player overlay — one per playing video */
@@ -31,6 +32,10 @@ const SingleVideoOverlay: Component<{ elementId: string }> = (props) => {
     });
 
     const isLocked = createMemo(() => videoEl()?.videoLocked ?? false);
+    /** Sound only (an audio clip from PowerPoint): a player bar wide enough to use, not a picture-sized box. */
+    const isAudio = createMemo(() => isAudioSource(videoEl()?.videoURL));
+    // 320 = .video-overlay-container min-width in video-overlay.css: the clamp must use the width it really gets.
+    const AUDIO_BAR_W = 320, AUDIO_BAR_H = 54;
 
     const rawVideoSrc = createMemo(() => {
         const el = videoEl();
@@ -115,9 +120,11 @@ const SingleVideoOverlay: Component<{ elementId: string }> = (props) => {
                 class="video-overlay-container"
                 classList={{ dragging: isDragging() }}
                 style={{
-                    left: `${screenRect()!.x}px`,
-                    top: `${screenRect()!.y}px`,
-                    width: `${screenRect()!.width}px`,
+                    // An audio bar is wider than its icon, and icons often sit in a slide corner:
+                    // keep the bar on screen.
+                    left: `${isAudio() ? Math.max(0, Math.min(screenRect()!.x, window.innerWidth - Math.max(screenRect()!.width, AUDIO_BAR_W) - 8)) : screenRect()!.x}px`,
+                    top: `${isAudio() ? Math.max(0, Math.min(screenRect()!.y, window.innerHeight - AUDIO_BAR_H - 40)) : screenRect()!.y}px`,
+                    width: `${isAudio() ? Math.max(screenRect()!.width, AUDIO_BAR_W) : screenRect()!.width}px`,
                 }}
             >
                 <div
@@ -147,17 +154,29 @@ const SingleVideoOverlay: Component<{ elementId: string }> = (props) => {
                     </button>
                 </div>
 
-                <div class="video-overlay-content" style={{ height: `${screenRect()!.height}px` }}>
+                <div class="video-overlay-content" style={{ height: `${isAudio() ? AUDIO_BAR_H : screenRect()!.height}px` }}>
                     <Show when={debouncedSrc()}>
                         <Show when={debouncedIsEmbed()} fallback={
-                            <video
-                                class="video-overlay-player"
-                                src={debouncedSrc()}
-                                controls
-                                autoplay
-                                loop={videoEl()!.videoLoop || false}
-                                muted={videoEl()!.videoMuted || false}
-                            />
+                            <Show when={!isAudio()} fallback={
+                                <audio
+                                    class="video-overlay-player"
+                                    src={debouncedSrc()}
+                                    controls
+                                    autoplay
+                                    loop={videoEl()!.videoLoop || false}
+                                    muted={videoEl()!.videoMuted || false}
+                                />
+                            }>
+                                <video
+                                    class="video-overlay-player"
+                                    src={debouncedSrc()}
+                                    poster={videoEl()!.videoPosterDataURL || videoEl()!.videoPosterURL || undefined}
+                                    controls
+                                    autoplay
+                                    loop={videoEl()!.videoLoop || false}
+                                    muted={videoEl()!.videoMuted || false}
+                                />
+                            </Show>
                         }>
                             <iframe
                                 src={debouncedSrc()}

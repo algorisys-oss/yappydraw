@@ -858,3 +858,150 @@ describe("vertical text", () => {
         expect(cells[0].h).toBeGreaterThan(7 * 24);               // seven letters, one under another
     });
 });
+
+describe("embedded objects (OLE) come in as their preview picture", () => {
+    const MC = 'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"';
+    const frameXml = (gdInner: string) => `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="9" name="Object 3" descr="Revenue sheet"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>`
+        + `<p:xfrm><a:off x="${100 * 9525}" y="${50 * 9525}"/><a:ext cx="${200 * 9525}" cy="${100 * 9525}"/></p:xfrm>`
+        + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/presentationml/2006/ole">${gdInner}</a:graphicData></a:graphic></p:graphicFrame>`;
+    const fallbackPic = (spPrExtra = '') => `<p:pic><p:nvPicPr><p:cNvPr id="0" name="Object 3"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>`
+        + `<p:spPr>${xfrm(100, 50, 200, 100)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${spPrExtra}</p:spPr></p:pic>`;
+    const modern = (spPrExtra = '') => `<mc:AlternateContent ${MC}><mc:Choice xmlns:v="urn:schemas-microsoft-com:vml" Requires="v"><p:oleObj name="Worksheet" r:id="rIdOle" progId="Excel.Sheet.12"><p:embed/></p:oleObj></mc:Choice>`
+        + `<mc:Fallback><p:oleObj name="Worksheet" r:id="rIdOle" progId="Excel.Sheet.12"><p:embed/>${fallbackPic(spPrExtra)}</p:oleObj></mc:Fallback></mc:AlternateContent>`;
+    const rels = REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rIdImg', 'image', '../media/image1.png'], ['rIdOle', 'oleObject', '../embeddings/oleObject1.bin'], ['rIdVml', 'vmlDrawing', '../drawings/vmlDrawing1.vml']]);
+    const obj = (d: Deck) => d.slides[0].items.find(i => i.name === 'Object 3')!;
+    const build = (tree: string, extra: Record<string, Uint8Array> = {}) => zipSync({
+        ...unzipSync(handBuilt(tree, { 'ppt/slides/_rels/slide1.xml.rels': rels })),
+        'ppt/media/image1.png': PNG_1x1, 'ppt/embeddings/oleObject1.bin': new Uint8Array(16), ...extra,
+    });
+
+    it("PowerPoint 2010+: the fallback p:pic, placed at the frame, with alt text and a warning", () => {
+        const { deck, warnings } = read(build(frameXml(modern())));
+        const p = obj(deck) as PictureItem;
+        expect(p.kind).toBe('picture');
+        expect([p.x, p.y, p.w, p.h]).toEqual([100, 50, 200, 100]);
+        expect(p.media.ext).toBe('png');
+        expect(p.descr).toBe('Revenue sheet');
+        expect(warnings.some(w => w.includes('Excel.Sheet.12') && w.includes('preview picture'))).toBe(true);
+        expect(warnings.some(w => w.includes('placeholder frame'))).toBe(false);
+    });
+    it("keeps the fallback picture's fill and outline behind and around the preview", () => {
+        const { deck } = read(build(frameXml(modern('<a:solidFill><a:srgbClr val="FFFF00"/></a:solidFill><a:ln w="19050"><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></a:ln>'))));
+        const g = obj(deck) as GroupItem;
+        expect(g.kind).toBe('group');
+        expect(g.descr).toBe('Revenue sheet');
+        const [back, pic] = g.children as [ShapeItem, PictureItem];
+        expect(back.fill).toEqual({ kind: 'solid', color: { hex: '#ffff00' } });
+        expect(back.line).toMatchObject({ width: 2, color: { hex: '#ff0000' } });
+        expect(pic.kind).toBe('picture');
+        expect([pic.x, pic.y, pic.w, pic.h]).toEqual([100, 50, 200, 100]);
+    });
+    it("PowerPoint 2007: the v:imagedata of the VML shape named by spid", () => {
+        const vml = `<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><v:shape id="_x0000_s1000"><v:imagedata o:relid="rId2"/></v:shape>`
+            + `<v:shape id="_x0000_s2050"><v:imagedata o:relid="rId1"/></v:shape></xml>`;
+        const vmlRels = REL([['rId1', 'image', '../media/image1.png'], ['rId2', 'image', '../media/missing.png']]);
+        const tree = frameXml(`<p:oleObj spid="_x0000_s2050" name="Slide" r:id="rIdOle" progId="PowerPoint.Slide.8"><p:embed/></p:oleObj>`);
+        const { deck } = read(build(tree, { 'ppt/drawings/vmlDrawing1.vml': strToU8(vml), 'ppt/drawings/_rels/vmlDrawing1.vml.rels': strToU8(vmlRels) }));
+        const p = obj(deck) as PictureItem;
+        expect(p.kind).toBe('picture');
+        expect(p.media.ext).toBe('png');
+        // The same drawing linked as Microsoft's legacyDrawing relationship.
+        const legacy = zipSync({ ...unzipSync(build(tree, { 'ppt/drawings/vmlDrawing1.vml': strToU8(vml), 'ppt/drawings/_rels/vmlDrawing1.vml.rels': strToU8(vmlRels) })),
+            'ppt/slides/_rels/slide1.xml.rels': strToU8(rels.replace('relationships/vmlDrawing', 'relationships/legacyDrawing')) });
+        expect(obj(read(legacy).deck).kind).toBe('picture');
+    });
+    it("with no readable preview it stays the labelled placeholder", () => {
+        const { deck, warnings } = read(build(frameXml(`<p:oleObj spid="_x0000_s9" name="X" r:id="rIdOle" progId="Visio.Drawing.15"><p:embed/></p:oleObj>`)));
+        expect((obj(deck) as ShapeItem).kind).toBe('shape');
+        expect(warnings.some(w => w.includes('placeholder frame'))).toBe(true);
+    });
+});
+
+describe("video and audio clips", () => {
+    const P14 = '<p:extLst><p:ext uri="{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}"><p14:media xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" r:embed="rIdM"/></p:ext></p:extLst>';
+    const clipPic = (id: number, name: string, nvPr: string, crop = '') => `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="${name}"><a:hlinkClick r:id="" action="ppaction://media"/></p:cNvPr><p:cNvPicPr/><p:nvPr>${nvPr}</p:nvPr></p:nvPicPr>`
+        + `<p:blipFill><a:blip r:embed="rIdImg"/>${crop}<a:stretch/></p:blipFill><p:spPr>${xfrm(10, 20, 320, 180)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+    // PowerPoint's own timing for "Start: Automatically", "Loop until Stopped", mute, plus its click-to-pause sequence.
+    const timing = (spid: number, tag = 'video', media = ' vol="80000" mute="1"', ctn = ' repeatCount="indefinite"', auto = true) =>
+        `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>`
+        + (auto ? `<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst><p:par><p:cTn id="3" fill="hold"><p:stCondLst><p:cond delay="indefinite"/><p:cond evt="onBegin" delay="0"><p:tn val="2"/></p:cond></p:stCondLst><p:childTnLst><p:par><p:cTn id="4" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`
+            + `<p:par><p:cTn id="5" presetID="1" presetClass="mediacall" presetSubtype="0" fill="hold" nodeType="afterEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:cmd type="call" cmd="playFrom(0.0)"><p:cBhvr><p:cTn id="6" dur="4000" fill="hold"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl></p:cBhvr></p:cmd></p:childTnLst></p:cTn></p:par>`
+            + `</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq>` : '')
+        + `<p:${tag}><p:cMediaNode${media}><p:cTn id="7"${ctn} fill="hold" display="0"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst></p:cTn><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl></p:cMediaNode></p:${tag}>`
+        + `<p:seq concurrent="1" nextAc="seek"><p:cTn id="8" restart="whenNotActive" fill="hold" evtFilter="cancelBubble" nodeType="interactiveSeq"><p:stCondLst><p:cond evt="onClick" delay="0"><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl></p:cond></p:stCondLst><p:childTnLst><p:par><p:cTn id="9" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`
+        + `<p:par><p:cTn id="11" presetID="2" presetClass="mediacall" presetSubtype="0" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:cmd type="call" cmd="togglePause"><p:cBhvr><p:cTn id="12" dur="1" fill="hold"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl></p:cBhvr></p:cmd></p:childTnLst></p:cTn></p:par>`
+        + `</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
+    const CLIP = new Uint8Array([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70]); // the start of an MP4
+    const deckWith = (tree: string, timingXml: string, rels: [string, string, string][], files: Record<string, Uint8Array>) => {
+        const base = unzipSync(handBuilt(tree, { 'ppt/slides/_rels/slide1.xml.rels': REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rIdImg', 'image', '../media/image1.png'], ...rels]) }));
+        const slide = strFromU8(base['ppt/slides/slide1.xml']).replace('</p:sld>', `${timingXml}</p:sld>`);
+        let relsXml = strFromU8(base['ppt/slides/_rels/slide1.xml.rels']);
+        // The p14 media relationship is in Microsoft's namespace, not ECMA's.
+        relsXml = relsXml.replace(/Type="http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/media2007"/, 'Type="http://schemas.microsoft.com/office/2007/relationships/media"');
+        return zipSync({ ...base, 'ppt/slides/slide1.xml': strToU8(slide), 'ppt/slides/_rels/slide1.xml.rels': strToU8(relsXml), 'ppt/media/image1.png': PNG_1x1, ...files });
+    };
+    const media = (d: Deck) => d.slides[0].items.filter(i => i.kind === 'media') as any[];
+
+    it("reads an embedded video with its poster, crop, autoplay, loop and mute, and warns about none of it", () => {
+        const tree = clipPic(4, 'Clip', `<a:videoFile r:link="rIdV"/>${P14}`, '<a:srcRect l="25000" r="25000"/>');
+        const bytes = deckWith(tree, timing(4), [['rIdV', 'video', '../media/media1.mp4'], ['rIdM', 'media2007', '../media/media1.mp4']], { 'ppt/media/media1.mp4': CLIP });
+        const { deck, warnings } = read(bytes);
+        const [m] = media(deck);
+        expect(m).toMatchObject({ kind: 'media', name: 'Clip', audio: false, autoplay: true, loop: true, muted: true, x: 10, y: 20, w: 320, h: 180 });
+        expect(m.file.ext).toBe('mp4');
+        expect(Array.from(m.file.bytes)).toEqual(Array.from(CLIP));
+        expect(m.poster.ext).toBe('png');
+        expect(m.crop).toEqual({ l: 0.25, t: 0, r: 0.25, b: 0 });
+        expect(warnings).toEqual([]);
+    });
+    it("reads audio that starts on a click (no main sequence): not autoplay, not looped", () => {
+        const tree = clipPic(5, 'tada', `<a:audioFile r:link="rIdA"/>${P14}`);
+        const bytes = deckWith(tree, timing(5, 'audio', ' vol="80000"', '', false), [['rIdA', 'audio', '../media/media1.wav'], ['rIdM', 'media2007', '../media/media1.wav']], { 'ppt/media/media1.wav': new Uint8Array(8) });
+        const { deck, warnings } = read(bytes);
+        const [m] = media(deck);
+        expect(m).toMatchObject({ audio: true, file: { ext: 'wav' } });
+        expect(m.autoplay).toBeUndefined();
+        expect(m.loop).toBeUndefined();
+        expect(warnings).toEqual([]);
+    });
+    it("keeps a web link, and warns about a link to someone's disk", () => {
+        const web = clipPic(4, 'Web', '<a:videoFile r:link="rIdV"/>') + clipPic(6, 'Local', '<a:videoFile r:link="rIdL"/>');
+        const rels = REL([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rIdImg', 'image', '../media/image1.png'], ['rIdV', 'video', 'https://example.com/a.mp4'], ['rIdL', 'video', 'file:///C:/clips/b.wmv']])
+            .replace(/(Target="(https|file)[^"]*")/g, '$1 TargetMode="External"');
+        const bytes = zipSync({ ...unzipSync(handBuilt(web, { 'ppt/slides/_rels/slide1.xml.rels': rels })), 'ppt/media/image1.png': PNG_1x1 });
+        const { deck, warnings } = read(bytes);
+        const [a, b] = media(deck);
+        expect(a).toMatchObject({ name: 'Web', file: null, url: 'https://example.com/a.mp4' });
+        expect(b).toMatchObject({ name: 'Local', file: null });
+        expect(b.url).toBeUndefined();
+        expect(warnings).toEqual(['Video "Local" is linked to a file on another computer; only its picture was imported.']);
+    });
+    it("round-trips through our writer: files, links, autoplay, loop, mute and audio", () => {
+        const clip = (id: number, extra: object) => ({ kind: 'media', id, name: `C${id}`, x: 10 * id, y: 10, w: 160, h: 90, poster: { bytes: PNG_1x1, ext: 'png' }, file: null, audio: false, ...extra }) as any;
+        const deck: Deck = { width: 960, height: 540, slides: [{ items: [
+            clip(2, { file: { bytes: CLIP, ext: 'mp4' }, autoplay: true, loop: true, muted: true }),
+            clip(3, { audio: true, file: { bytes: new Uint8Array([1, 2, 3]), ext: 'm4a' } }),
+            clip(4, { url: 'https://example.com/v.webm' }),
+            { kind: 'shape', id: 5, name: 'Box', x: 0, y: 300, w: 100, h: 50, geom: { kind: 'preset', prst: 'rect' }, fill: { kind: 'solid', color: { hex: '#ff0000' } }, line: null },
+        ], anims: [{ target: 5, cls: 'entr', effect: 'fade', presetId: 10, subtype: 0, start: 'click', durationMs: 500, delayMs: 0 }] }] };
+        const out = buildPptx(deck);
+        const back = read(out);
+        expect(back.warnings).toEqual([]);
+        const [a, b, c] = media(back.deck);
+        expect(a).toMatchObject({ audio: false, autoplay: true, loop: true, muted: true, file: { ext: 'mp4' } });
+        expect(Array.from(a.file.bytes)).toEqual(Array.from(CLIP));
+        expect(b).toMatchObject({ audio: true, file: { ext: 'm4a' } });
+        expect(b.autoplay).toBeUndefined();
+        expect(c).toMatchObject({ file: null, url: 'https://example.com/v.webm' });
+        // The build animation still reads back after the clip's play command in the same timing tree.
+        expect(back.deck.slides[0].anims?.map(x => x.target)).toEqual([5]);
+        // Content types and relationships PowerPoint needs.
+        const files = unzipSync(out);
+        const ct = strFromU8(files['[Content_Types].xml']);
+        expect(ct).toContain('Extension="mp4" ContentType="video/mp4"');
+        expect(ct).toContain('Extension="m4a" ContentType="audio/mp4"');
+        const rels = strFromU8(files['ppt/slides/_rels/slide1.xml.rels']);
+        expect(rels).toContain('http://schemas.microsoft.com/office/2007/relationships/media');
+        expect(rels).toMatch(/relationships\/video" Target="https:\/\/example\.com\/v\.webm" TargetMode="External"/);
+    });
+});

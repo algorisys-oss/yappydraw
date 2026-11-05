@@ -57,7 +57,9 @@ in implementations of the standard.
 `frontend/src/utils/morph.ts` adapts the slide-to-slide Morph matching order from DeckCraft's
 `crates/anim/src/morph.rs` (`morph_pairs`), rewritten in TypeScript. The PowerPoint writer's
 part list and notes-master layout (`frontend/src/utils/pptx/write.ts`) follow DeckCraft's
-`crates/pptx/src/write.rs`. DeckCraft is dual-licensed MIT OR Apache-2.0; Yappy uses it under
+`crates/pptx/src/write.rs`. The EMF/WMF/EMF+ reader in `frontend/src/utils/metafile/` is a
+TypeScript port of DeckCraft's `crates/metafile` (record handling, mapping, clipping, limits and
+its tests), with the additions noted in its files. DeckCraft is dual-licensed MIT OR Apache-2.0; Yappy uses it under
 the MIT licence below. No DeckCraft names, logos or brand assets are used.
 
 - Source: DeckCraft (Rust presentation app), read-only clone.
