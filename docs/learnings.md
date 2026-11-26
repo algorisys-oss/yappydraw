@@ -11961,3 +11961,16 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
   check the sketch path, set `roughness` too.
 - **Test the fallback with a visible shape**: the reader drops shapes with no fill, line or text,
   so an empty fallback `p:sp` silently fell through to the chart placeholder.
+
+
+## A pinned transitive dependency is fixed with an override, not an upgrade (2026-11-26, #484)
+
+- **Check the parent's range before you upgrade it.** Hostinger flagged `seroval` < 1.8.2. It
+  comes only through `solid-js`, and every 1.9.x release, up to the newest 1.9.20, pins
+  `seroval ~1.6.11`. Upgrading solid cannot fix it. Only solid 2.x asks for `^1.8.0`, and that is
+  a major migration. `npm view solid-js@<v> dependencies` for each candidate answers this in seconds.
+- **Override the sibling packages together.** `seroval-plugins` 1.8.0 needs `seroval ^1.8.0`. If
+  you override only `seroval`, the plugins stay on 1.6 next to a 1.8 core.
+- **Check the bundle before you call an advisory reachable.** `grep` on `dist/assets/*.js` for
+  the library finds nothing: solid uses seroval only for SSR, and we render only on the client.
+  The host scans the lockfile and not the bundle, so we fix it anyway, as we did for `image-size` (0.8.271).

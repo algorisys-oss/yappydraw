@@ -1,4 +1,4 @@
-import { q as S, ap as E, aq as b, ar as N, as as C, at as v } from "./index-C2lzZgao.js";
+import { q as S, ap as E, aq as b, ar as N, as as C, at as v } from "./index-CVaACwxY.js";
 const U = "https://yappydraw.com/ns/scene", x = /<metadata>\s*<yappy:scene\b[^>]*>([\s\S]*?)<\/yappy:scene>\s*<\/metadata>/, D = /<yappy:scene\b[^>]*>([\s\S]*?)<\/yappy:scene>/, s = "yappy-scene", A = [137, 80, 78, 71, 13, 10, 26, 10];
 function g(t) {
   let n = "";

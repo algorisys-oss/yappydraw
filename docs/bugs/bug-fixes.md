@@ -11754,3 +11754,14 @@ Found while adding scatter, bubble, radar and stock charts (PPTX parity P4a):
   sent readers to `github.com/rajeshpillai/yappy/issues`, which the public cannot open (404).
   It now points at the public mirror's issues, `github.com/algorisys-oss/yappydraw/issues`.
   (`frontend/src/help-docs/features/workspace.md`)
+
+### seroval advisory from Hostinger (2026-11-26, #484)
+
+- **#484 `seroval` < 1.8.2: CWE-770, too much memory and CPU when it decodes `Error`/`AggregateError`.**
+  Reported by Hostinger's scanner. It comes in only through `solid-js` 1.9.18. That version pins
+  `seroval ~1.6.11` and `seroval-plugins ~1.6.8`, and no 1.9.x release allows 1.8. So `package.json`
+  `overrides` now sets `seroval ^1.8.2` and `seroval-plugins ^1.8.0`; the plugins package needs
+  `seroval ^1.8.0`. We were never exposed: solid uses seroval only for SSR serialization, the app
+  renders only on the client, and `dist/assets/*.js` has no seroval code. `npm audit` is clean for
+  seroval. The build and `npm test` (2272 pass) pass. Remove the override when solid 1.9.x widens
+  its range, or when we move to solid 2.x (it asks for `seroval ^1.8.0`).

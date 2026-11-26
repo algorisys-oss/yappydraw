@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.308](0.8.308.md) — Security update: `seroval` 1.8.2 (CWE-770) through an npm override, because solid-js 1.9.x pins 1.6. Not reachable: seroval is not in the client bundle (#484)
 - [0.8.297](0.8.297.md) — Build animations to and from PowerPoint (closest effects, playing order kept); animations gain an explicit `order`
 - [0.8.296](0.8.296.md) — Morph between slides: objects on both slides glide, resize, turn and recolour into place; PowerPoint keeps it (p159:morph)
 - [0.8.295](0.8.295.md) — Hide slide, sections, auto-advance and loop until Esc (PowerPoint keeps all four); security updates including a critical `zip` advisory in the desktop updater and 19 `npm audit` fixes (#465)
