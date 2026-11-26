@@ -164,7 +164,6 @@ UML Class shapes can be exported to Rocket Backend import JSON via:
 
 - **Export dialog**: Menu → Export/Save → Export to Rocket
 - **API**: `window.Yappy.exportToRocket({ appName: 'my_app' })`
-- **MCP**: `diagram_to_rocket_schema` tool
 
 The attribute syntax is parsed into Rocket entity field definitions, and connector labels define relations between entities.
 

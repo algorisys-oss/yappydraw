@@ -11982,3 +11982,14 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **To prove a glob override is safe, compare outputs.** "It builds" is not proof: the #465
   override built cleanly and matched 0 files. For `vsce`, compare `npx vsce ls | sort` before
   and after. Both gave 1876 files.
+- **A folder the mirror strips is a folder no scanner watches (#486).** `backend/mcp` had high
+  advisories that nobody had raised, because Dependabot and Hostinger see only the mirror. Run
+  `npm audit` there yourself.
+- **`bun install` does not upgrade bun.lock to match `npm audit fix`.** It keeps any locked
+  version that still fits the range. Raise the floor in `package.json`, or regenerate the lock,
+  and then grep `bun.lock` for the versions.
+- **A tool that was always failing showed up only in a before/after comparison (#487).** The
+  #486 round trip ran `diagram_to_rocket_schema` on the old and the new dependencies. It failed
+  on both, so the failure was older than the upgrade. Nobody had noticed, because the feature was
+  not used, and it was removed. When a check fails on the old versions too, it is a finding, not
+  noise. Report it.

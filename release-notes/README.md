@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.310](0.8.310.md) — MCP server: SDK 1.32.2, zod 4 and tsx 4.23 clear high audit advisories nobody had reported (#486); the Rocket Backend MCP tools are removed (#487). The app does not change
 - [0.8.309](0.8.309.md) — Security update: `minimatch` 11 and `glob` 14 for the VS Code extension's packaging tools (Dependabot #21, GHSA-3g3m-2fjr-6pw4). The app does not change (#485)
 - [0.8.308](0.8.308.md) — Security update: `seroval` 1.8.2 (CWE-770) through an npm override, because solid-js 1.9.x pins 1.6. Not reachable: seroval is not in the client bundle (#484)
 - [0.8.297](0.8.297.md) — Build animations to and from PowerPoint (closest effects, playing order kept); animations gain an explicit `order`

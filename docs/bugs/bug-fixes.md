@@ -11778,3 +11778,39 @@ Found while adding scatter, bubble, radar and stock charts (PPTX parity P4a):
   tooling only; the extension and the web app do not ship it. **Verified:** `npx vsce ls` gives
   the same 1876 files before and after, `npm run package` builds the `.vsix`, and `npm audit`
   in `vscode/` reports 0 vulnerabilities.
+
+### MCP server dependencies: SDK, Hono, body-parser, rate limit, zod, esbuild (2026-11-26, #486)
+
+- **#486 `backend/mcp` had high-severity advisories that no alert reported.** `.ossignore` strips
+  `backend/mcp` from the mirror, so Dependabot and the Hostinger scanner do not see it. The
+  advisories: `@modelcontextprotocol/sdk` ≤ 1.31.0; through it, `@hono/node-server` ≤ 1.19.17
+  (three static-path access-control bypasses), `body-parser` 2.0–2.3 (two DoS) and
+  `express-rate-limit` 8.0.1–8.5.0 (IPv4-mapped IPv6 bypass); `zod` < 4.6.6 (GHSA-mrhx-c7xc-m3w5,
+  memory exhaustion on oversized constrained collections); and `esbuild` 0.27.3–0.28.0 through
+  `tsx` (Windows dev-server file read). The server uses only the stdio transport, so the HTTP
+  packages were never loaded. `zod` validates every tool call, so that one was reachable.
+- **Fix.** SDK `^1.32.2` (it accepts `zod ^3.25 || ^4.0`), `zod ^4.6.7`, `tsx ^4.23.15`
+  (`esbuild` 0.28.2). The one zod 4 break: `z.record()` needs a key type, so
+  `z.record(z.any())` became `z.record(z.string(), z.any())` in `diagram-tools.ts` and
+  `rocket-tools.ts`. `bun.lock` was regenerated: `bun install` keeps locked versions that still
+  fit the range, so it had stayed on SDK 1.26.0 and Hono 1.19.9. Both lockfiles now agree.
+- **Verified** (the server has no tests). `temp/mcp-smoke.mjs` runs `initialize`, `tools/list`,
+  `resources/list` and a call; the same 7 tools and resources, and the call succeeds.
+  `temp/mcp-roundtrip.mjs` checks that bad arguments are rejected, then runs create → read →
+  analyze → rocket → delete in a temp data dir. Old and new dependencies give identical
+  results. The advertised JSON Schemas differ only in what zod 4 emits: no
+  `additionalProperties: false`, and `propertyNames` on records. Unknown keys were stripped
+  before and still are. `tsc --noEmit` is clean and `npm audit` reports 0.
+
+### MCP server: Rocket Backend tools removed (2026-11-26, #487)
+
+- **#487 `diagram_to_rocket_schema` and `rocket_schema_to_dsl` are removed from the MCP server**
+  (`backend/mcp`). YappyDraw does not need them. The `#486` round trip had found that
+  `diagram_to_rocket_schema` returned an error, with both the old and the new dependencies.
+  Removed: both tools, `utils/rocket-bridge.ts` (it dynamically imported the frontend's
+  `dsl/adapters/rocket/rocket-exporter`) and the `yappy://rocket-conventions` resource.
+  `analyze_diagram` stays, because it works on any diagram. It moved from `tools/rocket-tools.ts`
+  to `tools/analyze-tools.ts`. The `yappy://shape-types` text no longer mentions Rocket. The
+  in-app Export to Rocket feature and `Yappy.exportToRocket()` do not change. The server now has
+  5 tools and 2 resources. `tsc` is clean; `temp/mcp-smoke.mjs` and `temp/mcp-roundtrip.mjs` pass.
+  Docs: `backend/mcp/README.md`, `docs/uml-class.md`.

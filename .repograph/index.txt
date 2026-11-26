@@ -1,19 +1,18 @@
 # Repo index: yappy
 # columns: path | lang | lines | symbols(name:line; Owner{m:line ...} groups methods)
 
-backend/mcp/README.md | - | 135 |
-backend/mcp/bun.lock | - | 263 |
-backend/mcp/package-lock.json | - | 1702 |
+backend/mcp/README.md | - | 118 |
+backend/mcp/bun.lock | - | 264 |
+backend/mcp/package-lock.json | - | 1711 |
 backend/mcp/package.json | - | 18 |
 backend/mcp/src/config.ts | typescript | 15 |
 backend/mcp/src/index.ts | typescript | 26 |
-backend/mcp/src/resources/schema-resources.ts | typescript | 211 | registerResources:9
+backend/mcp/src/resources/schema-resources.ts | typescript | 137 | registerResources:9
 backend/mcp/src/server.ts | typescript | 16 | registerAll:12
+backend/mcp/src/tools/analyze-tools.ts | typescript | 51 | registerAnalyzeTools:14
 backend/mcp/src/tools/diagram-tools.ts | typescript | 231 | summarizeElements:14 registerDiagramTools:68
-backend/mcp/src/tools/rocket-tools.ts | typescript | 205 | registerRocketTools:16 elementsToDSLDiagram:150
 backend/mcp/src/utils/diagram-store.ts | typescript | 191 | SlideDocument:15 DiagramInfo:31 safePath:41 ensureDataDir:51 getRecursiveFiles:59 listDiagrams:80 readDiagram:119 writeDiagram:150 deleteDiagram:174
 backend/mcp/src/utils/dsl-helpers.ts | typescript | 290 | AnalysisResult:10 AnalyzedEntity:17 AnalyzedField:25 AnalyzedMethod:35 AnalyzedRelationship:42 AnalyzedElement:54 parseFieldFromAttribute:67 parseMethodFromLine:129 detectCardinality:152 analyzeDiagramElements:174
-backend/mcp/src/utils/rocket-bridge.ts | typescript | 36 | RocketExportResult:11 callExportToRocket:21 callRocketSchemaToDSL:33
 backend/mcp/tsconfig.json | - | 13 |
 backend/server/index.ts | typescript | 160 | getRecursiveFiles:28 or:88
 examples/dsl/01-simple-flowchart.ysl | - | 19 |
