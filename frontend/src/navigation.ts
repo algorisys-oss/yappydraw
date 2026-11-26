@@ -16,8 +16,12 @@
 
 import { createSignal } from 'solid-js';
 import { hashRedirect, parsePath, type RouteKey } from './routes';
+import { isVSCode, prepareVSCodeBoot, openExternal } from './vscode/vscode-host';
 
 const hasWindow = typeof window !== 'undefined';
+
+// Inside VS Code the page URL is `…/index.html`; move it to `/` before the signal below reads it.
+if (hasWindow) prepareVSCodeBoot();
 
 const [path, setPath] = createSignal(hasWindow ? window.location.pathname : '/');
 
@@ -40,11 +44,16 @@ export const navigate = (to: string, options: { replace?: boolean } = {}): void 
 
     const route = parsePath(to);
     if (!route || !SPA_ROUTES.includes(route.key)) {
+        // A VS Code webview has no site behind it: the page would be a blank 404 that
+        // replaces the editor. Open the public page in the browser instead.
+        if (isVSCode()) { openExternal(new URL(to, 'https://yappydraw.com').href); return; }
         window.location.assign(to);
         return;
     }
 
-    const url = to + window.location.search;
+    // Resolved against location.href, not the document base: the VS Code build injects a
+    // <base href> on another origin, and a relative URL would make pushState throw.
+    const url = new URL(to + window.location.search, window.location.href).href;
     if (options.replace) window.history.replaceState(null, '', url);
     else window.history.pushState(null, '', url);
     setPath(window.location.pathname);

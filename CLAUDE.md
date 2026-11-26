@@ -8,11 +8,26 @@ to the task at hand.
 
 ### Branch policy
 
-**Never commit development work directly on `main`.** All development happens on
-the `dev` branch or a dedicated feature branch (`feat/…`). `main` receives work
-only via fast-forward/merge from `dev` (or a feature branch) as part of the
-"ship it" release flow. Before starting new work, make sure you're on `dev` or a
-feature branch — not `main`.
+**Development happens on `dev`, or on a feature branch cut from `dev`.** Never
+commit development work on `main`.
+
+- **Branch from a synced `dev`.** A feature branch (`feat/…`, `fix/…`) always
+  diverges from `dev`, never from `main` or another feature branch. Before
+  starting work on any branch, bring it up to date with the latest `dev`
+  (`git fetch`, then rebase/merge `dev` into the branch). Don't build on a stale
+  base: sync first, then work.
+- **Feature branches merge back into `dev`**, not into `main`. A finished
+  feature lands on `dev` before it can ship.
+- **`main` takes work only from `dev`**, by fast-forward, as part of the
+  "ship it" release flow. After every push to `main`, `dev` and `main` must be on
+  the same commit.
+- Before starting new work, confirm `git branch --show-current` prints `dev` or a
+  feature branch cut from it, not `main`.
+
+The primary repo is **`Algorisys-Technologies/yappydraw`** (private, remote
+`origin`). `rajeshpillai/yappy` is the old location, kept only as a read-only
+backup. Deploys come from the public OSS mirror `algorisys-oss/yappydraw`
+(see step 8 of "ship it"), not from `origin`.
 
 **Always end on `dev`.** Syncing `main` is the last step of a release, not a
 place to stay: `git checkout main` for the merge/push, then switch straight back
@@ -153,8 +168,8 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    So run the clean clone FIRST and measure memory second: reproduction beats recognition,
    and it is usually faster. Note the clone must be of the **OSS mirror**, which is what the
    host builds; a clone of this repo cannot see anything `.ossignore` removed.
-5. **Commit and tag** — commit on the working branch, then create an annotated tag for the version: `git tag -a v<version> -m "v<version> — <short headline>"` (e.g. `v0.8.124`). One tag per shipped version, `v`-prefixed, matching `package.json`.
-6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
+5. **Commit and tag** — commit on `dev` (merge the feature branch into `dev` first, if the work is on one), then create an annotated tag for the version: `git tag -a v<version> -m "v<version> — <short headline>"` (e.g. `v0.8.124`). One tag per shipped version, `v`-prefixed, matching `package.json`.
+6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward from `dev`). Push `dev` too.
 7. **Fast-forward `dev` to `main` and push it** — `dev` is the branch the next change starts from, so it must not be left behind the release (`git checkout dev && git merge --ff-only main && git push origin dev`).
 8. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push --verify` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
    **Always pass `--verify` on a release.** It runs `npm ci` and `npm run build` inside the published tree before pushing, which is the only check that tests what Hostinger tests: we build THIS repo and the host builds the mirror, so every `.ossignore` edit is an untested change to the deployed artifact. That has now failed three times in one shape — `scripts/` stripped once the prerenderer joined `npm run build` (hence `OSS_KEEP`), and `articles/` stripped in v0.8.236 under a comment reading "not consumed by the build", which broke two consecutive deploys while this repo built fine. A cheap derived check runs unconditionally (it greps the prerenderer for `path.join(REPO, …)` and asserts those paths survived), but it only sees inputs declared that way; `--verify` catches the rest, including a repeat of the #344 OOM.

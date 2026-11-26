@@ -17,6 +17,7 @@ import {
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { initPWA } from './utils/pwa';
+import { isVSCode } from './vscode/vscode-host';
 import { toggleTimelapse } from './utils/timelapse-manager';
 import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
@@ -146,6 +147,8 @@ const App: Component = () => {
   onMount(() => {
     // Desktop (Tauri) shell: wire native menu + file Open/Save. No-op on web.
     void import('./desktop/desktop-bridge').then(m => m.initDesktop());
+    // VS Code custom editor: the open file is the document. No-op elsewhere.
+    if (isVSCode()) void import('./vscode/vscode-bridge').then(m => m.initVSCode());
   });
 
   onMount(() => {
@@ -182,7 +185,9 @@ const App: Component = () => {
   // offline-ready and update-available toasts; applying an update is an
   // explicit user action (version-tap hard refresh / applyPwaUpdate).
   onMount(() => {
-    initPWA();
+    // Not in VS Code: the extension ships the build and updates with itself, and a webview
+    // cannot register a service worker for its own origin anyway.
+    if (!isVSCode()) initPWA();
   });
 
   onMount(() => {
@@ -192,7 +197,9 @@ const App: Component = () => {
 
     // Auto-save: silently restore last session (async — large docs come from
     // IndexedDB), then start the watchers
-    loadAutoSave().finally(() => initAutoSave());
+    // VS Code: skipped. The editor tab's file is the document, and every webview shares one
+    // storage origin, so a restored autosave would paste one file's drawing into another.
+    if (!isVSCode()) loadAutoSave().finally(() => initAutoSave());
 
     // Cloud storage: register providers and restore config
     initCloudStorage();
@@ -349,6 +356,8 @@ const App: Component = () => {
           setIsLoadExportOpen(true);
           return;
         } else if (key === 's') {
+          // VS Code saves the file itself: the webview forwards Ctrl+S to the workbench.
+          if (isVSCode()) return;
           // Ctrl/Cmd+S → quick-save to the local "My Drawings" gallery
           // (Ctrl+Alt+S remains the full Export/Save dialog above).
           e.preventDefault();

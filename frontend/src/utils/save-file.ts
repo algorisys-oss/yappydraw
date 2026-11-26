@@ -14,6 +14,8 @@
  * so nothing regresses on those browsers.
  */
 
+import { isVSCode, saveViaHost } from '../vscode/vscode-host';
+
 type SaveOpts = {
     /** Human label for the file kind, shown in the picker's type dropdown. */
     description: string;
@@ -21,8 +23,10 @@ type SaveOpts = {
     accept: Record<string, string[]>;
 };
 
+// In VS Code the host shows its own Save dialog (see vscode/vscode-host.ts), so the answer
+// is yes there even though the webview's showSaveFilePicker is unusable.
 const canPick = (): boolean =>
-    typeof window !== 'undefined' && typeof (window as any).showSaveFilePicker === 'function';
+    typeof window !== 'undefined' && (isVSCode() || typeof (window as any).showSaveFilePicker === 'function');
 
 /** True where `saveBlob` will show a real Save dialog (name + folder) rather than download. */
 export const canPickSaveLocation = canPick;
@@ -46,6 +50,7 @@ const anchorDownload = (blob: Blob, suggestedName: string): void => {
  * download, or "Cancel" would still drop a file in Downloads.
  */
 export const saveBlob = async (blob: Blob, suggestedName: string, opts: SaveOpts): Promise<boolean> => {
+    if (isVSCode()) return saveViaHost(blob, suggestedName, opts.accept, opts.description);
     if (canPick()) {
         try {
             const handle = await (window as any).showSaveFilePicker({

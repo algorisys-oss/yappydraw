@@ -44,29 +44,37 @@ const tabId = crypto.randomUUID();
  * Initialize reactive watchers for auto-save.
  * Call once from App.tsx onMount after recovery check.
  */
+/**
+ * The store reads that mean "the document was edited". Shared by autosave and by hosts that
+ * keep the document somewhere else (the VS Code editor marks its tab dirty from the same list),
+ * so the two can't disagree about what counts as an edit.
+ */
+export function documentEditSignature(): unknown[] {
+    return [
+        store.undoStackLength,
+        store.elements.length,
+        store.slides.length,
+        store.layers.length,
+        store.states.length,
+        store.docType,
+        store.dirtyRevision,
+        // Guides are saved with the document; adding or removing one is an edit.
+        store.guides.length,
+    ];
+}
+
+/** Run `onEdit` after every document edit (not on the initial read). Call inside a reactive owner. */
+export function watchDocumentEdits(onEdit: () => void): void {
+    createEffect(on(documentEditSignature, onEdit, { defer: true }));
+}
+
 export function initAutoSave(): void {
     // Watch meaningful document changes (debounced)
-    createEffect(
-        on(
-            () => [
-                store.undoStackLength,
-                store.elements.length,
-                store.slides.length,
-                store.layers.length,
-                store.states.length,
-                store.docType,
-                store.dirtyRevision,
-                // Guides are saved with the document; adding or removing one is an edit.
-                store.guides.length,
-            ],
-            () => {
-                if (_isSaving) return;
-                setStore('isDirty', true);
-                scheduleAutoSave();
-            },
-            { defer: true }
-        )
-    );
+    watchDocumentEdits(() => {
+        if (_isSaving) return;
+        setStore('isDirty', true);
+        scheduleAutoSave();
+    });
 
     // Immediate save on slide navigation
     createEffect(

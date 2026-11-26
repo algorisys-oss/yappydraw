@@ -579,24 +579,35 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
 const documentBackground = (): string => store.canvasBackgroundColor || '#ffffff';
 
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
+    const canvas = await renderPngCanvas(scale, background, onlySelected);
+    if (!canvas) return;
+    // Save — prompts for a name and folder where the browser supports it (see save-file.ts).
+    const paged = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
+    const name = !paged ? 'yappy_drawing.png' : store.docType === 'design' ? 'yappy_design.png' : 'yappy_slides.png';
+    await saveCanvas(canvas, name, 'image/png');
+};
+
+/**
+ * The PNG export's picture, without saving it: the whole drawing (or the selection), cropped to
+ * its visual bounds — or, for paged documents, every page at full page bounds. Undefined when
+ * there is nothing to draw. Shared by Export PNG and the editable `.yappy.png` save.
+ */
+export const renderPngCanvas = async (scale: number, background: boolean, onlySelected: boolean): Promise<HTMLCanvasElement | undefined> => {
     await ensureExportImages();
     // Paged docs (design / slides): export every page at full page bounds with its
     // background, not just the element-bounding-box crop.
     if (isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected) {
-        const canvas = renderPagedDocToCanvas(scale, background);
-        if (!canvas) return;
-        await saveCanvas(canvas, store.docType === 'design' ? 'yappy_design.png' : 'yappy_slides.png', 'image/png');
-        return;
+        return renderPagedDocToCanvas(scale, background) ?? undefined;
     }
 
     let elements = exportScene().filter(isExportable); // drops hidden elements and null objects (adjustment layers still render their filter)
     setJumpScene(elements, store.globalSettings.connectorJumps !== false); // line jumps, same as the canvas
     setLabelScene(elements);                                                  // label lanes, same as the canvas
     if (onlySelected) {
-        if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
+        if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return undefined; }
         elements = elements.filter(el => store.selection.includes(el.id));
     }
-    if (elements.length === 0) return;
+    if (elements.length === 0) return undefined;
 
     // Visual bounds — rotation / stroke / shadow / extrude / transform-effect aware, so nothing
     // is cropped off the export (the raw x/y/w/h box misses all of those).
@@ -612,7 +623,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     canvas.height = height * scale;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     // Background
     if (background) {
@@ -629,9 +640,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
         renderElWithEffects(rc, ctx, el);
     });
     paintDimensions(ctx, elements, scale);
-
-    // Save — prompts for a name and folder where the browser supports it (see save-file.ts).
-    await saveCanvas(canvas, 'yappy_drawing.png', 'image/png');
+    return canvas;
 };
 
 /**

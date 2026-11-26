@@ -117,7 +117,7 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
                                         </div>
                                         <div class="option-info">
                                             <h4>Load from file</h4>
-                                            <p>Open a .yappy or .json sketch file from your device</p>
+                                            <p>Open a .yappy or .json drawing, or an editable .yappy.svg / .yappy.png image, from your device</p>
                                         </div>
                                         <button class="action-trigger">Load from file</button>
                                     </div>

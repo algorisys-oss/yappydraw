@@ -40,6 +40,7 @@ import { meta as animateMeta } from './features/animate.md?meta';
 import { meta as arcadeMeta } from './features/arcade.md?meta';
 import { meta as doodlesMeta } from './features/doodles.md?meta';
 import { meta as embeddingMeta } from './features/embedding.md?meta';
+import { meta as vscodeMeta } from './features/vscode.md?meta';
 import { meta as yslTutorialMeta } from './features/ysl-tutorial.md?meta';
 import { meta as bulkEditingMeta } from './features/bulk-editing.md?meta';
 import './help-page.css';
@@ -106,6 +107,7 @@ const AnimateDoc = markdownDoc(() => import('./features/animate.md'));
 const ArcadeDoc = markdownDoc(() => import('./features/arcade.md'));
 const DoodlesDoc = markdownDoc(() => import('./features/doodles.md'));
 const EmbeddingDoc = markdownDoc(() => import('./features/embedding.md'));
+const VscodeDoc = markdownDoc(() => import('./features/vscode.md'));
 const YslTutorialDoc = markdownDoc(() => import('./features/ysl-tutorial.md'));
 const BulkEditingDoc = markdownDoc(() => import('./features/bulk-editing.md'));
 
@@ -146,6 +148,7 @@ const shapeDocuments: ShapeDoc[] = [
     { ...arcadeMeta, content: ArcadeDoc },
     { ...doodlesMeta, content: DoodlesDoc },
     { ...embeddingMeta, content: EmbeddingDoc },
+    { ...vscodeMeta, content: VscodeDoc },
     { ...yslTutorialMeta, content: YslTutorialDoc },
     { ...bulkEditingMeta, content: BulkEditingDoc },
 ];

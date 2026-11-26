@@ -1,0 +1,85 @@
+{
+  "name": "yappydraw",
+  "displayName": "YappyDraw",
+  "description": "Draw diagrams, flowcharts, mind maps, wireframes and slides inside VS Code. Edits .yappy files, and .yappy.svg / .yappy.png images that show on GitHub and stay editable. Offline.",
+  "version": "0.8.307",
+  "publisher": "algorisys",
+  "license": "AGPL-3.0-only",
+  "icon": "media/icon.png",
+  "homepage": "https://yappydraw.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/algorisys-oss/yappydraw"
+  },
+  "bugs": {
+    "url": "https://github.com/algorisys-oss/yappydraw/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "diagram",
+    "drawing",
+    "whiteboard",
+    "flowchart",
+    "mindmap",
+    "uml",
+    "excalidraw",
+    "yappy"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "yappy.editor",
+        "displayName": "YappyDraw",
+        "selector": [
+          {
+            "filenamePattern": "*.yappy"
+          },
+          {
+            "filenamePattern": "*.yappy.svg"
+          },
+          {
+            "filenamePattern": "*.yappy.png"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "yappy.newDrawing",
+        "title": "New Drawing",
+        "category": "YappyDraw"
+      }
+    ],
+    "menus": {
+      "file/newFile": [
+        {
+          "command": "yappy.newDrawing"
+        }
+      ]
+    },
+    "configurationDefaults": {
+      "workbench.editorAssociations": {
+        "*.yappy.svg": "yappy.editor",
+        "*.yappy.png": "yappy.editor"
+      }
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "package": "node build.mjs --package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/vscode": "~1.85.0",
+    "@vscode/vsce": "^3.6.0"
+  }
+}

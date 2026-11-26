@@ -2,6 +2,72 @@
 
 This document captures key lessons learned during the development of Yappy, particularly from implementing complex features like the mindmap action toolbar.
 
+## Moving the primary repo; help for something not yet published (Nov 26 2026)
+
+- **A public page must not link into a private repo.** Help sent translation feedback to
+  `github.com/rajeshpillai/yappy/issues`, a private repo, so every visitor got a 404. User-facing
+  links go to the public mirror, `algorisys-oss/yappydraw`. Check with
+  `grep -rn "github.com/" frontend/src/help-docs articles` and confirm each owner is public.
+- **Move a repo by pushing its remote refs, not just your branches.** `git push --all` only
+  sends local branches. `git push new 'refs/remotes/old/*:refs/heads/*'` sends every branch the
+  old remote had, but it also creates a branch literally named `HEAD` (from
+  `refs/remotes/old/HEAD`); delete that one afterwards. Before dropping the old remote, check
+  each of its branches is an ancestor of the same branch on the new one.
+- **Help for an unreleased channel has to say so.** P1/P2 of the VS Code extension shipped in
+  the web build before the extension reached any store. The help page told readers to "search
+  the Extensions view and click Install", which would find nothing. When the code ships ahead
+  of its distribution, the Install section says "coming soon" and names what works today.
+
+## Editable images: a drawing inside an SVG or PNG (Nov 25 2026)
+
+- **Carry the file, not a new format.** The payload in a `.yappy.svg` / `.yappy.png` is the
+  `.yappy` file itself (gzip JSON, base64). Reading it back is the same `decodeDocumentBytes`
+  every other open path uses, so version checks and migrations apply with no new code.
+- **Put it where viewers already look away.** SVG: `<metadata>` before `</svg>`. PNG: a
+  `tEXt` chunk before `IEND`. Re-embedding must replace the old payload, or every save makes
+  the file bigger. The unit tests check that, and the CRC of every chunk.
+- **Refuse what you can't round-trip.** A plain PNG renamed `.yappy.png` opens with an error
+  and an empty canvas; the file is not touched unless the user draws and saves. Treating it
+  as an empty drawing silently would let one Ctrl+S overwrite a real image.
+- **Claiming a file pattern means competing for it.** VS Code's core image viewer is also a
+  default editor for `*.png`, so `*.yappy.png` raised "multiple default editors". A
+  `configurationDefaults` entry for `workbench.editorAssociations` settles it without a prompt.
+- **Test the host off-screen.** The VS Code test windows opened on the user's desktop, and
+  killing them raised "The window terminated unexpectedly" dialogs, which were reported back
+  as an error. Run them under `env -u WAYLAND_DISPLAY xvfb-run -a` and close through
+  `window.close()`.
+
+## VS Code extension: the website build in a webview (Nov 25 2026)
+
+- **A webview is the website at the wrong URL.** The page lives at
+  `vscode-webview://<id>/index.html?id=<uuid>&…`, and three things read that URL as if it were
+  yappydraw.com: the path router (`/index.html` is not a route), relative assets (resolve to
+  nothing) and the menu, which reads `?id=` as "fetch this drawing from the server" (a 401 on
+  every open). A `<base href>` fixes the assets; the router and the `?id=` read need explicit
+  guards. Before reusing a web build in a new host, grep for every `location.*` and
+  `URLSearchParams` read.
+- **A `<base>` on another origin breaks relative `pushState`.** `history.pushState(null, '',
+  '/help/')` resolves against the document base, which is now a different origin, so it throws
+  a SecurityError. Resolve against `location.href` explicitly; on the website that is the same
+  URL, so nothing changes there.
+- **Module-load reads happen before the entry file runs.** `navigation.ts` reads
+  `location.pathname` into a signal when it is imported, which is before any line of
+  `index.tsx`. The URL fix-up has to run in that module, not in the entry.
+- **A webview cannot download.** `<a download>` does nothing and `showSaveFilePicker` is
+  refused in its frame, so every export failed silently. `saveBlob` now goes to the host's
+  Save dialog, and a patched `HTMLAnchorElement.prototype.click` catches the eight other
+  `<a download>` call sites, plus any added later.
+- **Let the editor own undo.** VS Code's webview preload `preventDefault`s Ctrl+Z, but the
+  editor's capture-phase listener still runs first. Reporting edits with VS Code undo
+  callbacks would undo twice; plain content-change events mark the tab dirty and leave
+  history to Yappy.
+- **A document carries its own theme.** `loadDocument` applies `globalSettings.theme` from
+  the file, so a host theme set before the load is overwritten. Apply it after.
+- **Test in the real host, not a mock of it.** Every bug above showed up only in a real VS Code
+  driven over CDP (`temp/vsc/roundtrip.mjs`: a portable VS Code with `--no-sandbox`, an
+  isolated profile, `chromium.connectOverCDP`). Playwright's `_electron.launch` does not start
+  VS Code, and the snap build will not run outside its sandbox.
+
 ## TIFF pictures and embedded-object previews (Nov 5 2026)
 
 - **A decoder test needs an encoder you didn't write.** The TIFF decoder was checked against

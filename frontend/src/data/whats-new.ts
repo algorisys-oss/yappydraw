@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.307', date: '2026-11-26', items: [
+        'Editable images: a .yappy.svg or .yappy.png shows as a normal picture on GitHub, in Markdown or in a browser, and still holds your whole drawing. Open one with Export / Save… → Load → Load from file and keep editing. Scripts can make them with Yappy.exportEditableImage().',
+        'Coming soon: a YappyDraw extension for VS Code, Cursor and VSCodium, so you can edit diagrams next to your code. See Help ▸ VS Code Extension.',
+    ] },
     { version: '0.8.306', date: '2026-11-05', items: [
         'Waterfall, funnel, histogram, Pareto, box & whisker, treemap and sunburst charts in PowerPoint files now open sharp — drawn from their data in your deck’s colours, instead of as a blurry picture. Their values are in the chart’s alt text.',
     ] },

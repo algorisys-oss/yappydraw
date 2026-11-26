@@ -46,6 +46,7 @@ import { openAltText, openAccessibilityCheck, checkDocument } from './components
 import { SLIDE_LAYOUTS } from './utils/slide-layouts';
 import { openPresenterView, closePresenterView, isPresenterViewOpen } from './components/presenter-view';
 import { exportToSvg, exportToPdf, exportToPptx, type SvgExportOptions, exportArtboard, exportRegion, exportPageToPng, exportPageForPlatform } from "./utils/export";
+import { saveBlob } from "./utils/save-file";
 import { socialTargetsForPage, SOCIAL_TARGETS } from "./utils/social-export";
 import { GRID_STYLES, gridSnap, gridUnitToPx } from "./utils/grid-lattice";
 import { openLayoutGuidesDialog } from "./components/layout-guides-dialog";
@@ -2447,6 +2448,45 @@ export const YappyAPI = {
      */
     exportSVG(onlySelected = false, options?: SvgExportOptions): string | undefined {
         return exportToSvg(onlySelected, options);
+    },
+
+    /**
+     * Export an **editable image**: an SVG or PNG of the whole drawing that also carries the
+     * drawing itself, so YappyDraw (the website, the desktop app, the VS Code extension) opens
+     * it again for editing. It displays like any other image on GitHub, in Markdown and in a
+     * browser. Name it `*.yappy.svg` / `*.yappy.png` so the VS Code extension opens it.
+     *
+     *   await Yappy.exportEditableImage('svg');                      // saves drawing.yappy.svg
+     *   const blob = await Yappy.exportEditableImage('png', { download: false });
+     *
+     * SVG is the vector export; PNG is the PNG export at 2× on the document background. Resolves
+     * to the file as a Blob.
+     */
+    async exportEditableImage(format: 'svg' | 'png' = 'svg', options: { download?: boolean; name?: string } = {}): Promise<Blob> {
+        const { download = true, name = 'drawing' } = options;
+        const { renderEditableImage } = await import('./utils/editable-image');
+        const bytes = await renderEditableImage(format, name);
+        const type = format === 'svg' ? 'image/svg+xml' : 'image/png';
+        const blob = new Blob([bytes as BlobPart], { type });
+        if (download) {
+            await saveBlob(blob, `${name}.yappy.${format}`, {
+                description: format === 'svg' ? 'Editable SVG' : 'Editable PNG',
+                accept: { [type]: [`.${format}`] },
+            });
+        }
+        return blob;
+    },
+
+    /**
+     * Open the drawing carried by an editable SVG/PNG (see `exportEditableImage`), replacing the
+     * current document. Resolves false — and changes nothing — when the image has no drawing in it.
+     */
+    async openEditableImage(image: Blob | ArrayBuffer | Uint8Array): Promise<boolean> {
+        const bytes = image instanceof Uint8Array ? image
+            : image instanceof ArrayBuffer ? new Uint8Array(image)
+            : new Uint8Array(await image.arrayBuffer());
+        const { openEditableImage } = await import('./utils/editable-image');
+        return openEditableImage(bytes);
     },
 
     /**

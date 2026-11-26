@@ -665,7 +665,13 @@ My Drawings lives in this browser's storage — convenient, but not a backup. Fo
 
 ## Saving a file to your computer
 
-**Export / Save…** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) → **Save to disk** writes the drawing as a `.yappy` file (or **JSON** for the plain-text version). In Chrome, Edge and the desktop app the browser's own **Save** dialog opens, so you pick the file name and the folder, the same as for image exports; **Cancel** there saves nothing. Browsers without that dialog (Safari, Firefox) download the file under the name you typed, and on a phone the share sheet opens so you can save it to Files. Open it again with **Export / Save… → Load**.
+**Export / Save…** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) → **Save to disk** writes the drawing as a `.yappy` file (or **JSON** for the plain-text version). In Chrome, Edge and the desktop app the browser's own **Save** dialog opens, so you pick the file name and the folder, the same as for image exports; **Cancel** there saves nothing. Browsers without that dialog (Safari, Firefox) download the file under the name you typed, and on a phone the share sheet opens so you can save it to Files. Open it again with **Export / Save… → Load → Load from file**.
+
+**Editable images.** **Load from file** also opens a `.yappy.svg` or `.yappy.png`: an image
+that displays anywhere (GitHub, Markdown, a browser) and carries the whole drawing inside it.
+The API saves these
+(` Yappy.exportEditableImage('svg')`), and so will the VS Code extension once it is published. An ordinary SVG or PNG has no drawing inside; to place
+one on the canvas, use the **Insert Image** tool.
 
 The file keeps everything in the drawing, including an animation's timeline, pattern swatches and symmetry settings. A file saved by a **newer version of Yappy** than the one you're running isn't opened as a blank page: you're told to reload the app to update, then open it again.
 
@@ -695,7 +701,7 @@ Two things worth knowing:
 - **The command palette searches in your language, and in English.** Accents and apostrophes are ignored while matching, so on a French keyboard `elements` finds *Éléments* and `d'exportation` finds *Zone d’exportation* — you do not have to type the typographic apostrophe the label uses. Command names in English keep working too, so you can follow an English tutorial in a French interface.
 - **Anything not yet translated stays in English** rather than going blank, string by string. Some panels — Layers among them — are still English in every language while their text is being extracted.
 
-A language is only offered once it is complete, so you will never get a half-translated interface. Translations are our own work rather than a native speaker's review; if a word is wrong in your language, [tell us](https://github.com/rajeshpillai/yappy/issues) — that is the fastest way for it to get fixed.
+A language is only offered once it is complete, so you will never get a half-translated interface. Translations are our own work rather than a native speaker's review; if a word is wrong in your language, [tell us](https://github.com/algorisys-oss/yappydraw/issues) — that is the fastest way for it to get fixed.
 
 ## Accessibility
 

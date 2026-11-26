@@ -11747,3 +11747,10 @@ Found while adding scatter, bubble, radar and stock charts (PPTX parity P4a):
 - **#482 Data labels on stacked bar charts** sat past the end of each segment, over the next
   segment's colour. They are centred inside the segment now, as on stacked columns.
   (`utils/chart/chart-layout.ts`)
+
+### Help linked into a private repo (2026-11-26, #483)
+
+- **#483 The translation feedback link in Help went to a private repo.** Workspace ▸ Language
+  sent readers to `github.com/rajeshpillai/yappy/issues`, which the public cannot open (404).
+  It now points at the public mirror's issues, `github.com/algorisys-oss/yappydraw/issues`.
+  (`frontend/src/help-docs/features/workspace.md`)

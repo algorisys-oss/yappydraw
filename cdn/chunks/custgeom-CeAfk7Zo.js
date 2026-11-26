@@ -1,4 +1,4 @@
-import { aJ as w } from "./index-DEKxp5SH.js";
+import { aO as w } from "./index-C2lzZgao.js";
 import { s as z, z as X } from "./browser-D4hpQp_u.js";
 const Z = 9525, _ = 12700, U = (c) => {
   const o = ((Number.isFinite(c) ? c : 0) % 360 + 360) % 360;
@@ -178,11 +178,11 @@ function H(c) {
 function V(c, o, i, r = 1, n = 1) {
   return c.map((e) => e.op === "Z" ? e : e.op === "C" ? { op: "C", x1: e.x1 * r + o, y1: e.y1 * n + i, x2: e.x2 * r + o, y2: e.y2 * n + i, x: e.x * r + o, y: e.y * n + i } : { op: e.op, x: e.x * r + o, y: e.y * n + i });
 }
-function J(c, o) {
+function K(c, o) {
   const [i, r, n, e, s, g] = o, b = (a, y) => i * a + n * y + s, u = (a, y) => r * a + e * y + g;
   return c.map((a) => a.op === "Z" ? a : a.op === "C" ? { op: "C", x1: b(a.x1, a.y1), y1: u(a.x1, a.y1), x2: b(a.x2, a.y2), y2: u(a.x2, a.y2), x: b(a.x, a.y), y: u(a.x, a.y) } : { op: a.op, x: b(a.x, a.y), y: u(a.x, a.y) });
 }
-function K(c) {
+function q(c) {
   let o = 1 / 0, i = 1 / 0, r = -1 / 0, n = -1 / 0;
   const e = (s, g) => {
     s < o && (o = s), g < i && (i = g), s > r && (r = s), g > n && (n = g);
@@ -191,9 +191,9 @@ function K(c) {
     s.op !== "Z" && (s.op === "C" && (e(s.x1, s.y1), e(s.x2, s.y2)), e(s.x, s.y));
   return Number.isFinite(o) ? { minX: o, minY: i, maxX: r, maxY: n } : null;
 }
-const G = 1e5, E = 2e9;
-function q(c, o, i) {
-  const r = Math.max(Math.abs(o), 1e-6), n = Math.max(Math.abs(i), 1e-6), e = Math.max(1, G / Math.max(r, n)), s = Math.max(1, Math.round(r * e)), g = Math.max(1, Math.round(n * e)), b = (h) => {
+const O = 1e5, E = 2e9;
+function J(c, o, i) {
+  const r = Math.max(Math.abs(o), 1e-6), n = Math.max(Math.abs(i), 1e-6), e = Math.max(1, O / Math.max(r, n)), s = Math.max(1, Math.round(r * e)), g = Math.max(1, Math.round(n * e)), b = (h) => {
     const M = Math.round(h * e);
     return Number.isFinite(M) ? Math.max(-E, Math.min(E, M)) : 0;
   }, u = (h, M) => `<a:pt x="${b(h)}" y="${b(M)}"/>`;
@@ -218,13 +218,13 @@ export {
   R as N,
   j as R,
   N as X,
-  J as a,
+  K as a,
   U as b,
-  K as c,
+  q as c,
   B as d,
   T as e,
   W as f,
-  q as g,
+  J as g,
   A as h,
   _ as i,
   H as p,

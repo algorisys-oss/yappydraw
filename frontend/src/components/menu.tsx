@@ -1,4 +1,5 @@
 import { type Component, createSignal, onMount, onCleanup, Show, lazy, Suspense, createEffect } from "solid-js";
+import { isVSCode } from '../vscode/vscode-host';
 import { saveBlob, canPickSaveLocation } from '../utils/save-file';
 import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
@@ -419,6 +420,26 @@ const Menu: Component = () => {
             return;
         }
 
+        // Editable image (`.yappy.svg` / `.yappy.png`, or any SVG/PNG saved with the drawing
+        // inside): open the drawing it carries. A plain image has none — say where it goes instead.
+        if (/\.(svg|png)$/i.test(file.name)) {
+            try {
+                const { openEditableImage } = await import('../utils/editable-image');
+                if (!await openEditableImage(new Uint8Array(await file.arrayBuffer()))) {
+                    showToast('That image has no YappyDraw drawing inside. To place it on the canvas, use the Insert Image tool.', 'error');
+                } else {
+                    setDrawingId(file.name.replace(/(\.yappy)?\.(svg|png)$/i, ''));
+                    showToast('File loaded successfully', 'success');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(err instanceof DocumentTooNewError ? err.message : 'Failed to load file. It might be corrupted or invalid format.', 'error');
+            }
+            setIsMenuOpen(false);
+            (e.target as HTMLInputElement).value = '';
+            return;
+        }
+
         try {
             showToast('Loading file...', 'loading', 0);
             let jsonString: string;
@@ -609,7 +630,9 @@ const Menu: Component = () => {
         });
 
         const params = new URLSearchParams(window.location.search);
-        const id = params.get('id');
+        // Not in VS Code: its webview URL carries its own `?id=<webview uuid>`, which this would
+        // read as a workspace drawing to fetch (a 401 from /api/drawings on every open).
+        const id = isVSCode() ? null : params.get('id');
         if (id) {
             setDrawingId(id);
             handleLoad(id);
@@ -626,7 +649,7 @@ const Menu: Component = () => {
                 type="file"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
-                accept=".json,.yappy,.excalidraw,.pptx,.potx,.ppsx"
+                accept=".json,.yappy,.svg,.png,.excalidraw,.pptx,.potx,.ppsx"
                 onChange={handleOpenJson}
             />
 

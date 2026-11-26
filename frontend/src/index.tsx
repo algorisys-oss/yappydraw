@@ -103,7 +103,8 @@ const Router = () => {
                         }
                         // Update URL to show the loaded document (change #load= to #doc= to prevent re-loading)
                         const docName = fileName.replace(/\.(json|yappy)$/i, '')
-                        window.history.replaceState(null, '', `${window.location.pathname}#doc=${encodeURIComponent(docName)}`)
+                        // Absolute: under VS Code a <base href> on another origin would make a relative URL throw.
+                        window.history.replaceState(null, '', new URL(`${window.location.pathname}#doc=${encodeURIComponent(docName)}`, window.location.href).href)
                     } catch (err) {
                         console.error('Failed to load example:', err)
                     } finally {
