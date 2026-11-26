@@ -11974,3 +11974,11 @@ or Project scene as Yappy shapes and attaches its timeline. Decisions worth keep
 - **Check the bundle before you call an advisory reachable.** `grep` on `dist/assets/*.js` for
   the library finds nothing: solid uses seroval only for SSR, and we render only on the client.
   The host scans the lockfile and not the bundle, so we fix it anyway, as we did for `image-size` (0.8.271).
+
+- **`npm audit` finds more than the alert that was reported (#485).** Dependabot raised only
+  `minimatch` in `vscode/`. `npm audit` in the same folder also found `glob` 13.0.7. When you fix
+  one advisory, run `npm audit` in every folder that has a lockfile (`./`, `vscode/`,
+  `backend/mcp/`).
+- **To prove a glob override is safe, compare outputs.** "It builds" is not proof: the #465
+  override built cleanly and matched 0 files. For `vsce`, compare `npx vsce ls | sort` before
+  and after. Both gave 1876 files.

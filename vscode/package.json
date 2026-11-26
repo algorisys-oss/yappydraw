@@ -2,7 +2,7 @@
   "name": "yappydraw",
   "displayName": "YappyDraw",
   "description": "Draw diagrams, flowcharts, mind maps, wireframes and slides inside VS Code. Edits .yappy files, and .yappy.svg / .yappy.png images that show on GitHub and stay editable. Offline.",
-  "version": "0.8.307",
+  "version": "0.8.308",
   "publisher": "algorisys",
   "license": "AGPL-3.0-only",
   "icon": "media/icon.png",
@@ -81,5 +81,9 @@
     "@types/node": "^20.19.43",
     "@types/vscode": "~1.85.0",
     "@vscode/vsce": "^3.6.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1",
+    "glob": "^14.0.3"
   }
 }

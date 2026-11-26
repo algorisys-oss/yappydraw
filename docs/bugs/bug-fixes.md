@@ -11765,3 +11765,16 @@ Found while adding scatter, bubble, radar and stock charts (PPTX parity P4a):
   renders only on the client, and `dist/assets/*.js` has no seroval code. `npm audit` is clean for
   seroval. The build and `npm test` (2272 pass) pass. Remove the override when solid 1.9.x widens
   its range, or when we move to solid 2.x (it asks for `seroval ^1.8.0`).
+
+### VS Code extension dev dependencies: minimatch, glob (2026-11-26, #485)
+
+- **#485 `minimatch` < 11.0.1 (Dependabot #21 on the mirror; DoS via globparts amplification) and
+  `glob` 9.0.0–14.0.1 (GHSA-3g3m-2fjr-6pw4: after an AbortSignal timeout, glob keeps walking the
+  file system).** Both are in `vscode/package-lock.json`, through `@vscode/vsce` 3.9.2: `minimatch`
+  10.2.6 and `glob` 13.0.7. Even `vsce` 4.1.1 asks for `minimatch ^10.2.6`, so upgrading `vsce`
+  does not fix it. `vscode/package.json` `overrides` now sets `minimatch ^11.0.1` and
+  `glob ^14.0.3`, the same pair as the main repo's workbox override (#465). `glob` 14 is built for
+  `minimatch` 11. On its own, `minimatch` 11 under `glob` 11 had matched nothing. Packaging
+  tooling only; the extension and the web app do not ship it. **Verified:** `npx vsce ls` gives
+  the same 1876 files before and after, `npm run package` builds the `.vsix`, and `npm audit`
+  in `vscode/` reports 0 vulnerabilities.
